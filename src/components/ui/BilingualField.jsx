@@ -17,11 +17,32 @@
 // The current UI language (from LangContext) is highlighted with a slightly
 // brighter border so the user knows which one they're "working in".
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import LangContext from '../../i18n/LangContext.js';
 import { toL }     from '../../utils.js';
 
 const LANG_LABELS = { en: 'EN 🇺🇸', es: 'ES 🇲🇽' };
+
+// Auto-grow textarea: height expands with content
+function AutoGrowTextarea({ value, onChange, placeholder, maxLength, className, rows }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.style.height = 'auto';
+    ref.current.style.height = `${Math.max(ref.current.scrollHeight, rows * 24)}px`;
+  }, [value, rows]);
+  return (
+    <textarea
+      ref={ref}
+      rows={rows}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      maxLength={maxLength}
+      className={className}
+    />
+  );
+}
 
 export default function BilingualField({
   label, value, onChange, multiline = false, rows = 3,
@@ -39,19 +60,19 @@ export default function BilingualField({
   const handleChange = (l, text) => onChange({ ...val, [l]: text });
 
   const fieldCls = (l) =>
-    `w-full px-3 py-2 bg-slate-900 border rounded text-sm resize-none transition-colors ${
+    `w-full min-w-0 px-3 py-2 bg-slate-900 border rounded text-sm resize-none transition-colors ${
       lang === l ? 'border-emerald-600' : 'border-slate-600'
     }`;
 
   const renderInput = (l) =>
     multiline ? (
-      <textarea
-        rows={rows}
+      <AutoGrowTextarea
         value={val[l]}
-        onChange={(e) => handleChange(l, e.target.value)}
+        onChange={(text) => handleChange(l, text)}
         placeholder={ph(l)}
         maxLength={maxLength}
         className={fieldCls(l)}
+        rows={rows}
       />
     ) : (
       <input
@@ -60,6 +81,8 @@ export default function BilingualField({
         placeholder={ph(l)}
         maxLength={maxLength}
         className={fieldCls(l)}
+        size={Math.max(12, (val[l]?.length || 0) + 2)}
+        style={{ width: '100%', minWidth: '8ch' }}
       />
     );
 

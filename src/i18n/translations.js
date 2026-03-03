@@ -63,6 +63,7 @@ const TRANSLATIONS = {
     approve:      'Approve',
     reject:       'Reject',
     close:        'Close',
+    back:         'Back',
     view_profile: 'View profile',
     click_to_edit:'Click to view & edit your profile →',
 
@@ -579,6 +580,7 @@ const TRANSLATIONS = {
     approve:      'Aprobar',
     reject:       'Rechazar',
     close:        'Cerrar',
+    back:         'Volver',
     view_profile: 'Ver perfil',
     click_to_edit:'Ver y editar mi perfil →',
 

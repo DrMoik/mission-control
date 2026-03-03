@@ -31,7 +31,7 @@ import { atLeast, tsToDate }       from './utils.js';
 import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
 
 // ── Modals ────────────────────────────────────────────────────────────────────
-import ProfileModal                from './components/ProfileModal.jsx';
+import ProfilePageView            from './views/ProfilePageView.jsx';
 import JoinRequestModal            from './components/JoinRequestModal.jsx';
 
 // ── Full-page views ───────────────────────────────────────────────────────────
@@ -148,6 +148,7 @@ export default function App() {
   const [profileMember,  setProfileMember]  = useState(null);   // opens ProfileModal
   const [renamingTeamId, setRenamingTeamId] = useState(null);  // team picker inline rename
   const [renameValue,    setRenameValue]    = useState('');
+  const [prevView,       setPrevView]       = useState('overview');  // restore when leaving profile
 
   // ────────────────────────────────────────────────────────────────────────────
   // EFFECTS — Firebase subscriptions
@@ -882,7 +883,11 @@ export default function App() {
     </div>
   );
 
-  const handleViewProfile = (membership) => setProfileMember(membership);
+  const handleViewProfile = (membership) => {
+    setPrevView(view);
+    setProfileMember(membership);
+    setView('profile');
+  };
 
   // ────────────────────────────────────────────────────────────────────────────
   // RENDER
@@ -1142,18 +1147,6 @@ export default function App() {
     <LangContext.Provider value={{ lang, t, setLang: handleSetLang }}>
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
 
-        {/* ── Profile modal ── */}
-        {profileMember && (
-          <ProfileModal
-            membership={profileMember}
-            categories={teamCategories}
-            canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && profileMember.userId === authUser.uid)}
-            onClose={() => setProfileMember(null)}
-            onSave={handleUpdateMemberProfile}
-            weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
-            onSaveWeeklyStatus={handleSaveWeeklyStatus}
-          />
-        )}
 
         {/* ── Mobile nav overlay ── */}
         {mobileNavOpen && (
@@ -1404,35 +1397,29 @@ export default function App() {
               />
             )}
 
-            {/* My Profile — shortcut to open own profile modal */}
+            {/* My Profile — full page */}
             {view === 'myprofile' && currentMembership && (
-              <div className="max-w-lg space-y-4">
-                <h2 className="text-base font-semibold">{t('my_profile_title')}</h2>
-                <p className="text-xs text-slate-400">{t('profile_visible')}</p>
-                <button onClick={() => setProfileMember(currentMembership)}
-                  className="w-full bg-slate-800 rounded-lg p-4 text-left hover:bg-slate-700 transition-colors active:scale-[0.99]">
-                  <div className="flex items-center gap-3">
-                    {currentMembership.photoURL ? (
-                      <img src={currentMembership.photoURL} className="w-12 h-12 rounded-full object-cover" alt="" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center text-xl font-bold">
-                        {(currentMembership.displayName || '?')[0].toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-semibold">{currentMembership.displayName}</div>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        {currentMembership.career     || t('no_career')} · {currentMembership.university || t('no_university')}
-                      </div>
-                      <div className="text-xs text-emerald-400 mt-1">{t('click_to_edit')}</div>
-                    </div>
-                  </div>
-                  {currentMembership.bio
-                    ? <p className="text-sm text-slate-300 mt-3 line-clamp-2">{currentMembership.bio}</p>
-                    : <p className="text-xs text-slate-600 mt-3 italic">{t('no_bio')}</p>
-                  }
-                </button>
-              </div>
+              <ProfilePageView
+                membership={currentMembership}
+                categories={teamCategories}
+                canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && currentMembership.userId === authUser.uid)}
+                onSave={handleUpdateMemberProfile}
+                weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
+                onSaveWeeklyStatus={handleSaveWeeklyStatus}
+              />
+            )}
+
+            {/* Viewing another member's profile — full page with back button */}
+            {view === 'profile' && profileMember && (
+              <ProfilePageView
+                membership={profileMember}
+                categories={teamCategories}
+                canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && profileMember.userId === authUser.uid)}
+                onSave={handleUpdateMemberProfile}
+                weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
+                onSaveWeeklyStatus={handleSaveWeeklyStatus}
+                onBack={() => { setProfileMember(null); setView(prevView); }}
+              />
             )}
           </main>
         </div>
