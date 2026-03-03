@@ -20,7 +20,7 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
   const [categoryId,  setCategoryId]  = useState('');
   const [motivation,  setMotivation]  = useState('');
 
-  const canSubmit = categories.length > 0 ? Boolean(categoryId) : true;
+  const canSubmit = true;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
@@ -38,7 +38,7 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
           {/* Category picker */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              {t('which_category')}{categories.length > 0 && <span className="text-red-400"> *</span>}
+              {t('which_category')} <span className="text-slate-500 font-normal">{t('optional_label')}</span>
             </label>
             {categories.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
