@@ -1231,7 +1231,7 @@ export default function App() {
               className="flex items-center gap-2 hover:opacity-80 transition-opacity" title={t('view_profile')}>
               {(currentMembership?.photoURL || userProfile?.photoURL) ? (
                 <img src={currentMembership?.photoURL || userProfile?.photoURL}
-                  className="w-8 h-8 rounded-full object-cover border-2 border-slate-600 hover:border-emerald-500 transition-colors" alt="" />
+                  className="w-8 h-8 rounded-full object-cover object-[center_top] border-2 border-slate-600 hover:border-emerald-500 transition-colors" alt="" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-500 flex items-center justify-center text-sm font-bold">
                   {(userProfile?.displayName || '?')[0].toUpperCase()}

@@ -201,7 +201,7 @@ export default function ProfilePageView({
         <div className="absolute -bottom-16 left-6">
           {(editing ? draft.photoURL : membership.photoURL) ? (
             <img src={editing ? draft.photoURL : membership.photoURL}
-              className="w-32 h-32 rounded-full border-4 border-slate-800 object-cover shadow-lg ring-2 ring-emerald-500/30" alt="" />
+              className="w-32 h-32 rounded-full border-4 border-slate-800 object-cover object-[center_top] shadow-lg ring-2 ring-emerald-500/30" alt="" />
           ) : (
             <div className="w-32 h-32 rounded-full border-4 border-slate-800 bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
               {(ensureString(membership.displayName, lang) || '?')[0].toUpperCase()}
@@ -210,7 +210,7 @@ export default function ProfilePageView({
         </div>
       </div>
 
-      <div className="pt-20 px-4 sm:px-6 pb-8 bg-slate-800/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-slate-700/50">
+      <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-8 bg-slate-800/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-slate-700/50 w-full">
 
         {editing ? (
           <div className="space-y-4">
@@ -340,9 +340,9 @@ export default function ProfilePageView({
             </div>
           </div>
         ) : (
-          <div className="space-y-0.5">
+          <div className="space-y-4 w-full">
             <div className="flex items-start justify-between flex-wrap gap-2">
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-xl font-bold">{ensureString(membership.displayName, lang)}</h2>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <RoleBadge role={membership.role} />
@@ -367,10 +367,12 @@ export default function ProfilePageView({
               )}
             </div>
 
+            {/* Two-column layout on large screens for better horizontal space use */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-6">
             {(getL(membership.currentObjective, lang) || getL(membership.currentChallenge, lang)) && (
-              <>
+              <div className="min-w-0">
                 <SectionHeading icon="🎯" label={t('section_mission')} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {getL(membership.currentObjective, lang) && (
                     <div className="bg-slate-800/60 rounded-lg p-3">
                       <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1">{t('current_objective')}</p>
@@ -384,14 +386,14 @@ export default function ProfilePageView({
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             )}
 
             {(membership.lookingForHelpIn?.length || membership.iCanHelpWith?.length ||
               membership.skillsToLearnThisSemester?.length || membership.skillsICanTeach?.length) && (
-              <>
+              <div className="min-w-0">
                 <SectionHeading icon="🤝" label={t('section_collaboration')} />
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                   {membership.lookingForHelpIn?.length > 0 && (
                     <div>
                       <p className="text-[10px] text-slate-500 font-semibold">{t('looking_label')}</p>
@@ -417,11 +419,11 @@ export default function ProfilePageView({
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             )}
 
             {(membership.songOnRepeatTitle || getL(membership.funFact, lang)) && (
-              <>
+              <div className="min-w-0">
                 <SectionHeading icon="🎵" label={t('section_culture')} />
                 <div className="space-y-2">
                   {membership.songOnRepeatTitle && (
@@ -444,9 +446,10 @@ export default function ProfilePageView({
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             )}
 
+            <div className="min-w-0">
             <SectionHeading icon="📅" label={t('section_weekly')} />
             {editingWeekly ? (
               <div className="bg-slate-800 rounded-lg p-4 space-y-3">
@@ -487,9 +490,10 @@ export default function ProfilePageView({
                 )}
               </div>
             )}
+            </div>
 
             {(getL(membership.bio, lang) || getL(membership.hobbies, lang)) && (
-              <>
+              <div className="min-w-0">
                 <SectionHeading icon="👤" label={t('about_label')} />
                 {getL(membership.bio, lang) && <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{getL(membership.bio, lang)}</p>}
                 {getL(membership.hobbies, lang) && (
@@ -498,18 +502,19 @@ export default function ProfilePageView({
                     <p className="text-sm text-slate-200 leading-relaxed">{getL(membership.hobbies, lang)}</p>
                   </div>
                 )}
-              </>
+              </div>
             )}
 
             {!getL(membership.bio, lang) && !getL(membership.hobbies, lang) && !getL(membership.currentObjective, lang) && !getL(membership.currentChallenge, lang) && !membership.lookingForHelpIn?.length && !membership.iCanHelpWith?.length && !membership.songOnRepeatTitle && !thisWeek && (
-              <p className="text-xs text-slate-600 italic text-center py-4">{t('no_profile_info')}</p>
+              <p className="text-xs text-slate-600 italic text-center py-4 col-span-full">{t('no_profile_info')}</p>
             )}
+            </div>
           </div>
         )}
       </div>
 
       {cropTarget === 'photoURL' && (
-        <ImageCropModal src={draft.photoURL} label="Reframe Profile Photo" cropWidth={400} cropHeight={400}
+        <ImageCropModal src={draft.photoURL} label="Reframe Profile Photo" cropWidth={400} cropHeight={400} focusTop
           onApply={(url) => { set('photoURL', url); setCropTarget(null); }} onCancel={() => setCropTarget(null)} />
       )}
       {cropTarget === 'coverPhotoURL' && (

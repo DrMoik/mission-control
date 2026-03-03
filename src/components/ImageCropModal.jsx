@@ -28,6 +28,7 @@ export default function ImageCropModal({
   cropWidth  = 240,
   cropHeight = 240,
   label      = 'Reframe Image',
+  focusTop   = false,  // when true, initial crop favors top (face/head) for portrait photos
 }) {
   const { t } = React.useContext(LangContext);
 
@@ -75,7 +76,9 @@ export default function ImageCropModal({
         const fs = Math.max(vpW / img.naturalWidth, vpH / img.naturalHeight);
         setFitScale(fs);
         setUserZoom(1);
-        setOffset({ x: 0, y: 0 });
+        // For portrait/headshot: favor showing top (face) — shift crop up by ~20% of frame
+        const initialY = focusTop && img.naturalHeight > img.naturalWidth ? vpH * 0.2 : 0;
+        setOffset({ x: 0, y: initialY });
         setStatus('ready');
       };
       img.onerror = () => {
@@ -85,7 +88,7 @@ export default function ImageCropModal({
       img.src = src;
     };
     tryLoad(true);
-  }, [src, vpW, vpH]);
+  }, [src, vpW, vpH, focusTop]);
 
   // ── Draw preview canvas ───────────────────────────────────────────────────
   useEffect(() => {

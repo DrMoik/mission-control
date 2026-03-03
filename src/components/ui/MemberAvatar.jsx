@@ -22,7 +22,7 @@ export default function MemberAvatar({ membership, size = 'sm', onViewProfile })
   const avatar = membership?.photoURL ? (
     <img
       src={membership.photoURL}
-      className={`${sizeClass} rounded-full shrink-0 object-cover`}
+      className={`${sizeClass} rounded-full shrink-0 object-cover object-[center_top]`}
       alt=""
     />
   ) : (

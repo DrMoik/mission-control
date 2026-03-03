@@ -186,7 +186,7 @@ export default function ProfileModal({
           <div className="absolute -bottom-12 left-5">
             {(editing ? draft.photoURL : membership.photoURL) ? (
               <img src={editing ? draft.photoURL : membership.photoURL}
-                className="w-24 h-24 rounded-full border-4 border-slate-900 object-cover" alt="" />
+                className="w-24 h-24 rounded-full border-4 border-slate-900 object-cover object-[center_top]" alt="" />
             ) : (
               <div className="w-24 h-24 rounded-full border-4 border-slate-900 bg-slate-600 flex items-center justify-center text-3xl font-bold">
                 {(membership.displayName || '?')[0].toUpperCase()}
@@ -573,7 +573,7 @@ export default function ProfileModal({
       {/* Crop modals — outside the scroll container so they always overlay */}
       {cropTarget === 'photoURL' && (
         <ImageCropModal src={draft.photoURL} label="Reframe Profile Photo"
-          cropWidth={400} cropHeight={400}
+          cropWidth={400} cropHeight={400} focusTop
           onApply={(url) => { set('photoURL', url); setCropTarget(null); }}
           onCancel={() => setCropTarget(null)} />
       )}
