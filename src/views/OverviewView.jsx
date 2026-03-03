@@ -136,22 +136,22 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
 
       {/* Live stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-slate-800 rounded-lg p-3">
+        <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-sm hover:border-slate-600/50 transition-colors">
           <div className="text-[11px] text-slate-400 uppercase tracking-wide">{t('total_members')}</div>
-          <div className="text-2xl font-bold mt-1">{activeMembers}</div>
+          <div className="text-2xl font-bold mt-1 text-slate-100">{activeMembers}</div>
         </div>
-        <div className="bg-slate-800 rounded-lg p-3">
+        <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-sm hover:border-slate-600/50 transition-colors">
           <div className="text-[11px] text-slate-400 uppercase tracking-wide">{t('total_points_earned')}</div>
-          <div className="text-2xl font-bold mt-1">{Math.max(0, totalPoints)}</div>
+          <div className="text-2xl font-bold mt-1 text-emerald-400">{Math.max(0, totalPoints)}</div>
         </div>
-        <div className="bg-slate-800 rounded-lg p-3">
+        <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-sm hover:border-slate-600/50 transition-colors">
           <div className="text-[11px] text-slate-400 uppercase tracking-wide">{t('nav_academy')}</div>
-          <div className="text-2xl font-bold mt-1">{teamModules.length}</div>
+          <div className="text-2xl font-bold mt-1 text-slate-100">{teamModules.length}</div>
         </div>
         {(ov.kpis || []).map((kpi, i) => (
-          <div key={i} className="bg-slate-800 rounded-lg p-3">
+          <div key={i} className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-sm hover:border-slate-600/50 transition-colors">
             <div className="text-[11px] text-slate-400 uppercase tracking-wide truncate">{getL(kpi.label, lang)}</div>
-            <div className="text-2xl font-bold mt-1">{ensureString(kpi.value)}</div>
+            <div className="text-2xl font-bold mt-1 text-slate-100">{ensureString(kpi.value)}</div>
           </div>
         ))}
       </div>

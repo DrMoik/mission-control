@@ -32,10 +32,10 @@ function isValidSongUrl(url) {
 
 function SectionHeading({ icon, label }) {
   return (
-    <div className="flex items-center gap-2 mt-5 mb-2">
-      <span className="text-base">{icon}</span>
+    <div className="flex items-center gap-2 mt-6 mb-2">
+      <span className="text-lg opacity-90">{icon}</span>
       <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{label}</h4>
-      <div className="flex-1 h-px bg-slate-700" />
+      <div className="flex-1 h-px bg-gradient-to-r from-slate-600 to-transparent" />
     </div>
   );
 }
@@ -43,12 +43,12 @@ function SectionHeading({ icon, label }) {
 function TagList({ tags, colorClass = 'bg-emerald-900/50 text-emerald-200 border-emerald-700/50', lang = 'es' }) {
   if (!tags?.length) return null;
   return (
-    <div className="flex flex-wrap gap-1.5 mt-1">
+    <div className="flex flex-wrap gap-2 mt-1.5">
       {tags.map((tag, i) => {
         const str = ensureString(tag, lang);
         const key = typeof tag === 'string' ? tag : (str || `tag-${i}`);
         return (
-          <span key={key} className={`text-xs px-2 py-0.5 rounded-full border ${colorClass}`}>{str}</span>
+          <span key={key} className={`text-xs px-2.5 py-1 rounded-full border ${colorClass} transition-colors`}>{str}</span>
         );
       })}
     </div>
@@ -182,30 +182,35 @@ export default function ProfilePageView({
       {/* Back button when viewing another member */}
       {onBack && (
         <button onClick={onBack}
-          className="mb-4 text-xs text-slate-400 hover:text-white flex items-center gap-1">
+          className="mb-4 text-xs text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1">
           ← {t('back')}
         </button>
       )}
 
       {/* Cover + avatar */}
-      <div className="h-40 bg-gradient-to-r from-emerald-900 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden">
-        {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) && (
-          <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
-            className="w-full h-full object-cover" alt="" />
+      <div className="h-44 bg-gradient-to-br from-emerald-950/80 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden shadow-xl">
+        {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) ? (
+          <>
+            <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
+              className="w-full h-full object-cover" alt="" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/40 via-transparent to-slate-800/60" />
         )}
-        <div className="absolute -bottom-14 left-5">
+        <div className="absolute -bottom-16 left-6">
           {(editing ? draft.photoURL : membership.photoURL) ? (
             <img src={editing ? draft.photoURL : membership.photoURL}
-              className="w-28 h-28 rounded-full border-4 border-slate-900 object-cover" alt="" />
+              className="w-32 h-32 rounded-full border-4 border-slate-800 object-cover shadow-lg ring-2 ring-emerald-500/30" alt="" />
           ) : (
-            <div className="w-28 h-28 rounded-full border-4 border-slate-900 bg-slate-600 flex items-center justify-center text-4xl font-bold">
+            <div className="w-32 h-32 rounded-full border-4 border-slate-800 bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
               {(ensureString(membership.displayName, lang) || '?')[0].toUpperCase()}
             </div>
           )}
         </div>
       </div>
 
-      <div className="pt-16 px-4 sm:px-6 pb-8 bg-slate-800 rounded-b-xl -mt-px">
+      <div className="pt-20 px-4 sm:px-6 pb-8 bg-slate-800/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-slate-700/50">
 
         {editing ? (
           <div className="space-y-4">
@@ -420,7 +425,7 @@ export default function ProfilePageView({
                 <SectionHeading icon="🎵" label={t('section_culture')} />
                 <div className="space-y-2">
                   {membership.songOnRepeatTitle && (
-                    <div className="flex items-center gap-3 bg-slate-800/60 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-3 bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
                       <span className="text-xl shrink-0">🎧</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] text-slate-500">{t('song_on_repeat')}</p>
@@ -433,7 +438,7 @@ export default function ProfilePageView({
                     </div>
                   )}
                   {getL(membership.funFact, lang) && (
-                    <div className="bg-yellow-950/20 border border-yellow-900/30 rounded-lg px-3 py-2">
+                    <div className="bg-yellow-950/20 border border-yellow-800/40 rounded-lg px-3 py-2.5">
                       <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-0.5">{t('fun_fact_label')}</p>
                       <p className="text-sm text-slate-200 italic">"{getL(membership.funFact, lang)}"</p>
                     </div>
@@ -459,7 +464,7 @@ export default function ProfilePageView({
                 </div>
               </div>
             ) : thisWeek ? (
-              <div className="bg-slate-800/60 rounded-lg p-4 space-y-3">
+              <div className="bg-slate-800/60 rounded-lg p-4 space-y-3 border border-slate-700/30">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] text-slate-500">{t('week_of')(new Date(weekOf + 'T12:00').toLocaleDateString())}</p>
                   {canEditThis && <button onClick={startWeeklyEdit} className="text-[11px] text-amber-400 underline">{t('edit')}</button>}

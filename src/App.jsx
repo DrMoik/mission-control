@@ -928,7 +928,7 @@ export default function App() {
             <p className="text-slate-400 text-sm mb-5">{t('sign_in_google')} — {t('app_subtitle')}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {allTeams.map((team) => (
-                <div key={team.id} className="bg-slate-800 rounded-xl p-4 space-y-2">
+                <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-2 border border-slate-700/40 shadow-sm hover:border-slate-600/50 transition-colors">
                   <h2 className="font-bold text-base">{team.name}</h2>
                   {getL(team.overview?.tagline, lang) && <p className="text-sm text-slate-300 italic">"{getL(team.overview.tagline, lang)}"</p>}
                   {getL(team.overview?.about, lang)   && <p className="text-xs text-slate-400 line-clamp-3">{getL(team.overview.about, lang)}</p>}
@@ -1042,7 +1042,7 @@ export default function App() {
                   {activeMyTeams.map((team) => {
                     const mem = userMemberships.find((m) => m.teamId === team.id);
                     return (
-                      <div key={team.id} className="bg-slate-800 rounded-xl p-4 space-y-1">
+                      <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-1 border border-slate-700/40 shadow-sm hover:border-emerald-500/30 transition-colors">
                         <button onClick={() => { setSelectedTeamId(team.id); setView('overview'); }}
                           className="w-full text-left hover:text-emerald-300 transition-colors active:scale-95">
                           <div className="flex items-center justify-between gap-2">
@@ -1089,7 +1089,7 @@ export default function App() {
                 <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{t('join_a_team')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {otherTeams.map((team) => (
-                    <div key={team.id} className="bg-slate-800 rounded-xl p-4 space-y-2">
+                    <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-2 border border-slate-700/40 shadow-sm hover:border-slate-600/50 transition-colors">
                       <h3 className="font-bold text-sm">{team.name}</h3>
                       {getL(team.overview?.tagline, lang) && <p className="text-xs text-slate-400 italic">"{getL(team.overview.tagline, lang)}"</p>}
                       {getL(team.overview?.about, lang)   && <p className="text-xs text-slate-500 line-clamp-2">{getL(team.overview.about, lang)}</p>}
@@ -1180,7 +1180,7 @@ export default function App() {
         )}
 
         {/* ── Header ── */}
-        <header className="border-b border-slate-800 px-3 py-2.5 flex items-center justify-between shrink-0 bg-slate-950/60 gap-2">
+        <header className="border-b border-slate-800/80 px-4 py-3 flex items-center justify-between shrink-0 bg-slate-950/80 backdrop-blur-sm gap-2">
           <div className="flex items-center gap-2 min-w-0">
             {/* Mobile hamburger */}
             <button onClick={() => setMobileNavOpen(true)}
@@ -1261,7 +1261,7 @@ export default function App() {
         <div className="flex flex-1 overflow-hidden">
 
           {/* Desktop sidebar */}
-          <nav className={`hidden md:block ${navCollapsed ? 'w-11' : 'w-44'} border-r border-slate-800 p-2 space-y-1 shrink-0 transition-all duration-200 overflow-hidden bg-slate-950/40`}>
+          <nav className={`hidden md:block ${navCollapsed ? 'w-11' : 'w-44'} border-r border-slate-800/80 p-2.5 space-y-1 shrink-0 transition-all duration-200 overflow-hidden bg-slate-950/60`}>
             {navItems.map((tab) => (
               <button key={tab.id} onClick={() => setView(tab.id)}
                 className={`w-full text-left px-2 py-2 rounded flex items-center gap-2 text-sm transition-colors
@@ -1273,7 +1273,7 @@ export default function App() {
           </nav>
 
           {/* Main content area */}
-          <main className="flex-1 overflow-y-auto p-3 sm:p-5">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-900/50">
             {view === 'overview' && (
               <OverviewView
                 team={currentTeam}
