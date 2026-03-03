@@ -156,7 +156,7 @@ export default function AcademyView({
                 className={`w-full text-left px-2 py-2 rounded text-xs flex items-center justify-between gap-1 transition-colors
                   ${selectedId === m.id ? 'bg-emerald-500 text-black' : 'hover:bg-slate-700 text-slate-200'}`}>
                 <span className="truncate">{getL(m.title, lang)}</span>
-                {done && <span className="shrink-0 font-bold">✓</span>}
+                {done && <span className="shrink-0 font-bold text-emerald-400">●</span>}
               </button>
             );
           })}
@@ -218,7 +218,7 @@ export default function AcademyView({
                 )}
                 {attempt ? (
                   <div className="bg-emerald-900/20 border border-emerald-800 rounded p-3 space-y-1">
-                    <p className="text-xs text-emerald-300 font-semibold">{t('completed_badge')} ✓</p>
+                    <p className="text-xs text-emerald-300 font-semibold">{t('completed_badge')}</p>
                     <p className="text-xs text-slate-300 italic">"{attempt.answer}"</p>
                     <p className="text-[10px] text-slate-500">{tsToDate(attempt.completedAt).toLocaleString()}</p>
                   </div>

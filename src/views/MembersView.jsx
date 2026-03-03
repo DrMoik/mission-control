@@ -239,7 +239,7 @@ export default function MembersView({
       {/* Collaboration / skill filter row */}
       {allSkillTags.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] text-slate-500 shrink-0">🤝 {t('filter_collab')}:</span>
+          <span className="text-[11px] text-slate-500 shrink-0">{t('filter_collab')}:</span>
           <input
             value={skillFilter}
             onChange={(e) => setSkillFilter(e.target.value)}

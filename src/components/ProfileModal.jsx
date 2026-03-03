@@ -43,10 +43,9 @@ function isValidSongUrl(url) {
 }
 
 // ── Helper: small section heading ─────────────────────────────────────────────
-function SectionHeading({ icon, label }) {
+function SectionHeading({ label }) {
   return (
     <div className="flex items-center gap-2 mt-5 mb-2">
-      <span className="text-base">{icon}</span>
       <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{label}</h4>
       <div className="flex-1 h-px bg-slate-700" />
     </div>
@@ -288,7 +287,7 @@ export default function ProfileModal({
 
               {/* ── Mission ── */}
               <div className="border-t border-slate-700 pt-3 space-y-3">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">🎯 {t('section_mission')}</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_mission')}</p>
                 <BilingualField
                   label={t('current_objective')}
                   value={draft.currentObjective}
@@ -305,7 +304,7 @@ export default function ProfileModal({
 
               {/* ── Collaboration ── */}
               <div className="border-t border-slate-700 pt-3 space-y-3">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">🤝 {t('section_collaboration')}</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_collaboration')}</p>
                 <TagInput label={t('looking_for_help_in')} value={draft.lookingForHelpIn}
                   onChange={(v) => set('lookingForHelpIn', v)} placeholder={t('collab_tags_ph')} />
                 <TagInput label={t('i_can_help_with')} value={draft.iCanHelpWith}
@@ -318,7 +317,7 @@ export default function ProfileModal({
 
               {/* ── Culture ── */}
               <div className="border-t border-slate-700 pt-3 space-y-3">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">🎵 {t('section_culture')}</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_culture')}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-[11px] text-slate-500 block mb-0.5">{t('song_title_label')}</label>
@@ -349,7 +348,7 @@ export default function ProfileModal({
 
               {/* ── About ── */}
               <div className="border-t border-slate-700 pt-3 space-y-3">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">👤 {t('about_label')}</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('about_label')}</p>
                 <BilingualField
                   label={t('about_me')}
                   value={draft.bio}
@@ -396,10 +395,16 @@ export default function ProfileModal({
                   </div>
                   {(membership.university || membership.career || membership.semester || membership.email) && (
                     <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
-                      {membership.university && <span>🎓 {membership.university}</span>}
-                      {membership.career     && <span>💼 {membership.career}</span>}
-                      {membership.semester   && <span>📅 {membership.semester} {t('semester_suffix')}</span>}
-                      {membership.email     && <a href={`mailto:${membership.email}`} className="text-emerald-400 hover:text-emerald-300">✉ {membership.email}</a>}
+                      {membership.university && <span>{membership.university}</span>}
+                      {membership.career     && <span>{membership.career}</span>}
+                      {membership.semester   && (
+                        <span>{
+                          membership.semester === 'Faculty' ? t('semester_Faculty') :
+                          membership.semester === 'Graduate' ? t('semester_Graduate') :
+                          `${membership.semester} ${t('semester_suffix')}`
+                        }</span>
+                      )}
+                      {membership.email     && <a href={`mailto:${membership.email}`} className="text-emerald-400 hover:text-emerald-300">{membership.email}</a>}
                     </div>
                   )}
                 </div>
@@ -411,7 +416,7 @@ export default function ProfileModal({
               {/* ── Section 2: Mission ── */}
               {(getL(membership.currentObjective, lang) || getL(membership.currentChallenge, lang)) && (
                 <>
-                  <SectionHeading icon="🎯" label={t('section_mission')} />
+                  <SectionHeading label={t('section_mission')} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {getL(membership.currentObjective, lang) && (
                       <div className="bg-slate-800/60 rounded-lg p-3">
@@ -433,7 +438,7 @@ export default function ProfileModal({
               {(membership.lookingForHelpIn?.length || membership.iCanHelpWith?.length ||
                 membership.skillsToLearnThisSemester?.length || membership.skillsICanTeach?.length) && (
                 <>
-                  <SectionHeading icon="🤝" label={t('section_collaboration')} />
+                  <SectionHeading label={t('section_collaboration')} />
                   <div className="space-y-2">
                     {membership.lookingForHelpIn?.length > 0 && (
                       <div>
@@ -449,13 +454,13 @@ export default function ProfileModal({
                     )}
                     {membership.skillsToLearnThisSemester?.length > 0 && (
                       <div>
-                        <p className="text-[10px] text-slate-500 font-semibold">📚 {t('skills_to_learn')}</p>
+                        <p className="text-[10px] text-slate-500 font-semibold">{t('skills_to_learn')}</p>
                         <TagList tags={membership.skillsToLearnThisSemester} colorClass="bg-blue-900/40 text-blue-200 border-blue-700/50" />
                       </div>
                     )}
                     {membership.skillsICanTeach?.length > 0 && (
                       <div>
-                        <p className="text-[10px] text-slate-500 font-semibold">🏫 {t('skills_i_can_teach')}</p>
+                        <p className="text-[10px] text-slate-500 font-semibold">{t('skills_i_can_teach')}</p>
                         <TagList tags={membership.skillsICanTeach} colorClass="bg-purple-900/40 text-purple-200 border-purple-700/50" />
                       </div>
                     )}
@@ -466,9 +471,8 @@ export default function ProfileModal({
               {/* ── Section 4: Culture ── */}
               {membership.songOnRepeatTitle && (
                 <>
-                  <SectionHeading icon="🎵" label={t('section_culture')} />
+                  <SectionHeading label={t('section_culture')} />
                   <div className="flex items-center gap-3 bg-slate-800/60 rounded-lg px-3 py-2">
-                    <span className="text-xl shrink-0">🎧</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] text-slate-500">{t('song_on_repeat')}</p>
                       <p className="text-sm text-slate-200 truncate">{membership.songOnRepeatTitle}</p>
@@ -484,7 +488,7 @@ export default function ProfileModal({
               )}
 
               {/* ── Section 5: Weekly Status ── */}
-              <SectionHeading icon="📅" label={t('section_weekly')} />
+              <SectionHeading label={t('section_weekly')} />
               {editingWeekly ? (
                 <div className="bg-slate-800 rounded-lg p-4 space-y-3">
                   {[
@@ -517,14 +521,14 @@ export default function ProfileModal({
                     )}
                   </div>
                   {[
-                    ['✅', t('weekly_advanced'), thisWeek.advanced],
-                    ['⚠️', t('weekly_failed_at'), thisWeek.failedAt],
-                    ['💡', t('weekly_learned'),  thisWeek.learned],
-                  ].map(([icon, label, text]) => {
+                    [t('weekly_advanced'), thisWeek.advanced],
+                    [t('weekly_failed_at'), thisWeek.failedAt],
+                    [t('weekly_learned'),  thisWeek.learned],
+                  ].map(([label, text]) => {
                     const str = ensureString(text, lang);
                     return str ? (
                       <div key={label}>
-                        <p className="text-[10px] text-slate-500 font-semibold">{icon} {label}</p>
+                        <p className="text-[10px] text-slate-500 font-semibold">{label}</p>
                         <p className="text-sm text-slate-200 leading-relaxed mt-0.5">{str}</p>
                       </div>
                     ) : null;
@@ -545,7 +549,7 @@ export default function ProfileModal({
               {/* ── Section 6: About ── */}
               {(getL(membership.bio, lang) || getL(membership.hobbies, lang) || getL(membership.funFact, lang)) && (
                 <>
-                  <SectionHeading icon="👤" label={t('about_label')} />
+                  <SectionHeading label={t('about_label')} />
                   {getL(membership.bio, lang) && (
                     <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{getL(membership.bio, lang)}</p>
                   )}

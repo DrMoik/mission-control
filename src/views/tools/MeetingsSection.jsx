@@ -146,7 +146,7 @@ export default function MeetingsSection({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm">{getL(m.title, lang)}</div>
-                {m.attendees && <div className="text-xs text-slate-400 mt-0.5">👥 {m.attendees}</div>}
+                {m.attendees && <div className="text-xs text-slate-400 mt-0.5">{m.attendees}</div>}
                 {(m.actionItems || []).length > 0 && (
                   <div className="text-xs text-slate-500 mt-0.5">
                     {t('action_done_of')(done, (m.actionItems || []).length)}

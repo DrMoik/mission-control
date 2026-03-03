@@ -26,6 +26,18 @@ import {
 const POINTS_PER_WEEKLY_UPDATE = 5;
 const MILESTONE_50_POINTS = 100;
 
+/** Returns true if weekOf (YYYY-MM-DD) is the current week or previous week (late submission). */
+function isWeekEligibleForPoints(weekOf) {
+  if (!weekOf || typeof weekOf !== 'string') return false;
+  const d = new Date();
+  const day = d.getDay() || 7; // Sun=0 → treat as 7
+  d.setDate(d.getDate() - (day - 1));
+  const thisMonday = d.toISOString().split('T')[0];
+  d.setDate(d.getDate() - 7);
+  const lastMonday = d.toISOString().split('T')[0];
+  return weekOf === thisMonday || weekOf === lastMonday;
+}
+
 // ── Internal modules ──────────────────────────────────────────────────────────
 import TRANSLATIONS                from './i18n/translations.js';
 import LangContext                 from './i18n/LangContext.js';
@@ -105,13 +117,13 @@ function InlineTeamRename({ team, isPlatformAdmin, onRename, onDelete, t }) {
         title={t('rename_team')}
         className="text-slate-500 hover:text-amber-400 transition-colors text-xs shrink-0"
       >
-        ✏
+        …
       </button>
       <button onClick={() => onDelete(team.id)}
         title={t('delete_team')}
         className="text-slate-500 hover:text-red-400 transition-colors text-xs shrink-0"
       >
-        🗑
+        ×
       </button>
     </div>
   );
@@ -579,7 +591,8 @@ export default function App() {
     }, { merge: true });
 
     // Auto-award points only for NEW weekly updates (not edits)
-    if (!existed) {
+    // and only when weekOf is current or previous week (prevents farming by backfilling)
+    if (!existed && isWeekEligibleForPoints(weekOf)) {
       await addDoc(collection(db, 'meritEvents'), {
         teamId:       currentTeam.id,
         membershipId,
@@ -1168,11 +1181,11 @@ export default function App() {
         <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
           <button onClick={(e) => startRename(team, e)}
             className="text-[11px] text-amber-400 hover:text-amber-300 underline transition-colors">
-            ✏ {t('rename_team')}
+            {t('rename_team')}
           </button>
           <button onClick={(e) => { e.stopPropagation(); handleDeleteTeam(team.id); }}
             className="text-[11px] text-red-400 hover:text-red-300 underline transition-colors">
-            🗑 {t('delete_team')}
+            {t('delete_team')}
           </button>
         </div>
       );

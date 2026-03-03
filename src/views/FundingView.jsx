@@ -154,7 +154,7 @@ export default function FundingView({
       <div className="bg-slate-800/60 rounded-xl border border-slate-700/50 p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-            <span>🏦</span> {t('funding_accounts_title')}
+            {t('funding_accounts_title')}
           </h3>
           {canEdit && (
             <button onClick={startAddAccount} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded">

@@ -44,3 +44,4 @@ Definition of Done:
   - academy module completion with retrieval prompt
 - Provide a README with exact steps to run.
 - Provide STATUS.md summarizing what was built and what remains.
+-Push github

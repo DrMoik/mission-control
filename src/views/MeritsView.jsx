@@ -141,7 +141,7 @@ export default function MeritsView({
                       onClick={() => { setCropSrc(meritForm.logo); setShowIconPicker(false); }}
                       title="Reframe Image"
                       className="w-8 h-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-white font-semibold rounded transition-colors shrink-0">
-                      ✂
+                      ⟳
                     </button>
                   </div>
                 </div>

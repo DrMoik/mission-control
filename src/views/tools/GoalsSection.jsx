@@ -137,8 +137,8 @@ export default function GoalsSection({
                     }
                   </div>
                   <div className="text-xs text-slate-400 mt-0.5 flex gap-3 flex-wrap">
-                    {goal.owner   && <span>👤 {goal.owner}</span>}
-                    {goal.dueDate && <span>📅 {goal.dueDate}</span>}
+                    {goal.owner   && <span>{goal.owner}</span>}
+                    {goal.dueDate && <span>{goal.dueDate}</span>}
                     {krs.length > 0 && <span>{t('key_result_s')(krs.length)}</span>}
                   </div>
                 </div>

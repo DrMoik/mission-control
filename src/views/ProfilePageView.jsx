@@ -29,10 +29,9 @@ function isValidSongUrl(url) {
   return /spotify\.com|youtube\.com|youtu\.be|soundcloud\.com/.test(url);
 }
 
-function SectionHeading({ icon, label }) {
+function SectionHeading({ label }) {
   return (
     <div className="flex items-center gap-2 mt-6 mb-2">
-      <span className="text-lg opacity-90">{icon}</span>
       <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{label}</h4>
       <div className="flex-1 h-px bg-gradient-to-r from-slate-600 to-transparent" />
     </div>
@@ -293,7 +292,7 @@ export default function ProfilePageView({
             </div>
 
             <div className="border-t border-slate-700 pt-3 space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">🎯 {t('section_mission')}</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_mission')}</p>
               <BilingualField label={t('current_objective')} value={draft.currentObjective}
                 onChange={(v) => set('currentObjective', v)} placeholder={{ en: t('objective_ph'), es: t('objective_ph') }} />
               <BilingualField label={t('current_challenge')} value={draft.currentChallenge}
@@ -301,7 +300,7 @@ export default function ProfilePageView({
             </div>
 
             <div className="border-t border-slate-700 pt-3 space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">🤝 {t('section_collaboration')}</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_collaboration')}</p>
               <TagInput label={t('looking_for_help_in')} value={draft.lookingForHelpIn} onChange={(v) => set('lookingForHelpIn', v)} placeholder={t('collab_tags_ph')} />
               <TagInput label={t('i_can_help_with')} value={draft.iCanHelpWith} onChange={(v) => set('iCanHelpWith', v)} placeholder={t('collab_tags_ph')} />
               <TagInput label={t('skills_to_learn')} value={draft.skillsToLearnThisSemester} onChange={(v) => set('skillsToLearnThisSemester', v)} placeholder={t('collab_tags_ph')} />
@@ -309,7 +308,7 @@ export default function ProfilePageView({
             </div>
 
             <div className="border-t border-slate-700 pt-3 space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">👤 {t('about_label')}</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('about_label')}</p>
               <BilingualField label={t('about_me')} value={draft.bio} onChange={(v) => set('bio', v)}
                 multiline rows={3} placeholder={{ en: t('tell_team_placeholder'), es: t('tell_team_placeholder') }} />
               <BilingualField label={t('hobbies')} value={draft.hobbies} onChange={(v) => set('hobbies', v)}
@@ -319,7 +318,7 @@ export default function ProfilePageView({
             </div>
 
             <div className="border-t border-slate-700 pt-3 space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">🎵 {t('section_culture')}</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_culture')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="text-[11px] text-slate-500 block mb-0.5">{t('song_title_label')}</label>
@@ -356,7 +355,7 @@ export default function ProfilePageView({
                   {cat && <span className="text-xs text-slate-400">· {ensureString(cat.name, lang)}</span>}
                   {totalPoints > 0 && (
                     <span className="text-[10px] bg-amber-900/50 text-amber-200 px-2 py-0.5 rounded-full border border-amber-700/50">
-                      🏆 {totalPoints} pts
+                      {totalPoints} pts
                     </span>
                   )}
                   {ensureString(membership.personalityTag, lang) && (
@@ -368,10 +367,16 @@ export default function ProfilePageView({
                 </div>
                 {(membership.university || membership.career || membership.semester || membership.email) && (
                   <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
-                    {membership.university && <span>🎓 {ensureString(membership.university, lang)}</span>}
-                    {membership.career     && <span>💼 {ensureString(membership.career, lang)}</span>}
-                    {membership.semester   && <span>📅 {ensureString(membership.semester, lang)} {t('semester_suffix')}</span>}
-                    {membership.email      && <a href={`mailto:${membership.email}`} className="text-emerald-400 hover:text-emerald-300">✉ {membership.email}</a>}
+                    {membership.university && <span>{ensureString(membership.university, lang)}</span>}
+                    {membership.career     && <span>{ensureString(membership.career, lang)}</span>}
+                    {membership.semester   && (
+                      <span>{
+                        membership.semester === 'Faculty' ? t('semester_Faculty') :
+                        membership.semester === 'Graduate' ? t('semester_Graduate') :
+                        `${ensureString(membership.semester, lang)} ${t('semester_suffix')}`
+                      }</span>
+                    )}
+                    {membership.email      && <a href={`mailto:${membership.email}`} className="text-emerald-400 hover:text-emerald-300">{membership.email}</a>}
                   </div>
                 )}
               </div>
@@ -384,7 +389,7 @@ export default function ProfilePageView({
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-6">
             {/* Row 1: Acerca de mí (left) | Esta semana (right) */}
             <div className="min-w-0">
-              <SectionHeading icon="👤" label={t('about_label')} />
+              <SectionHeading label={t('about_label')} />
               {(getL(membership.bio, lang) || getL(membership.hobbies, lang) || getL(membership.funFact, lang)) ? (
                 <>
                   {getL(membership.bio, lang) && <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{getL(membership.bio, lang)}</p>}
@@ -415,7 +420,7 @@ export default function ProfilePageView({
             </div>
 
             <div className="min-w-0">
-              <SectionHeading icon="📅" label={t('section_weekly')} />
+              <SectionHeading label={t('section_weekly')} />
               {editingWeekly ? (
                 <div className="bg-slate-800 rounded-lg p-4 space-y-3">
                   {[['advanced', t('weekly_advanced'), t('weekly_ph_advanced')], ['failedAt', t('weekly_failed_at'), t('weekly_ph_failed')], ['learned', t('weekly_learned'), t('weekly_ph_learned')]].map(([key, label, ph]) => (
@@ -437,11 +442,11 @@ export default function ProfilePageView({
                     <p className="text-[10px] text-slate-500">{t('week_of')(new Date(weekOf + 'T12:00').toLocaleDateString())}</p>
                     {canEditThis && <button onClick={startWeeklyEdit} className="text-[11px] text-amber-400 underline">{t('edit')}</button>}
                   </div>
-                  {[['✅', t('weekly_advanced'), thisWeek.advanced], ['⚠️', t('weekly_failed_at'), thisWeek.failedAt], ['💡', t('weekly_learned'), thisWeek.learned]].map(([icon, label, text]) => {
+                  {[['advanced', t('weekly_advanced'), thisWeek.advanced], ['failedAt', t('weekly_failed_at'), thisWeek.failedAt], ['learned', t('weekly_learned'), thisWeek.learned]].map(([key, label, text]) => {
                     const str = ensureString(text, lang);
                     return str ? (
                       <div key={label}>
-                        <p className="text-[10px] text-slate-500 font-semibold">{icon} {label}</p>
+                        <p className="text-[10px] text-slate-500 font-semibold">{label}</p>
                         <p className="text-sm text-slate-200 leading-relaxed mt-0.5">{str}</p>
                       </div>
                     ) : null;
@@ -459,7 +464,7 @@ export default function ProfilePageView({
 
             {(getL(membership.currentObjective, lang) || getL(membership.currentChallenge, lang)) && (
               <div className="min-w-0">
-                <SectionHeading icon="🎯" label={t('section_mission')} />
+                <SectionHeading label={t('section_mission')} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {getL(membership.currentObjective, lang) && (
                     <div className="bg-slate-800/60 rounded-lg p-3">
@@ -480,7 +485,7 @@ export default function ProfilePageView({
             {(membership.lookingForHelpIn?.length || membership.iCanHelpWith?.length ||
               membership.skillsToLearnThisSemester?.length || membership.skillsICanTeach?.length) && (
               <div className="min-w-0">
-                <SectionHeading icon="🤝" label={t('section_collaboration')} />
+                <SectionHeading label={t('section_collaboration')} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                   {membership.lookingForHelpIn?.length > 0 && (
                     <div>
@@ -496,13 +501,13 @@ export default function ProfilePageView({
                   )}
                   {membership.skillsToLearnThisSemester?.length > 0 && (
                     <div>
-                      <p className="text-[10px] text-slate-500 font-semibold">📚 {t('skills_to_learn')}</p>
+                      <p className="text-[10px] text-slate-500 font-semibold">{t('skills_to_learn')}</p>
                       <TagList tags={membership.skillsToLearnThisSemester} colorClass="bg-blue-900/40 text-blue-200 border-blue-700/50" lang={lang} />
                     </div>
                   )}
                   {membership.skillsICanTeach?.length > 0 && (
                     <div>
-                      <p className="text-[10px] text-slate-500 font-semibold">🏫 {t('skills_i_can_teach')}</p>
+                      <p className="text-[10px] text-slate-500 font-semibold">{t('skills_i_can_teach')}</p>
                       <TagList tags={membership.skillsICanTeach} colorClass="bg-purple-900/40 text-purple-200 border-purple-700/50" lang={lang} />
                     </div>
                   )}
@@ -511,7 +516,7 @@ export default function ProfilePageView({
             )}
 
             <div className="min-w-0 xl:col-span-2">
-              <SectionHeading icon="🏆" label={t('profile_logros_obtained')} />
+              <SectionHeading label={t('profile_logros_obtained')} />
               {meritEvents.filter((e) => e.type === 'award').length > 0 ? (
                 <div className="flex flex-wrap gap-3">
                   {meritEvents
@@ -537,9 +542,8 @@ export default function ProfilePageView({
 
             {membership.songOnRepeatTitle && (
               <div className="min-w-0">
-                <SectionHeading icon="🎵" label={t('section_culture')} />
+                <SectionHeading label={t('section_culture')} />
                 <div className="flex items-center gap-3 bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
-                  <span className="text-xl shrink-0">🎧</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] text-slate-500">{t('song_on_repeat')}</p>
                     <p className="text-sm text-slate-200 truncate">{ensureString(membership.songOnRepeatTitle, lang)}</p>
