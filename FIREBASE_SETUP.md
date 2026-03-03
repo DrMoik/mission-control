@@ -328,6 +328,25 @@ service cloud.firestore {
       allow delete: if isTeamAdmin(resource.data.teamId);
     }
 
+    // ═══════════════════════════════════════════════════════════
+    //  FUNDING — transparent ledger for team money
+    //  teamFundingAccount: doc id = teamId. All active members read; leaders+ write.
+    //  teamFundingEntries: movement log. All active members read; leaders+ create/delete.
+    // ═══════════════════════════════════════════════════════════
+
+    match /teamFundingAccount/{teamId} {
+      allow read: if isActiveMember(teamId);
+      allow create, update: if isLeaderOrAbove(teamId);
+      allow delete: if isTeamAdmin(teamId);
+    }
+
+    match /teamFundingEntries/{entryId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if false;
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
   }
 }
 ```

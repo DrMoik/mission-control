@@ -44,6 +44,7 @@ import LeaderboardView             from './views/LeaderboardView.jsx';
 import ToolsView                   from './views/ToolsView.jsx';
 import AcademyView                 from './views/AcademyView.jsx';
 import FeedView                    from './views/FeedView.jsx';
+import FundingView                 from './views/FundingView.jsx';
 
 // Standard hamburger menu icon (three horizontal bars)
 function HamburgerIcon({ className = 'w-5 h-5' }) {
@@ -1486,6 +1487,17 @@ export default function App() {
               />
             )}
 
+            {view === 'funding' && isAtLeastRookie && (
+              <FundingView
+                account={teamFundingAccount}
+                entries={teamFundingEntries}
+                canEdit={canEditTools}
+                onSaveAccount={handleSaveFundingAccount}
+                onCreateEntry={handleCreateFundingEntry}
+                onDeleteEntry={handleDeleteFundingEntry}
+              />
+            )}
+
             {/* My Profile — full page */}
             {view === 'myprofile' && (
               currentMembership ? (
@@ -1504,7 +1516,7 @@ export default function App() {
               )
             )}
 
-            {/* Viewing another member's profile — full page with back button */}
+            {/* Viewing another member's profile — full page */}
             {view === 'profile' && profileMemberId && !profileMember && (
               <div className="py-12 text-center">
                 <p className="text-slate-400 text-sm">{t('member_not_found')}</p>
