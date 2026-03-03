@@ -1236,7 +1236,7 @@ export default function App() {
       { id: 'leaderboard', label: t('nav_leaderboard'), icon: '▲' },
       { id: 'tools',       label: t('nav_tools'),       icon: '⊙' },
       { id: 'academy',     label: t('nav_academy'),     icon: '◈' },
-      { id: 'funding',     label: t('nav_funding'),     icon: '💰' },
+      { id: 'funding',     label: t('nav_funding'),     icon: '¤' },
     ] : []),
     ...(currentMembership ? [{ id: 'myprofile', label: t('nav_myprofile'), icon: '☺' }] : []),
   ];
@@ -1360,15 +1360,18 @@ export default function App() {
         <div className="flex flex-1 overflow-hidden">
 
           {/* Desktop sidebar */}
-          <nav className={`hidden md:block ${navCollapsed ? 'w-11' : 'w-44'} border-r border-slate-800/80 p-2.5 space-y-1 shrink-0 transition-all duration-200 overflow-hidden bg-slate-950/60`}>
+          <nav className={`hidden md:block ${navCollapsed ? 'w-12' : 'w-44'} border-r border-slate-800/80 p-2 shrink-0 transition-all duration-200 bg-slate-950/60 flex flex-col min-w-0 overflow-hidden`}>
+            <div className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             {navItems.map((tab) => (
               <button key={tab.id} onClick={() => goToView(tab.id)}
-                className={`w-full text-left px-2 py-2 rounded flex items-center gap-2 text-sm transition-colors
+                className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors flex-shrink-0
+                  ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
                   ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
                 <span className="text-base shrink-0 w-5 text-center">{tab.icon}</span>
                 {!navCollapsed && <span className="truncate">{tab.label}</span>}
               </button>
             ))}
+            </div>
           </nav>
 
           {/* Main content area */}
