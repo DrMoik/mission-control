@@ -199,7 +199,7 @@ export default function ProfilePageView({
               className="w-28 h-28 rounded-full border-4 border-slate-900 object-cover" alt="" />
           ) : (
             <div className="w-28 h-28 rounded-full border-4 border-slate-900 bg-slate-600 flex items-center justify-center text-4xl font-bold">
-              {(membership.displayName || '?')[0].toUpperCase()}
+              {(ensureString(membership.displayName, lang) || '?')[0].toUpperCase()}
             </div>
           )}
         </div>
@@ -351,9 +351,9 @@ export default function ProfilePageView({
                 </div>
                 {(membership.university || membership.career || membership.semester) && (
                   <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
-                    {membership.university && <span>🎓 {membership.university}</span>}
-                    {membership.career     && <span>💼 {membership.career}</span>}
-                    {membership.semester   && <span>📅 {membership.semester} {t('semester_suffix')}</span>}
+                    {membership.university && <span>🎓 {ensureString(membership.university, lang)}</span>}
+                    {membership.career     && <span>💼 {ensureString(membership.career, lang)}</span>}
+                    {membership.semester   && <span>📅 {ensureString(membership.semester, lang)} {t('semester_suffix')}</span>}
                   </div>
                 )}
               </div>
@@ -464,14 +464,15 @@ export default function ProfilePageView({
                   <p className="text-[10px] text-slate-500">{t('week_of')(new Date(weekOf + 'T12:00').toLocaleDateString())}</p>
                   {canEditThis && <button onClick={startWeeklyEdit} className="text-[11px] text-amber-400 underline">{t('edit')}</button>}
                 </div>
-                {[['✅', t('weekly_advanced'), thisWeek.advanced], ['⚠️', t('weekly_failed_at'), thisWeek.failedAt], ['💡', t('weekly_learned'), thisWeek.learned]].map(([icon, label, text]) =>
-                  text ? (
+                {[['✅', t('weekly_advanced'), thisWeek.advanced], ['⚠️', t('weekly_failed_at'), thisWeek.failedAt], ['💡', t('weekly_learned'), thisWeek.learned]].map(([icon, label, text]) => {
+                  const str = ensureString(text, lang);
+                  return str ? (
                     <div key={label}>
                       <p className="text-[10px] text-slate-500 font-semibold">{icon} {label}</p>
-                      <p className="text-sm text-slate-200 leading-relaxed mt-0.5">{text}</p>
+                      <p className="text-sm text-slate-200 leading-relaxed mt-0.5">{str}</p>
                     </div>
-                  ) : null,
-                )}
+                  ) : null;
+                })}
               </div>
             ) : (
               <div className="flex items-center justify-between bg-slate-800/40 rounded-lg px-3 py-2">

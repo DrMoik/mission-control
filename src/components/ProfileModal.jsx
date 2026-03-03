@@ -18,7 +18,7 @@ import LangContext              from '../i18n/LangContext.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput } from './ui/index.js';
 import ImageCropModal           from './ImageCropModal.jsx';
-import { getL, toL, fillL }     from '../utils.js';
+import { getL, toL, fillL, ensureString } from '../utils.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -519,14 +519,15 @@ export default function ProfileModal({
                     ['✅', t('weekly_advanced'), thisWeek.advanced],
                     ['⚠️', t('weekly_failed_at'), thisWeek.failedAt],
                     ['💡', t('weekly_learned'),  thisWeek.learned],
-                  ].map(([icon, label, text]) =>
-                    text ? (
+                  ].map(([icon, label, text]) => {
+                    const str = ensureString(text, lang);
+                    return str ? (
                       <div key={label}>
                         <p className="text-[10px] text-slate-500 font-semibold">{icon} {label}</p>
-                        <p className="text-sm text-slate-200 leading-relaxed mt-0.5">{text}</p>
+                        <p className="text-sm text-slate-200 leading-relaxed mt-0.5">{str}</p>
                       </div>
-                    ) : null,
-                  )}
+                    ) : null;
+                  })}
                 </div>
               ) : (
                 <div className="flex items-center justify-between bg-slate-800/40 rounded-lg px-3 py-2">
