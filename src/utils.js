@@ -64,6 +64,18 @@ export const fillL = (field) => {
   return { en: l.en || l.es, es: l.es || l.en };
 };
 
+/**
+ * Ensures a value is a string for display. Handles bilingual objects {en, es}
+ * and plain strings. Use when rendering values that might come from Firestore
+ * as either format (avoids React error #31).
+ */
+export const ensureString = (val, lang = 'es') => {
+  if (val == null) return '';
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object' && ('en' in val || 'es' in val)) return getL(val, lang);
+  return String(val);
+};
+
 // ── Media helpers ─────────────────────────────────────────────────────────────
 
 /**

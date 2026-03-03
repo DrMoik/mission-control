@@ -9,6 +9,7 @@ import React, { useState, useMemo } from 'react';
 import LangContext   from '../i18n/LangContext.js';
 import { ROLE_ORDER, CAREER_OPTIONS } from '../constants.js';
 import { RoleBadge, StrikePips, MemberAvatar } from '../components/ui/index.js';
+import { ensureString } from '../utils.js';
 
 /**
  * @param {{
@@ -49,11 +50,12 @@ export default function MembersView({
   // Collect all unique skill tags across active members for the autocomplete list
   const allSkillTags = useMemo(() => {
     const set = new Set();
+    const add = (t) => { const s = ensureString(t); if (s) set.add(s); };
     active.forEach((m) => {
-      (m.lookingForHelpIn        || []).forEach((t) => set.add(t));
-      (m.iCanHelpWith            || []).forEach((t) => set.add(t));
-      (m.skillsToLearnThisSemester || []).forEach((t) => set.add(t));
-      (m.skillsICanTeach         || []).forEach((t) => set.add(t));
+      (m.lookingForHelpIn        || []).forEach(add);
+      (m.iCanHelpWith            || []).forEach(add);
+      (m.skillsToLearnThisSemester || []).forEach(add);
+      (m.skillsICanTeach         || []).forEach(add);
     });
     return [...set].sort();
   }, [active]);
@@ -70,7 +72,7 @@ export default function MembersView({
         ...(m.iCanHelpWith               || []),
         ...(m.skillsToLearnThisSemester  || []),
         ...(m.skillsICanTeach            || []),
-      ];
+      ].map((t) => ensureString(t));
       if (!allTags.some((tag) => tag.toLowerCase().includes(sk))) return false;
     }
     return true;
@@ -81,8 +83,8 @@ export default function MembersView({
   const isMatch = (m) => {
     if (!skillFilter) return false;
     const sk = skillFilter.toLowerCase().trim();
-    return (m.iCanHelpWith || []).some((tag) => tag.toLowerCase().includes(sk)) ||
-           (m.skillsICanTeach || []).some((tag) => tag.toLowerCase().includes(sk));
+    return (m.iCanHelpWith || []).some((tag) => ensureString(tag).toLowerCase().includes(sk)) ||
+           (m.skillsICanTeach || []).some((tag) => ensureString(tag).toLowerCase().includes(sk));
   };
 
   const handleCreateGhost = async (e) => {

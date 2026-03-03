@@ -313,6 +313,21 @@ service cloud.firestore {
       allow delete: if isTeamAdmin(resource.data.teamId);
     }
 
+    // ═══════════════════════════════════════════════════════════
+    //  WEEKLY STATUSES (profile mission updates)
+    //  Active members can read all in their team.
+    //  Members can create/update their own (membershipId matches).
+    // ═══════════════════════════════════════════════════════════
+
+    match /weeklyStatuses/{statusId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isActiveMember(request.resource.data.teamId) &&
+        request.resource.data.membershipId == request.auth.uid + '_' + request.resource.data.teamId;
+      allow update: if isActiveMember(resource.data.teamId) &&
+        resource.data.membershipId == request.auth.uid + '_' + resource.data.teamId;
+      allow delete: if isTeamAdmin(resource.data.teamId);
+    }
+
   }
 }
 ```
@@ -387,6 +402,7 @@ Your app will be live at `https://quantum-robotics-48d7e.web.app`
 | `comments` | `teamId`, `postId`, `content`, `authorId`, `authorName` | Rookie+ members |
 | `teamMeetings` | `teamId`, `title`, `date`, `attendees`, `notes`, `actionItems[]` | Active team members |
 | `teamGoals` | `teamId`, `objective`, `owner`, `dueDate`, `keyResults[]`, `status` | Active team members |
+| `weeklyStatuses` | `teamId`, `membershipId`, `weekOf`, `advanced`, `failedAt`, `learned` | Active team members |
 
 ---
 

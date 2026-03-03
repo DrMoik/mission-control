@@ -10,7 +10,7 @@ import LangContext              from '../i18n/LangContext.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
-import { getL, toL, fillL }     from '../utils.js';
+import { getL, toL, fillL, ensureString } from '../utils.js';
 
 const PERSONALITY_TAGS = [
   'ptag_creative', 'ptag_analytical', 'ptag_detail', 'ptag_bigpicture',
@@ -40,13 +40,17 @@ function SectionHeading({ icon, label }) {
   );
 }
 
-function TagList({ tags, colorClass = 'bg-emerald-900/50 text-emerald-200 border-emerald-700/50' }) {
+function TagList({ tags, colorClass = 'bg-emerald-900/50 text-emerald-200 border-emerald-700/50', lang = 'es' }) {
   if (!tags?.length) return null;
   return (
     <div className="flex flex-wrap gap-1.5 mt-1">
-      {tags.map((tag) => (
-        <span key={tag} className={`text-xs px-2 py-0.5 rounded-full border ${colorClass}`}>{tag}</span>
-      ))}
+      {tags.map((tag, i) => {
+        const str = ensureString(tag, lang);
+        const key = typeof tag === 'string' ? tag : (str || `tag-${i}`);
+        return (
+          <span key={key} className={`text-xs px-2 py-0.5 rounded-full border ${colorClass}`}>{str}</span>
+        );
+      })}
     </div>
   );
 }
@@ -333,8 +337,8 @@ export default function ProfilePageView({
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <RoleBadge role={membership.role} />
                   {cat && <span className="text-xs text-slate-400">· {cat.name}</span>}
-                  {membership.personalityTag && (
-                    <span className="text-[10px] bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/50">{t(membership.personalityTag)}</span>
+                  {ensureString(membership.personalityTag, lang) && (
+                    <span className="text-[10px] bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/50">{t(ensureString(membership.personalityTag, lang))}</span>
                   )}
                   {membership.ghost && (
                     <span className="text-[10px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded">{t('external_member')}</span>
@@ -381,25 +385,25 @@ export default function ProfilePageView({
                   {membership.lookingForHelpIn?.length > 0 && (
                     <div>
                       <p className="text-[10px] text-slate-500 font-semibold">{t('looking_label')}</p>
-                      <TagList tags={membership.lookingForHelpIn} colorClass="bg-amber-900/40 text-amber-200 border-amber-700/50" />
+                      <TagList tags={membership.lookingForHelpIn} colorClass="bg-amber-900/40 text-amber-200 border-amber-700/50" lang={lang} />
                     </div>
                   )}
                   {membership.iCanHelpWith?.length > 0 && (
                     <div>
                       <p className="text-[10px] text-slate-500 font-semibold">{t('offering_label')}</p>
-                      <TagList tags={membership.iCanHelpWith} colorClass="bg-emerald-900/40 text-emerald-200 border-emerald-700/50" />
+                      <TagList tags={membership.iCanHelpWith} colorClass="bg-emerald-900/40 text-emerald-200 border-emerald-700/50" lang={lang} />
                     </div>
                   )}
                   {membership.skillsToLearnThisSemester?.length > 0 && (
                     <div>
                       <p className="text-[10px] text-slate-500 font-semibold">📚 {t('skills_to_learn')}</p>
-                      <TagList tags={membership.skillsToLearnThisSemester} colorClass="bg-blue-900/40 text-blue-200 border-blue-700/50" />
+                      <TagList tags={membership.skillsToLearnThisSemester} colorClass="bg-blue-900/40 text-blue-200 border-blue-700/50" lang={lang} />
                     </div>
                   )}
                   {membership.skillsICanTeach?.length > 0 && (
                     <div>
                       <p className="text-[10px] text-slate-500 font-semibold">🏫 {t('skills_i_can_teach')}</p>
-                      <TagList tags={membership.skillsICanTeach} colorClass="bg-purple-900/40 text-purple-200 border-purple-700/50" />
+                      <TagList tags={membership.skillsICanTeach} colorClass="bg-purple-900/40 text-purple-200 border-purple-700/50" lang={lang} />
                     </div>
                   )}
                 </div>
