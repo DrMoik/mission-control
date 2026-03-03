@@ -558,6 +558,11 @@ const TRANSLATIONS = {
 
     // ── Funding ────────────────────────────────────────────────────────────────
     funding_account_title:  'Cuenta donde se guarda el dinero',
+    funding_accounts_title:  'Cuentas',
+    funding_add_account:    'Agregar cuenta',
+    funding_no_accounts:   'Sin cuentas. Agrega una para comenzar.',
+    funding_grand_total:   'Total general',
+    funding_account:       'Cuenta',
     funding_bank:           'Banco / Institución',
     funding_account_name:   'Nombre de la cuenta',
     funding_last4:          'Últimos 4 dígitos',
@@ -1013,6 +1018,8 @@ const TRANSLATIONS = {
 
     // ── Profile — Estatus semanal ─────────────────────────────────────────────
     section_weekly:          'Esta Semana',
+    profile_logros_obtained:  'Logros obtenidos',
+    profile_logros_empty:     'Sin logros aún. Publica actualizaciones semanales para ganar puntos (5 pts por cada una, 100 pts al llegar a 50).',
     weekly_advanced:         'Avancé en…',
     weekly_failed_at:        'Me costó trabajo…',
     weekly_learned:          'Aprendí…',

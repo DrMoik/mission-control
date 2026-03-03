@@ -200,7 +200,9 @@ service cloud.firestore {
 
     match /meritEvents/{eventId} {
       allow read: if isActiveMember(resource.data.teamId);
-      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId) ||
+        (request.resource.data.autoAward == true &&
+         get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid);
       allow update: if isPlatformAdmin();
       allow delete: if isPlatformAdmin();
     }
@@ -330,14 +332,15 @@ service cloud.firestore {
 
     // ═══════════════════════════════════════════════════════════
     //  FUNDING — transparent ledger for team money
-    //  teamFundingAccount: doc id = teamId. All active members read; leaders+ write.
-    //  teamFundingEntries: movement log. All active members read; leaders+ create/delete.
+    //  teamFundingAccounts: multiple accounts per team. All active members read; leaders+ write.
+    //  teamFundingEntries: movement log with accountId. All active members read; leaders+ create/delete.
     // ═══════════════════════════════════════════════════════════
 
-    match /teamFundingAccount/{teamId} {
-      allow read: if isActiveMember(teamId);
-      allow create, update: if isLeaderOrAbove(teamId);
-      allow delete: if isTeamAdmin(teamId);
+    match /teamFundingAccounts/{accountId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
     }
 
     match /teamFundingEntries/{entryId} {

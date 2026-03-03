@@ -91,7 +91,7 @@ function AutoGrowInput({ value, onChange, placeholder, className, ...rest }) {
 }
 
 export default function ProfilePageView({
-  membership, categories, canEditThis, onSave,
+  membership, categories, meritEvents = [], canEditThis, onSave,
   weeklyStatuses = [], onSaveWeeklyStatus,
 }) {
   const { t, lang } = React.useContext(LangContext);
@@ -107,6 +107,9 @@ export default function ProfilePageView({
   const cat     = categories.find((c) => c.id === membership.categoryId);
   const weekOf  = currentWeekMonday();
   const thisWeek = weeklyStatuses.find((s) => s.weekOf === weekOf);
+  const totalPoints = meritEvents
+    .filter((e) => e.type === 'award')
+    .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
 
   const startEdit = () => {
     const normTags = (arr) => (arr || []).map((t) => (typeof t === 'string' ? t : ensureString(t, lang)));
@@ -351,6 +354,11 @@ export default function ProfilePageView({
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <RoleBadge role={membership.role} />
                   {cat && <span className="text-xs text-slate-400">· {ensureString(cat.name, lang)}</span>}
+                  {totalPoints > 0 && (
+                    <span className="text-[10px] bg-amber-900/50 text-amber-200 px-2 py-0.5 rounded-full border border-amber-700/50">
+                      🏆 {totalPoints} pts
+                    </span>
+                  )}
                   {ensureString(membership.personalityTag, lang) && (
                     <span className="text-[10px] bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/50">{t(ensureString(membership.personalityTag, lang))}</span>
                   )}
@@ -501,6 +509,31 @@ export default function ProfilePageView({
                 </div>
               </div>
             )}
+
+            <div className="min-w-0 xl:col-span-2">
+              <SectionHeading icon="🏆" label={t('profile_logros_obtained')} />
+              {meritEvents.filter((e) => e.type === 'award').length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {meritEvents
+                    .filter((e) => e.type === 'award')
+                    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
+                    .map((evt) => (
+                      <div
+                        key={evt.id}
+                        className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 rounded-lg px-3 py-2"
+                      >
+                        <span className="text-xl shrink-0">{evt.meritLogo || '🏆'}</span>
+                        <div>
+                          <p className="text-sm font-medium text-slate-200">{evt.meritName || t('merit')}</p>
+                          <p className="text-xs text-amber-400/90">+{evt.points || 0} pts</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic py-2">{t('profile_logros_empty')}</p>
+              )}
+            </div>
 
             {membership.songOnRepeatTitle && (
               <div className="min-w-0">

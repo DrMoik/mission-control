@@ -22,6 +22,10 @@ import {
   addDoc, query, where, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
 
+// Default achievements for platform usage
+const POINTS_PER_WEEKLY_UPDATE = 5;
+const MILESTONE_50_POINTS = 100;
+
 // ── Internal modules ──────────────────────────────────────────────────────────
 import TRANSLATIONS                from './i18n/translations.js';
 import LangContext                 from './i18n/LangContext.js';
@@ -153,7 +157,7 @@ export default function App() {
   const [teamMeetings,        setTeamMeetings]        = useState([]);
   const [teamGoals,           setTeamGoals]           = useState([]);
   const [teamWeeklyStatuses,  setTeamWeeklyStatuses]  = useState([]);
-  const [teamFundingAccount,   setTeamFundingAccount]  = useState(null);
+  const [teamFundingAccounts,  setTeamFundingAccounts]  = useState([]);
   const [teamFundingEntries,  setTeamFundingEntries]  = useState([]);
 
   // ── UI state ───────────────────────────────────────────────────────────────
@@ -277,9 +281,8 @@ export default function App() {
     sub(query(collection(db, 'teamGoals'),       where('teamId', '==', selectedTeamId)), setTeamGoals);
     sub(query(collection(db, 'weeklyStatuses'),  where('teamId', '==', selectedTeamId)), setTeamWeeklyStatuses,
       (rows) => [...rows].sort((a, b) => (b.weekOf || '').localeCompare(a.weekOf || '')));
-    unsubs.push(onSnapshot(doc(db, 'teamFundingAccount', selectedTeamId), (snap) => {
-      setTeamFundingAccount(snap.exists() ? { id: snap.id, ...snap.data() } : null);
-    }));
+    sub(query(collection(db, 'teamFundingAccounts'), where('teamId', '==', selectedTeamId)), setTeamFundingAccounts,
+      (rows) => [...rows].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)));
     sub(query(collection(db, 'teamFundingEntries'), where('teamId', '==', selectedTeamId)), setTeamFundingEntries,
       (rows) => [...rows].sort((a, b) => (b.date || '').localeCompare(a.date || '')));
 
@@ -552,6 +555,7 @@ export default function App() {
 
   // ── Weekly status ───────────────────────────────────────────────────────────
   // One document per member per week.  Doc ID: `{membershipId}_{weekOf}`.
+  // Auto-awards: 5 pts per new weekly update; 100 pts when member hits 50 updates.
   const handleSaveWeeklyStatus = async ({ membershipId, weekOf, advanced, failedAt, learned }) => {
     if (!currentTeam || !authUser) return;
     const m = teamMemberships.find((mm) => mm.id === membershipId);
@@ -560,17 +564,61 @@ export default function App() {
     const canPost = isPlatformAdmin || memberRole === 'teamAdmin' || m.userId === authUser.uid;
     if (!canPost) return;
     const docId = `${membershipId}_${weekOf}`;
-    await setDoc(doc(db, 'weeklyStatuses', docId), {
+    const statusRef = doc(db, 'weeklyStatuses', docId);
+    const existed = (await getDoc(statusRef)).exists();
+    await setDoc(statusRef, {
       teamId:       currentTeam.id,
       membershipId,
       userId:       authUser.uid,
       displayName:  m.displayName || '',
-      weekOf,                         // ISO date string for the Monday of that week
+      weekOf,
       advanced:     advanced  || '',
       failedAt:     failedAt  || '',
       learned:      learned   || '',
       updatedAt:    serverTimestamp(),
     }, { merge: true });
+
+    // Auto-award points only for NEW weekly updates (not edits)
+    if (!existed) {
+      await addDoc(collection(db, 'meritEvents'), {
+        teamId:       currentTeam.id,
+        membershipId,
+        meritId:      null,
+        meritName:    'Actualización semanal',
+        meritLogo:    '📝',
+        points:       POINTS_PER_WEEKLY_UPDATE,
+        type:         'award',
+        evidence:     weekOf,
+        autoAward:    true,
+        awardedByUserId: authUser.uid,
+        awardedByName:  userProfile?.displayName || authUser.email || '—',
+        createdAt:    serverTimestamp(),
+      });
+      // Check 50-update milestone
+      const memberStatuses = teamWeeklyStatuses.filter((s) => s.membershipId === membershipId);
+      const count = memberStatuses.length + 1; // +1 for the one we just saved
+      if (count >= 50) {
+        const alreadyAwarded = teamMeritEvents.some(
+          (e) => e.membershipId === membershipId && e.evidence === 'milestone_50',
+        );
+        if (!alreadyAwarded) {
+          await addDoc(collection(db, 'meritEvents'), {
+            teamId:       currentTeam.id,
+            membershipId,
+            meritId:      null,
+            meritName:    '50 actualizaciones',
+            meritLogo:    '🎯',
+            points:       MILESTONE_50_POINTS,
+            type:         'award',
+            evidence:     'milestone_50',
+            autoAward:    true,
+            awardedByUserId: authUser.uid,
+            awardedByName:  userProfile?.displayName || authUser.email || '—',
+            createdAt:    serverTimestamp(),
+          });
+        }
+      }
+    }
   };
 
   const handleCreateGhostMember = async ({ displayName, role, categoryId, university, career, bio }) => {
@@ -627,23 +675,51 @@ export default function App() {
 
   // ── Funding ─────────────────────────────────────────────────────────────────
 
-  const handleSaveFundingAccount = async (payload) => {
+  const handleCreateFundingAccount = async (payload) => {
     if (!currentTeam || !canEditTools) return;
-    await setDoc(doc(db, 'teamFundingAccount', currentTeam.id), {
+    const order = teamFundingAccounts.length;
+    await addDoc(collection(db, 'teamFundingAccounts'), {
       teamId: currentTeam.id,
-      ...payload,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
+      bankName: String(payload.bankName || '').trim(),
+      accountName: String(payload.accountName || '').trim(),
+      accountLast4: String(payload.accountLast4 || '').replace(/\D/g, '').slice(-4),
+      currentBalance: parseFloat(payload.currentBalance) || 0,
+      order,
+      createdAt: serverTimestamp(),
+    });
   };
 
-  const handleCreateFundingEntry = async ({ date, description, amount, type, category }) => {
+  const handleUpdateFundingAccount = async (accountId, payload) => {
     if (!currentTeam || !canEditTools) return;
-    const acc = teamFundingAccount;
+    await updateDoc(doc(db, 'teamFundingAccounts', accountId), {
+      bankName: String(payload.bankName || '').trim(),
+      accountName: String(payload.accountName || '').trim(),
+      accountLast4: String(payload.accountLast4 || '').replace(/\D/g, '').slice(-4),
+      currentBalance: parseFloat(payload.currentBalance) || 0,
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  const handleDeleteFundingAccount = async (accountId) => {
+    if (!currentTeam || !canEditTools) return;
+    const hasEntries = teamFundingEntries.some((e) => e.accountId === accountId);
+    if (hasEntries) {
+      alert('No se puede eliminar una cuenta con movimientos. Elimina o reasigna los movimientos primero.');
+      return;
+    }
+    await deleteDoc(doc(db, 'teamFundingAccounts', accountId));
+  };
+
+  const handleCreateFundingEntry = async ({ date, description, amount, type, category, accountId }) => {
+    if (!currentTeam || !canEditTools) return;
+    const acc = teamFundingAccounts.find((a) => a.id === accountId);
+    if (!acc) return;
     const currentBal = acc?.currentBalance ?? 0;
     const delta = type === 'out' ? -amount : amount;
     const newBalance = currentBal + delta;
     await addDoc(collection(db, 'teamFundingEntries'), {
       teamId: currentTeam.id,
+      accountId,
       date,
       description: description || '',
       amount,
@@ -651,26 +727,25 @@ export default function App() {
       category: category || '',
       createdAt: serverTimestamp(),
     });
-    await setDoc(doc(db, 'teamFundingAccount', currentTeam.id), {
-      teamId: currentTeam.id,
+    await updateDoc(doc(db, 'teamFundingAccounts', accountId), {
       currentBalance: newBalance,
       updatedAt: serverTimestamp(),
-    }, { merge: true });
+    });
   };
 
   const handleDeleteFundingEntry = async (entryId) => {
     if (!currentTeam || !canEditTools) return;
     const entry = teamFundingEntries.find((e) => e.id === entryId);
     if (!entry) return;
+    const acc = teamFundingAccounts.find((a) => a.id === entry.accountId);
+    if (!acc) return;
     const delta = entry.type === 'out' ? entry.amount : -entry.amount;
-    const acc = teamFundingAccount;
     const newBalance = (acc?.currentBalance ?? 0) + delta;
     await deleteDoc(doc(db, 'teamFundingEntries', entryId));
-    await setDoc(doc(db, 'teamFundingAccount', currentTeam.id), {
-      teamId: currentTeam.id,
+    await updateDoc(doc(db, 'teamFundingAccounts', entry.accountId), {
       currentBalance: newBalance,
       updatedAt: serverTimestamp(),
-    }, { merge: true });
+    });
   };
 
   // ── Merits ─────────────────────────────────────────────────────────────────
@@ -723,6 +798,7 @@ export default function App() {
       membershipId,
       meritId,
       meritName:            merit.name,
+      meritLogo:            merit.logo || '🏆',
       points:               merit.points,
       type:                 'award',
       evidence:             evidence || '',
@@ -1502,10 +1578,12 @@ export default function App() {
 
             {view === 'funding' && isAtLeastRookie && (
               <FundingView
-                account={teamFundingAccount}
+                accounts={teamFundingAccounts}
                 entries={teamFundingEntries}
                 canEdit={canEditTools}
-                onSaveAccount={handleSaveFundingAccount}
+                onCreateAccount={handleCreateFundingAccount}
+                onUpdateAccount={handleUpdateFundingAccount}
+                onDeleteAccount={handleDeleteFundingAccount}
                 onCreateEntry={handleCreateFundingEntry}
                 onDeleteEntry={handleDeleteFundingEntry}
               />
@@ -1517,6 +1595,7 @@ export default function App() {
                 <ProfilePageView
                   membership={currentMembership}
                   categories={teamCategories}
+                  meritEvents={teamMeritEvents.filter((e) => e.membershipId === currentMembership.id)}
                   canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && currentMembership.userId === authUser.uid)}
                   onSave={handleUpdateMemberProfile}
                   weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
@@ -1539,6 +1618,7 @@ export default function App() {
               <ProfilePageView
                 membership={profileMember}
                 categories={teamCategories}
+                meritEvents={teamMeritEvents.filter((e) => e.membershipId === profileMember.id)}
                 canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && profileMember.userId === authUser.uid)}
                 onSave={handleUpdateMemberProfile}
                 weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
