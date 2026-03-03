@@ -24,6 +24,36 @@ export const ROLE_RANK = Object.fromEntries(ROLE_ORDER.map((r, i) => [r, i]));
 /** Roles that can assign a given logro. One per logro. */
 export const ASSIGNABLE_BY_OPTIONS = ['leader', 'teamAdmin', 'facultyAdvisor'];
 
+/** Suggested tags for collaboration fields — shown in dropdown to avoid duplicates. */
+export const COLLAB_TAG_SUGGESTIONS = [
+  'OpenCV', 'Python', 'C++', 'CAD', 'SolidWorks', 'Arduino', 'Raspberry Pi',
+  'ROS', 'control theory', 'soldering', '3D printing', 'circuit design',
+  'machine learning', 'computer vision', 'documentation', 'presentation',
+  'mentoring', 'project management',
+];
+
+/** Suggested tags for logros — used for search/filter. Add custom tags via TagInput. */
+export const MERIT_TAG_SUGGESTIONS = [
+  'mecánica', 'software', 'diseño', 'electrónica', 'robótica',
+  'liderazgo', 'colaboración', 'innovación', 'investigación',
+  'comunicación', 'documentación', 'presentación',
+];
+
+/** Achievement type — for filtering 500+ logros. Leaders award only in their category. */
+export const MERIT_ACHIEVEMENT_TYPES = [
+  'technical', 'leadership', 'collaboration', 'innovation', 'milestone',
+  'research', 'communication', 'documentation', 'presentation', 'other',
+];
+
+/** Domain — area of the achievement. */
+export const MERIT_DOMAINS = [
+  'software', 'hardware', 'mechanical', 'electronics', 'design',
+  'research', 'general',
+];
+
+/** Tier — optional difficulty/value level. */
+export const MERIT_TIERS = ['bronze', 'silver', 'gold'];
+
 /** Career options shown in the profile editor. Empty string = "not set". */
 export const CAREER_OPTIONS = [
   '',

@@ -91,7 +91,7 @@ function AutoGrowInput({ value, onChange, placeholder, className, ...rest }) {
 
 export default function ProfilePageView({
   membership, categories, meritEvents = [], canEditThis, onSave,
-  weeklyStatuses = [], onSaveWeeklyStatus,
+  weeklyStatuses = [], onSaveWeeklyStatus, suggestedTags = [],
 }) {
   const { t, lang } = React.useContext(LangContext);
   const [editing,    setEditing]    = useState(false);
@@ -301,10 +301,10 @@ export default function ProfilePageView({
 
             <div className="border-t border-slate-700 pt-3 space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_collaboration')}</p>
-              <TagInput label={t('looking_for_help_in')} value={draft.lookingForHelpIn} onChange={(v) => set('lookingForHelpIn', v)} placeholder={t('collab_tags_ph')} />
-              <TagInput label={t('i_can_help_with')} value={draft.iCanHelpWith} onChange={(v) => set('iCanHelpWith', v)} placeholder={t('collab_tags_ph')} />
-              <TagInput label={t('skills_to_learn')} value={draft.skillsToLearnThisSemester} onChange={(v) => set('skillsToLearnThisSemester', v)} placeholder={t('collab_tags_ph')} />
-              <TagInput label={t('skills_i_can_teach')} value={draft.skillsICanTeach} onChange={(v) => set('skillsICanTeach', v)} placeholder={t('collab_tags_ph')} />
+              <TagInput label={t('looking_for_help_in')} value={draft.lookingForHelpIn} onChange={(v) => set('lookingForHelpIn', v)} placeholder={t('collab_tags_ph')} suggestions={suggestedTags} />
+              <TagInput label={t('i_can_help_with')} value={draft.iCanHelpWith} onChange={(v) => set('iCanHelpWith', v)} placeholder={t('collab_tags_ph')} suggestions={suggestedTags} />
+              <TagInput label={t('skills_to_learn')} value={draft.skillsToLearnThisSemester} onChange={(v) => set('skillsToLearnThisSemester', v)} placeholder={t('collab_tags_ph')} suggestions={suggestedTags} />
+              <TagInput label={t('skills_i_can_teach')} value={draft.skillsICanTeach} onChange={(v) => set('skillsICanTeach', v)} placeholder={t('collab_tags_ph')} suggestions={suggestedTags} />
             </div>
 
             <div className="border-t border-slate-700 pt-3 space-y-3">

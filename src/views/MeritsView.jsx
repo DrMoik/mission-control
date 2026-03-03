@@ -5,12 +5,12 @@
 //  3. Award form (leader +)
 //  4. Audit log with edit/revoke (platformAdmin)
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import LangContext              from '../i18n/LangContext.js';
-import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS } from '../constants.js';
+import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS, MERIT_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS, MERIT_TIERS } from '../constants.js';
 import { tsToDate, getL, fillL, ensureString } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
-import { BilingualField }       from '../components/ui/index.js';
+import { BilingualField, TagInput } from '../components/ui/index.js';
 
 /**
  * @param {{
@@ -28,6 +28,7 @@ export default function MeritsView({
 
   const [meritForm, setMeritForm] = useState({
     name: '', points: 100, categoryId: '', logo: '🏆', assignableBy: 'leader',
+    tags: [], achievementTypes: [], domains: [], tier: '',
     shortDescription: { en: '', es: '' },
     longDescription:  { en: '', es: '' },
   });
@@ -35,20 +36,101 @@ export default function MeritsView({
   const [showIconPicker,  setShowIconPicker]  = useState(false);
   const [cropSrc,         setCropSrc]         = useState(null);
   const [awardForm,       setAwardForm]       = useState({ membershipId: '', meritId: '', evidence: '' });
+  const [meritSearch,        setMeritSearch]        = useState('');
+  const [meritScopeFilter,   setMeritScopeFilter]   = useState(''); // '' = all, 'global' = global only, categoryId = that category
+  const [meritTypeFilters,   setMeritTypeFilters]   = useState([]); // multi-select
+  const [meritDomainFilters, setMeritDomainFilters] = useState([]);
+  const [meritTierFilter,    setMeritTierFilter]    = useState('');
+  const [meritTagFilters,    setMeritTagFilters]    = useState([]); // multi-select
+  const [gridSearch,         setGridSearch]         = useState('');
+  const [gridScopeFilter,    setGridScopeFilter]    = useState('');
+  const [gridTypeFilters,    setGridTypeFilters]    = useState([]);
+  const [gridDomainFilters,   setGridDomainFilters]  = useState([]);
+  const [gridTierFilter,     setGridTierFilter]     = useState('');
+  const [gridTagFilters,     setGridTagFilters]     = useState([]);
   const [editingEventId,  setEditingEventId]  = useState(null);
   const [editEventDraft,  setEditEventDraft]  = useState({ points: '', evidence: '' });
 
   const activeMembers = memberships.filter((m) => m.status === 'active');
 
-  // Can current user assign this merit? (assignableBy must match memberRole; teamAdmin/facultyAdvisor can assign any)
-  const canAssignMerit = (merit) => {
-    if (!merit) return false;
-    const allowed = merit.assignableBy || 'leader';
-    if (memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor') return true; // admins can assign any
-    return memberRole === allowed;
-  };
+  // Assignable merits: teamAdmin/facultyAdvisor see all; leaders see global + their category only
+  const assignableMerits = useMemo(() => {
+    return merits.filter((m) => {
+      const allowed = m.assignableBy || 'leader';
+      if (memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor') return true;
+      if (memberRole !== allowed) return false;
+      if (memberRole === 'leader' && currentMembership?.categoryId && !isPlatformAdmin) {
+        return !m.categoryId || m.categoryId === currentMembership.categoryId;
+      }
+      return true;
+    });
+  }, [merits, memberRole, currentMembership?.categoryId, isPlatformAdmin]);
 
-  const assignableMerits = merits.filter(canAssignMerit);
+  // Filtered merits for award form (search, scope, types, domains, tier, tags)
+  const filteredAwardMerits = useMemo(() => {
+    let list = assignableMerits;
+    const q = (meritSearch || '').toLowerCase().trim();
+    if (q) {
+      list = list.filter((m) => {
+        const name = (m.name || '').toLowerCase();
+        const short = (getL(m.shortDescription, lang) || '').toLowerCase();
+        const tags = (m.tags || []).join(' ').toLowerCase();
+        const types = (m.achievementTypes || []).join(' ').toLowerCase();
+        const domains = (m.domains || []).join(' ').toLowerCase();
+        return name.includes(q) || short.includes(q) || tags.includes(q) || types.includes(q) || domains.includes(q);
+      });
+    }
+    if (meritScopeFilter) {
+      if (meritScopeFilter === 'global') list = list.filter((m) => !m.categoryId);
+      else list = list.filter((m) => m.categoryId === meritScopeFilter);
+    }
+    if (meritTypeFilters.length > 0) {
+      list = list.filter((m) => (m.achievementTypes || []).some((t) => meritTypeFilters.includes(t)));
+    }
+    if (meritDomainFilters.length > 0) {
+      list = list.filter((m) => (m.domains || []).some((d) => meritDomainFilters.includes(d)));
+    }
+    if (meritTierFilter) {
+      list = list.filter((m) => (m.tier || '') === meritTierFilter);
+    }
+    if (meritTagFilters.length > 0) {
+      list = list.filter((m) => (m.tags || []).some((t) => meritTagFilters.includes(t)));
+    }
+    return list;
+  }, [assignableMerits, meritSearch, meritScopeFilter, meritTypeFilters, meritDomainFilters, meritTierFilter, meritTagFilters, lang]);
+
+  // Filtered merits for definitions grid
+  const filteredGridMerits = useMemo(() => {
+    let list = merits;
+    const q = (gridSearch || '').toLowerCase().trim();
+    if (q) {
+      list = list.filter((m) => {
+        const name = (m.name || '').toLowerCase();
+        const short = (getL(m.shortDescription, lang) || '').toLowerCase();
+        const tags = (m.tags || []).join(' ').toLowerCase();
+        const types = (m.achievementTypes || []).join(' ').toLowerCase();
+        const domains = (m.domains || []).join(' ').toLowerCase();
+        return name.includes(q) || short.includes(q) || tags.includes(q) || types.includes(q) || domains.includes(q);
+      });
+    }
+    if (gridScopeFilter) {
+      if (gridScopeFilter === 'global') list = list.filter((m) => !m.categoryId);
+      else list = list.filter((m) => m.categoryId === gridScopeFilter);
+    }
+    if (gridTypeFilters.length > 0) {
+      list = list.filter((m) => (m.achievementTypes || []).some((t) => gridTypeFilters.includes(t)));
+    }
+    if (gridDomainFilters.length > 0) {
+      list = list.filter((m) => (m.domains || []).some((d) => gridDomainFilters.includes(d)));
+    }
+    if (gridTierFilter) {
+      list = list.filter((m) => (m.tier || '') === gridTierFilter);
+    }
+    if (gridTagFilters.length > 0) {
+      list = list.filter((m) => (m.tags || []).some((t) => gridTagFilters.includes(t)));
+    }
+    return list;
+  }, [merits, gridSearch, gridScopeFilter, gridTypeFilters, gridDomainFilters, gridTierFilter, gridTagFilters, lang]);
 
   const handleCreate = () => {
     if (!meritForm.name.trim())                             { alert(t('name') + ' required.');    return; }
@@ -59,9 +141,14 @@ export default function MeritsView({
       fillL(meritForm.shortDescription),
       fillL(meritForm.longDescription),
       meritForm.assignableBy,
+      meritForm.tags || [],
+      meritForm.achievementTypes || [],
+      meritForm.domains || [],
+      meritForm.tier || null,
     );
     setMeritForm({
       name: '', points: 100, categoryId: '', logo: '🏆', assignableBy: 'leader',
+      tags: [], achievementTypes: [], domains: [], tier: '',
       shortDescription: { en: '', es: '' },
       longDescription:  { en: '', es: '' },
     });
@@ -201,6 +288,81 @@ export default function MeritsView({
             </button>
           </div>
 
+          {/* Attributes for search/filter (500+ logros) */}
+          <div className="space-y-2">
+            <label className="text-[11px] text-slate-500 block">{t('merit_attr_types')}</label>
+            <div className="flex flex-wrap gap-1">
+              {MERIT_ACHIEVEMENT_TYPES.map((type) => {
+                const sel = (meritForm.achievementTypes || []).includes(type);
+                return (
+                  <button key={type} type="button"
+                    onClick={() => setMeritForm((f) => ({
+                      ...f, achievementTypes: sel ? (f.achievementTypes || []).filter((t) => t !== type) : [...(f.achievementTypes || []), type],
+                    }))}
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                    {t('merit_type_' + type)}
+                  </button>
+                );
+              })}
+            </div>
+            <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_domains')}</label>
+            <div className="flex flex-wrap gap-1">
+              {MERIT_DOMAINS.map((d) => {
+                const sel = (meritForm.domains || []).includes(d);
+                return (
+                  <button key={d} type="button"
+                    onClick={() => setMeritForm((f) => ({
+                      ...f, domains: sel ? (f.domains || []).filter((x) => x !== d) : [...(f.domains || []), d],
+                    }))}
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                    {t('merit_domain_' + d)}
+                  </button>
+                );
+              })}
+            </div>
+            <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_tier')}</label>
+            <div className="flex flex-wrap gap-1">
+              <button type="button"
+                onClick={() => setMeritForm((f) => ({ ...f, tier: '' }))}
+                className={`text-[10px] px-2 py-0.5 rounded ${!meritForm.tier ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                —
+              </button>
+              {MERIT_TIERS.map((tier) => {
+                const sel = meritForm.tier === tier;
+                return (
+                  <button key={tier} type="button"
+                    onClick={() => setMeritForm((f) => ({ ...f, tier: sel ? '' : tier }))}
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                    {t('merit_tier_' + tier)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 items-center">
+            <TagInput
+              label={t('merit_tags')}
+              value={meritForm.tags || []}
+              onChange={(v) => setMeritForm((f) => ({ ...f, tags: v }))}
+              placeholder={t('merit_tags_placeholder')}
+              suggestions={[...new Set([...MERIT_TAG_SUGGESTIONS, ...merits.flatMap((m) => m.tags || [])])]}
+            />
+            <div className="flex flex-wrap gap-1 mt-5">
+              {MERIT_TAG_SUGGESTIONS.map((tag) => (
+                <button key={tag} type="button"
+                  onClick={() => {
+                    const current = meritForm.tags || [];
+                    if (current.includes(tag)) return;
+                    setMeritForm((f) => ({ ...f, tags: [...(f.tags || []), tag] }));
+                  }}
+                  className="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded">
+                  +{tag}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Bilingual description fields */}
           <BilingualField
             label={t('short_description')}
@@ -273,12 +435,73 @@ export default function MeritsView({
 
       {/* ── Merit definitions grid ── */}
       <div className="bg-slate-800 rounded-lg p-4">
-        <div className="text-xs text-slate-400 mb-3">{t('merit_definitions')}</div>
+        <div className="space-y-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-400">{t('merit_definitions')}</span>
+            <input
+              type="search"
+              value={gridSearch}
+              onChange={(e) => setGridSearch(e.target.value)}
+              placeholder={t('merit_search_placeholder')}
+              className="flex-1 min-w-[140px] px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px]"
+            />
+          </div>
+          {merits.length > 5 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-[10px] text-slate-500">{t('merit_filter_scope')}:</span>
+              <button type="button" onClick={() => setGridScopeFilter('')}
+                className={`text-[10px] px-2 py-0.5 rounded ${!gridScopeFilter ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_scope_all')}</button>
+              <button type="button" onClick={() => setGridScopeFilter('global')}
+                className={`text-[10px] px-2 py-0.5 rounded ${gridScopeFilter === 'global' ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('global_category')}</button>
+              {categories.map((c) => (
+                <button key={c.id} type="button" onClick={() => setGridScopeFilter(gridScopeFilter === c.id ? '' : c.id)}
+                  className={`text-[10px] px-2 py-0.5 rounded ${gridScopeFilter === c.id ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{ensureString(c.name)}</button>
+              ))}
+              <span className="text-[10px] text-slate-500 ml-2">{t('merit_filter_type')}:</span>
+              {MERIT_ACHIEVEMENT_TYPES.slice(0, 6).map((type) => {
+                const sel = gridTypeFilters.includes(type);
+                return (
+                  <button key={type} type="button"
+                    onClick={() => setGridTypeFilters(sel ? gridTypeFilters.filter((t) => t !== type) : [...gridTypeFilters, type])}
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_type_' + type)}</button>
+                );
+              })}
+              <span className="text-[10px] text-slate-500 ml-2">{t('merit_filter_domain')}:</span>
+              {MERIT_DOMAINS.map((d) => {
+                const sel = gridDomainFilters.includes(d);
+                return (
+                  <button key={d} type="button"
+                    onClick={() => setGridDomainFilters(sel ? gridDomainFilters.filter((x) => x !== d) : [...gridDomainFilters, d])}
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_domain_' + d)}</button>
+                );
+              })}
+              <span className="text-[10px] text-slate-500 ml-2">{t('merit_filter_tier')}:</span>
+              {MERIT_TIERS.map((tier) => {
+                const sel = gridTierFilter === tier;
+                return (
+                  <button key={tier} type="button"
+                    onClick={() => setGridTierFilter(sel ? '' : tier)}
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_tier_' + tier)}</button>
+                );
+              })}
+              {[...new Set(merits.flatMap((m) => m.tags || []))].sort().slice(0, 8).map((tag) => {
+                const sel = gridTagFilters.includes(tag);
+                return (
+                  <button key={tag} type="button"
+                    onClick={() => setGridTagFilters(sel ? gridTagFilters.filter((t) => t !== tag) : [...gridTagFilters, tag])}
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-amber-600/50 border border-amber-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{tag}</button>
+                );
+              })}
+            </div>
+          )}
+        </div>
         {merits.length === 0 ? (
           <div className="text-xs text-slate-500">{t('no_merits')}</div>
+        ) : filteredGridMerits.length === 0 ? (
+          <div className="text-xs text-slate-500">{t('no_merits_match')}</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {merits.map((m) => (
+            {filteredGridMerits.map((m) => (
               <button key={m.id} onClick={() => setDetailMerit(m)}
                 className="flex items-center gap-3 p-3 bg-slate-700/40 hover:bg-slate-700/70 rounded-lg transition-colors text-left w-full group">
                 <div className="shrink-0 w-12 h-12 flex items-center justify-center bg-slate-700 rounded-xl overflow-hidden border border-slate-600">
@@ -292,8 +515,9 @@ export default function MeritsView({
                   <div className="font-semibold text-sm truncate group-hover:text-emerald-300 transition-colors">{m.name}</div>
                   <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className="font-mono text-emerald-400 font-bold">{m.points} {t('pts_label')}</span>
-                    {m.categoryId && <span className="truncate">· {ensureString(categories.find((c) => c.id === m.categoryId)?.name)}</span>}
-                    <span className="text-[10px] text-slate-500">· {t('assignable_by_' + (m.assignableBy || 'leader'))}</span>
+                    {m.categoryId ? <span className="truncate">· {ensureString(categories.find((c) => c.id === m.categoryId)?.name)}</span> : <span>· {t('global_category')}</span>}
+                    {(m.achievementTypes || []).length > 0 && <span>· {(m.achievementTypes || []).map((x) => t('merit_type_' + x)).join(', ')}</span>}
+                    {m.tier && <span>· {t('merit_tier_' + m.tier)}</span>}
                   </div>
                   {getL(m.shortDescription, lang) && (
                     <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{getL(m.shortDescription, lang)}</p>
@@ -320,46 +544,117 @@ export default function MeritsView({
           {assignableMerits.length === 0 && (
             <p className="text-xs text-amber-400/90 mb-3">{t('no_assignable_logros')}</p>
           )}
-          <div className="flex flex-wrap gap-2 items-end">
-            <div className="flex-1 min-w-[130px]">
-              <label className="text-[11px] text-slate-500 block mb-1">{t('member')}</label>
-              <select
-                value={awardForm.membershipId}
-                onChange={(e) => setAwardForm((f) => ({ ...f, membershipId: e.target.value }))}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
-              >
-                <option value="">{t('select_member')}</option>
-                {activeMembers.map((m) => (
-                  <option key={m.id} value={m.id}>{ensureString(m.displayName)} ({t('role_' + m.role) || m.role})</option>
-                ))}
-              </select>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="flex-1 min-w-[130px]">
+                <label className="text-[11px] text-slate-500 block mb-1">{t('member')}</label>
+                <select
+                  value={awardForm.membershipId}
+                  onChange={(e) => setAwardForm((f) => ({ ...f, membershipId: e.target.value }))}
+                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                >
+                  <option value="">{t('select_member')}</option>
+                  {activeMembers.map((m) => (
+                    <option key={m.id} value={m.id}>{ensureString(m.displayName)} ({t('role_' + m.role) || m.role})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[140px]">
+                <label className="text-[11px] text-slate-500 block mb-1">{t('evidence_optional')}</label>
+                <input
+                  value={awardForm.evidence}
+                  onChange={(e) => setAwardForm((f) => ({ ...f, evidence: e.target.value }))}
+                  placeholder={t('evidence_optional')}
+                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                />
+              </div>
+              <button onClick={handleAward}
+                disabled={!awardForm.membershipId || !awardForm.meritId}
+                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-black text-xs font-semibold rounded">
+                {t('award')}
+              </button>
             </div>
-            <div className="flex-1 min-w-[130px]">
+
+            {/* Merit selector: search + filter chips + list */}
+            <div>
               <label className="text-[11px] text-slate-500 block mb-1">{t('merit')}</label>
-              <select
-                value={awardForm.meritId}
-                onChange={(e) => setAwardForm((f) => ({ ...f, meritId: e.target.value }))}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
-              >
-                <option value="">{t('select_merit')}</option>
-                {assignableMerits.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name} ({m.points} {t('pts_label')})</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex-1 min-w-[140px]">
-              <label className="text-[11px] text-slate-500 block mb-1">{t('evidence_optional')}</label>
               <input
-                value={awardForm.evidence}
-                onChange={(e) => setAwardForm((f) => ({ ...f, evidence: e.target.value }))}
-                placeholder={t('evidence_optional')}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                type="search"
+                value={meritSearch}
+                onChange={(e) => setMeritSearch(e.target.value)}
+                placeholder={t('merit_search_placeholder')}
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs mb-2"
               />
+              <div className="flex flex-wrap gap-1 mb-2">
+                <button type="button" onClick={() => setMeritScopeFilter('')}
+                  className={`text-[10px] px-2 py-0.5 rounded ${!meritScopeFilter ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_scope_all')}</button>
+                <button type="button" onClick={() => setMeritScopeFilter('global')}
+                  className={`text-[10px] px-2 py-0.5 rounded ${meritScopeFilter === 'global' ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('global_category')}</button>
+                {categories.map((c) => (
+                  <button key={c.id} type="button" onClick={() => setMeritScopeFilter(meritScopeFilter === c.id ? '' : c.id)}
+                    className={`text-[10px] px-2 py-0.5 rounded ${meritScopeFilter === c.id ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{ensureString(c.name)}</button>
+                ))}
+                {MERIT_ACHIEVEMENT_TYPES.map((type) => {
+                  const sel = meritTypeFilters.includes(type);
+                  return (
+                    <button key={type} type="button"
+                      onClick={() => setMeritTypeFilters(sel ? meritTypeFilters.filter((t) => t !== type) : [...meritTypeFilters, type])}
+                      className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_type_' + type)}</button>
+                  );
+                })}
+                {MERIT_DOMAINS.map((d) => {
+                  const sel = meritDomainFilters.includes(d);
+                  return (
+                    <button key={d} type="button"
+                      onClick={() => setMeritDomainFilters(sel ? meritDomainFilters.filter((x) => x !== d) : [...meritDomainFilters, d])}
+                      className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_domain_' + d)}</button>
+                  );
+                })}
+                {MERIT_TIERS.map((tier) => {
+                  const sel = meritTierFilter === tier;
+                  return (
+                    <button key={tier} type="button"
+                      onClick={() => setMeritTierFilter(sel ? '' : tier)}
+                      className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_tier_' + tier)}</button>
+                  );
+                })}
+                {[...new Set(assignableMerits.flatMap((m) => m.tags || []))].sort().map((tag) => {
+                  const sel = meritTagFilters.includes(tag);
+                  return (
+                    <button key={tag} type="button"
+                      onClick={() => setMeritTagFilters(sel ? meritTagFilters.filter((t) => t !== tag) : [...meritTagFilters, tag])}
+                      className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-amber-600/50 border border-amber-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{tag}</button>
+                  );
+                })}
+              </div>
+              <div className="max-h-40 overflow-y-auto border border-slate-600 rounded bg-slate-900/60">
+                {filteredAwardMerits.length === 0 ? (
+                  <p className="px-3 py-4 text-xs text-slate-500">{t('no_merits_match')}</p>
+                ) : (
+                  <div className="divide-y divide-slate-700/50">
+                    {filteredAwardMerits.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setAwardForm((f) => ({ ...f, meritId: m.id }))}
+                        className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-700/50 transition-colors ${awardForm.meritId === m.id ? 'bg-emerald-900/40 border-l-2 border-emerald-500' : ''}`}
+                      >
+                        <span className="text-lg shrink-0">{m.logo && !m.logo.startsWith('http') ? m.logo : '🏆'}</span>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-sm font-medium truncate block">{m.name}</span>
+                          <span className="text-[10px] text-slate-500">
+                            {m.points} {t('pts_label')}
+                            {m.categoryId ? ` · ${ensureString(categories.find((c) => c.id === m.categoryId)?.name)}` : ` · ${t('global_category')}`}
+                            {(m.achievementTypes || []).length > 0 && ` · ${(m.achievementTypes || []).map((x) => t('merit_type_' + x)).join(', ')}`}
+                            {m.tier && ` · ${t('merit_tier_' + m.tier)}`}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <button onClick={handleAward}
-              className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded">
-              {t('award')}
-            </button>
           </div>
         </div>
       )}

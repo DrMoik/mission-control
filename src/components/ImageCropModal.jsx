@@ -212,13 +212,28 @@ export default function ImageCropModal({
     }
   };
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      e.stopPropagation();
+      onCancel();
+    }
+  };
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+
   return (
-    // stopPropagation keeps parent modal backdrops from intercepting clicks
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
-      onClick={(e) => e.stopPropagation()}
+      onClick={handleBackdropClick}
     >
-      <div className="bg-slate-800 rounded-2xl p-5 w-full max-w-lg shadow-2xl">
+      <div
+        className="bg-slate-800 rounded-2xl p-5 w-full max-w-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h3 className="text-white font-semibold mb-1 text-sm">{label}</h3>
         <p className="text-[11px] text-slate-400 mb-3">{t('drag_instruction')}</p>
 
@@ -266,6 +281,13 @@ export default function ImageCropModal({
             className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors"
           >
             {t('cancel')}
+          </button>
+          <button
+            onClick={() => onApply('')}
+            className="py-2 px-3 bg-slate-600 hover:bg-slate-500 text-slate-300 text-sm rounded-lg transition-colors"
+            title={t('remove_image')}
+          >
+            {t('remove_image')}
           </button>
           <button
             onClick={handleApply}

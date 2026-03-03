@@ -414,7 +414,7 @@ Your app will be live at `https://quantum-robotics-48d7e.web.app`
 | `teams` | `name`, `overview`, `swot` | Any signed-in user |
 | `memberships` | `teamId`, `userId`, `displayName`, `role`, `status`, `strikes`, `categoryId` | Active team members |
 | `categories` | `teamId`, `name`, `description` | Active team members |
-| `merits` | `teamId`, `name`, `points`, `categoryId` | Active team members |
+| `merits` | `teamId`, `name`, `points`, `categoryId`, `achievementTypes[]`, `domains[]`, `tier`, `tags[]` | Active team members |
 | `meritEvents` | `teamId`, `membershipId`, `meritId`, `points`, `type`, `evidence` | Active team members |
 | `modules` | `teamId`, `title`, `content`, `videoUrl`, `retrievalPrompt` | Rookie+ members |
 | `moduleAttempts` | `teamId`, `moduleId`, `userId`, `answer`, `completedAt` | Own doc + team admins |

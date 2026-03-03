@@ -41,7 +41,7 @@ function isWeekEligibleForPoints(weekOf) {
 // ── Internal modules ──────────────────────────────────────────────────────────
 import TRANSLATIONS                from './i18n/translations.js';
 import LangContext                 from './i18n/LangContext.js';
-import { EMPTY_PROFILE }           from './constants.js';
+import { EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString } from './utils.js';
 
 // ── Shared UI atoms ───────────────────────────────────────────────────────────
@@ -347,6 +347,19 @@ export default function App() {
     return allTeams.filter((t) => ids.has(t.id));
   }, [allTeams, userMemberships]);
 
+  // All collaboration tags (team + predefined) — for TagInput dropdown to avoid duplicates
+  const collabTagSuggestions = useMemo(() => {
+    const set = new Set(COLLAB_TAG_SUGGESTIONS);
+    const add = (t) => { const s = typeof t === 'string' ? t : (t?.es || t?.en || ''); if (s.trim()) set.add(s.trim()); };
+    teamMemberships.forEach((m) => {
+      (m.lookingForHelpIn || []).forEach(add);
+      (m.iCanHelpWith || []).forEach(add);
+      (m.skillsToLearnThisSemester || []).forEach(add);
+      (m.skillsICanTeach || []).forEach(add);
+    });
+    return [...set].sort();
+  }, [teamMemberships]);
+
   // Leaderboard — aggregated points per member for "this season" (last 3 months) and all-time
   const leaderboard = useMemo(() => {
     if (!selectedTeamId) return { allTime: [], season: [] };
@@ -469,18 +482,39 @@ export default function App() {
       if (existing.status === 'active') { setSelectedTeamId(teamId); navigate('/overview'); }
       return;
     }
+    // Copy profile from another membership if user has one (shared profile across teams)
+    const otherMembership = userMemberships.find((m) => m.userId === authUser.uid && m.teamId !== teamId);
+    const profileSeed = otherMembership ? {
+      displayName:   otherMembership.displayName   || userProfile.displayName,
+      photoURL:      otherMembership.photoURL      ?? userProfile.photoURL ?? null,
+      coverPhotoURL: otherMembership.coverPhotoURL ?? '',
+      bio:           otherMembership.bio           ?? '',
+      hobbies:       otherMembership.hobbies       ?? '',
+      career:        otherMembership.career        ?? '',
+      semester:      otherMembership.semester      ?? '',
+      university:    otherMembership.university    ?? '',
+      email:         otherMembership.email         ?? '',
+      currentObjective: otherMembership.currentObjective ?? '',
+      currentChallenge: otherMembership.currentChallenge ?? '',
+      lookingForHelpIn:  otherMembership.lookingForHelpIn ?? [],
+      iCanHelpWith:      otherMembership.iCanHelpWith ?? [],
+      skillsToLearnThisSemester: otherMembership.skillsToLearnThisSemester ?? [],
+      skillsICanTeach:   otherMembership.skillsICanTeach ?? [],
+      songOnRepeatTitle: otherMembership.songOnRepeatTitle ?? '',
+      songOnRepeatUrl:   otherMembership.songOnRepeatUrl ?? '',
+      funFact:           otherMembership.funFact ?? '',
+      personalityTag:    otherMembership.personalityTag ?? '',
+    } : { displayName: userProfile.displayName, photoURL: userProfile.photoURL || null, ...EMPTY_PROFILE };
     await setDoc(doc(db, 'memberships', `${authUser.uid}_${teamId}`), {
       teamId,
       userId:      authUser.uid,
-      displayName: userProfile.displayName,
-      photoURL:    userProfile.photoURL || null,
       role:        'aspirant',
       status:      'pending',    // awaiting admin approval
       strikes:     0,
       categoryId:  categoryId || null,
       motivation:  motivation || '',
       ghost:       false,
-      ...EMPTY_PROFILE,
+      ...profileSeed,
       createdAt:   serverTimestamp(),
     });
   };
@@ -560,7 +594,12 @@ export default function App() {
       funFact:            updates.funFact            ?? m.funFact            ?? '',
       personalityTag:     updates.personalityTag     ?? m.personalityTag     ?? '',
     };
-    await updateDoc(doc(db, 'memberships', membershipId), payload);
+    // When user edits their own profile, sync to all their memberships (shared profile across teams)
+    const isOwnProfile = authUser && m.userId === authUser.uid;
+    const idsToUpdate = isOwnProfile
+      ? userMemberships.filter((um) => um.userId === authUser.uid).map((um) => um.id)
+      : [membershipId];
+    await Promise.all(idsToUpdate.map((id) => updateDoc(doc(db, 'memberships', id), payload)));
     // Keep the open profile modal in sync without waiting for Firestore
     setProfileMember((prev) => prev?.id === membershipId ? { ...prev, ...payload } : prev);
   };
@@ -763,7 +802,7 @@ export default function App() {
 
   // ── Merits ─────────────────────────────────────────────────────────────────
 
-  const handleCreateMerit = async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader') => {
+  const handleCreateMerit = async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader', tags = [], achievementTypes = [], domains = [], tier = null) => {
     if (!currentTeam) { alert('No team selected.'); return; }
     if (!canEdit)     { alert('No permission to create logros.'); return; }
     try {
@@ -776,6 +815,10 @@ export default function App() {
         shortDescription: shortDescription || '',
         longDescription:  longDescription  || '',
         assignableBy:     assignableBy     || 'leader',
+        tags:             Array.isArray(tags) ? tags.filter(Boolean) : [],
+        achievementTypes: Array.isArray(achievementTypes) ? achievementTypes.filter(Boolean) : [],
+        domains:          Array.isArray(domains) ? domains.filter(Boolean) : [],
+        tier:             tier || null,
         createdAt: serverTimestamp(),
       });
     } catch (err) {
@@ -1613,6 +1656,7 @@ export default function App() {
                   onSave={handleUpdateMemberProfile}
                   weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
                   onSaveWeeklyStatus={handleSaveWeeklyStatus}
+                  suggestedTags={collabTagSuggestions}
                 />
               ) : (
                 <div className="py-12 text-center text-slate-400 text-sm">
@@ -1636,6 +1680,7 @@ export default function App() {
                 onSave={handleUpdateMemberProfile}
                 weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
                 onSaveWeeklyStatus={handleSaveWeeklyStatus}
+                suggestedTags={collabTagSuggestions}
               />
             )}
           </main>
