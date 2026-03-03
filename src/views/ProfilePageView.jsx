@@ -309,6 +309,16 @@ export default function ProfilePageView({
             </div>
 
             <div className="border-t border-slate-700 pt-3 space-y-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">👤 {t('about_label')}</p>
+              <BilingualField label={t('about_me')} value={draft.bio} onChange={(v) => set('bio', v)}
+                multiline rows={3} placeholder={{ en: t('tell_team_placeholder'), es: t('tell_team_placeholder') }} />
+              <BilingualField label={t('hobbies')} value={draft.hobbies} onChange={(v) => set('hobbies', v)}
+                multiline rows={2} placeholder={{ en: t('hobbies_placeholder'), es: t('hobbies_placeholder') }} />
+              <BilingualField label={t('fun_fact_label')} value={draft.funFact} onChange={(v) => set('funFact', v)}
+                placeholder={{ en: t('fun_fact_ph'), es: t('fun_fact_ph') }} />
+            </div>
+
+            <div className="border-t border-slate-700 pt-3 space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">🎵 {t('section_culture')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
@@ -334,16 +344,6 @@ export default function ProfilePageView({
                   {PERSONALITY_TAGS.map((k) => <option key={k} value={k}>{t(k)}</option>)}
                 </select>
               </div>
-              <BilingualField label={t('fun_fact_label')} value={draft.funFact} onChange={(v) => set('funFact', v)}
-                placeholder={{ en: t('fun_fact_ph'), es: t('fun_fact_ph') }} />
-            </div>
-
-            <div className="border-t border-slate-700 pt-3 space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">👤 {t('about_label')}</p>
-              <BilingualField label={t('about_me')} value={draft.bio} onChange={(v) => set('bio', v)}
-                multiline rows={3} placeholder={{ en: t('tell_team_placeholder'), es: t('tell_team_placeholder') }} />
-              <BilingualField label={t('hobbies')} value={draft.hobbies} onChange={(v) => set('hobbies', v)}
-                multiline rows={2} placeholder={{ en: t('hobbies_placeholder'), es: t('hobbies_placeholder') }} />
             </div>
           </div>
         ) : (
@@ -374,7 +374,35 @@ export default function ProfilePageView({
               )}
             </div>
 
-            {/* Two-column layout on large screens for better horizontal space use */}
+            {/* Acerca — full width at top */}
+            {(getL(membership.bio, lang) || getL(membership.hobbies, lang) || getL(membership.funFact, lang)) && (
+              <div className="w-full mb-6">
+                <SectionHeading icon="👤" label={t('about_label')} />
+                {getL(membership.bio, lang) && <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{getL(membership.bio, lang)}</p>}
+                {getL(membership.hobbies, lang) && (
+                  <div className="mt-3">
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1.5">{t('hobbies')}</p>
+                    <ul className="list-disc list-inside text-sm text-slate-200 leading-relaxed space-y-0.5">
+                      {getL(membership.hobbies, lang)
+                        .split(/\n+/)
+                        .map((line) => line.trim())
+                        .filter(Boolean)
+                        .map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+                {getL(membership.funFact, lang) && (
+                  <div className="mt-3 bg-yellow-950/20 border border-yellow-800/40 rounded-lg px-3 py-2.5">
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-0.5">{t('fun_fact_label')}</p>
+                    <p className="text-sm text-slate-200 italic">&quot;{getL(membership.funFact, lang)}&quot;</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Two-column layout on large screens */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-6">
             {(getL(membership.currentObjective, lang) || getL(membership.currentChallenge, lang)) && (
               <div className="min-w-0">
@@ -429,28 +457,18 @@ export default function ProfilePageView({
               </div>
             )}
 
-            {(membership.songOnRepeatTitle || getL(membership.funFact, lang)) && (
+            {membership.songOnRepeatTitle && (
               <div className="min-w-0">
                 <SectionHeading icon="🎵" label={t('section_culture')} />
-                <div className="space-y-2">
-                  {membership.songOnRepeatTitle && (
-                    <div className="flex items-center gap-3 bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
-                      <span className="text-xl shrink-0">🎧</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] text-slate-500">{t('song_on_repeat')}</p>
-                        <p className="text-sm text-slate-200 truncate">{ensureString(membership.songOnRepeatTitle, lang)}</p>
-                      </div>
-                      {membership.songOnRepeatUrl && isValidSongUrl(membership.songOnRepeatUrl) && (
-                        <a href={membership.songOnRepeatUrl} target="_blank" rel="noopener noreferrer"
-                          className="shrink-0 text-xs text-emerald-400 underline hover:text-emerald-300">{t('listen_link')}</a>
-                      )}
-                    </div>
-                  )}
-                  {getL(membership.funFact, lang) && (
-                    <div className="bg-yellow-950/20 border border-yellow-800/40 rounded-lg px-3 py-2.5">
-                      <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-0.5">{t('fun_fact_label')}</p>
-                      <p className="text-sm text-slate-200 italic">"{getL(membership.funFact, lang)}"</p>
-                    </div>
+                <div className="flex items-center gap-3 bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                  <span className="text-xl shrink-0">🎧</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-slate-500">{t('song_on_repeat')}</p>
+                    <p className="text-sm text-slate-200 truncate">{ensureString(membership.songOnRepeatTitle, lang)}</p>
+                  </div>
+                  {membership.songOnRepeatUrl && isValidSongUrl(membership.songOnRepeatUrl) && (
+                    <a href={membership.songOnRepeatUrl} target="_blank" rel="noopener noreferrer"
+                      className="shrink-0 text-xs text-emerald-400 underline hover:text-emerald-300">{t('listen_link')}</a>
                   )}
                 </div>
               </div>
@@ -499,20 +517,7 @@ export default function ProfilePageView({
             )}
             </div>
 
-            {(getL(membership.bio, lang) || getL(membership.hobbies, lang)) && (
-              <div className="min-w-0">
-                <SectionHeading icon="👤" label={t('about_label')} />
-                {getL(membership.bio, lang) && <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{getL(membership.bio, lang)}</p>}
-                {getL(membership.hobbies, lang) && (
-                  <div className="mt-2">
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1">{t('hobbies')}</p>
-                    <p className="text-sm text-slate-200 leading-relaxed">{getL(membership.hobbies, lang)}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!getL(membership.bio, lang) && !getL(membership.hobbies, lang) && !getL(membership.currentObjective, lang) && !getL(membership.currentChallenge, lang) && !membership.lookingForHelpIn?.length && !membership.iCanHelpWith?.length && !membership.songOnRepeatTitle && !thisWeek && (
+            {!getL(membership.bio, lang) && !getL(membership.hobbies, lang) && !getL(membership.funFact, lang) && !getL(membership.currentObjective, lang) && !getL(membership.currentChallenge, lang) && !membership.lookingForHelpIn?.length && !membership.iCanHelpWith?.length && !membership.songOnRepeatTitle && !thisWeek && (
               <p className="text-xs text-slate-600 italic text-center py-4 col-span-full">{t('no_profile_info')}</p>
             )}
             </div>
