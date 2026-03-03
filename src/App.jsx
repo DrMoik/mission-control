@@ -146,6 +146,8 @@ export default function App() {
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
   const [previewRole,    setPreviewRole]    = useState(null);   // admin "preview as role" simulation
   const [profileMember,  setProfileMember]  = useState(null);   // opens ProfileModal
+  const [renamingTeamId, setRenamingTeamId] = useState(null);  // team picker inline rename
+  const [renameValue,    setRenameValue]    = useState('');
 
   // ────────────────────────────────────────────────────────────────────────────
   // EFFECTS — Firebase subscriptions
@@ -947,13 +949,6 @@ export default function App() {
     const otherTeams     = allTeams.filter((t) => !joinedIds.has(t.id));
     const activeMyTeams  = myTeams.filter((t) => { const m = userMemberships.find((m) => m.teamId === t.id); return m?.status === 'active' || m?.status === 'suspended'; });
     const pendingMyTeams = myTeams.filter((t) => { const m = userMemberships.find((m) => m.teamId === t.id); return m?.status === 'pending'; });
-
-    // Inline rename state (keyed by team id — only one open at a time)
-    // Declared here inside the render block so it is scoped to this branch.
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const [renamingTeamId, setRenamingTeamId] = React.useState(null);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const [renameValue,    setRenameValue]    = React.useState('');
 
     const startRename = (team, e) => {
       e.stopPropagation();
