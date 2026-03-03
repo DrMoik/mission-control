@@ -62,32 +62,26 @@ export default function ImageCropModal({
   };
 
   // ── Load image ────────────────────────────────────────────────────────────
+  // Load without CORS so the image always renders when valid. Using CORS first
+  // can cause the browser to cache a failure; retrying with the same URL may
+  // keep failing and show "error" even though the image would load fine.
+  // If canvas export fails (tainted), handleApply returns the original src.
   useEffect(() => {
     setStatus('loading');
     imgRef.current = null;
 
-    // Try first with crossOrigin (needed for canvas export); fall back without
-    const tryLoad = (withCors) => {
-      const img = new Image();
-      if (withCors) img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        imgRef.current = img;
-        // fitScale = minimum scale that covers the frame in both axes
-        const fs = Math.max(vpW / img.naturalWidth, vpH / img.naturalHeight);
-        setFitScale(fs);
-        setUserZoom(1);
-        // For portrait/headshot: favor showing top (face) — shift crop up by ~20% of frame
-        const initialY = focusTop && img.naturalHeight > img.naturalWidth ? vpH * 0.2 : 0;
-        setOffset({ x: 0, y: initialY });
-        setStatus('ready');
-      };
-      img.onerror = () => {
-        if (withCors) tryLoad(false); // CORS failed → retry without
-        else setStatus('error');
-      };
-      img.src = src;
+    const img = new Image();
+    img.onload = () => {
+      imgRef.current = img;
+      const fs = Math.max(vpW / img.naturalWidth, vpH / img.naturalHeight);
+      setFitScale(fs);
+      setUserZoom(1);
+      const initialY = focusTop && img.naturalHeight > img.naturalWidth ? vpH * 0.2 : 0;
+      setOffset({ x: 0, y: initialY });
+      setStatus('ready');
     };
-    tryLoad(true);
+    img.onerror = () => setStatus('error');
+    img.src = src;
   }, [src, vpW, vpH, focusTop]);
 
   // ── Draw preview canvas ───────────────────────────────────────────────────

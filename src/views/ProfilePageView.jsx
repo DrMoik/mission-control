@@ -519,21 +519,31 @@ export default function ProfilePageView({
               <SectionHeading label={t('profile_logros_obtained')} />
               {meritEvents.filter((e) => e.type === 'award').length > 0 ? (
                 <div className="flex flex-wrap gap-3">
-                  {meritEvents
-                    .filter((e) => e.type === 'award')
-                    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
-                    .map((evt) => (
-                      <div
-                        key={evt.id}
-                        className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 rounded-lg px-3 py-2"
-                      >
-                        <span className="text-xl shrink-0">{evt.meritLogo || '🏆'}</span>
-                        <div>
-                          <p className="text-sm font-medium text-slate-200">{evt.meritName || t('merit')}</p>
-                          <p className="text-xs text-amber-400/90">+{evt.points || 0} pts</p>
+                  {(() => {
+                    const awards = meritEvents.filter((e) => e.type === 'award');
+                    const groups = {};
+                    awards.forEach((evt) => {
+                      const key = `${evt.meritId || ''}_${evt.meritName || ''}_${evt.points || 0}`;
+                      if (!groups[key]) groups[key] = { evt, count: 0 };
+                      groups[key].count++;
+                    });
+                    return Object.values(groups)
+                      .sort((a, b) => (b.evt.createdAt?.seconds || 0) - (a.evt.createdAt?.seconds || 0))
+                      .map(({ evt, count }) => (
+                        <div
+                          key={evt.id}
+                          className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 rounded-lg px-3 py-2"
+                        >
+                          <span className="text-xl shrink-0">{evt.meritLogo || '🏆'}</span>
+                          <div>
+                            <p className="text-sm font-medium text-slate-200">{evt.meritName || t('merit')}</p>
+                            <p className="text-xs text-amber-400/90">
+                              +{(evt.points || 0) * count} pts{count > 1 && <span className="text-slate-400 ml-1">×{count}</span>}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ));
+                  })()}
                 </div>
               ) : (
                 <p className="text-xs text-slate-500 italic py-2">{t('profile_logros_empty')}</p>
