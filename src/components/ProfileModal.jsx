@@ -172,18 +172,20 @@ export default function ProfileModal({
         className="bg-slate-900 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Cover photo ── */}
-        <div className="h-36 bg-gradient-to-r from-emerald-900 via-slate-800 to-slate-900 relative shrink-0">
-          {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) && (
-            <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
-              className="w-full h-full object-cover" alt="" />
-          )}
-          <button onClick={onClose}
-            className="absolute top-3 right-3 text-white/80 hover:text-white w-7 h-7 bg-black/50 rounded-full flex items-center justify-center text-sm">
-            ✕
-          </button>
-          {/* Avatar */}
-          <div className="absolute -bottom-12 left-5">
+        {/* ── Cover photo + avatar — z-10 so they render above content */}
+        <div className="relative z-10 shrink-0">
+          <div className="h-36 bg-gradient-to-r from-emerald-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-t-xl">
+            {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) && (
+              <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
+                className="w-full h-full object-cover" alt="" />
+            )}
+            <button onClick={onClose}
+              className="absolute top-3 right-3 z-30 text-white/80 hover:text-white w-7 h-7 bg-black/50 rounded-full flex items-center justify-center text-sm">
+              ✕
+            </button>
+          </div>
+          {/* Avatar — z-20 so it renders above content section */}
+          <div className="absolute -bottom-12 left-5 z-20">
             {(editing ? draft.photoURL : membership.photoURL) ? (
               <img src={editing ? draft.photoURL : membership.photoURL}
                 className="w-24 h-24 rounded-full border-4 border-slate-900 object-cover object-[center_top]" alt="" />
@@ -193,9 +195,10 @@ export default function ProfileModal({
               </div>
             )}
           </div>
+          </div>
         </div>
 
-        <div className="pt-16 px-5 pb-5">
+        <div className="relative z-0 pt-16 px-5 pb-5">
 
           {/* ════════════ EDIT FORM ════════════ */}
           {editing ? (
