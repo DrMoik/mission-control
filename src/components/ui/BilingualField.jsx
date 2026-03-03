@@ -1,27 +1,23 @@
 // ─── BilingualField ───────────────────────────────────────────────────────────
-// A reusable form field that shows two side-by-side (or stacked on mobile)
-// inputs: one for English, one for Spanish.
+// A form field that shows a single input for the current UI language.
+// When interface is in English, only EN is shown; when in Spanish, only ES.
+// Data is still stored as { en, es } — the other language keeps its value.
 //
 // Props
 // ─────
-//  label?        — optional section label above both fields
+//  label?        — optional section label
 //  value         — { en: string, es: string } or plain string (auto-converted)
 //  onChange      — called with { en, es } on every keystroke
 //  multiline?    — render <textarea> instead of <input>
 //  rows?         — textarea rows (default 3)
-//  placeholder?  — applied to both inputs (can be a string or { en, es })
-//  maxLength?    — applied to both inputs
-//  required?     — marks EN and ES with the required indicator
+//  placeholder?  — applied to the visible input (string or { en, es })
+//  maxLength?    — applied to the input
+//  required?     — marks with required indicator
 //  className?    — extra classes on the outer wrapper
-//
-// The current UI language (from LangContext) is highlighted with a slightly
-// brighter border so the user knows which one they're "working in".
 
 import React, { useRef, useEffect } from 'react';
 import LangContext from '../../i18n/LangContext.js';
 import { toL }     from '../../utils.js';
-
-const LANG_LABELS = { en: 'EN 🇺🇸', es: 'ES 🇲🇽' };
 
 // Auto-grow textarea: height expands with content
 function AutoGrowTextarea({ value, onChange, placeholder, maxLength, className, rows }) {
@@ -44,12 +40,29 @@ function AutoGrowTextarea({ value, onChange, placeholder, maxLength, className, 
   );
 }
 
+// Auto-grow input: width expands with content (min 12ch)
+function AutoGrowInput({ value, onChange, placeholder, maxLength, className }) {
+  const len = (value || '').length;
+  const w = Math.max(12, Math.min(len + 2, 72));
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      maxLength={maxLength}
+      className={className}
+      size={w}
+      style={{ minWidth: `${w}ch`, width: '100%' }}
+    />
+  );
+}
+
 export default function BilingualField({
   label, value, onChange, multiline = false, rows = 3,
   placeholder, maxLength, required, className = '',
 }) {
   const { lang } = React.useContext(LangContext);
-  const val       = toL(value);
+  const val = toL(value);
 
   const ph = (l) => {
     if (!placeholder) return '';
@@ -57,50 +70,33 @@ export default function BilingualField({
     return placeholder[l] || '';
   };
 
-  const handleChange = (l, text) => onChange({ ...val, [l]: text });
+  const handleChange = (text) => onChange({ ...val, [lang]: text });
 
-  const fieldCls = (l) =>
-    `w-full min-w-0 px-3 py-2 bg-slate-900 border rounded text-sm resize-none transition-colors ${
-      lang === l ? 'border-emerald-600' : 'border-slate-600'
-    }`;
-
-  const renderInput = (l) =>
-    multiline ? (
-      <AutoGrowTextarea
-        value={val[l]}
-        onChange={(text) => handleChange(l, text)}
-        placeholder={ph(l)}
-        maxLength={maxLength}
-        className={fieldCls(l)}
-        rows={rows}
-      />
-    ) : (
-      <input
-        value={val[l]}
-        onChange={(e) => handleChange(l, e.target.value)}
-        placeholder={ph(l)}
-        maxLength={maxLength}
-        className={fieldCls(l)}
-        size={Math.max(12, (val[l]?.length || 0) + 2)}
-        style={{ width: '100%', minWidth: '8ch' }}
-      />
-    );
+  const fieldCls = 'w-full min-w-0 px-3 py-2 bg-slate-900 border border-emerald-600 rounded text-sm resize-none transition-colors';
 
   return (
     <div className={`space-y-1 ${className}`}>
       {label && (
         <span className="text-xs text-slate-400">{label}{required && <span className="text-red-400 ml-0.5">*</span>}</span>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {['en', 'es'].map((l) => (
-          <div key={l}>
-            <div className={`text-[10px] font-semibold mb-0.5 ${lang === l ? 'text-emerald-400' : 'text-slate-500'}`}>
-              {LANG_LABELS[l]}
-            </div>
-            {renderInput(l)}
-          </div>
-        ))}
-      </div>
+      {multiline ? (
+        <AutoGrowTextarea
+          value={val[lang]}
+          onChange={handleChange}
+          placeholder={ph(lang)}
+          maxLength={maxLength}
+          className={fieldCls}
+          rows={rows}
+        />
+      ) : (
+        <AutoGrowInput
+          value={val[lang]}
+          onChange={handleChange}
+          placeholder={ph(lang)}
+          maxLength={maxLength}
+          className={fieldCls}
+        />
+      )}
     </div>
   );
 }
