@@ -111,6 +111,7 @@ export default function ProfilePageView({
   const thisWeek = weeklyStatuses.find((s) => s.weekOf === weekOf);
 
   const startEdit = () => {
+    const normTags = (arr) => (arr || []).map((t) => (typeof t === 'string' ? t : ensureString(t, lang)));
     setDraft({
       displayName:   membership.displayName   || '',
       photoURL:      membership.photoURL      || '',
@@ -122,10 +123,10 @@ export default function ProfilePageView({
       university:    membership.university || '',
       currentObjective: toL(membership.currentObjective),
       currentChallenge: toL(membership.currentChallenge),
-      lookingForHelpIn:          membership.lookingForHelpIn          || [],
-      iCanHelpWith:              membership.iCanHelpWith              || [],
-      skillsToLearnThisSemester: membership.skillsToLearnThisSemester || [],
-      skillsICanTeach:           membership.skillsICanTeach           || [],
+      lookingForHelpIn:          normTags(membership.lookingForHelpIn),
+      iCanHelpWith:              normTags(membership.iCanHelpWith),
+      skillsToLearnThisSemester: normTags(membership.skillsToLearnThisSemester),
+      skillsICanTeach:           normTags(membership.skillsICanTeach),
       songOnRepeatTitle:  membership.songOnRepeatTitle  || '',
       songOnRepeatUrl:    membership.songOnRepeatUrl    || '',
       funFact:            toL(membership.funFact),
@@ -148,6 +149,10 @@ export default function ProfilePageView({
       currentObjective: fillL(draft.currentObjective),
       currentChallenge: fillL(draft.currentChallenge),
       funFact:          fillL(draft.funFact),
+      lookingForHelpIn:          (draft.lookingForHelpIn || []).map((t) => ensureString(t)),
+      iCanHelpWith:              (draft.iCanHelpWith || []).map((t) => ensureString(t)),
+      skillsToLearnThisSemester: (draft.skillsToLearnThisSemester || []).map((t) => ensureString(t)),
+      skillsICanTeach:           (draft.skillsICanTeach || []).map((t) => ensureString(t)),
     });
     setEditing(false);
   };
@@ -333,10 +338,10 @@ export default function ProfilePageView({
           <div className="space-y-0.5">
             <div className="flex items-start justify-between flex-wrap gap-2">
               <div>
-                <h2 className="text-xl font-bold">{membership.displayName}</h2>
+                <h2 className="text-xl font-bold">{ensureString(membership.displayName, lang)}</h2>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <RoleBadge role={membership.role} />
-                  {cat && <span className="text-xs text-slate-400">· {cat.name}</span>}
+                  {cat && <span className="text-xs text-slate-400">· {ensureString(cat.name, lang)}</span>}
                   {ensureString(membership.personalityTag, lang) && (
                     <span className="text-[10px] bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/50">{t(ensureString(membership.personalityTag, lang))}</span>
                   )}
@@ -419,7 +424,7 @@ export default function ProfilePageView({
                       <span className="text-xl shrink-0">🎧</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] text-slate-500">{t('song_on_repeat')}</p>
-                        <p className="text-sm text-slate-200 truncate">{membership.songOnRepeatTitle}</p>
+                        <p className="text-sm text-slate-200 truncate">{ensureString(membership.songOnRepeatTitle, lang)}</p>
                       </div>
                       {membership.songOnRepeatUrl && isValidSongUrl(membership.songOnRepeatUrl) && (
                         <a href={membership.songOnRepeatUrl} target="_blank" rel="noopener noreferrer"

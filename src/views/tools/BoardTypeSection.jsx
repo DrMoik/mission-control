@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import LangContext from '../../i18n/LangContext.js';
+import { ensureString } from '../../utils.js';
 import BoardView   from './BoardView.jsx';
 
 /**
@@ -27,7 +28,7 @@ export default function BoardTypeSection({
   categories, canCreate, resolveCanEdit,
   onCreateBoard, onUpdateBoard, onDeleteBoard,
 }) {
-  const { t } = React.useContext(LangContext);
+  const { t, lang } = React.useContext(LangContext);
   const [newBoardName,    setNewBoardName]    = useState('');
   const [newCategoryId,   setNewCategoryId]   = useState('');  // '' = global
   const [selectedBoardId, setSelectedBoardId] = useState(null);
@@ -54,7 +55,7 @@ export default function BoardTypeSection({
             className="px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs text-slate-300">
             <option value="">{t('scope_global')}</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{t('scope_category')} {c.name}</option>
+              <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
             ))}
           </select>
           <button onClick={handleCreate}
@@ -77,11 +78,11 @@ export default function BoardTypeSection({
             <button key={b.id} onClick={() => setSelectedBoardId(b.id)}
               className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors
                 ${selectedBoard?.id === b.id ? 'bg-slate-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>
-              {b.name}
+              {ensureString(b.name, lang)}
               {/* Scope badge */}
               {b.categoryId
                 ? <span className="ml-1.5 text-[9px] bg-blue-900/60 text-blue-300 px-1 py-0.5 rounded">
-                    {categories.find((c) => c.id === b.categoryId)?.name ?? ''}
+                    {ensureString(categories.find((c) => c.id === b.categoryId)?.name, lang) ?? ''}
                   </span>
                 : <span className="ml-1.5 text-[9px] bg-slate-700 text-slate-400 px-1 py-0.5 rounded">Global</span>
               }
@@ -97,7 +98,7 @@ export default function BoardTypeSection({
             <div className="flex items-center gap-2">
               {selectedBoard.categoryId
                 ? <span className="text-[10px] bg-blue-900/40 text-blue-300 border border-blue-800 px-2 py-0.5 rounded-full">
-                    {t('scope_category')} {categories.find((c) => c.id === selectedBoard.categoryId)?.name}
+                    {t('scope_category')} {ensureString(categories.find((c) => c.id === selectedBoard.categoryId)?.name, lang)}
                     <span className="ml-1 text-blue-500">· {t('category_only_hint')}</span>
                   </span>
                 : <span className="text-[10px] bg-slate-700 text-slate-400 px-2 py-0.5 rounded-full">

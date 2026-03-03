@@ -374,7 +374,7 @@ export default function ProfileModal({
                   <h2 className="text-xl font-bold">{membership.displayName}</h2>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <RoleBadge role={membership.role} />
-                    {cat && <span className="text-xs text-slate-400">· {cat.name}</span>}
+                    {cat && <span className="text-xs text-slate-400">· {getL(cat.name, lang)}</span>}
                     {membership.personalityTag && (
                       <span className="text-[10px] bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/50">
                         {t(membership.personalityTag)}

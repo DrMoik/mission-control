@@ -6,7 +6,7 @@
 import React, { useState }    from 'react';
 import LangContext              from '../../i18n/LangContext.js';
 import { BilingualField }       from '../../components/ui/index.js';
-import { getL, toL, fillL }     from '../../utils.js';
+import { getL, toL, fillL, ensureString } from '../../utils.js';
 
 /**
  * @param {{
@@ -93,7 +93,7 @@ export default function GoalsSection({
               className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
               <option value="">{t('scope_global')}</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{t('scope_category')} {c.name}</option>
+                <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
               ))}
             </select>
             <button type="submit" className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded whitespace-nowrap">
@@ -131,7 +131,7 @@ export default function GoalsSection({
                     {/* Scope badge */}
                     {goal.categoryId
                       ? <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded-full">
-                          {t('scope_category')} {categories.find((c) => c.id === goal.categoryId)?.name ?? goal.categoryId}
+                          {t('scope_category')} {ensureString(categories.find((c) => c.id === goal.categoryId)?.name, lang) ?? goal.categoryId}
                         </span>
                       : <span className="text-[9px] bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded-full">Global</span>
                     }
@@ -178,7 +178,7 @@ export default function GoalsSection({
                 {krs.map((kr) => (
                   <div key={kr.id} className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm flex-1">{kr.text}</span>
+                      <span className="text-sm flex-1">{ensureString(kr.text, lang)}</span>
                       <span className="text-xs font-mono text-emerald-400 w-10 text-right">{kr.progress}%</span>
                       {canEditThis && (
                         <button onClick={() => removeKR(goal, kr.id)} className="text-[11px] text-red-400">✕</button>

@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import LangContext             from '../i18n/LangContext.js';
 import { BilingualField }      from '../components/ui/index.js';
-import { getL, toL, fillL }    from '../utils.js';
+import { getL, toL, fillL, ensureString } from '../utils.js';
 
 export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamModules, canEdit, onSave }) {
   const { t, lang } = React.useContext(LangContext);
@@ -123,7 +123,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">{team?.name}</h2>
+          <h2 className="text-2xl font-bold">{ensureString(team?.name, lang)}</h2>
           {tagline && <p className="text-slate-300 italic mt-1 text-lg">"{tagline}"</p>}
         </div>
         {canEdit && (
@@ -151,7 +151,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
         {(ov.kpis || []).map((kpi, i) => (
           <div key={i} className="bg-slate-800 rounded-lg p-3">
             <div className="text-[11px] text-slate-400 uppercase tracking-wide truncate">{getL(kpi.label, lang)}</div>
-            <div className="text-2xl font-bold mt-1">{kpi.value}</div>
+            <div className="text-2xl font-bold mt-1">{ensureString(kpi.value)}</div>
           </div>
         ))}
       </div>

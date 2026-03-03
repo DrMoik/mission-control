@@ -25,7 +25,7 @@ import {
 import TRANSLATIONS                from './i18n/translations.js';
 import LangContext                 from './i18n/LangContext.js';
 import { EMPTY_PROFILE }           from './constants.js';
-import { atLeast, tsToDate }       from './utils.js';
+import { atLeast, tsToDate, getL, ensureString } from './utils.js';
 
 // ── Shared UI atoms ───────────────────────────────────────────────────────────
 import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
@@ -930,8 +930,8 @@ export default function App() {
               {allTeams.map((team) => (
                 <div key={team.id} className="bg-slate-800 rounded-xl p-4 space-y-2">
                   <h2 className="font-bold text-base">{team.name}</h2>
-                  {team.overview?.tagline && <p className="text-sm text-slate-300 italic">"{team.overview.tagline}"</p>}
-                  {team.overview?.about   && <p className="text-xs text-slate-400 line-clamp-3">{team.overview.about}</p>}
+                  {getL(team.overview?.tagline, lang) && <p className="text-sm text-slate-300 italic">"{getL(team.overview.tagline, lang)}"</p>}
+                  {getL(team.overview?.about, lang)   && <p className="text-xs text-slate-400 line-clamp-3">{getL(team.overview.about, lang)}</p>}
                   <button onClick={handleGoogleSignIn}
                     className="mt-1 text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded hover:bg-emerald-400 transition-colors">
                     {t('sign_in_google')}
@@ -1049,7 +1049,7 @@ export default function App() {
                             <h3 className="font-bold text-sm">{team.name}</h3>
                             {mem && <RoleBadge role={mem.role} />}
                           </div>
-                          {team.overview?.tagline && <p className="text-xs text-slate-400 italic">"{team.overview.tagline}"</p>}
+                          {getL(team.overview?.tagline, lang) && <p className="text-xs text-slate-400 italic">"{getL(team.overview.tagline, lang)}"</p>}
                         </button>
                         <AdminTeamActions team={team} />
                       </div>
@@ -1074,7 +1074,7 @@ export default function App() {
                             {t('awaiting_approval')}
                           </span>
                         </div>
-                        {cat && <p className="text-xs text-slate-400">{t('requested_category')}: <span className="text-slate-200">{cat.name}</span></p>}
+                        {cat && <p className="text-xs text-slate-400">{t('requested_category')}: <span className="text-slate-200">{ensureString(cat.name, lang)}</span></p>}
                         {mem?.motivation && <p className="text-xs text-slate-500 italic">"{mem.motivation}"</p>}
                         <p className="text-[11px] text-slate-600">{t('review_shortly')}</p>
                       </div>
@@ -1091,8 +1091,8 @@ export default function App() {
                   {otherTeams.map((team) => (
                     <div key={team.id} className="bg-slate-800 rounded-xl p-4 space-y-2">
                       <h3 className="font-bold text-sm">{team.name}</h3>
-                      {team.overview?.tagline && <p className="text-xs text-slate-400 italic">"{team.overview.tagline}"</p>}
-                      {team.overview?.about   && <p className="text-xs text-slate-500 line-clamp-2">{team.overview.about}</p>}
+                      {getL(team.overview?.tagline, lang) && <p className="text-xs text-slate-400 italic">"{getL(team.overview.tagline, lang)}"</p>}
+                      {getL(team.overview?.about, lang)   && <p className="text-xs text-slate-500 line-clamp-2">{getL(team.overview.about, lang)}</p>}
                       <button onClick={() => setJoinTarget(team)}
                         className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded hover:bg-emerald-400 transition-colors">
                         {t('request_to_join')}

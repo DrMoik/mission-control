@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import LangContext from '../../i18n/LangContext.js';
+import { ensureString } from '../../utils.js';
 
 /**
  * @param {{
@@ -15,7 +16,7 @@ import LangContext from '../../i18n/LangContext.js';
  * }} props
  */
 export default function BoardView({ board, canEditThis, onUpdateBoard, onDeleteBoard }) {
-  const { t } = React.useContext(LangContext);
+  const { t, lang } = React.useContext(LangContext);
   const [newCardTitles, setNewCardTitles] = useState({});
 
   // ── Card mutations ─────────────────────────────────────────────────────────
@@ -53,7 +54,7 @@ export default function BoardView({ board, canEditThis, onUpdateBoard, onDeleteB
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-sm">{board.name}</h3>
+        <h3 className="font-semibold text-sm">{ensureString(board.name, lang)}</h3>
         {canEditThis && (
           <button onClick={() => onDeleteBoard(board.id)} className="text-[11px] text-red-400 underline">
             {t('delete_board_btn')}
@@ -65,7 +66,7 @@ export default function BoardView({ board, canEditThis, onUpdateBoard, onDeleteB
         {board.columns.map((col) => (
           <div key={col.id} className="bg-slate-800 rounded-lg p-3 space-y-2 min-h-[120px]">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{col.name}</span>
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">{ensureString(col.name, lang)}</span>
               <span className="text-[10px] text-slate-600">{col.cards.length}</span>
             </div>
 
@@ -73,7 +74,7 @@ export default function BoardView({ board, canEditThis, onUpdateBoard, onDeleteB
               {col.cards.map((card) => (
                 <div key={card.id} className="bg-slate-700 rounded p-2.5 text-xs group">
                   <div className="flex items-start justify-between gap-1">
-                    <span className="text-slate-100 font-medium">{card.title}</span>
+                    <span className="text-slate-100 font-medium">{ensureString(card.title, lang)}</span>
                     {canEditThis && (
                       <button onClick={() => deleteCard(col.id, card.id)}
                         className="opacity-0 group-hover:opacity-100 text-red-400 shrink-0 transition-opacity">✕</button>
@@ -84,7 +85,7 @@ export default function BoardView({ board, canEditThis, onUpdateBoard, onDeleteB
                       {board.columns.filter((c) => c.id !== col.id).map((target) => (
                         <button key={target.id} onClick={() => moveCard(card.id, col.id, target.id)}
                           className="text-[10px] text-slate-400 hover:text-emerald-400 border border-slate-600 rounded px-1 transition-colors">
-                          {t('move_to')} {target.name}
+                          {t('move_to')} {ensureString(target.name, lang)}
                         </button>
                       ))}
                     </div>

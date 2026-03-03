@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import LangContext              from '../i18n/LangContext.js';
 import { MERIT_ICONS }         from '../constants.js';
-import { tsToDate, getL, fillL } from '../utils.js';
+import { tsToDate, getL, fillL, ensureString } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { BilingualField }       from '../components/ui/index.js';
 
@@ -167,7 +167,7 @@ export default function MeritsView({
                 className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
               >
                 <option value="">{t('global_category')}</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
               </select>
             </div>
 
@@ -220,7 +220,7 @@ export default function MeritsView({
                   <span className="font-mono text-emerald-400 font-bold text-sm">{detailMerit.points} {t('pts_label')}</span>
                   {detailMerit.categoryId && (
                     <span className="text-xs text-slate-400">
-                      · {categories.find((c) => c.id === detailMerit.categoryId)?.name}
+                      · {ensureString(categories.find((c) => c.id === detailMerit.categoryId)?.name)}
                     </span>
                   )}
                 </div>
@@ -268,7 +268,7 @@ export default function MeritsView({
                   <div className="font-semibold text-sm truncate group-hover:text-emerald-300 transition-colors">{m.name}</div>
                   <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
                     <span className="font-mono text-emerald-400 font-bold">{m.points} {t('pts_label')}</span>
-                    {m.categoryId && <span className="truncate">· {categories.find((c) => c.id === m.categoryId)?.name}</span>}
+                    {m.categoryId && <span className="truncate">· {ensureString(categories.find((c) => c.id === m.categoryId)?.name)}</span>}
                   </div>
                   {getL(m.shortDescription, lang) && (
                     <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{getL(m.shortDescription, lang)}</p>
@@ -302,7 +302,7 @@ export default function MeritsView({
               >
                 <option value="">{t('select_member')}</option>
                 {activeMembers.map((m) => (
-                  <option key={m.id} value={m.id}>{m.displayName} ({t('role_' + m.role) || m.role})</option>
+                  <option key={m.id} value={m.id}>{ensureString(m.displayName)} ({t('role_' + m.role) || m.role})</option>
                 ))}
               </select>
             </div>
@@ -368,7 +368,7 @@ export default function MeritsView({
                       <td className="px-3 py-2 text-[10px] text-slate-400 whitespace-nowrap">{ts.toLocaleString()}</td>
                       <td className="px-3 py-2">
                         {m ? (
-                          <button onClick={() => onViewProfile?.(m)} className="hover:underline text-left">{m.displayName}</button>
+                          <button onClick={() => onViewProfile?.(m)} className="hover:underline text-left">{ensureString(m.displayName)}</button>
                         ) : '?'}
                       </td>
                       <td className="px-3 py-2">

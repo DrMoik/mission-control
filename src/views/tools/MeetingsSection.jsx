@@ -6,7 +6,7 @@
 import React, { useState }       from 'react';
 import LangContext                from '../../i18n/LangContext.js';
 import { BilingualField }        from '../../components/ui/index.js';
-import { getL, toL, fillL }      from '../../utils.js';
+import { getL, toL, fillL, ensureString } from '../../utils.js';
 
 /**
  * @param {{
@@ -108,7 +108,7 @@ export default function MeetingsSection({
               className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
               <option value="">{t('scope_global')}</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{t('scope_category')} {c.name}</option>
+                <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
               ))}
             </select>
             <button type="submit" className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded ml-auto">
@@ -156,7 +156,7 @@ export default function MeetingsSection({
                 <div className="mt-1">
                   {m.categoryId
                     ? <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded-full">
-                        {t('scope_category')} {categories.find((c) => c.id === m.categoryId)?.name ?? m.categoryId}
+                        {t('scope_category')} {ensureString(categories.find((c) => c.id === m.categoryId)?.name, lang) ?? m.categoryId}
                       </span>
                     : <span className="text-[9px] bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded-full">Global</span>
                   }
@@ -185,7 +185,7 @@ export default function MeetingsSection({
                     <div key={a.id} className="flex items-center gap-2 py-1">
                       <input type="checkbox" checked={a.done} onChange={() => toggleAction(m, a.id)}
                         className="accent-emerald-500" />
-                      <span className={`text-sm flex-1 ${a.done ? 'line-through text-slate-500' : ''}`}>{a.text}</span>
+                      <span className={`text-sm flex-1 ${a.done ? 'line-through text-slate-500' : ''}`}>{ensureString(a.text, lang)}</span>
                       {canEditThis && (
                         <button onClick={() => removeAction(m, a.id)} className="text-[11px] text-red-400">✕</button>
                       )}

@@ -25,7 +25,7 @@ import BoardTypeSection        from './tools/BoardTypeSection.jsx';
 import MeetingsSection         from './tools/MeetingsSection.jsx';
 import GoalsSection            from './tools/GoalsSection.jsx';
 import { BilingualField }      from '../components/ui/index.js';
-import { getL, toL, fillL }    from '../utils.js';
+import { getL, toL, fillL, ensureString } from '../utils.js';
 
 // SWOT quadrant metadata (colours are language-independent)
 const SWOT_META = [
@@ -57,14 +57,14 @@ function HowToUse({ descKey }) {
 // ── ScopeFilter ────────────────────────────────────────────────────────────────
 // Tab strip: "All accessible" / "Global only" / per-category
 function ScopeFilter({ value, onChange, categories, userCategoryId, canEdit }) {
-  const { t } = React.useContext(LangContext);
+  const { t, lang } = React.useContext(LangContext);
   const options = [
     { id: 'all',    label: t('scope_filter_all')    },
     { id: 'global', label: t('scope_filter_global') },
     // Only show a category filter if the user belongs to one (or is admin)
     ...categories
       .filter((c) => canEdit || c.id === userCategoryId)
-      .map((c) => ({ id: c.id, label: c.name })),
+      .map((c) => ({ id: c.id, label: ensureString(c.name, lang) })),
   ];
   return (
     <div className="flex gap-1.5 flex-wrap">
@@ -248,7 +248,7 @@ export default function ToolsView({
                     className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
                     <option value="">{t('scope_global')}</option>
                     {categories.map((c) => (
-                      <option key={c.id} value={c.id}>{t('scope_category')} {c.name}</option>
+                      <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
                     ))}
                   </select>
                 </div>
@@ -268,7 +268,7 @@ export default function ToolsView({
                   const d         = evt.date?.toDate ? evt.date.toDate() : new Date(evt.date);
                   const isPast    = d < new Date();
                   const catName   = evt.categoryId
-                    ? categories.find((c) => c.id === evt.categoryId)?.name : null;
+                    ? ensureString(categories.find((c) => c.id === evt.categoryId)?.name, lang) : null;
                   const canDelEvt = resolveCanEdit(evt);
                   return (
                     <div key={evt.id} className={`flex items-start gap-4 px-4 py-3 ${isPast ? 'opacity-40' : ''}`}>

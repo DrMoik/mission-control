@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import LangContext              from '../i18n/LangContext.js';
 import { BilingualField }       from '../components/ui/index.js';
-import { getL, toL, fillL }     from '../utils.js';
+import { getL, toL, fillL, ensureString } from '../utils.js';
 
 export default function CategoriesView({
   categories, memberships, canEdit,
@@ -106,7 +106,7 @@ export default function CategoriesView({
                     /* View mode header */
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <div className="font-semibold text-sm">{cat.name}</div>
+                        <div className="font-semibold text-sm">{ensureString(cat.name, lang)}</div>
                         {cat.description && <div className="text-xs text-slate-400 mt-0.5">{getL(cat.description, lang)}</div>}
                         <div className="text-xs text-slate-500 mt-0.5">{t('member_s')(catMembers.length)}</div>
                       </div>

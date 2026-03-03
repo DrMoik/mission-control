@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import LangContext from '../i18n/LangContext.js';
+import { getL, ensureString } from '../utils.js';
 
 /**
  * @param {{
@@ -15,7 +16,7 @@ import LangContext from '../i18n/LangContext.js';
  * }} props
  */
 export default function JoinRequestModal({ team, categories, onSubmit, onCancel }) {
-  const { t } = React.useContext(LangContext);
+  const { t, lang } = React.useContext(LangContext);
   const [categoryId,  setCategoryId]  = useState('');
   const [motivation,  setMotivation]  = useState('');
 
@@ -28,8 +29,8 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
         <div className="bg-gradient-to-r from-emerald-900 to-slate-800 px-6 py-5">
           <h2 className="text-white font-bold text-lg">{t('join_title')}</h2>
           <p className="text-emerald-300/80 text-sm mt-0.5">{team.name}</p>
-          {team.overview?.tagline && (
-            <p className="text-slate-400 text-xs mt-1 italic">"{team.overview.tagline}"</p>
+          {getL(team.overview?.tagline, lang) && (
+            <p className="text-slate-400 text-xs mt-1 italic">"{getL(team.overview.tagline, lang)}"</p>
           )}
         </div>
 
@@ -52,10 +53,10 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
                         : 'bg-slate-900/60 border-slate-600 text-slate-300 hover:border-slate-400'
                     }`}
                   >
-                    {c.name}
-                    {c.description && (
+                    {ensureString(c.name, lang)}
+                    {getL(c.description, lang) && (
                       <span className="block text-[10px] text-slate-500 font-normal mt-0.5 line-clamp-1">
-                        {c.description}
+                        {getL(c.description, lang)}
                       </span>
                     )}
                   </button>

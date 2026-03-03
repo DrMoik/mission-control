@@ -133,7 +133,7 @@ export default function MembersView({
               className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
             >
               <option value="">{t('no_category_opt')}</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
             </select>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -185,9 +185,9 @@ export default function MembersView({
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-slate-100">{m.displayName}</div>
+                    <div className="font-semibold text-sm text-slate-100">{ensureString(m.displayName)}</div>
                     <div className="text-[11px] text-slate-400 mt-0.5">
-                      {t('wants_to_join')} <span className="text-slate-200">{cat?.name || t('no_cat_selected')}</span>
+                      {t('wants_to_join')} <span className="text-slate-200">{ensureString(cat?.name) || t('no_cat_selected')}</span>
                     </div>
                     {m.motivation && <div className="text-[11px] text-slate-500 italic mt-0.5">"{m.motivation}"</div>}
                   </div>
@@ -224,7 +224,7 @@ export default function MembersView({
         <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}
           className="px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs">
           <option value="">{t('all_categories_opt')}</option>
-          {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
         </select>
         {(search || roleFilter || catFilter || skillFilter) && (
           <button
@@ -306,9 +306,9 @@ export default function MembersView({
                         className="bg-slate-900 border border-slate-600 rounded px-1 py-0.5 text-xs"
                       >
                         <option value="">{t('unassigned')}</option>
-                        {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
                       </select>
-                    ) : (categories.find((c) => c.id === m.categoryId)?.name || '—')}
+                    ) : (ensureString(categories.find((c) => c.id === m.categoryId)?.name) || '—')}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
@@ -359,7 +359,7 @@ export default function MembersView({
               <tbody>
                 {suspended.map((m) => (
                   <tr key={m.id} className="border-b border-slate-700 opacity-60">
-                    <td className="px-3 py-2">{m.displayName}</td>
+                    <td className="px-3 py-2">{ensureString(m.displayName)}</td>
                     <td className="px-3 py-2"><StrikePips count={m.strikes || 0} /></td>
                     <td className="px-3 py-2">
                       <button onClick={() => onRemoveStrike(m.id)} className="text-[11px] text-emerald-400 underline">

@@ -4,6 +4,7 @@
 // clickable button that opens the profile modal.
 
 import React from 'react';
+import { ensureString } from '../../utils.js';
 
 /**
  * @param {{
@@ -26,7 +27,7 @@ export default function MemberAvatar({ membership, size = 'sm', onViewProfile })
     />
   ) : (
     <div className={`${sizeClass} rounded-full bg-slate-600 shrink-0 flex items-center justify-center font-bold text-white`}>
-      {(membership?.displayName || '?')[0].toUpperCase()}
+      {(ensureString(membership?.displayName) || '?')[0].toUpperCase()}
     </div>
   );
 
@@ -34,7 +35,7 @@ export default function MemberAvatar({ membership, size = 'sm', onViewProfile })
     return (
       <div className="flex items-center gap-2">
         {avatar}
-        <span>{membership?.displayName}</span>
+        <span>{ensureString(membership?.displayName)}</span>
       </div>
     );
   }
@@ -45,7 +46,7 @@ export default function MemberAvatar({ membership, size = 'sm', onViewProfile })
       className="flex items-center gap-2 hover:opacity-80 transition-opacity text-left"
     >
       {avatar}
-      <span className="hover:underline font-medium">{membership?.displayName}</span>
+      <span className="hover:underline font-medium">{ensureString(membership?.displayName)}</span>
     </button>
   );
 }
