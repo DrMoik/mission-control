@@ -169,7 +169,7 @@ export default function ProfilePageView({
   const set = (key, val) => setDraft((d) => ({ ...d, [key]: val }));
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="w-full max-w-full min-h-[60vh]">
       {/* Back button when viewing another member */}
       {onBack && (
         <button onClick={onBack}
@@ -196,7 +196,7 @@ export default function ProfilePageView({
         </div>
       </div>
 
-      <div className="pt-16 px-4 pb-8 bg-slate-800/40 rounded-b-xl -mt-px">
+      <div className="pt-16 px-4 sm:px-6 pb-8 bg-slate-800 rounded-b-xl -mt-px">
 
         {editing ? (
           <div className="space-y-4">

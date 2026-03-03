@@ -1398,15 +1398,21 @@ export default function App() {
             )}
 
             {/* My Profile — full page */}
-            {view === 'myprofile' && currentMembership && (
-              <ProfilePageView
-                membership={currentMembership}
-                categories={teamCategories}
-                canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && currentMembership.userId === authUser.uid)}
-                onSave={handleUpdateMemberProfile}
-                weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
-                onSaveWeeklyStatus={handleSaveWeeklyStatus}
-              />
+            {view === 'myprofile' && (
+              currentMembership ? (
+                <ProfilePageView
+                  membership={currentMembership}
+                  categories={teamCategories}
+                  canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && currentMembership.userId === authUser.uid)}
+                  onSave={handleUpdateMemberProfile}
+                  weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
+                  onSaveWeeklyStatus={handleSaveWeeklyStatus}
+                />
+              ) : (
+                <div className="py-12 text-center text-slate-400 text-sm">
+                  {t('loading')}
+                </div>
+              )
             )}
 
             {/* Viewing another member's profile — full page with back button */}
