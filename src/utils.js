@@ -29,7 +29,7 @@ export const tsToDate = (ts) => {
 
 // ── Bilingual field helpers ────────────────────────────────────────────────────
 // Bilingual fields are stored as { en: string, es: string }.
-// Old data stored as plain strings is handled gracefully via backward-compat.
+// UI is Spanish-only for now; these helpers remain for backward-compat with stored data.
 
 /**
  * Returns the localised string for a bilingual field.

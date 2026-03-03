@@ -1,13 +1,12 @@
 // ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
-// All UI strings live here.  Add a key to BOTH 'en' and 'es' when adding new text.
-//
-// Anglicisms kept the same in both languages (per project style):
-//   Feed, Kanban, SCRUM, Sprint, KPI, OKR, Leaderboard
+// All UI strings live here.  Spanish only for now.
+// Bilingual (en/es) support commented out — will deal with that later.
 //
 // Function values accept arguments for interpolated strings, e.g.:
 //   preview_banner: (role) => `…${role}…`
 
 const TRANSLATIONS = {
+  /* ── English (commented out; bilingual support deferred) ──
   en: {
     // ── App shell ──────────────────────────────────────────────────────────────
     app_name:          'Mission Control',
@@ -423,6 +422,7 @@ const TRANSLATIONS = {
     external_member:    'External',
     about_label:        'About',
     no_profile_info:    'No profile information added yet.',
+    member_not_found:   'Member not found.',
     semester_suffix:    'semester',
     select_placeholder: '— select —',
     tell_team_placeholder:'Tell your team about yourself…',
@@ -524,6 +524,7 @@ const TRANSLATIONS = {
     zoom_label:        'Zoom',
     apply_btn:         'Apply',
   },
+  */
 
   // ────────────────────────────────────────────────────────────────────────────
   es: {
@@ -929,6 +930,7 @@ const TRANSLATIONS = {
     external_member:    'Externo',
     about_label:        'Acerca de',
     no_profile_info:    'Aún no se ha agregado información de perfil.',
+    member_not_found:   'Miembro no encontrado.',
     semester_suffix:    'semestre',
     select_placeholder: '— seleccionar —',
     tell_team_placeholder:'Cuéntale a tu equipo sobre ti…',

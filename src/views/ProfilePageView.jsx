@@ -194,7 +194,7 @@ export default function ProfilePageView({
 
       {/* Cover + avatar — z-10 so they render above the content section */}
       <div className="relative z-10">
-        <div className="h-80 bg-gradient-to-br from-emerald-950/80 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden shadow-xl">
+        <div className="h-60 bg-gradient-to-br from-emerald-950/80 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden shadow-xl">
           {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) ? (
             <>
               <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
@@ -208,16 +208,16 @@ export default function ProfilePageView({
         <div className="absolute -bottom-16 left-6 z-20">
           {(editing ? draft.photoURL : membership.photoURL) ? (
             <img src={editing ? draft.photoURL : membership.photoURL}
-              className="w-32 h-32 rounded-full border-4 border-slate-800 object-cover object-[center_top] shadow-lg ring-2 ring-emerald-500/30" alt="" />
+              className="w-48 h-48 rounded-full border-4 border-slate-800 object-cover object-[center_top] shadow-lg ring-2 ring-emerald-500/30" alt="" />
           ) : (
-            <div className="w-32 h-32 rounded-full border-4 border-slate-800 bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
+            <div className="w-48 h-48 rounded-full border-4 border-slate-800 bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
               {(ensureString(membership.displayName, lang) || '?')[0].toUpperCase()}
             </div>
           )}
         </div>
       </div>
 
-      <div className="relative z-0 pt-20 px-4 sm:px-6 lg:px-8 pb-8 bg-slate-800/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-slate-700/50 w-full">
+      <div className="relative z-0 pt-28 px-4 sm:px-6 lg:px-8 pb-8 bg-slate-800/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-slate-700/50 w-full">
 
         {editing ? (
           <div className="space-y-4">

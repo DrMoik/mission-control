@@ -14,6 +14,7 @@
 //   views/         — one file per full-page view
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, db, googleProvider }         from './firebase.js';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
@@ -43,6 +44,17 @@ import LeaderboardView             from './views/LeaderboardView.jsx';
 import ToolsView                   from './views/ToolsView.jsx';
 import AcademyView                 from './views/AcademyView.jsx';
 import FeedView                    from './views/FeedView.jsx';
+
+// Standard hamburger menu icon (three horizontal bars)
+function HamburgerIcon({ className = 'w-5 h-5' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
 
 // ── InlineTeamRename ──────────────────────────────────────────────────────────
 // Small component rendered in the app header so platform admins can
@@ -105,13 +117,14 @@ function InlineTeamRename({ team, isPlatformAdmin, onRename, onDelete, t }) {
 export default function App() {
 
   // ── Language ───────────────────────────────────────────────────────────────
-  // Persist choice in localStorage; default to Spanish
-  const [lang, setLang] = useState(() => localStorage.getItem('mc_lang') || 'es');
+  // Spanish only for now. Bilingual toggle commented out — will deal with that later.
+  const lang = 'es';
   const t = React.useCallback(
-    (key) => TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS.en[key] ?? key,
-    [lang],
+    (key) => TRANSLATIONS.es?.[key] ?? key,
+    [],
   );
-  const handleSetLang = (l) => { setLang(l); localStorage.setItem('mc_lang', l); };
+  // const [lang, setLang] = useState(() => localStorage.getItem('mc_lang') || 'es');
+  // const handleSetLang = (l) => { setLang(l); localStorage.setItem('mc_lang', l); };
 
   // ── Firebase Auth ──────────────────────────────────────────────────────────
   const [authUser,    setAuthUser]    = useState(null);
@@ -141,14 +154,31 @@ export default function App() {
   const [teamWeeklyStatuses,  setTeamWeeklyStatuses]  = useState([]);
 
   // ── UI state ───────────────────────────────────────────────────────────────
-  const [view,           setView]           = useState('overview');
   const [navCollapsed,   setNavCollapsed]   = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
   const [previewRole,    setPreviewRole]    = useState(null);   // admin "preview as role" simulation
-  const [profileMember,  setProfileMember]  = useState(null);   // opens ProfileModal
   const [renamingTeamId, setRenamingTeamId] = useState(null);  // team picker inline rename
   const [renameValue,    setRenameValue]    = useState('');
-  const [prevView,       setPrevView]       = useState('overview');  // restore when leaving profile
+
+  // Routing — derive view and profileMember from URL when team is selected
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = (location.pathname || '/').replace(/^\/+|\/+$/g, '') || 'overview';
+  const pathParts = pathname.split('/').filter(Boolean);
+  const routeView = pathParts[0] || 'overview';  // first segment: overview, feed, profile, etc.
+  const profileMemberId = routeView === 'profile' && pathParts[1] ? pathParts[1] : null;
+  const view = routeView === 'profile' && !profileMemberId ? 'myprofile' : (routeView === 'profile' ? 'profile' : routeView);
+  const profileMember = profileMemberId
+    ? teamMemberships.find((m) => m.id === profileMemberId) || null
+    : null;
+
+  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'tools', 'academy', 'myprofile', 'profile']);
+  const isViewValid = validViews.has(view);
+
+  // Redirect invalid paths to /overview (only when team is selected, to avoid running in team picker)
+  useEffect(() => {
+    if (selectedTeamId && !isViewValid) navigate('/overview', { replace: true });
+  }, [selectedTeamId, isViewValid, navigate]);
 
   // ────────────────────────────────────────────────────────────────────────────
   // EFFECTS — Firebase subscriptions
@@ -375,7 +405,7 @@ export default function App() {
         createdAt: serverTimestamp(),
       });
       setSelectedTeamId(teamRef.id);
-      setView('overview');
+      navigate('/overview');
     } catch (err) {
       alert(
         `Could not create team.\n\nFirebase said: ${err.message}\n\n` +
@@ -413,7 +443,7 @@ export default function App() {
     if (!authUser || !userProfile) return;
     const existing = userMemberships.find((m) => m.teamId === teamId);
     if (existing) {
-      if (existing.status === 'active') { setSelectedTeamId(teamId); setView('overview'); }
+      if (existing.status === 'active') { setSelectedTeamId(teamId); navigate('/overview'); }
       return;
     }
     await setDoc(doc(db, 'memberships', `${authUser.uid}_${teamId}`), {
@@ -869,7 +899,7 @@ export default function App() {
   // RENDER HELPERS
   // ────────────────────────────────────────────────────────────────────────────
 
-  /** EN / ES toggle pill — used in every screen header */
+  /* Bilingual toggle — commented out; will deal with that later
   const LangToggle = () => (
     <div className="flex items-center gap-0.5 bg-slate-800 rounded-lg p-0.5 shrink-0">
       {['en', 'es'].map((l) => (
@@ -882,11 +912,14 @@ export default function App() {
       ))}
     </div>
   );
+  */
 
   const handleViewProfile = (membership) => {
-    setPrevView(view);
-    setProfileMember(membership);
-    setView('profile');
+    navigate(`/profile/${membership.id}`);
+  };
+
+  const goToView = (viewId) => {
+    navigate(viewId === 'myprofile' ? '/profile' : `/${viewId}`);
   };
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -896,7 +929,7 @@ export default function App() {
   // ── Loading splash ─────────────────────────────────────────────────────────
   if (authLoading) {
     return (
-      <LangContext.Provider value={{ lang, t, setLang: handleSetLang }}>
+      <LangContext.Provider value={{ lang, t, setLang: () => {} }}>
         <div className="min-h-screen bg-slate-900 flex items-center justify-center">
           <div className="text-slate-400 text-sm">{t('loading')}</div>
         </div>
@@ -907,7 +940,7 @@ export default function App() {
   // ── Unauthenticated — public team browser ──────────────────────────────────
   if (!authUser) {
     return (
-      <LangContext.Provider value={{ lang, t, setLang: handleSetLang }}>
+      <LangContext.Provider value={{ lang, t, setLang: () => {} }}>
         <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
           <header className="border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -915,7 +948,6 @@ export default function App() {
               <p className="text-[11px] text-slate-500 hidden sm:block">{t('app_subtitle')}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <LangToggle />
               <button onClick={handleGoogleSignIn}
                 className="flex items-center gap-2 bg-white text-slate-900 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors">
                 <GoogleIcon />
@@ -1005,7 +1037,7 @@ export default function App() {
     };
 
     return (
-      <LangContext.Provider value={{ lang, t, setLang: handleSetLang }}>
+      <LangContext.Provider value={{ lang, t, setLang: () => {} }}>
         <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
           {joinTarget && (
             <JoinRequestModal
@@ -1022,7 +1054,6 @@ export default function App() {
               <p className="text-[11px] text-slate-500 hidden sm:block">{t('app_subtitle')}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-              <LangToggle />
               {userProfile?.photoURL && <img src={userProfile.photoURL} className="w-7 h-7 rounded-full" alt="" />}
               <span className="text-sm text-slate-200 hidden sm:inline">{userProfile?.displayName}</span>
               {isPlatformAdmin && (
@@ -1043,7 +1074,7 @@ export default function App() {
                     const mem = userMemberships.find((m) => m.teamId === team.id);
                     return (
                       <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-1 border border-slate-700/40 shadow-sm hover:border-emerald-500/30 transition-colors">
-                        <button onClick={() => { setSelectedTeamId(team.id); setView('overview'); }}
+                        <button onClick={() => { setSelectedTeamId(team.id); navigate('/overview'); }}
                           className="w-full text-left hover:text-emerald-300 transition-colors active:scale-95">
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="font-bold text-sm">{team.name}</h3>
@@ -1144,7 +1175,7 @@ export default function App() {
   ];
 
   return (
-    <LangContext.Provider value={{ lang, t, setLang: handleSetLang }}>
+    <LangContext.Provider value={{ lang, t, setLang: () => {} }}>
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
 
 
@@ -1158,7 +1189,7 @@ export default function App() {
                 <button onClick={() => setMobileNavOpen(false)} className="text-slate-400 hover:text-white text-lg">✕</button>
               </div>
               {navItems.map((tab) => (
-                <button key={tab.id} onClick={() => { setView(tab.id); setMobileNavOpen(false); }}
+                <button key={tab.id} onClick={() => { goToView(tab.id); setMobileNavOpen(false); }}
                   className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm transition-colors
                     ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
                   <span className="text-base shrink-0 w-5 text-center">{tab.icon}</span>
@@ -1166,7 +1197,6 @@ export default function App() {
                 </button>
               ))}
               <div className="pt-3 border-t border-slate-800 space-y-2 mt-2">
-                <LangToggle />
                 <button onClick={() => { setSelectedTeamId(null); setPreviewRole(null); setMobileNavOpen(false); }}
                   className="w-full text-left text-xs text-slate-400 hover:text-white px-2 py-1.5">
                   ← {t('switch_team')}
@@ -1182,16 +1212,30 @@ export default function App() {
         {/* ── Header ── */}
         <header className="border-b border-slate-800/80 px-4 py-3 flex items-center justify-between shrink-0 bg-slate-950/80 backdrop-blur-sm gap-2">
           <div className="flex items-center gap-2 min-w-0">
+            {/* Back button when on profile views */}
+            {(view === 'profile' || view === 'myprofile') && (
+              <button onClick={() => navigate(-1)}
+                className="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded hover:bg-slate-800 transition-colors shrink-0"
+                title={t('back')}
+                aria-label={t('back')}>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
             {/* Mobile hamburger */}
             <button onClick={() => setMobileNavOpen(true)}
-              className="md:hidden text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded hover:bg-slate-800 transition-colors text-xl shrink-0">
-              ☰
+              className="md:hidden text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded hover:bg-slate-800 transition-colors shrink-0"
+              title={t('expand_menu')}
+              aria-label={t('expand_menu')}>
+              <HamburgerIcon />
             </button>
             {/* Desktop sidebar collapse toggle */}
             <button onClick={() => setNavCollapsed((c) => !c)}
-              className="hidden md:flex text-slate-400 hover:text-white w-7 h-7 items-center justify-center rounded hover:bg-slate-800 transition-colors text-lg shrink-0"
-              title={navCollapsed ? t('expand_menu') : t('collapse_menu')}>
-              {navCollapsed ? '›' : '‹'}
+              className="hidden md:flex text-slate-400 hover:text-white w-8 h-8 items-center justify-center rounded hover:bg-slate-800 transition-colors shrink-0"
+              title={navCollapsed ? t('expand_menu') : t('collapse_menu')}
+              aria-label={navCollapsed ? t('expand_menu') : t('collapse_menu')}>
+              <HamburgerIcon />
             </button>
             <InlineTeamRename
               team={currentTeam}
@@ -1208,7 +1252,6 @@ export default function App() {
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <LangToggle />
             {/* Preview mode controls */}
             {isAdminLevel && (
               previewRole ? (
@@ -1263,7 +1306,7 @@ export default function App() {
           {/* Desktop sidebar */}
           <nav className={`hidden md:block ${navCollapsed ? 'w-11' : 'w-44'} border-r border-slate-800/80 p-2.5 space-y-1 shrink-0 transition-all duration-200 overflow-hidden bg-slate-950/60`}>
             {navItems.map((tab) => (
-              <button key={tab.id} onClick={() => setView(tab.id)}
+              <button key={tab.id} onClick={() => goToView(tab.id)}
                 className={`w-full text-left px-2 py-2 rounded flex items-center gap-2 text-sm transition-colors
                   ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
                 <span className="text-base shrink-0 w-5 text-center">{tab.icon}</span>
@@ -1416,6 +1459,15 @@ export default function App() {
             )}
 
             {/* Viewing another member's profile — full page with back button */}
+            {view === 'profile' && profileMemberId && !profileMember && (
+              <div className="py-12 text-center">
+                <p className="text-slate-400 text-sm mb-4">{t('member_not_found')}</p>
+                <button onClick={() => navigate(-1)}
+                  className="text-xs text-emerald-400 underline hover:text-emerald-300">
+                  ← {t('back')}
+                </button>
+              </div>
+            )}
             {view === 'profile' && profileMember && (
               <ProfilePageView
                 membership={profileMember}
@@ -1424,7 +1476,7 @@ export default function App() {
                 onSave={handleUpdateMemberProfile}
                 weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
                 onSaveWeeklyStatus={handleSaveWeeklyStatus}
-                onBack={() => { setProfileMember(null); setView(prevView); }}
+                onBack={() => navigate(-1)}
               />
             )}
           </main>
@@ -1433,7 +1485,7 @@ export default function App() {
         {/* ── Mobile bottom nav bar ── */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 flex items-center justify-around px-1 py-1 z-30">
           {navItems.slice(0, 5).map((tab) => (
-            <button key={tab.id} onClick={() => setView(tab.id)}
+            <button key={tab.id} onClick={() => goToView(tab.id)}
               className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded flex-1 transition-colors
                 ${view === tab.id ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}>
               <span className="text-lg leading-none">{tab.icon}</span>
