@@ -57,6 +57,7 @@ const TRANSLATIONS = {
     // ── Common actions ────────────────────────────────────────────────────────
     edit:         'Edit',
     save:         'Save',
+    save_failed:   'Save failed. The image may be too large — try a smaller photo.',
     cancel:       'Cancel',
     delete:       'Delete',
     add:          'Add',
@@ -574,6 +575,7 @@ const TRANSLATIONS = {
     // ── Common actions ────────────────────────────────────────────────────────
     edit:         'Editar',
     save:         'Guardar',
+    save_failed:   'Error al guardar. La imagen puede ser muy grande — prueba con una foto más pequeña.',
     cancel:       'Cancelar',
     delete:       'Eliminar',
     add:          'Agregar',

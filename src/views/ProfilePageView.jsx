@@ -142,8 +142,9 @@ export default function ProfilePageView({
       return;
     }
     setSongUrlError('');
-    await onSave(membership.id, {
-      ...draft,
+    try {
+      await onSave(membership.id, {
+        ...draft,
       bio:              fillL(draft.bio),
       hobbies:          fillL(draft.hobbies),
       currentObjective: fillL(draft.currentObjective),
@@ -153,8 +154,12 @@ export default function ProfilePageView({
       iCanHelpWith:              (draft.iCanHelpWith || []).map((t) => ensureString(t)),
       skillsToLearnThisSemester: (draft.skillsToLearnThisSemester || []).map((t) => ensureString(t)),
       skillsICanTeach:           (draft.skillsICanTeach || []).map((t) => ensureString(t)),
-    });
-    setEditing(false);
+      });
+      setEditing(false);
+    } catch (err) {
+      console.error('Profile save failed:', err);
+      alert(t('save_failed') || `Save failed: ${err.message}`);
+    }
   };
 
   const startWeeklyEdit = () => {
@@ -193,7 +198,7 @@ export default function ProfilePageView({
           {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) ? (
             <>
               <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
-                className="w-full h-full object-cover" alt="" />
+                className="w-full h-full object-cover object-center" alt="" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
             </>
           ) : (
@@ -520,7 +525,7 @@ export default function ProfilePageView({
           onApply={(url) => { set('photoURL', url); setCropTarget(null); }} onCancel={() => setCropTarget(null)} />
       )}
       {cropTarget === 'coverPhotoURL' && (
-        <ImageCropModal src={draft.coverPhotoURL} label="Reframe Cover Photo" cropWidth={960} cropHeight={320}
+        <ImageCropModal src={draft.coverPhotoURL} label="Reframe Cover Photo" cropWidth={800} cropHeight={267}
           onApply={(url) => { set('coverPhotoURL', url); setCropTarget(null); }} onCancel={() => setCropTarget(null)} />
       )}
     </div>

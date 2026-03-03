@@ -203,7 +203,9 @@ export default function ImageCropModal({
       out.width  = cropWidth;
       out.height = cropHeight;
       out.getContext('2d').drawImage(img, srcX, srcY, srcW, srcH, 0, 0, cropWidth, cropHeight);
-      onApply(out.toDataURL('image/png'));
+      // Use JPEG with quality 0.85 to keep under Firestore 1MB limit (PNG can be 5–10× larger)
+      const dataUrl = out.toDataURL('image/jpeg', 0.85);
+      onApply(dataUrl);
     } catch {
       // CORS blocked on the source — return the original URL unchanged
       onApply(src);
