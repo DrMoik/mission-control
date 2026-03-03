@@ -374,36 +374,83 @@ export default function ProfilePageView({
               )}
             </div>
 
-            {/* Acerca — full width at top */}
-            {(getL(membership.bio, lang) || getL(membership.hobbies, lang) || getL(membership.funFact, lang)) && (
-              <div className="w-full mb-6">
-                <SectionHeading icon="👤" label={t('about_label')} />
-                {getL(membership.bio, lang) && <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{getL(membership.bio, lang)}</p>}
-                {getL(membership.hobbies, lang) && (
-                  <div className="mt-3">
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1.5">{t('hobbies')}</p>
-                    <ul className="list-disc list-inside text-sm text-slate-200 leading-relaxed space-y-0.5">
-                      {getL(membership.hobbies, lang)
-                        .split(/\n+/)
-                        .map((line) => line.trim())
-                        .filter(Boolean)
-                        .map((item, i) => (
-                          <li key={i}>{item}</li>
-                        ))}
-                    </ul>
-                  </div>
-                )}
-                {getL(membership.funFact, lang) && (
-                  <div className="mt-3 bg-yellow-950/20 border border-yellow-800/40 rounded-lg px-3 py-2.5">
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-0.5">{t('fun_fact_label')}</p>
-                    <p className="text-sm text-slate-200 italic">&quot;{getL(membership.funFact, lang)}&quot;</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Two-column layout on large screens */}
+            {/* Two-column layout: Acerca de mí | Esta semana, then rest */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-8 gap-y-6">
+            {/* Row 1: Acerca de mí (left) | Esta semana (right) */}
+            <div className="min-w-0">
+              <SectionHeading icon="👤" label={t('about_label')} />
+              {(getL(membership.bio, lang) || getL(membership.hobbies, lang) || getL(membership.funFact, lang)) ? (
+                <>
+                  {getL(membership.bio, lang) && <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{getL(membership.bio, lang)}</p>}
+                  {getL(membership.hobbies, lang) && (
+                    <div className="mt-3">
+                      <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1.5">{t('hobbies')}</p>
+                      <ul className="list-disc list-inside text-sm text-slate-200 leading-relaxed space-y-0.5">
+                        {getL(membership.hobbies, lang)
+                          .split(/\n+/)
+                          .map((line) => line.trim())
+                          .filter(Boolean)
+                          .map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+                  {getL(membership.funFact, lang) && (
+                    <div className="mt-3 bg-yellow-950/20 border border-yellow-800/40 rounded-lg px-3 py-2.5">
+                      <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-0.5">{t('fun_fact_label')}</p>
+                      <p className="text-sm text-slate-200 italic">&quot;{getL(membership.funFact, lang)}&quot;</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-slate-500 italic">{t('no_info')}</p>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <SectionHeading icon="📅" label={t('section_weekly')} />
+              {editingWeekly ? (
+                <div className="bg-slate-800 rounded-lg p-4 space-y-3">
+                  {[['advanced', t('weekly_advanced'), t('weekly_ph_advanced')], ['failedAt', t('weekly_failed_at'), t('weekly_ph_failed')], ['learned', t('weekly_learned'), t('weekly_ph_learned')]].map(([key, label, ph]) => (
+                    <div key={key}>
+                      <label className="text-[11px] text-slate-400 block mb-0.5">{label}</label>
+                      <AutoGrowTextarea value={weeklyDraft[key]} onChange={(v) => setWeeklyDraft((d) => ({ ...d, [key]: v }))}
+                        placeholder={ph} rows={2}
+                        className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm resize-none min-h-[48px]" />
+                    </div>
+                  ))}
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => setEditingWeekly(false)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
+                    <button onClick={handleSaveWeekly} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded">{t('save')}</button>
+                  </div>
+                </div>
+              ) : thisWeek ? (
+                <div className="bg-slate-800/60 rounded-lg p-4 space-y-3 border border-slate-700/30">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] text-slate-500">{t('week_of')(new Date(weekOf + 'T12:00').toLocaleDateString())}</p>
+                    {canEditThis && <button onClick={startWeeklyEdit} className="text-[11px] text-amber-400 underline">{t('edit')}</button>}
+                  </div>
+                  {[['✅', t('weekly_advanced'), thisWeek.advanced], ['⚠️', t('weekly_failed_at'), thisWeek.failedAt], ['💡', t('weekly_learned'), thisWeek.learned]].map(([icon, label, text]) => {
+                    const str = ensureString(text, lang);
+                    return str ? (
+                      <div key={label}>
+                        <p className="text-[10px] text-slate-500 font-semibold">{icon} {label}</p>
+                        <p className="text-sm text-slate-200 leading-relaxed mt-0.5">{str}</p>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-slate-800/40 rounded-lg px-3 py-2">
+                  <p className="text-xs text-slate-500 italic">{t('no_weekly_status')}</p>
+                  {canEditThis && (
+                    <button onClick={startWeeklyEdit} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1 rounded">{t('post_weekly_status')}</button>
+                  )}
+                </div>
+              )}
+            </div>
+
             {(getL(membership.currentObjective, lang) || getL(membership.currentChallenge, lang)) && (
               <div className="min-w-0">
                 <SectionHeading icon="🎯" label={t('section_mission')} />
@@ -473,49 +520,6 @@ export default function ProfilePageView({
                 </div>
               </div>
             )}
-
-            <div className="min-w-0">
-            <SectionHeading icon="📅" label={t('section_weekly')} />
-            {editingWeekly ? (
-              <div className="bg-slate-800 rounded-lg p-4 space-y-3">
-                {[['advanced', t('weekly_advanced'), t('weekly_ph_advanced')], ['failedAt', t('weekly_failed_at'), t('weekly_ph_failed')], ['learned', t('weekly_learned'), t('weekly_ph_learned')]].map(([key, label, ph]) => (
-                  <div key={key}>
-                    <label className="text-[11px] text-slate-400 block mb-0.5">{label}</label>
-                    <AutoGrowTextarea value={weeklyDraft[key]} onChange={(v) => setWeeklyDraft((d) => ({ ...d, [key]: v }))}
-                      placeholder={ph} rows={2}
-                      className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm resize-none min-h-[48px]" />
-                  </div>
-                ))}
-                <div className="flex gap-2 justify-end">
-                  <button onClick={() => setEditingWeekly(false)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
-                  <button onClick={handleSaveWeekly} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded">{t('save')}</button>
-                </div>
-              </div>
-            ) : thisWeek ? (
-              <div className="bg-slate-800/60 rounded-lg p-4 space-y-3 border border-slate-700/30">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] text-slate-500">{t('week_of')(new Date(weekOf + 'T12:00').toLocaleDateString())}</p>
-                  {canEditThis && <button onClick={startWeeklyEdit} className="text-[11px] text-amber-400 underline">{t('edit')}</button>}
-                </div>
-                {[['✅', t('weekly_advanced'), thisWeek.advanced], ['⚠️', t('weekly_failed_at'), thisWeek.failedAt], ['💡', t('weekly_learned'), thisWeek.learned]].map(([icon, label, text]) => {
-                  const str = ensureString(text, lang);
-                  return str ? (
-                    <div key={label}>
-                      <p className="text-[10px] text-slate-500 font-semibold">{icon} {label}</p>
-                      <p className="text-sm text-slate-200 leading-relaxed mt-0.5">{str}</p>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            ) : (
-              <div className="flex items-center justify-between bg-slate-800/40 rounded-lg px-3 py-2">
-                <p className="text-xs text-slate-500 italic">{t('no_weekly_status')}</p>
-                {canEditThis && (
-                  <button onClick={startWeeklyEdit} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1 rounded">{t('post_weekly_status')}</button>
-                )}
-              </div>
-            )}
-            </div>
 
             {!getL(membership.bio, lang) && !getL(membership.hobbies, lang) && !getL(membership.funFact, lang) && !getL(membership.currentObjective, lang) && !getL(membership.currentChallenge, lang) && !membership.lookingForHelpIn?.length && !membership.iCanHelpWith?.length && !membership.songOnRepeatTitle && !thisWeek && (
               <p className="text-xs text-slate-600 italic text-center py-4 col-span-full">{t('no_profile_info')}</p>
