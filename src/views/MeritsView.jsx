@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import LangContext              from '../i18n/LangContext.js';
-import { MERIT_ICONS }         from '../constants.js';
+import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS } from '../constants.js';
 import { tsToDate, getL, fillL, ensureString } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { BilingualField }       from '../components/ui/index.js';
@@ -20,14 +20,14 @@ import { BilingualField }       from '../components/ui/index.js';
  * }} props
  */
 export default function MeritsView({
-  merits, categories, memberships, meritEvents,
+  merits, categories, memberships, meritEvents, userProfile,
   canEdit, canAward, currentMembership, memberRole, isPlatformAdmin,
   onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
   const { t, lang } = React.useContext(LangContext);
 
   const [meritForm, setMeritForm] = useState({
-    name: '', points: 100, categoryId: '', logo: '🏆',
+    name: '', points: 100, categoryId: '', logo: '🏆', assignableBy: 'leader',
     shortDescription: { en: '', es: '' },
     longDescription:  { en: '', es: '' },
   });
@@ -40,6 +40,16 @@ export default function MeritsView({
 
   const activeMembers = memberships.filter((m) => m.status === 'active');
 
+  // Can current user assign this merit? (assignableBy must match memberRole; teamAdmin/facultyAdvisor can assign any)
+  const canAssignMerit = (merit) => {
+    if (!merit) return false;
+    const allowed = merit.assignableBy || 'leader';
+    if (memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor') return true; // admins can assign any
+    return memberRole === allowed;
+  };
+
+  const assignableMerits = merits.filter(canAssignMerit);
+
   const handleCreate = () => {
     if (!meritForm.name.trim())                             { alert(t('name') + ' required.');    return; }
     if (!meritForm.points || Number(meritForm.points) <= 0) { alert(t('points') + ' must be > 0.'); return; }
@@ -48,9 +58,10 @@ export default function MeritsView({
       meritForm.logo,
       fillL(meritForm.shortDescription),
       fillL(meritForm.longDescription),
+      meritForm.assignableBy,
     );
     setMeritForm({
-      name: '', points: 100, categoryId: '', logo: '🏆',
+      name: '', points: 100, categoryId: '', logo: '🏆', assignableBy: 'leader',
       shortDescription: { en: '', es: '' },
       longDescription:  { en: '', es: '' },
     });
@@ -170,6 +181,19 @@ export default function MeritsView({
                 {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
               </select>
             </div>
+            {/* Assignable by — who can award this logro */}
+            <div className="flex-1 min-w-[120px]">
+              <label className="text-[11px] text-slate-500 block mb-1">{t('assignable_by')}</label>
+              <select
+                value={meritForm.assignableBy}
+                onChange={(e) => setMeritForm((f) => ({ ...f, assignableBy: e.target.value }))}
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+              >
+                {ASSIGNABLE_BY_OPTIONS.map((r) => (
+                  <option key={r} value={r}>{t('assignable_by_' + r)}</option>
+                ))}
+              </select>
+            </div>
 
             <button onClick={handleCreate}
               className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded whitespace-nowrap self-end">
@@ -266,9 +290,10 @@ export default function MeritsView({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm truncate group-hover:text-emerald-300 transition-colors">{m.name}</div>
-                  <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                  <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className="font-mono text-emerald-400 font-bold">{m.points} {t('pts_label')}</span>
                     {m.categoryId && <span className="truncate">· {ensureString(categories.find((c) => c.id === m.categoryId)?.name)}</span>}
+                    <span className="text-[10px] text-slate-500">· {t('assignable_by_' + (m.assignableBy || 'leader'))}</span>
                   </div>
                   {getL(m.shortDescription, lang) && (
                     <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{getL(m.shortDescription, lang)}</p>
@@ -292,6 +317,9 @@ export default function MeritsView({
       {canAward && (
         <div className="bg-slate-800 rounded-lg p-4">
           <div className="text-xs text-slate-400 mb-3">{t('award_merit')}</div>
+          {assignableMerits.length === 0 && (
+            <p className="text-xs text-amber-400/90 mb-3">{t('no_assignable_logros')}</p>
+          )}
           <div className="flex flex-wrap gap-2 items-end">
             <div className="flex-1 min-w-[130px]">
               <label className="text-[11px] text-slate-500 block mb-1">{t('member')}</label>
@@ -314,7 +342,7 @@ export default function MeritsView({
                 className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
               >
                 <option value="">{t('select_merit')}</option>
-                {merits.map((m) => (
+                {assignableMerits.map((m) => (
                   <option key={m.id} value={m.id}>{m.name} ({m.points} {t('pts_label')})</option>
                 ))}
               </select>
@@ -353,9 +381,10 @@ export default function MeritsView({
                   <th className="px-3 py-2">{t('th_member')}</th>
                   <th className="px-3 py-2">{t('merit')}</th>
                   <th className="px-3 py-2">{t('points')}</th>
+                  <th className="px-3 py-2">{t('awarded_by')}</th>
                   <th className="px-3 py-2">{t('th_note')}</th>
                   <th className="px-3 py-2">{t('th_type')}</th>
-                  {(canEdit || isPlatformAdmin) && <th className="px-3 py-2"></th>}
+                  {(canEdit || isPlatformAdmin) && <th className="px-3 py-2 w-0"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -388,6 +417,13 @@ export default function MeritsView({
                             {evt.points > 0 ? '+' : ''}{evt.points}
                           </span>
                         )}
+                      </td>
+                      <td className="px-3 py-2 text-slate-400 text-[11px]">
+                        {evt.awardedByName || (() => {
+                          const uid = evt.awardedByUserId || evt.createdByUserId;
+                          const m = memberships.find((mm) => mm.userId === uid);
+                          return m ? ensureString(m.displayName) : '—';
+                        })()}
                       </td>
                       <td className="px-3 py-2 text-slate-400 max-w-[160px] truncate">
                         {isEditing ? (

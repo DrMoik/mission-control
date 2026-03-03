@@ -21,6 +21,9 @@ export const ROLE_LABELS = {
 /** Fast numeric lookup: roleId → rank index (used for atLeast() comparisons). */
 export const ROLE_RANK = Object.fromEntries(ROLE_ORDER.map((r, i) => [r, i]));
 
+/** Roles that can assign a given logro. One per logro. */
+export const ASSIGNABLE_BY_OPTIONS = ['leader', 'teamAdmin', 'facultyAdvisor'];
+
 /** Career options shown in the profile editor. Empty string = "not set". */
 export const CAREER_OPTIONS = [
   '',

@@ -675,9 +675,9 @@ export default function App() {
 
   // ── Merits ─────────────────────────────────────────────────────────────────
 
-  const handleCreateMerit = async (name, points, categoryId, logo, shortDescription, longDescription) => {
+  const handleCreateMerit = async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader') => {
     if (!currentTeam) { alert('No team selected.'); return; }
-    if (!canEdit)     { alert('No permission to create merits.'); return; }
+    if (!canEdit)     { alert('No permission to create logros.'); return; }
     try {
       await addDoc(collection(db, 'merits'), {
         teamId: currentTeam.id,
@@ -687,11 +687,12 @@ export default function App() {
         logo:             logo             || '🏆',
         shortDescription: shortDescription || '',
         longDescription:  longDescription  || '',
+        assignableBy:     assignableBy     || 'leader',
         createdAt: serverTimestamp(),
       });
     } catch (err) {
-      console.error('[Merit] Firestore error:', err);
-      alert(`No se pudo guardar el mérito: ${err.message}\n\nVerifica las reglas de Firestore en FIREBASE_SETUP.md.`);
+      console.error('[Logro] Firestore error:', err);
+      alert(`No se pudo guardar el logro: ${err.message}\n\nVerifica las reglas de Firestore en FIREBASE_SETUP.md.`);
     }
   };
 
@@ -704,10 +705,16 @@ export default function App() {
     if (!currentTeam || !canAward) return;
     const merit = teamMerits.find((m) => m.id === meritId);
     if (!merit) return;
+    const allowed = merit.assignableBy || 'leader';
+    const canAssign = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || memberRole === allowed;
+    if (!canAssign) {
+      alert(`Solo un ${allowed === 'leader' ? 'Líder' : allowed === 'teamAdmin' ? 'Team Admin' : 'Faculty Advisor'} puede otorgar este logro.`);
+      return;
+    }
     // Leaders may only award merits within their own category
     if (!canEdit && memberRole === 'leader' && !isPlatformAdmin) {
       if (merit.categoryId && merit.categoryId !== currentMembership?.categoryId) {
-        alert('As a Leader, you can only award merits within your assigned category.');
+        alert('Como Líder, solo puedes otorgar logros dentro de tu categoría asignada.');
         return;
       }
     }
@@ -721,6 +728,8 @@ export default function App() {
       evidence:             evidence || '',
       createdByUserId:      authUser?.uid             || null,
       createdByMembershipId: currentMembership?.id    || null,
+      awardedByUserId:      authUser?.uid             || null,
+      awardedByName:        userProfile?.displayName   || authUser?.email || '—',
       createdAt:            serverTimestamp(),
     });
   };
@@ -1425,6 +1434,7 @@ export default function App() {
                 categories={teamCategories}
                 memberships={teamMemberships}
                 meritEvents={teamMeritEvents}
+                userProfile={userProfile}
                 canEdit={canEdit}
                 canAward={canAward}
                 currentMembership={currentMembership}
