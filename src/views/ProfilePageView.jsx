@@ -3,7 +3,6 @@
 // but as the main content area.  Used for "Mi Perfil" and when viewing
 // another member's profile from the members list.
 //
-// onBack: optional — when viewing another member, show a back button that calls this
 
 import React, { useState, useEffect, useRef } from 'react';
 import LangContext              from '../i18n/LangContext.js';
@@ -94,7 +93,6 @@ function AutoGrowInput({ value, onChange, placeholder, className, ...rest }) {
 export default function ProfilePageView({
   membership, categories, canEditThis, onSave,
   weeklyStatuses = [], onSaveWeeklyStatus,
-  onBack,
 }) {
   const { t, lang } = React.useContext(LangContext);
   const [editing,    setEditing]    = useState(false);
@@ -114,6 +112,7 @@ export default function ProfilePageView({
     const normTags = (arr) => (arr || []).map((t) => (typeof t === 'string' ? t : ensureString(t, lang)));
     setDraft({
       displayName:   membership.displayName   || '',
+      email:         membership.email         || '',
       photoURL:      membership.photoURL      || '',
       coverPhotoURL: membership.coverPhotoURL || '',
       bio:           toL(membership.bio),
@@ -184,14 +183,6 @@ export default function ProfilePageView({
 
   return (
     <div className="w-full max-w-full min-h-[60vh]">
-      {/* Back button when viewing another member */}
-      {onBack && (
-        <button onClick={onBack}
-          className="mb-4 text-xs text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1">
-          ← {t('back')}
-        </button>
-      )}
-
       {/* Cover + avatar — z-10 so they render above the content section */}
       <div className="relative z-10">
         <div className="h-60 bg-gradient-to-br from-emerald-950/80 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden shadow-xl">
@@ -233,6 +224,12 @@ export default function ProfilePageView({
               <label className="text-[11px] text-slate-500 block mb-0.5">{t('display_name')}</label>
               <AutoGrowInput value={draft.displayName} onChange={(v) => set('displayName', v)}
                 className="w-full min-w-0 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+            </div>
+            <div>
+              <label className="text-[11px] text-slate-500 block mb-0.5">{t('email')}</label>
+              <input type="email" value={draft.email} onChange={(e) => set('email', e.target.value)}
+                placeholder={t('email_placeholder')}
+                className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
             </div>
 
             <div>
@@ -361,11 +358,12 @@ export default function ProfilePageView({
                     <span className="text-[10px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded">{t('external_member')}</span>
                   )}
                 </div>
-                {(membership.university || membership.career || membership.semester) && (
+                {(membership.university || membership.career || membership.semester || membership.email) && (
                   <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
                     {membership.university && <span>🎓 {ensureString(membership.university, lang)}</span>}
                     {membership.career     && <span>💼 {ensureString(membership.career, lang)}</span>}
                     {membership.semester   && <span>📅 {ensureString(membership.semester, lang)} {t('semester_suffix')}</span>}
+                    {membership.email      && <a href={`mailto:${membership.email}`} className="text-emerald-400 hover:text-emerald-300">✉ {membership.email}</a>}
                   </div>
                 )}
               </div>
@@ -534,7 +532,7 @@ export default function ProfilePageView({
           onApply={(url) => { set('photoURL', url); setCropTarget(null); }} onCancel={() => setCropTarget(null)} />
       )}
       {cropTarget === 'coverPhotoURL' && (
-        <ImageCropModal src={draft.coverPhotoURL} label="Reframe Cover Photo" cropWidth={800} cropHeight={267}
+        <ImageCropModal src={draft.coverPhotoURL} label="Reframe Cover Photo" cropWidth={1280} cropHeight={427}
           onApply={(url) => { set('coverPhotoURL', url); setCropTarget(null); }} onCancel={() => setCropTarget(null)} />
       )}
     </div>

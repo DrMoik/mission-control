@@ -152,6 +152,8 @@ export default function App() {
   const [teamMeetings,        setTeamMeetings]        = useState([]);
   const [teamGoals,           setTeamGoals]           = useState([]);
   const [teamWeeklyStatuses,  setTeamWeeklyStatuses]  = useState([]);
+  const [teamFundingAccount,   setTeamFundingAccount]  = useState(null);
+  const [teamFundingEntries,  setTeamFundingEntries]  = useState([]);
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [navCollapsed,   setNavCollapsed]   = useState(false);
@@ -172,7 +174,7 @@ export default function App() {
     ? teamMemberships.find((m) => m.id === profileMemberId) || null
     : null;
 
-  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'tools', 'academy', 'myprofile', 'profile']);
+  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'tools', 'academy', 'funding', 'myprofile', 'profile']);
   const isViewValid = validViews.has(view);
 
   // Redirect invalid paths to /overview (only when team is selected, to avoid running in team picker)
@@ -274,6 +276,11 @@ export default function App() {
     sub(query(collection(db, 'teamGoals'),       where('teamId', '==', selectedTeamId)), setTeamGoals);
     sub(query(collection(db, 'weeklyStatuses'),  where('teamId', '==', selectedTeamId)), setTeamWeeklyStatuses,
       (rows) => [...rows].sort((a, b) => (b.weekOf || '').localeCompare(a.weekOf || '')));
+    unsubs.push(onSnapshot(doc(db, 'teamFundingAccount', selectedTeamId), (snap) => {
+      setTeamFundingAccount(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+    }));
+    sub(query(collection(db, 'teamFundingEntries'), where('teamId', '==', selectedTeamId)), setTeamFundingEntries,
+      (rows) => [...rows].sort((a, b) => (b.date || '').localeCompare(a.date || '')));
 
     // Module attempts are filtered per user to respect Firestore rules
     if (authUser) {
@@ -518,10 +525,11 @@ export default function App() {
       // Bilingual fields
       bio:           updates.bio           ?? m.bio     ?? '',
       hobbies:       updates.hobbies       ?? m.hobbies ?? '',
-      // Academic
+      // Academic & contact
       career:        updates.career        ?? m.career     ?? '',
       semester:      updates.semester      ?? m.semester   ?? '',
       university:    updates.university    ?? m.university ?? '',
+      email:         updates.email         ?? m.email      ?? '',
       // ── Community profile — Mission ──────────────────────────────────────
       currentObjective: updates.currentObjective ?? m.currentObjective ?? '',
       currentChallenge: updates.currentChallenge ?? m.currentChallenge ?? '',
@@ -614,6 +622,54 @@ export default function App() {
   const handleSaveOverview = async (overview) => {
     if (!currentTeam || !canEdit) return;
     await updateDoc(doc(db, 'teams', currentTeam.id), { overview });
+  };
+
+  // ── Funding ─────────────────────────────────────────────────────────────────
+
+  const handleSaveFundingAccount = async (payload) => {
+    if (!currentTeam || !canEditTools) return;
+    await setDoc(doc(db, 'teamFundingAccount', currentTeam.id), {
+      teamId: currentTeam.id,
+      ...payload,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  };
+
+  const handleCreateFundingEntry = async ({ date, description, amount, type, category }) => {
+    if (!currentTeam || !canEditTools) return;
+    const acc = teamFundingAccount;
+    const currentBal = acc?.currentBalance ?? 0;
+    const delta = type === 'out' ? -amount : amount;
+    const newBalance = currentBal + delta;
+    await addDoc(collection(db, 'teamFundingEntries'), {
+      teamId: currentTeam.id,
+      date,
+      description: description || '',
+      amount,
+      type,
+      category: category || '',
+      createdAt: serverTimestamp(),
+    });
+    await setDoc(doc(db, 'teamFundingAccount', currentTeam.id), {
+      teamId: currentTeam.id,
+      currentBalance: newBalance,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  };
+
+  const handleDeleteFundingEntry = async (entryId) => {
+    if (!currentTeam || !canEditTools) return;
+    const entry = teamFundingEntries.find((e) => e.id === entryId);
+    if (!entry) return;
+    const delta = entry.type === 'out' ? entry.amount : -entry.amount;
+    const acc = teamFundingAccount;
+    const newBalance = (acc?.currentBalance ?? 0) + delta;
+    await deleteDoc(doc(db, 'teamFundingEntries', entryId));
+    await setDoc(doc(db, 'teamFundingAccount', currentTeam.id), {
+      teamId: currentTeam.id,
+      currentBalance: newBalance,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
   };
 
   // ── Merits ─────────────────────────────────────────────────────────────────
@@ -1170,6 +1226,7 @@ export default function App() {
       { id: 'leaderboard', label: t('nav_leaderboard'), icon: '▲' },
       { id: 'tools',       label: t('nav_tools'),       icon: '⊙' },
       { id: 'academy',     label: t('nav_academy'),     icon: '◈' },
+      { id: 'funding',     label: t('nav_funding'),     icon: '💰' },
     ] : []),
     ...(currentMembership ? [{ id: 'myprofile', label: t('nav_myprofile'), icon: '☺' }] : []),
   ];
@@ -1212,15 +1269,6 @@ export default function App() {
         {/* ── Header ── */}
         <header className="border-b border-slate-800/80 px-4 py-3 flex items-center justify-between shrink-0 bg-slate-950/80 backdrop-blur-sm gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            {/* Back button — system-wide when history allows */}
-            <button onClick={() => navigate(-1)}
-              className="text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded hover:bg-slate-800 transition-colors shrink-0"
-              title={t('back')}
-              aria-label={t('back')}>
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-            </button>
             {/* Mobile hamburger */}
             <button onClick={() => setMobileNavOpen(true)}
               className="md:hidden text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded hover:bg-slate-800 transition-colors shrink-0"
@@ -1459,11 +1507,7 @@ export default function App() {
             {/* Viewing another member's profile — full page with back button */}
             {view === 'profile' && profileMemberId && !profileMember && (
               <div className="py-12 text-center">
-                <p className="text-slate-400 text-sm mb-4">{t('member_not_found')}</p>
-                <button onClick={() => navigate(-1)}
-                  className="text-xs text-emerald-400 underline hover:text-emerald-300">
-                  ← {t('back')}
-                </button>
+                <p className="text-slate-400 text-sm">{t('member_not_found')}</p>
               </div>
             )}
             {view === 'profile' && profileMember && (
@@ -1474,7 +1518,6 @@ export default function App() {
                 onSave={handleUpdateMemberProfile}
                 weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
                 onSaveWeeklyStatus={handleSaveWeeklyStatus}
-                onBack={() => navigate(-1)}
               />
             )}
           </main>

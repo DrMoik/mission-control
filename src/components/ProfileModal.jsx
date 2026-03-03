@@ -95,6 +95,7 @@ export default function ProfileModal({
   const startEdit = () => {
     setDraft({
       displayName:   membership.displayName   || '',
+      email:         membership.email         || '',
       photoURL:      membership.photoURL      || '',
       coverPhotoURL: membership.coverPhotoURL || '',
       // Bilingual
@@ -216,6 +217,12 @@ export default function ProfileModal({
               <div>
                 <label className="text-[11px] text-slate-500 block mb-0.5">{t('display_name')}</label>
                 <input value={draft.displayName} onChange={(e) => set('displayName', e.target.value)}
+                  className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+              </div>
+              <div>
+                <label className="text-[11px] text-slate-500 block mb-0.5">{t('email')}</label>
+                <input type="email" value={draft.email} onChange={(e) => set('email', e.target.value)}
+                  placeholder={t('email_placeholder')}
                   className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
               </div>
 
@@ -387,11 +394,12 @@ export default function ProfileModal({
                       <span className="text-[10px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded">{t('external_member')}</span>
                     )}
                   </div>
-                  {(membership.university || membership.career || membership.semester) && (
+                  {(membership.university || membership.career || membership.semester || membership.email) && (
                     <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
                       {membership.university && <span>🎓 {membership.university}</span>}
                       {membership.career     && <span>💼 {membership.career}</span>}
                       {membership.semester   && <span>📅 {membership.semester} {t('semester_suffix')}</span>}
+                      {membership.email     && <a href={`mailto:${membership.email}`} className="text-emerald-400 hover:text-emerald-300">✉ {membership.email}</a>}
                     </div>
                   )}
                 </div>
@@ -586,7 +594,7 @@ export default function ProfileModal({
       )}
       {cropTarget === 'coverPhotoURL' && (
         <ImageCropModal src={draft.coverPhotoURL} label="Reframe Cover Photo"
-          cropWidth={960} cropHeight={320}
+          cropWidth={1280} cropHeight={427}
           onApply={(url) => { set('coverPhotoURL', url); setCropTarget(null); }}
           onCancel={() => setCropTarget(null)} />
       )}
