@@ -1,22 +1,18 @@
 // ─── OverviewView ─────────────────────────────────────────────────────────────
 // Public landing page for each team.  Shows editable tagline, rich-text fields,
-// and live KPI tiles.  Admins can edit; everyone else reads.
+// and live KPI tiles.
+//
+// All text fields are bilingual ({ en, es }).  The active UI language is shown
+// in read-mode; both are editable in the form.  KPI labels are also bilingual;
+// the value field stays monolingual (it's usually a number or short code).
 
 import React, { useState } from 'react';
-import LangContext from '../i18n/LangContext.js';
+import LangContext             from '../i18n/LangContext.js';
+import { BilingualField }      from '../components/ui/index.js';
+import { getL, toL, fillL }    from '../utils.js';
 
-/**
- * @param {{
- *   team:              object,    – current team document
- *   teamMemberships:   object[],  – all memberships in this team
- *   teamMeritEvents:   object[],  – all merit events (for points total)
- *   teamModules:       object[],  – all academy modules (count)
- *   canEdit:           boolean,
- *   onSave:            function(overview) → Promise
- * }} props
- */
 export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamModules, canEdit, onSave }) {
-  const { t } = React.useContext(LangContext);
+  const { t, lang } = React.useContext(LangContext);
   const [editing, setEditing] = useState(false);
   const [draft,   setDraft]   = useState(null);
 
@@ -24,32 +20,41 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
 
   const startEdit = () => {
     setDraft({
-      tagline:    ov.tagline    || '',
-      about:      ov.about      || '',
-      history:    ov.history    || '',
-      objectives: ov.objectives || '',
-      kpis:       ov.kpis ? [...ov.kpis.map((k) => ({ ...k }))] : [],
+      tagline:    toL(ov.tagline),
+      about:      toL(ov.about),
+      history:    toL(ov.history),
+      objectives: toL(ov.objectives),
+      kpis:       (ov.kpis || []).map((k) => ({ label: toL(k.label), value: k.value || '' })),
     });
     setEditing(true);
   };
 
   const handleSave = async () => {
-    await onSave(draft);
+    // fillL ensures that if one language was left empty, it gets a copy of the other
+    await onSave({
+      tagline:    fillL(draft.tagline),
+      about:      fillL(draft.about),
+      history:    fillL(draft.history),
+      objectives: fillL(draft.objectives),
+      kpis:       draft.kpis.map((k) => ({ label: fillL(k.label), value: k.value })),
+    });
     setEditing(false);
   };
 
-  const addKpi    = () => setDraft((d) => ({ ...d, kpis: [...d.kpis, { label: '', value: '' }] }));
-  const updateKpi = (i, field, val) =>
-    setDraft((d) => ({ ...d, kpis: d.kpis.map((k, idx) => idx === i ? { ...k, [field]: val } : k) }));
+  const addKpi    = () => setDraft((d) => ({ ...d, kpis: [...d.kpis, { label: { en: '', es: '' }, value: '' }] }));
+  const updateKpiLabel = (i, v) =>
+    setDraft((d) => ({ ...d, kpis: d.kpis.map((k, idx) => idx === i ? { ...k, label: v } : k) }));
+  const updateKpiValue = (i, v) =>
+    setDraft((d) => ({ ...d, kpis: d.kpis.map((k, idx) => idx === i ? { ...k, value: v } : k) }));
   const removeKpi = (i) => setDraft((d) => ({ ...d, kpis: d.kpis.filter((_, idx) => idx !== i) }));
 
   const activeMembers = teamMemberships.filter((m) => m.status === 'active').length;
   const totalPoints   = teamMeritEvents.reduce((s, e) => s + (e.points || 0), 0);
 
-  // ── Edit form ──
+  // ── Edit form ──────────────────────────────────────────────────────────────
   if (editing && draft) {
     return (
-      <div className="space-y-4 max-w-2xl">
+      <div className="space-y-5 max-w-3xl">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">{t('edit_overview')}</h2>
           <div className="flex gap-2">
@@ -58,38 +63,49 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">{t('tagline')}</label>
-          <input value={draft.tagline} onChange={(e) => setDraft((d) => ({ ...d, tagline: e.target.value }))}
-            className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm"
-            placeholder="e.g. Building tomorrow's engineers, today." />
-        </div>
+        <BilingualField
+          label={t('tagline')}
+          value={draft.tagline}
+          onChange={(v) => setDraft((d) => ({ ...d, tagline: v }))}
+          placeholder={{ en: 'e.g. Building tomorrow\'s engineers, today.', es: 'p.ej. Formando a los ingenieros del mañana.' }}
+        />
 
-        {[['about', t('about')], ['history', t('history')], ['objectives', t('objectives')]].map(([field, label]) => (
-          <div key={field}>
-            <label className="block text-xs text-slate-400 mb-1">{label}</label>
-            <textarea rows={field === 'about' ? 4 : 3}
-              value={draft[field]}
-              onChange={(e) => setDraft((d) => ({ ...d, [field]: e.target.value }))}
-              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm"
-              placeholder="…" />
-          </div>
+        {[
+          ['about',      t('about'),      4],
+          ['history',    t('history'),    3],
+          ['objectives', t('objectives'), 3],
+        ].map(([field, label, rows]) => (
+          <BilingualField
+            key={field}
+            label={label}
+            value={draft[field]}
+            onChange={(v) => setDraft((d) => ({ ...d, [field]: v }))}
+            multiline
+            rows={rows}
+          />
         ))}
 
+        {/* KPIs */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs text-slate-400">{t('kpis')}</label>
             <button onClick={addKpi} className="text-xs text-emerald-400 underline">{t('add_kpi')}</button>
           </div>
           {draft.kpis.map((kpi, i) => (
-            <div key={i} className="flex gap-2 mb-2">
-              <input value={kpi.label} onChange={(e) => updateKpi(i, 'label', e.target.value)}
-                placeholder={t('kpi_label')}
-                className="flex-1 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
-              <input value={kpi.value} onChange={(e) => updateKpi(i, 'value', e.target.value)}
-                placeholder={t('kpi_value')}
-                className="w-28 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
-              <button onClick={() => removeKpi(i)} className="text-red-400 text-xs px-2 hover:text-red-300">✕</button>
+            <div key={i} className="mb-3 bg-slate-800/60 rounded-lg p-3 space-y-2">
+              <BilingualField
+                label={t('kpi_label')}
+                value={kpi.label}
+                onChange={(v) => updateKpiLabel(i, v)}
+                placeholder={{ en: 'e.g. Competition wins', es: 'p.ej. Victorias en competencia' }}
+              />
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-slate-400 w-20 shrink-0">{t('kpi_value')}</label>
+                <input value={kpi.value} onChange={(e) => updateKpiValue(i, e.target.value)}
+                  placeholder="e.g. 3 / 42%"
+                  className="flex-1 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs" />
+                <button onClick={() => removeKpi(i)} className="text-red-400 text-xs px-2 hover:text-red-300 shrink-0">✕</button>
+              </div>
             </div>
           ))}
         </div>
@@ -97,13 +113,18 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
     );
   }
 
-  // ── View mode ──
+  // ── View mode ──────────────────────────────────────────────────────────────
+  const tagline    = getL(ov.tagline,    lang);
+  const about      = getL(ov.about,      lang);
+  const history    = getL(ov.history,    lang);
+  const objectives = getL(ov.objectives, lang);
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">{team?.name}</h2>
-          {ov.tagline && <p className="text-slate-300 italic mt-1 text-lg">"{ov.tagline}"</p>}
+          {tagline && <p className="text-slate-300 italic mt-1 text-lg">"{tagline}"</p>}
         </div>
         {canEdit && (
           <button onClick={startEdit}
@@ -113,7 +134,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
         )}
       </div>
 
-      {/* Live stats tiles */}
+      {/* Live stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-slate-800 rounded-lg p-3">
           <div className="text-[11px] text-slate-400 uppercase tracking-wide">{t('total_members')}</div>
@@ -127,21 +148,16 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
           <div className="text-[11px] text-slate-400 uppercase tracking-wide">{t('nav_academy')}</div>
           <div className="text-2xl font-bold mt-1">{teamModules.length}</div>
         </div>
-        {/* Custom KPIs */}
         {(ov.kpis || []).map((kpi, i) => (
           <div key={i} className="bg-slate-800 rounded-lg p-3">
-            <div className="text-[11px] text-slate-400 uppercase tracking-wide truncate">{kpi.label}</div>
+            <div className="text-[11px] text-slate-400 uppercase tracking-wide truncate">{getL(kpi.label, lang)}</div>
             <div className="text-2xl font-bold mt-1">{kpi.value}</div>
           </div>
         ))}
       </div>
 
       {/* Text sections */}
-      {[
-        [t('about'), ov.about],
-        [t('history'), ov.history],
-        [t('objectives'), ov.objectives],
-      ].map(([label, text]) =>
+      {[[t('about'), about], [t('history'), history], [t('objectives'), objectives]].map(([label, text]) =>
         text ? (
           <div key={label}>
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{label}</h3>
@@ -150,20 +166,17 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
         ) : null,
       )}
 
-      {!ov.about && !ov.history && !ov.objectives && !ov.tagline && (
-        <>
-          {canEdit ? (
-            <>
-              <p className="text-slate-400 text-sm mb-4">{t('no_overview')}</p>
-              <button onClick={startEdit}
-                className="text-xs bg-emerald-500 text-black font-semibold px-4 py-2 rounded">
-                {t('edit_overview')}
-              </button>
-            </>
-          ) : (
-            <p className="text-slate-500 text-sm">{t('no_overview')}</p>
-          )}
-        </>
+      {!about && !history && !objectives && !tagline && (
+        canEdit ? (
+          <>
+            <p className="text-slate-400 text-sm mb-4">{t('no_overview')}</p>
+            <button onClick={startEdit} className="text-xs bg-emerald-500 text-black font-semibold px-4 py-2 rounded">
+              {t('edit_overview')}
+            </button>
+          </>
+        ) : (
+          <p className="text-slate-500 text-sm">{t('no_overview')}</p>
+        )
       )}
     </div>
   );

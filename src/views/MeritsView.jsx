@@ -6,10 +6,11 @@
 //  4. Audit log with edit/revoke (platformAdmin)
 
 import React, { useState } from 'react';
-import LangContext     from '../i18n/LangContext.js';
-import { MERIT_ICONS } from '../constants.js';
-import { tsToDate }    from '../utils.js';
-import ImageCropModal  from '../components/ImageCropModal.jsx';
+import LangContext              from '../i18n/LangContext.js';
+import { MERIT_ICONS }         from '../constants.js';
+import { tsToDate, getL, fillL } from '../utils.js';
+import ImageCropModal           from '../components/ImageCropModal.jsx';
+import { BilingualField }       from '../components/ui/index.js';
 
 /**
  * @param {{
@@ -23,10 +24,12 @@ export default function MeritsView({
   canEdit, canAward, currentMembership, memberRole, isPlatformAdmin,
   onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
-  const { t } = React.useContext(LangContext);
+  const { t, lang } = React.useContext(LangContext);
 
   const [meritForm, setMeritForm] = useState({
-    name: '', points: 100, categoryId: '', logo: '🏆', shortDescription: '', longDescription: '',
+    name: '', points: 100, categoryId: '', logo: '🏆',
+    shortDescription: { en: '', es: '' },
+    longDescription:  { en: '', es: '' },
   });
   const [detailMerit,     setDetailMerit]     = useState(null);  // merit shown in popup
   const [showIconPicker,  setShowIconPicker]  = useState(false);
@@ -38,13 +41,19 @@ export default function MeritsView({
   const activeMembers = memberships.filter((m) => m.status === 'active');
 
   const handleCreate = () => {
-    if (!meritForm.name.trim())                        { alert(t('name') + ' required.');    return; }
+    if (!meritForm.name.trim())                             { alert(t('name') + ' required.');    return; }
     if (!meritForm.points || Number(meritForm.points) <= 0) { alert(t('points') + ' must be > 0.'); return; }
     onCreateMerit(
       meritForm.name.trim(), meritForm.points, meritForm.categoryId,
-      meritForm.logo, meritForm.shortDescription, meritForm.longDescription,
+      meritForm.logo,
+      fillL(meritForm.shortDescription),
+      fillL(meritForm.longDescription),
     );
-    setMeritForm({ name: '', points: 100, categoryId: '', logo: '🏆', shortDescription: '', longDescription: '' });
+    setMeritForm({
+      name: '', points: 100, categoryId: '', logo: '🏆',
+      shortDescription: { en: '', es: '' },
+      longDescription:  { en: '', es: '' },
+    });
     setShowIconPicker(false);
   };
 
@@ -168,30 +177,22 @@ export default function MeritsView({
             </button>
           </div>
 
-          {/* Description fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-            <div>
-              <label className="text-[11px] text-slate-500 block mb-0.5">
-                {t('short_description')} <span className="text-slate-600">({(meritForm.shortDescription || '').length}/100)</span>
-              </label>
-              <input
-                maxLength={100}
-                value={meritForm.shortDescription}
-                onChange={(e) => setMeritForm((f) => ({ ...f, shortDescription: e.target.value }))}
-                placeholder={t('short_desc_placeholder')}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] text-slate-500 block mb-0.5">{t('long_description')}</label>
-              <textarea rows={2}
-                value={meritForm.longDescription}
-                onChange={(e) => setMeritForm((f) => ({ ...f, longDescription: e.target.value }))}
-                placeholder={t('long_desc_placeholder')}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs resize-none"
-              />
-            </div>
-          </div>
+          {/* Bilingual description fields */}
+          <BilingualField
+            label={t('short_description')}
+            value={meritForm.shortDescription}
+            onChange={(v) => setMeritForm((f) => ({ ...f, shortDescription: v }))}
+            maxLength={100}
+            placeholder={{ en: t('short_desc_placeholder'), es: t('short_desc_placeholder') }}
+          />
+          <BilingualField
+            label={t('long_description')}
+            value={meritForm.longDescription}
+            onChange={(v) => setMeritForm((f) => ({ ...f, longDescription: v }))}
+            multiline
+            rows={2}
+            placeholder={{ en: t('long_desc_placeholder'), es: t('long_desc_placeholder') }}
+          />
         </div>
       )}
 
@@ -226,13 +227,13 @@ export default function MeritsView({
               </div>
             </div>
             <div className="p-5 space-y-4">
-              {detailMerit.shortDescription && (
-                <p className="text-sm text-slate-300 italic">{detailMerit.shortDescription}</p>
+              {getL(detailMerit.shortDescription, lang) && (
+                <p className="text-sm text-slate-300 italic">{getL(detailMerit.shortDescription, lang)}</p>
               )}
               <div>
                 <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">{t('how_to_obtain')}</div>
                 <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
-                  {detailMerit.longDescription || t('no_long_desc')}
+                  {getL(detailMerit.longDescription, lang) || t('no_long_desc')}
                 </p>
               </div>
               <button
@@ -269,8 +270,8 @@ export default function MeritsView({
                     <span className="font-mono text-emerald-400 font-bold">{m.points} {t('pts_label')}</span>
                     {m.categoryId && <span className="truncate">· {categories.find((c) => c.id === m.categoryId)?.name}</span>}
                   </div>
-                  {m.shortDescription && (
-                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{m.shortDescription}</p>
+                  {getL(m.shortDescription, lang) && (
+                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{getL(m.shortDescription, lang)}</p>
                   )}
                 </div>
                 {canEdit && (

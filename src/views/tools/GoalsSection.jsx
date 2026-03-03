@@ -3,8 +3,10 @@
 // progress sliders.  Scope (global vs. category) is set at creation time.
 // Edit permission is resolved per-goal via resolveCanEdit().
 
-import React, { useState } from 'react';
-import LangContext from '../../i18n/LangContext.js';
+import React, { useState }    from 'react';
+import LangContext              from '../../i18n/LangContext.js';
+import { BilingualField }       from '../../components/ui/index.js';
+import { getL, toL, fillL }     from '../../utils.js';
 
 /**
  * @param {{
@@ -21,8 +23,8 @@ export default function GoalsSection({
   goals, categories, canCreate, resolveCanEdit,
   onCreateGoal, onUpdateGoal, onDeleteGoal,
 }) {
-  const { t } = React.useContext(LangContext);
-  const [form,       setForm]       = useState({ objective: '', owner: '', dueDate: '', categoryId: '' });
+  const { t, lang } = React.useContext(LangContext);
+  const [form,       setForm]       = useState({ objective: { en: '', es: '' }, owner: '', dueDate: '', categoryId: '' });
   const [expandedId, setExpandedId] = useState(null);
   const [newKR,      setNewKR]      = useState({});
 
@@ -30,9 +32,16 @@ export default function GoalsSection({
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.objective.trim()) return;
-    await onCreateGoal({ ...form, categoryId: form.categoryId || null, keyResults: [], status: 'active' });
-    setForm({ objective: '', owner: '', dueDate: '', categoryId: '' });
+    if (!form.objective.en.trim() && !form.objective.es.trim()) return;
+    await onCreateGoal({
+      objective:  fillL(form.objective),
+      owner:      form.owner,
+      dueDate:    form.dueDate,
+      categoryId: form.categoryId || null,
+      keyResults: [],
+      status:     'active',
+    });
+    setForm({ objective: { en: '', es: '' }, owner: '', dueDate: '', categoryId: '' });
   };
 
   const addKeyResult = async (goal) => {
@@ -67,18 +76,19 @@ export default function GoalsSection({
     <div className="space-y-4">
       {/* ── Create form ── */}
       {canCreate && (
-        <form onSubmit={handleCreate} className="bg-slate-800 rounded-lg p-4 space-y-2">
-          <div className="text-xs text-slate-400 mb-1">{t('new_goal_btn')}</div>
-          <input value={form.objective} onChange={(e) => setForm((f) => ({ ...f, objective: e.target.value }))}
-            required placeholder={t('goal_ph')}
-            className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
+        <form onSubmit={handleCreate} className="bg-slate-800 rounded-lg p-4 space-y-3">
+          <div className="text-xs text-slate-400">{t('new_goal_btn')}</div>
+          <BilingualField
+            label={`${t('goal_ph')} *`}
+            value={form.objective}
+            onChange={(v) => setForm((f) => ({ ...f, objective: v }))}
+          />
           <div className="flex flex-wrap gap-2">
             <input value={form.owner} onChange={(e) => setForm((f) => ({ ...f, owner: e.target.value }))}
               placeholder={t('owner_ph')}
               className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
             <input type="date" value={form.dueDate} onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
               className="w-36 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
-            {/* Scope */}
             <select value={form.categoryId} onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
               className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
               <option value="">{t('scope_global')}</option>
@@ -112,7 +122,7 @@ export default function GoalsSection({
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold">{goal.objective}</span>
+                    <span className="text-sm font-semibold">{getL(goal.objective, lang)}</span>
                     {isDone && (
                       <span className="text-[10px] bg-emerald-900/60 text-emerald-300 px-1.5 py-0.5 rounded">
                         {t('completed_badge')}

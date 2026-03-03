@@ -3,8 +3,10 @@
 // Scope (global vs. category) is set at creation time.
 // Edit permission is resolved per-meeting via resolveCanEdit().
 
-import React, { useState } from 'react';
-import LangContext from '../../i18n/LangContext.js';
+import React, { useState }       from 'react';
+import LangContext                from '../../i18n/LangContext.js';
+import { BilingualField }        from '../../components/ui/index.js';
+import { getL, toL, fillL }      from '../../utils.js';
 
 /**
  * @param {{
@@ -21,8 +23,11 @@ export default function MeetingsSection({
   meetings, categories, canCreate, resolveCanEdit,
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
 }) {
-  const { t } = React.useContext(LangContext);
-  const [form,          setForm]          = useState({ title: '', date: '', attendees: '', notes: '', categoryId: '' });
+  const { t, lang } = React.useContext(LangContext);
+
+  const emptyForm = () => ({ title: { en: '', es: '' }, date: '', attendees: '', notes: { en: '', es: '' }, categoryId: '' });
+
+  const [form,          setForm]          = useState(emptyForm());
   const [expandedId,    setExpandedId]    = useState(null);
   const [editingId,     setEditingId]     = useState(null);
   const [editDraft,     setEditDraft]     = useState({});
@@ -32,9 +37,16 @@ export default function MeetingsSection({
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
-    await onCreateMeeting({ ...form, categoryId: form.categoryId || null, actionItems: [] });
-    setForm({ title: '', date: '', attendees: '', notes: '', categoryId: '' });
+    if (!form.title.en.trim() && !form.title.es.trim()) return;
+    await onCreateMeeting({
+      title:      fillL(form.title),
+      date:       form.date,
+      attendees:  form.attendees,
+      notes:      fillL(form.notes),
+      categoryId: form.categoryId || null,
+      actionItems: [],
+    });
+    setForm(emptyForm());
   };
 
   // ── Action items ───────────────────────────────────────────────────────────
@@ -59,7 +71,12 @@ export default function MeetingsSection({
 
   const startEdit = (m) => {
     setEditingId(m.id);
-    setEditDraft({ title: m.title, date: m.date || '', attendees: m.attendees || '', notes: m.notes || '' });
+    setEditDraft({
+      title:     toL(m.title),
+      date:      m.date      || '',
+      attendees: m.attendees || '',
+      notes:     toL(m.notes),
+    });
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -68,26 +85,27 @@ export default function MeetingsSection({
     <div className="space-y-4">
       {/* ── Create form ── */}
       {canCreate && (
-        <form onSubmit={handleCreate} className="bg-slate-800 rounded-lg p-4 space-y-2">
-          <div className="text-xs text-slate-400 mb-1">{t('new_meeting_btn')}</div>
-          <div className="flex flex-wrap gap-2">
-            <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              required placeholder={t('meeting_title_ph')}
-              className="flex-1 min-w-[160px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
+        <form onSubmit={handleCreate} className="bg-slate-800 rounded-lg p-4 space-y-3">
+          <div className="text-xs text-slate-400">{t('new_meeting_btn')}</div>
+          <BilingualField
+            label={`${t('meeting_title_ph')} *`}
+            value={form.title}
+            onChange={(v) => setForm((f) => ({ ...f, title: v }))}
+          />
+          <BilingualField
+            label={t('notes_ph')}
+            value={form.notes}
+            onChange={(v) => setForm((f) => ({ ...f, notes: v }))}
+            multiline rows={2}
+          />
+          <div className="flex flex-wrap gap-2 items-end">
             <input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
               className="w-36 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
             <input value={form.attendees} onChange={(e) => setForm((f) => ({ ...f, attendees: e.target.value }))}
               placeholder={t('attendees_ph')}
               className="flex-1 min-w-[160px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
-          </div>
-          <textarea rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            placeholder={t('notes_ph')}
-            className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm resize-none" />
-          {/* Scope */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <label className="text-xs text-slate-400 shrink-0">{t('scope_label')}:</label>
             <select value={form.categoryId} onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
-              className="px-2 py-1 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
+              className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
               <option value="">{t('scope_global')}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{t('scope_category')} {c.name}</option>
@@ -127,7 +145,7 @@ export default function MeetingsSection({
                 ) : <div className="text-xs text-slate-500">{t('tbd_label')}</div>}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm">{m.title}</div>
+                <div className="font-semibold text-sm">{getL(m.title, lang)}</div>
                 {m.attendees && <div className="text-xs text-slate-400 mt-0.5">👥 {m.attendees}</div>}
                 {(m.actionItems || []).length > 0 && (
                   <div className="text-xs text-slate-500 mt-0.5">
@@ -160,7 +178,7 @@ export default function MeetingsSection({
             {/* Expanded: notes + action items */}
             {isExpanded && !isEditing && (
               <div className="border-t border-slate-700 px-4 py-3 space-y-3">
-                {m.notes && <p className="text-sm text-slate-300 whitespace-pre-wrap">{m.notes}</p>}
+                {getL(m.notes, lang) && <p className="text-sm text-slate-300 whitespace-pre-wrap">{getL(m.notes, lang)}</p>}
                 <div>
                   <div className="text-xs text-slate-400 font-semibold mb-2">{t('action_items_label')}</div>
                   {(m.actionItems || []).map((a) => (
@@ -199,25 +217,38 @@ export default function MeetingsSection({
 
             {/* Inline edit form */}
             {isEditing && (
-              <div className="border-t border-slate-700 px-4 py-3 space-y-2">
-                <input value={editDraft.title} onChange={(e) => setEditDraft((d) => ({ ...d, title: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-slate-900 border border-emerald-500 rounded text-sm font-semibold" />
-                <div className="flex gap-2">
+              <div className="border-t border-slate-700 px-4 py-3 space-y-3">
+                <BilingualField
+                  label={t('meeting_title_ph')}
+                  value={editDraft.title}
+                  onChange={(v) => setEditDraft((d) => ({ ...d, title: v }))}
+                />
+                <BilingualField
+                  label={t('notes_ph')}
+                  value={editDraft.notes}
+                  onChange={(v) => setEditDraft((d) => ({ ...d, notes: v }))}
+                  multiline rows={3}
+                />
+                <div className="flex gap-2 flex-wrap">
                   <input type="date" value={editDraft.date}
                     onChange={(e) => setEditDraft((d) => ({ ...d, date: e.target.value }))}
                     className="w-36 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
                   <input value={editDraft.attendees}
                     onChange={(e) => setEditDraft((d) => ({ ...d, attendees: e.target.value }))}
                     placeholder={t('attendees_ph')}
-                    className="flex-1 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
+                    className="flex-1 min-w-[140px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
                 </div>
-                <textarea rows={3} value={editDraft.notes}
-                  onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm resize-none" />
                 <div className="flex gap-2 justify-end">
                   <button onClick={() => setEditingId(null)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
-                  <button onClick={async () => { await onUpdateMeeting(m.id, editDraft); setEditingId(null); }}
-                    className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1 rounded">{t('save')}</button>
+                  <button onClick={async () => {
+                    await onUpdateMeeting(m.id, {
+                      title:     fillL(editDraft.title),
+                      date:      editDraft.date,
+                      attendees: editDraft.attendees,
+                      notes:     fillL(editDraft.notes),
+                    });
+                    setEditingId(null);
+                  }} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1 rounded">{t('save')}</button>
                 </div>
               </div>
             )}

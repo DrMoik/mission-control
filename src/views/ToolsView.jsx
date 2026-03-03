@@ -20,10 +20,12 @@
 //   ③ "Last edited by" on every item
 
 import React, { useState, useMemo } from 'react';
-import LangContext      from '../i18n/LangContext.js';
-import BoardTypeSection from './tools/BoardTypeSection.jsx';
-import MeetingsSection  from './tools/MeetingsSection.jsx';
-import GoalsSection     from './tools/GoalsSection.jsx';
+import LangContext             from '../i18n/LangContext.js';
+import BoardTypeSection        from './tools/BoardTypeSection.jsx';
+import MeetingsSection         from './tools/MeetingsSection.jsx';
+import GoalsSection            from './tools/GoalsSection.jsx';
+import { BilingualField }      from '../components/ui/index.js';
+import { getL, toL, fillL }    from '../utils.js';
 
 // SWOT quadrant metadata (colours are language-independent)
 const SWOT_META = [
@@ -108,11 +110,16 @@ export default function ToolsView({
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
   onCreateGoal,   onUpdateGoal,   onDeleteGoal,
 }) {
-  const { t } = React.useContext(LangContext);
+  const { t, lang } = React.useContext(LangContext);
 
   const [toolTab,     setToolTab]     = useState('calendar');
-  const [scopeFilter, setScopeFilter] = useState('all');   // 'all' | 'global' | categoryId
-  const [newEvent,    setNewEvent]    = useState({ title: '', date: '', description: '', categoryId: '' });
+  const [scopeFilter, setScopeFilter] = useState('all');
+  const [newEvent,    setNewEvent]    = useState({
+    title:       { en: '', es: '' },
+    date:        '',
+    description: { en: '', es: '' },
+    categoryId:  '',
+  });
   const [editingSwot, setEditingSwot] = useState(false);
   const [swotDraft,   setSwotDraft]   = useState(null);
 
@@ -153,17 +160,19 @@ export default function ToolsView({
   // ── SWOT helpers ───────────────────────────────────────────────────────────
 
   const startEditSwot = () => {
+    // Normalise legacy plain-string text to bilingual objects
+    const norm = (items) => (items || []).map((i) => ({ ...i, text: toL(i.text) }));
     setSwotDraft({
-      strengths:     [...(swot.strengths     || [])],
-      weaknesses:    [...(swot.weaknesses    || [])],
-      opportunities: [...(swot.opportunities || [])],
-      threats:       [...(swot.threats       || [])],
+      strengths:     norm(swot.strengths),
+      weaknesses:    norm(swot.weaknesses),
+      opportunities: norm(swot.opportunities),
+      threats:       norm(swot.threats),
     });
     setEditingSwot(true);
   };
 
-  const addSwotItem    = (key)          => setSwotDraft((d) => ({ ...d, [key]: [...d[key], { id: `${Date.now()}`, text: '' }] }));
-  const updateSwotItem = (key, id, txt) => setSwotDraft((d) => ({ ...d, [key]: d[key].map((i) => (i.id === id ? { ...i, text: txt } : i)) }));
+  const addSwotItem    = (key)          => setSwotDraft((d) => ({ ...d, [key]: [...d[key], { id: `${Date.now()}`, text: { en: '', es: '' } }] }));
+  const updateSwotItem = (key, id, val) => setSwotDraft((d) => ({ ...d, [key]: d[key].map((i) => (i.id === id ? { ...i, text: val } : i)) }));
   const removeSwotItem = (key, id)      => setSwotDraft((d) => ({ ...d, [key]: d[key].filter((i) => i.id !== id) }));
 
   const handleSaveSwot = async () => { await onUpdateSwot(swotDraft); setEditingSwot(false); };
@@ -172,8 +181,13 @@ export default function ToolsView({
 
   const handleAddEvent = async (e) => {
     e.preventDefault();
-    await onCreateEvent({ ...newEvent, categoryId: newEvent.categoryId || null });
-    setNewEvent({ title: '', date: '', description: '', categoryId: '' });
+    await onCreateEvent({
+      title:       fillL(newEvent.title),
+      date:        newEvent.date,
+      description: fillL(newEvent.description),
+      categoryId:  newEvent.categoryId || null,
+    });
+    setNewEvent({ title: { en: '', es: '' }, date: '', description: { en: '', es: '' }, categoryId: '' });
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -210,37 +224,38 @@ export default function ToolsView({
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
 
           {canCreate && (
-            <form onSubmit={handleAddEvent} className="bg-slate-800 rounded-lg p-4 flex flex-wrap gap-2 items-end">
-              <div className="flex-1 min-w-[160px]">
-                <label className="text-xs text-slate-400 block mb-1">{t('event_title_label')}</label>
-                <input value={newEvent.title} onChange={(e) => setNewEvent((v) => ({ ...v, title: e.target.value }))}
-                  required className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
-                  placeholder={t('event_title_ph')} />
+            <form onSubmit={handleAddEvent} className="bg-slate-800 rounded-lg p-4 space-y-3">
+              <BilingualField
+                label={`${t('event_title_label')} *`}
+                value={newEvent.title}
+                onChange={(v) => setNewEvent((n) => ({ ...n, title: v }))}
+                placeholder={{ en: t('event_title_ph'), es: t('event_title_ph') }}
+              />
+              <BilingualField
+                label={t('description')}
+                value={newEvent.description}
+                onChange={(v) => setNewEvent((n) => ({ ...n, description: v }))}
+              />
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="w-40">
+                  <label className="text-xs text-slate-400 block mb-1">{t('event_date')} *</label>
+                  <input type="date" value={newEvent.date} onChange={(e) => setNewEvent((v) => ({ ...v, date: e.target.value }))}
+                    required className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1">{t('scope_label')}</label>
+                  <select value={newEvent.categoryId} onChange={(e) => setNewEvent((v) => ({ ...v, categoryId: e.target.value }))}
+                    className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
+                    <option value="">{t('scope_global')}</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{t('scope_category')} {c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded self-end">
+                  {t('add_event_btn')}
+                </button>
               </div>
-              <div className="w-40">
-                <label className="text-xs text-slate-400 block mb-1">{t('event_date')}</label>
-                <input type="date" value={newEvent.date} onChange={(e) => setNewEvent((v) => ({ ...v, date: e.target.value }))}
-                  required className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
-              </div>
-              <div className="flex-1 min-w-[140px]">
-                <label className="text-xs text-slate-400 block mb-1">{t('description')}</label>
-                <input value={newEvent.description} onChange={(e) => setNewEvent((v) => ({ ...v, description: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
-              </div>
-              {/* Scope selector */}
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">{t('scope_label')}</label>
-                <select value={newEvent.categoryId} onChange={(e) => setNewEvent((v) => ({ ...v, categoryId: e.target.value }))}
-                  className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
-                  <option value="">{t('scope_global')}</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{t('scope_category')} {c.name}</option>
-                  ))}
-                </select>
-              </div>
-              <button type="submit" className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded self-end">
-                {t('add_event_btn')}
-              </button>
             </form>
           )}
 
@@ -263,8 +278,8 @@ export default function ToolsView({
                         <div className="text-[10px] text-slate-400">{d.getFullYear()}</div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{evt.title}</div>
-                        {evt.description && <div className="text-xs text-slate-400 mt-0.5">{evt.description}</div>}
+                        <div className="font-medium text-sm">{getL(evt.title, lang)}</div>
+                        {getL(evt.description, lang) && <div className="text-xs text-slate-400 mt-0.5">{getL(evt.description, lang)}</div>}
                         {/* Scope badge */}
                         <div className="mt-1">
                           {catName
@@ -332,13 +347,16 @@ export default function ToolsView({
                       <div key={item.id} className="flex items-start gap-2">
                         <span className="text-slate-400 mt-0.5 text-xs shrink-0">•</span>
                         {editingSwot ? (
-                          <>
-                            <input value={item.text} onChange={(e) => updateSwotItem(q.key, item.id, e.target.value)}
-                              className="flex-1 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-xs" />
-                            <button onClick={() => removeSwotItem(q.key, item.id)} className="text-red-400 text-xs shrink-0">✕</button>
-                          </>
+                          <div className="flex-1 space-y-1">
+                            <BilingualField
+                              value={item.text}
+                              onChange={(v) => updateSwotItem(q.key, item.id, v)}
+                            />
+                            <button onClick={() => removeSwotItem(q.key, item.id)}
+                              className="text-red-400 text-xs underline">{t('delete')}</button>
+                          </div>
                         ) : (
-                          <span className="text-sm text-slate-200">{item.text}</span>
+                          <span className="text-sm text-slate-200">{getL(item.text, lang)}</span>
                         )}
                       </div>
                     ))}

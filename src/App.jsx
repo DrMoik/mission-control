@@ -44,6 +44,62 @@ import ToolsView                   from './views/ToolsView.jsx';
 import AcademyView                 from './views/AcademyView.jsx';
 import FeedView                    from './views/FeedView.jsx';
 
+// ── InlineTeamRename ──────────────────────────────────────────────────────────
+// Small component rendered in the app header so platform admins can
+// rename or delete the currently-open team without leaving the page.
+function InlineTeamRename({ team, isPlatformAdmin, onRename, onDelete, t }) {
+  const [editing,  setEditing]  = React.useState(false);
+  const [value,    setValue]    = React.useState('');
+
+  if (!team) return null;
+
+  if (!isPlatformAdmin) {
+    return <span className="font-bold text-sm truncate">{team.name}</span>;
+  }
+
+  const start = () => { setValue(team.name); setEditing(true); };
+  const commit = () => { onRename(team.id, value); setEditing(false); };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
+          className="px-2 py-1 bg-slate-800 border border-emerald-600 rounded text-sm font-bold w-44"
+        />
+        <button onClick={commit}
+          className="text-[11px] bg-emerald-500 text-black font-semibold px-2 py-1 rounded">
+          {t('save')}
+        </button>
+        <button onClick={() => setEditing(false)} className="text-[11px] text-slate-400 underline">
+          {t('cancel')}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 min-w-0">
+      <span className="font-bold text-sm truncate">{team.name}</span>
+      <button onClick={start}
+        title={t('rename_team')}
+        className="text-slate-500 hover:text-amber-400 transition-colors text-xs shrink-0"
+      >
+        ✏
+      </button>
+      <button onClick={() => onDelete(team.id)}
+        title={t('delete_team')}
+        className="text-slate-500 hover:text-red-400 transition-colors text-xs shrink-0"
+      >
+        🗑
+      </button>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -82,6 +138,7 @@ export default function App() {
   const [teamComments,        setTeamComments]        = useState([]);
   const [teamMeetings,        setTeamMeetings]        = useState([]);
   const [teamGoals,           setTeamGoals]           = useState([]);
+  const [teamWeeklyStatuses,  setTeamWeeklyStatuses]  = useState([]);
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [view,           setView]           = useState('overview');
@@ -180,8 +237,10 @@ export default function App() {
     sub(query(collection(db, 'posts'),        where('teamId', '==', selectedTeamId)), setTeamPosts,
       (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)));
     sub(query(collection(db, 'comments'),     where('teamId', '==', selectedTeamId)), setTeamComments);
-    sub(query(collection(db, 'teamMeetings'), where('teamId', '==', selectedTeamId)), setTeamMeetings);
-    sub(query(collection(db, 'teamGoals'),    where('teamId', '==', selectedTeamId)), setTeamGoals);
+    sub(query(collection(db, 'teamMeetings'),    where('teamId', '==', selectedTeamId)), setTeamMeetings);
+    sub(query(collection(db, 'teamGoals'),       where('teamId', '==', selectedTeamId)), setTeamGoals);
+    sub(query(collection(db, 'weeklyStatuses'),  where('teamId', '==', selectedTeamId)), setTeamWeeklyStatuses,
+      (rows) => [...rows].sort((a, b) => (b.weekOf || '').localeCompare(a.weekOf || '')));
 
     // Module attempts are filtered per user to respect Firestore rules
     if (authUser) {
@@ -323,6 +382,28 @@ export default function App() {
     }
   };
 
+  const handleRenameTeam = async (teamId, newName) => {
+    if (!isPlatformAdmin) return;
+    const name = newName.trim();
+    if (!name) return;
+    await updateDoc(doc(db, 'teams', teamId), { name });
+  };
+
+  const handleDeleteTeam = async (teamId) => {
+    if (!isPlatformAdmin) return;
+    const team = allTeams.find((t) => t.id === teamId);
+    const confirmed = window.confirm(
+      `Delete team "${team?.name}"?\n\n` +
+      `This removes the team record. Member data, categories, merits, and other ` +
+      `team collections must be cleaned up in the Firestore console separately.\n\n` +
+      `This cannot be undone.`,
+    );
+    if (!confirmed) return;
+    await deleteDoc(doc(db, 'teams', teamId));
+    // If we were inside the deleted team, return to the picker
+    if (selectedTeamId === teamId) setSelectedTeamId(null);
+  };
+
   // ── Memberships ────────────────────────────────────────────────────────────
 
   const handleJoinTeam = async (teamId, categoryId = null, motivation = '') => {
@@ -395,18 +476,59 @@ export default function App() {
     if (!m) return;
     const canEditThis = isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && m.userId === authUser.uid);
     if (!canEditThis) return;
-    await updateDoc(doc(db, 'memberships', membershipId), {
+    // Build a safe update object — only include keys that are explicitly present
+    // in `updates` so we never overwrite fields the caller didn't touch.
+    const payload = {
       displayName:   updates.displayName   || m.displayName,
-      photoURL:      updates.photoURL      || m.photoURL || null,
-      coverPhotoURL: updates.coverPhotoURL || '',
-      bio:           updates.bio           || '',
-      hobbies:       updates.hobbies       || '',
-      career:        updates.career        || '',
-      semester:      updates.semester      || '',
-      university:    updates.university    || '',
-    });
+      photoURL:      updates.photoURL      ?? m.photoURL ?? null,
+      coverPhotoURL: updates.coverPhotoURL ?? m.coverPhotoURL ?? '',
+      // Bilingual fields
+      bio:           updates.bio           ?? m.bio     ?? '',
+      hobbies:       updates.hobbies       ?? m.hobbies ?? '',
+      // Academic
+      career:        updates.career        ?? m.career     ?? '',
+      semester:      updates.semester      ?? m.semester   ?? '',
+      university:    updates.university    ?? m.university ?? '',
+      // ── Community profile — Mission ──────────────────────────────────────
+      currentObjective: updates.currentObjective ?? m.currentObjective ?? '',
+      currentChallenge: updates.currentChallenge ?? m.currentChallenge ?? '',
+      // ── Community profile — Collaboration ────────────────────────────────
+      lookingForHelpIn:        updates.lookingForHelpIn        ?? m.lookingForHelpIn        ?? [],
+      iCanHelpWith:            updates.iCanHelpWith            ?? m.iCanHelpWith            ?? [],
+      skillsToLearnThisSemester: updates.skillsToLearnThisSemester ?? m.skillsToLearnThisSemester ?? [],
+      skillsICanTeach:         updates.skillsICanTeach         ?? m.skillsICanTeach         ?? [],
+      // ── Community profile — Culture ───────────────────────────────────────
+      songOnRepeatTitle:  updates.songOnRepeatTitle  ?? m.songOnRepeatTitle  ?? '',
+      songOnRepeatUrl:    updates.songOnRepeatUrl    ?? m.songOnRepeatUrl    ?? '',
+      funFact:            updates.funFact            ?? m.funFact            ?? '',
+      personalityTag:     updates.personalityTag     ?? m.personalityTag     ?? '',
+    };
+    await updateDoc(doc(db, 'memberships', membershipId), payload);
     // Keep the open profile modal in sync without waiting for Firestore
-    setProfileMember((prev) => prev?.id === membershipId ? { ...prev, ...updates } : prev);
+    setProfileMember((prev) => prev?.id === membershipId ? { ...prev, ...payload } : prev);
+  };
+
+  // ── Weekly status ───────────────────────────────────────────────────────────
+  // One document per member per week.  Doc ID: `{membershipId}_{weekOf}`.
+  const handleSaveWeeklyStatus = async ({ membershipId, weekOf, advanced, failedAt, learned }) => {
+    if (!currentTeam || !authUser) return;
+    const m = teamMemberships.find((mm) => mm.id === membershipId);
+    if (!m) return;
+    // Only the member themselves (or an admin) can post
+    const canPost = isPlatformAdmin || memberRole === 'teamAdmin' || m.userId === authUser.uid;
+    if (!canPost) return;
+    const docId = `${membershipId}_${weekOf}`;
+    await setDoc(doc(db, 'weeklyStatuses', docId), {
+      teamId:       currentTeam.id,
+      membershipId,
+      userId:       authUser.uid,
+      displayName:  m.displayName || '',
+      weekOf,                         // ISO date string for the Monday of that week
+      advanced:     advanced  || '',
+      failedAt:     failedAt  || '',
+      learned:      learned   || '',
+      updatedAt:    serverTimestamp(),
+    }, { merge: true });
   };
 
   const handleCreateGhostMember = async ({ displayName, role, categoryId, university, career, bio }) => {
@@ -826,6 +948,62 @@ export default function App() {
     const activeMyTeams  = myTeams.filter((t) => { const m = userMemberships.find((m) => m.teamId === t.id); return m?.status === 'active' || m?.status === 'suspended'; });
     const pendingMyTeams = myTeams.filter((t) => { const m = userMemberships.find((m) => m.teamId === t.id); return m?.status === 'pending'; });
 
+    // Inline rename state (keyed by team id — only one open at a time)
+    // Declared here inside the render block so it is scoped to this branch.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [renamingTeamId, setRenamingTeamId] = React.useState(null);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [renameValue,    setRenameValue]    = React.useState('');
+
+    const startRename = (team, e) => {
+      e.stopPropagation();
+      setRenamingTeamId(team.id);
+      setRenameValue(team.name);
+    };
+    const commitRename = async (teamId) => {
+      await handleRenameTeam(teamId, renameValue);
+      setRenamingTeamId(null);
+    };
+
+    // Reusable card action bar for platform admins
+    const AdminTeamActions = ({ team }) => {
+      if (!isPlatformAdmin) return null;
+      if (renamingTeamId === team.id) {
+        return (
+          <div className="flex gap-1 items-center mt-2" onClick={(e) => e.stopPropagation()}>
+            <input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitRename(team.id); if (e.key === 'Escape') setRenamingTeamId(null); }}
+              placeholder={t('rename_team_ph')}
+              className="flex-1 px-2 py-1 bg-slate-900 border border-emerald-600 rounded text-xs"
+            />
+            <button onClick={() => commitRename(team.id)}
+              className="px-2 py-1 bg-emerald-500 text-black text-[11px] font-semibold rounded">
+              {t('save')}
+            </button>
+            <button onClick={() => setRenamingTeamId(null)}
+              className="text-[11px] text-slate-400 underline">
+              {t('cancel')}
+            </button>
+          </div>
+        );
+      }
+      return (
+        <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+          <button onClick={(e) => startRename(team, e)}
+            className="text-[11px] text-amber-400 hover:text-amber-300 underline transition-colors">
+            ✏ {t('rename_team')}
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); handleDeleteTeam(team.id); }}
+            className="text-[11px] text-red-400 hover:text-red-300 underline transition-colors">
+            🗑 {t('delete_team')}
+          </button>
+        </div>
+      );
+    };
+
     return (
       <LangContext.Provider value={{ lang, t, setLang: handleSetLang }}>
         <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
@@ -864,14 +1042,17 @@ export default function App() {
                   {activeMyTeams.map((team) => {
                     const mem = userMemberships.find((m) => m.teamId === team.id);
                     return (
-                      <button key={team.id} onClick={() => { setSelectedTeamId(team.id); setView('overview'); }}
-                        className="bg-slate-800 rounded-xl p-4 text-left hover:bg-slate-700 transition-colors space-y-1 active:scale-95">
-                        <div className="flex items-center justify-between gap-2">
-                          <h3 className="font-bold text-sm">{team.name}</h3>
-                          {mem && <RoleBadge role={mem.role} />}
-                        </div>
-                        {team.overview?.tagline && <p className="text-xs text-slate-400 italic">"{team.overview.tagline}"</p>}
-                      </button>
+                      <div key={team.id} className="bg-slate-800 rounded-xl p-4 space-y-1">
+                        <button onClick={() => { setSelectedTeamId(team.id); setView('overview'); }}
+                          className="w-full text-left hover:text-emerald-300 transition-colors active:scale-95">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-bold text-sm">{team.name}</h3>
+                            {mem && <RoleBadge role={mem.role} />}
+                          </div>
+                          {team.overview?.tagline && <p className="text-xs text-slate-400 italic">"{team.overview.tagline}"</p>}
+                        </button>
+                        <AdminTeamActions team={team} />
+                      </div>
                     );
                   })}
                 </div>
@@ -916,6 +1097,7 @@ export default function App() {
                         className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded hover:bg-emerald-400 transition-colors">
                         {t('request_to_join')}
                       </button>
+                      <AdminTeamActions team={team} />
                     </div>
                   ))}
                 </div>
@@ -973,6 +1155,8 @@ export default function App() {
             canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && profileMember.userId === authUser.uid)}
             onClose={() => setProfileMember(null)}
             onSave={handleUpdateMemberProfile}
+            weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
+            onSaveWeeklyStatus={handleSaveWeeklyStatus}
           />
         )}
 
@@ -1021,7 +1205,13 @@ export default function App() {
               title={navCollapsed ? t('expand_menu') : t('collapse_menu')}>
               {navCollapsed ? '›' : '‹'}
             </button>
-            <span className="font-bold text-sm truncate">{currentTeam?.name}</span>
+            <InlineTeamRename
+              team={currentTeam}
+              isPlatformAdmin={isPlatformAdmin}
+              onRename={handleRenameTeam}
+              onDelete={handleDeleteTeam}
+              t={t}
+            />
             {currentMembership && !previewRole && <span className="hidden sm:inline"><RoleBadge role={currentMembership.role} /></span>}
             {isPlatformAdmin && !previewRole && (
               <span className="text-[10px] bg-yellow-500 text-black px-1.5 py-0.5 rounded font-bold hidden sm:inline">

@@ -49,6 +49,10 @@ const TRANSLATIONS = {
     create:               'Create',
     no_teams:             'No teams available yet. Contact your Platform Admin.',
     no_teams_sign_in:     'No teams yet. Sign in and ask your Platform Admin to create one.',
+    rename_team:          'Rename',
+    delete_team:          'Delete team',
+    rename_team_ph:       'New team name…',
+    manage_teams:         'Manage Teams',
 
     // ── Common actions ────────────────────────────────────────────────────────
     edit:         'Edit',
@@ -422,6 +426,73 @@ const TRANSLATIONS = {
     tell_team_placeholder:'Tell your team about yourself…',
     hobbies_placeholder:'Reading, robotics, music…',
 
+    // ── Profile — Mission ──────────────────────────────────────────────────────
+    section_mission:           'Mission',
+    current_objective:         'What are you building?',
+    current_challenge:         'What are you struggling with?',
+    objective_ph:              'e.g. Finish the autonomous navigation module…',
+    challenge_ph:              'e.g. Getting OpenCV calibration right…',
+    no_mission_set:            'No mission set yet.',
+
+    // ── Profile — Collaboration ────────────────────────────────────────────────
+    section_collaboration:     'Collaboration',
+    looking_for_help_in:       'Looking for help in',
+    i_can_help_with:           'I can help with',
+    skills_to_learn:           'Skills to learn this semester',
+    skills_i_can_teach:        'Skills I can teach',
+    collab_tags_ph:            'Add a skill or topic…',
+    no_collab_set:             'No collaboration info yet.',
+    looking_label:             '🙋 Needs help with',
+    offering_label:            '🤝 Can help with',
+
+    // ── Profile — Culture ─────────────────────────────────────────────────────
+    section_culture:           'Culture',
+    song_on_repeat:            'Song on repeat',
+    song_title_label:          'Song / Artist',
+    song_url_label:            'Link (Spotify, YouTube…)',
+    song_title_ph:             'e.g. Power by Kanye West',
+    song_url_ph:               'https://open.spotify.com/track/…',
+    fun_fact_label:            'Fun fact',
+    fun_fact_ph:               'Share something surprising about yourself…',
+    personality_tag_label:     'I am…',
+    no_culture_set:            'No culture info yet.',
+    invalid_song_url:          'Link must be a Spotify, YouTube, or SoundCloud URL.',
+    listen_link:               '▶ Listen',
+
+    // Personality tag options (shown in a dropdown)
+    ptag_creative:       'Creative',
+    ptag_analytical:     'Analytical',
+    ptag_detail:         'Detail-oriented',
+    ptag_bigpicture:     'Big-picture thinker',
+    ptag_solver:         'Problem solver',
+    ptag_collaborator:   'Collaborator',
+    ptag_independent:    'Independent worker',
+    ptag_mentor:         'Mentor',
+    ptag_learner:        'Lifelong learner',
+    ptag_builder:        'Builder',
+    ptag_researcher:     'Researcher',
+
+    // ── Profile — Weekly Status ────────────────────────────────────────────────
+    section_weekly:          'This Week',
+    weekly_advanced:         'I advanced on…',
+    weekly_failed_at:        'I struggled with…',
+    weekly_learned:          'I learned…',
+    weekly_ph_advanced:      'What moved forward this week?',
+    weekly_ph_failed:        'What didn\'t go as planned?',
+    weekly_ph_learned:       'What\'s one thing you now know better?',
+    post_weekly_status:      'Post Weekly Status',
+    update_weekly_status:    'Update This Week',
+    no_weekly_status:        'No status posted this week.',
+    weekly_posted_by:        (name) => `Posted by ${name}`,
+    week_of:                 (date) => `Week of ${date}`,
+
+    // ── Members — collaboration filter ────────────────────────────────────────
+    filter_collab:           'Skill filter',
+    collab_filter_ph:        'Filter by skill…',
+    match_found:             (name) => `${name} can help with this`,
+    clear_skill_filter:      'Clear skill filter',
+    collab_match_hint:       '🤝 Skill match',
+
     // ── Join request modal ────────────────────────────────────────────────────
     join_title:              'Request to Join',
     join_pick_category:      'Pick your category',
@@ -494,6 +565,10 @@ const TRANSLATIONS = {
     create:               'Crear',
     no_teams:             'Aún no hay equipos. Contacta a tu Administrador de Plataforma.',
     no_teams_sign_in:     'Sin equipos aún. Inicia sesión y pide al Admin de Plataforma que cree uno.',
+    rename_team:          'Renombrar',
+    delete_team:          'Eliminar equipo',
+    rename_team_ph:       'Nuevo nombre del equipo…',
+    manage_teams:         'Administrar Equipos',
 
     // ── Common actions ────────────────────────────────────────────────────────
     edit:         'Editar',
@@ -854,6 +929,73 @@ const TRANSLATIONS = {
     select_placeholder: '— seleccionar —',
     tell_team_placeholder:'Cuéntale a tu equipo sobre ti…',
     hobbies_placeholder:'Lectura, robótica, música…',
+
+    // ── Profile — Misión ──────────────────────────────────────────────────────
+    section_mission:           'Misión',
+    current_objective:         '¿Qué estás construyendo?',
+    current_challenge:         '¿Con qué estás luchando?',
+    objective_ph:              'p.ej. Terminar el módulo de navegación autónoma…',
+    challenge_ph:              'p.ej. Calibrar OpenCV correctamente…',
+    no_mission_set:            'Sin misión registrada aún.',
+
+    // ── Profile — Colaboración ─────────────────────────────────────────────────
+    section_collaboration:     'Colaboración',
+    looking_for_help_in:       'Busco ayuda en',
+    i_can_help_with:           'Puedo ayudar con',
+    skills_to_learn:           'Habilidades a aprender este semestre',
+    skills_i_can_teach:        'Habilidades que puedo enseñar',
+    collab_tags_ph:            'Agrega una habilidad o tema…',
+    no_collab_set:             'Sin información de colaboración aún.',
+    looking_label:             '🙋 Necesita ayuda con',
+    offering_label:            '🤝 Puede ayudar con',
+
+    // ── Profile — Cultura ─────────────────────────────────────────────────────
+    section_culture:           'Cultura',
+    song_on_repeat:            'Canción en repeat',
+    song_title_label:          'Canción / Artista',
+    song_url_label:            'Enlace (Spotify, YouTube…)',
+    song_title_ph:             'p.ej. Power de Kanye West',
+    song_url_ph:               'https://open.spotify.com/track/…',
+    fun_fact_label:            'Dato curioso',
+    fun_fact_ph:               'Comparte algo sorprendente sobre ti…',
+    personality_tag_label:     'Soy…',
+    no_culture_set:            'Sin información cultural aún.',
+    invalid_song_url:          'El enlace debe ser de Spotify, YouTube o SoundCloud.',
+    listen_link:               '▶ Escuchar',
+
+    // Personality tag options
+    ptag_creative:       'Creativo/a',
+    ptag_analytical:     'Analítico/a',
+    ptag_detail:         'Orientado/a al detalle',
+    ptag_bigpicture:     'Pensamiento global',
+    ptag_solver:         'Resolvedor de problemas',
+    ptag_collaborator:   'Colaborador/a',
+    ptag_independent:    'Trabajo independiente',
+    ptag_mentor:         'Mentor/a',
+    ptag_learner:        'Aprendiz de por vida',
+    ptag_builder:        'Constructor/a',
+    ptag_researcher:     'Investigador/a',
+
+    // ── Profile — Estatus semanal ─────────────────────────────────────────────
+    section_weekly:          'Esta Semana',
+    weekly_advanced:         'Avancé en…',
+    weekly_failed_at:        'Me costó trabajo…',
+    weekly_learned:          'Aprendí…',
+    weekly_ph_advanced:      '¿Qué avanzó esta semana?',
+    weekly_ph_failed:        '¿Qué no salió como esperabas?',
+    weekly_ph_learned:       '¿Qué es algo que ahora entiendes mejor?',
+    post_weekly_status:      'Publicar Estatus Semanal',
+    update_weekly_status:    'Actualizar Esta Semana',
+    no_weekly_status:        'Sin estatus publicado esta semana.',
+    weekly_posted_by:        (name) => `Publicado por ${name}`,
+    week_of:                 (date) => `Semana del ${date}`,
+
+    // ── Miembros — filtro de colaboración ─────────────────────────────────────
+    filter_collab:           'Filtro de habilidades',
+    collab_filter_ph:        'Filtrar por habilidad…',
+    match_found:             (name) => `${name} puede ayudar con esto`,
+    clear_skill_filter:      'Limpiar filtro',
+    collab_match_hint:       '🤝 Coincidencia',
 
     // ── Join request modal ────────────────────────────────────────────────────
     join_title:              'Solicitar Unirse',

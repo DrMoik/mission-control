@@ -27,6 +27,43 @@ export const tsToDate = (ts) => {
   return new Date(ts);
 };
 
+// ── Bilingual field helpers ────────────────────────────────────────────────────
+// Bilingual fields are stored as { en: string, es: string }.
+// Old data stored as plain strings is handled gracefully via backward-compat.
+
+/**
+ * Returns the localised string for a bilingual field.
+ * Falls back to the other language if the preferred one is empty,
+ * and to the raw string value for backward-compatible plain strings.
+ *
+ * @param {string | {en:string, es:string} | null | undefined} field
+ * @param {'en'|'es'} lang
+ */
+export const getL = (field, lang = 'es') => {
+  if (!field) return '';
+  if (typeof field === 'string') return field;            // backward compat
+  return field[lang] || field[lang === 'en' ? 'es' : 'en'] || '';
+};
+
+/**
+ * Normalises a value to a bilingual object { en, es }.
+ * Plain strings are copied to both languages.
+ */
+export const toL = (value) => {
+  if (!value) return { en: '', es: '' };
+  if (typeof value === 'string') return { en: value, es: value };
+  return { en: value.en || '', es: value.es || '' };
+};
+
+/**
+ * On creation: if one language slot is empty, copy from the other.
+ * Ensures the user doesn't accidentally save a blank translation.
+ */
+export const fillL = (field) => {
+  const l = toL(field);
+  return { en: l.en || l.es, es: l.es || l.en };
+};
+
 // ── Media helpers ─────────────────────────────────────────────────────────────
 
 /**

@@ -3,46 +3,37 @@
 // Admins can create, rename, and delete categories.
 
 import React, { useState } from 'react';
-import LangContext from '../i18n/LangContext.js';
+import LangContext              from '../i18n/LangContext.js';
+import { BilingualField }       from '../components/ui/index.js';
+import { getL, toL, fillL }     from '../utils.js';
 
-/**
- * @param {{
- *   categories:       object[],
- *   memberships:      object[],
- *   canEdit:          boolean,
- *   onCreateCategory: function(name, description) → Promise
- *   onDeleteCategory: function(catId) → Promise
- *   onUpdateCategory: function(catId, name, description) → Promise
- *   onViewProfile:    function(membership)
- * }} props
- */
 export default function CategoriesView({
   categories, memberships, canEdit,
   onCreateCategory, onDeleteCategory, onUpdateCategory, onViewProfile,
 }) {
-  const { t } = React.useContext(LangContext);
+  const { t, lang } = React.useContext(LangContext);
 
-  const [newName,    setNewName]    = useState('');
-  const [newDesc,    setNewDesc]    = useState('');
-  const [editingId,  setEditingId]  = useState(null);
-  const [editDraft,  setEditDraft]  = useState({ name: '', description: '' });
+  const [newName,   setNewName]   = useState('');
+  const [newDesc,   setNewDesc]   = useState({ en: '', es: '' });
+  const [editingId, setEditingId] = useState(null);
+  const [editDraft, setEditDraft] = useState({ name: '', description: { en: '', es: '' } });
 
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    await onCreateCategory(newName.trim(), newDesc.trim());
+    await onCreateCategory(newName.trim(), fillL(newDesc));
     setNewName('');
-    setNewDesc('');
+    setNewDesc({ en: '', es: '' });
   };
 
   const startEdit = (cat) => {
     setEditingId(cat.id);
-    setEditDraft({ name: cat.name, description: cat.description || '' });
+    setEditDraft({ name: cat.name, description: toL(cat.description) });
   };
 
   const handleSaveEdit = async (catId) => {
     if (!editDraft.name.trim()) return;
-    await onUpdateCategory(catId, editDraft.name.trim(), editDraft.description.trim());
+    await onUpdateCategory(catId, editDraft.name.trim(), fillL(editDraft.description));
     setEditingId(null);
   };
 
@@ -52,28 +43,27 @@ export default function CategoriesView({
 
       {/* Create form — admins only */}
       {canEdit && (
-        <form onSubmit={handleCreate} className="bg-slate-800 rounded-lg p-4 flex flex-wrap gap-2 items-end">
-          <div className="flex-1 min-w-[140px]">
-            <label className="text-xs text-slate-400 block mb-1">{t('category_name')}</label>
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              required
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
-              placeholder={t('cat_placeholder')}
-            />
+        <form onSubmit={handleCreate} className="bg-slate-800 rounded-lg p-4 space-y-3">
+          <div className="flex flex-wrap gap-2 items-end">
+            <div className="flex-1 min-w-[160px]">
+              <label className="text-xs text-slate-400 block mb-1">{t('category_name')} *</label>
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                required
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
+                placeholder={t('cat_placeholder')}
+              />
+            </div>
+            <button type="submit" className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded self-end">
+              {t('add_category')}
+            </button>
           </div>
-          <div className="flex-1 min-w-[140px]">
-            <label className="text-xs text-slate-400 block mb-1">{t('description')}</label>
-            <input
-              value={newDesc}
-              onChange={(e) => setNewDesc(e.target.value)}
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
-            />
-          </div>
-          <button type="submit" className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded">
-            {t('add_category')}
-          </button>
+          <BilingualField
+            label={t('description')}
+            value={newDesc}
+            onChange={setNewDesc}
+          />
         </form>
       )}
 
@@ -92,17 +82,19 @@ export default function CategoriesView({
                 <div className="px-4 py-3">
                   {isEditing ? (
                     /* Inline edit form */
-                    <div className="space-y-2">
-                      <input
-                        value={editDraft.name}
-                        onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
-                        className="w-full px-2 py-1.5 bg-slate-900 border border-emerald-500 rounded text-sm font-semibold"
-                      />
-                      <input
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-slate-400">{t('category_name')}</label>
+                        <input
+                          value={editDraft.name}
+                          onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
+                          className="w-full mt-1 px-2 py-1.5 bg-slate-900 border border-emerald-500 rounded text-sm font-semibold"
+                        />
+                      </div>
+                      <BilingualField
+                        label={t('description')}
                         value={editDraft.description}
-                        onChange={(e) => setEditDraft((d) => ({ ...d, description: e.target.value }))}
-                        placeholder={t('desc_placeholder')}
-                        className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                        onChange={(v) => setEditDraft((d) => ({ ...d, description: v }))}
                       />
                       <div className="flex gap-2 justify-end">
                         <button onClick={() => setEditingId(null)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
@@ -115,7 +107,7 @@ export default function CategoriesView({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <div className="font-semibold text-sm">{cat.name}</div>
-                        {cat.description && <div className="text-xs text-slate-400 mt-0.5">{cat.description}</div>}
+                        {cat.description && <div className="text-xs text-slate-400 mt-0.5">{getL(cat.description, lang)}</div>}
                         <div className="text-xs text-slate-500 mt-0.5">{t('member_s')(catMembers.length)}</div>
                       </div>
                       {canEdit && (

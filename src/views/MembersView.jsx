@@ -5,7 +5,7 @@
 //  - Pending join request approvals
 //  - Strike management and suspensions
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import LangContext   from '../i18n/LangContext.js';
 import { ROLE_ORDER, CAREER_OPTIONS } from '../constants.js';
 import { RoleBadge, StrikePips, MemberAvatar } from '../components/ui/index.js';
@@ -36,6 +36,7 @@ export default function MembersView({
   const [search,        setSearch]        = useState('');
   const [roleFilter,    setRoleFilter]    = useState('');
   const [catFilter,     setCatFilter]     = useState('');
+  const [skillFilter,   setSkillFilter]   = useState('');   // collaboration skill search
   const [showGhostForm, setShowGhostForm] = useState(false);
   const [ghostForm,     setGhostForm]     = useState({
     displayName: '', role: 'facultyAdvisor', categoryId: '', university: '', career: '', bio: '',
@@ -45,13 +46,44 @@ export default function MembersView({
   const active    = memberships.filter((m) => m.status === 'active');
   const suspended = memberships.filter((m) => m.status === 'suspended');
 
+  // Collect all unique skill tags across active members for the autocomplete list
+  const allSkillTags = useMemo(() => {
+    const set = new Set();
+    active.forEach((m) => {
+      (m.lookingForHelpIn        || []).forEach((t) => set.add(t));
+      (m.iCanHelpWith            || []).forEach((t) => set.add(t));
+      (m.skillsToLearnThisSemester || []).forEach((t) => set.add(t));
+      (m.skillsICanTeach         || []).forEach((t) => set.add(t));
+    });
+    return [...set].sort();
+  }, [active]);
+
   // Apply search + filter to active members
   const filtered = active.filter((m) => {
     if (search     && !m.displayName?.toLowerCase().includes(search.toLowerCase())) return false;
     if (roleFilter && m.role !== roleFilter)                                         return false;
     if (catFilter  && m.categoryId !== catFilter)                                   return false;
+    if (skillFilter) {
+      const sk = skillFilter.toLowerCase().trim();
+      const allTags = [
+        ...(m.lookingForHelpIn           || []),
+        ...(m.iCanHelpWith               || []),
+        ...(m.skillsToLearnThisSemester  || []),
+        ...(m.skillsICanTeach            || []),
+      ];
+      if (!allTags.some((tag) => tag.toLowerCase().includes(sk))) return false;
+    }
     return true;
   });
+
+  // For each member, detect whether they can help someone who is looking for a specific skill
+  // (only shown when a skill filter is active)
+  const isMatch = (m) => {
+    if (!skillFilter) return false;
+    const sk = skillFilter.toLowerCase().trim();
+    return (m.iCanHelpWith || []).some((tag) => tag.toLowerCase().includes(sk)) ||
+           (m.skillsICanTeach || []).some((tag) => tag.toLowerCase().includes(sk));
+  };
 
   const handleCreateGhost = async (e) => {
     e.preventDefault();
@@ -192,15 +224,39 @@ export default function MembersView({
           <option value="">{t('all_categories_opt')}</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        {(search || roleFilter || catFilter) && (
+        {(search || roleFilter || catFilter || skillFilter) && (
           <button
-            onClick={() => { setSearch(''); setRoleFilter(''); setCatFilter(''); }}
+            onClick={() => { setSearch(''); setRoleFilter(''); setCatFilter(''); setSkillFilter(''); }}
             className="text-xs text-slate-400 underline"
           >
             {t('clear_filters')}
           </button>
         )}
       </div>
+
+      {/* Collaboration / skill filter row */}
+      {allSkillTags.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-slate-500 shrink-0">🤝 {t('filter_collab')}:</span>
+          <input
+            value={skillFilter}
+            onChange={(e) => setSkillFilter(e.target.value)}
+            list="skill-tags-list"
+            placeholder={t('collab_filter_ph')}
+            className={`flex-1 min-w-[140px] px-2 py-1 bg-slate-800 border rounded text-xs transition-colors ${
+              skillFilter ? 'border-emerald-600 text-emerald-200' : 'border-slate-600'
+            }`}
+          />
+          <datalist id="skill-tags-list">
+            {allSkillTags.map((tag) => <option key={tag} value={tag} />)}
+          </datalist>
+          {skillFilter && (
+            <button onClick={() => setSkillFilter('')} className="text-[11px] text-slate-400 underline">
+              {t('clear_skill_filter')}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Active members table */}
       <div className="bg-slate-800 rounded-lg overflow-hidden">
@@ -219,10 +275,15 @@ export default function MembersView({
             </thead>
             <tbody>
               {filtered.map((m) => (
-                <tr key={m.id} className="border-b border-slate-700 hover:bg-slate-700/30">
+                <tr key={m.id} className={`border-b border-slate-700 hover:bg-slate-700/30 ${isMatch(m) ? 'bg-emerald-950/20' : ''}`}>
                   <td className="px-3 py-2">
                     <MemberAvatar membership={m} onViewProfile={onViewProfile} />
                     {m.ghost && <span className="text-[10px] text-purple-400 ml-1">{t('external_badge')}</span>}
+                    {isMatch(m) && (
+                      <span className="ml-1 text-[9px] bg-emerald-900/60 text-emerald-300 px-1.5 py-0.5 rounded-full border border-emerald-700/50">
+                        {t('collab_match_hint')}
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     {canEdit ? (
