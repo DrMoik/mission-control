@@ -174,7 +174,7 @@ export default function ProfileModal({
       >
         {/* ── Cover photo + avatar — z-10 so they render above content */}
         <div className="relative z-10 shrink-0">
-          <div className="h-36 bg-gradient-to-r from-emerald-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-t-xl">
+          <div className="h-64 bg-gradient-to-r from-emerald-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-t-xl">
             {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) && (
               <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
                 className="w-full h-full object-cover" alt="" />

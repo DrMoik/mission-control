@@ -194,7 +194,7 @@ export default function ProfilePageView({
 
       {/* Cover + avatar — z-10 so they render above the content section */}
       <div className="relative z-10">
-        <div className="h-44 bg-gradient-to-br from-emerald-950/80 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden shadow-xl">
+        <div className="h-80 bg-gradient-to-br from-emerald-950/80 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden shadow-xl">
           {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) ? (
             <>
               <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
