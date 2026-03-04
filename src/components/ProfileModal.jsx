@@ -17,7 +17,7 @@ import LangContext              from '../i18n/LangContext.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from './ui/index.js';
 import ImageCropModal           from './ImageCropModal.jsx';
-import { getL, toL, fillL, ensureString } from '../utils.js';
+import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday } from '../utils.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -26,14 +26,6 @@ const PERSONALITY_TAGS = [
   'ptag_solver', 'ptag_collaborator', 'ptag_independent', 'ptag_mentor',
   'ptag_learner', 'ptag_builder', 'ptag_researcher',
 ];
-
-/** Returns the ISO date (YYYY-MM-DD) of the Monday of the current week. */
-function currentWeekMonday() {
-  const d  = new Date();
-  const day = d.getDay() || 7;               // Sun=0 → treat as 7
-  d.setDate(d.getDate() - (day - 1));
-  return d.toISOString().split('T')[0];
-}
 
 // ── Helper: small section heading ─────────────────────────────────────────────
 function SectionHeading({ label }) {
@@ -81,8 +73,9 @@ export default function ProfileModal({
   if (!membership) return null;
 
   const cat     = categories.find((c) => c.id === membership.categoryId);
-  const weekOf  = currentWeekMonday();
-  const thisWeek = weeklyStatuses.find((s) => s.weekOf === weekOf);
+  const weekOf  = getMondayOfWeekLocal(); // Monday–Sunday week, local time (weeks start Monday)
+  // Match by week: normalize stored weekOf to Monday so any day (e.g. 2026-03-03) matches current week Monday (2026-03-02)
+  const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToMonday(s.weekOf) === weekOf);
 
   // ── Edit form helpers ──────────────────────────────────────────────────────
 

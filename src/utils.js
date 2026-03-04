@@ -27,6 +27,42 @@ export const tsToDate = (ts) => {
   return new Date(ts);
 };
 
+// ── Week (Monday–Sunday) helpers ──────────────────────────────────────────
+// All in local time so week boundaries don't shift with timezone.
+
+/** Format a Date as YYYY-MM-DD in local time (no UTC shift). */
+export function dateToLocalYYYYMMDD(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Returns the Monday of the week for the given date (or today) as YYYY-MM-DD in local time. Week = Monday–Sunday. */
+export function getMondayOfWeekLocal(date = new Date()) {
+  const d = new Date(date.getTime());
+  const day = d.getDay() || 7; // Sun=0 → 7 so Monday=1
+  d.setDate(d.getDate() - (day - 1));
+  return dateToLocalYYYYMMDD(d);
+}
+
+/**
+ * Normalize a stored weekOf (YYYY-MM-DD, any day of week) to the Monday of that week in local time.
+ * Use this when matching weekly statuses so entries saved as e.g. "2026-03-03" (Tuesday) match the
+ * current week Monday "2026-03-02". Parses with local date parts to avoid UTC/Timezone quirks.
+ */
+export function normalizeWeekOfToMonday(weekOfStr) {
+  if (!weekOfStr || typeof weekOfStr !== 'string') return '';
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(weekOfStr.trim());
+  if (!match) return '';
+  const [, y, m, day] = match;
+  const month = parseInt(m, 10) - 1;
+  const dateNum = parseInt(day, 10);
+  if (month < 0 || month > 11 || dateNum < 1 || dateNum > 31) return '';
+  const d = new Date(Number(y), month, dateNum);
+  return getMondayOfWeekLocal(d);
+}
+
 // ── Bilingual field helpers ────────────────────────────────────────────────────
 // Bilingual fields are stored as { en: string, es: string }.
 // UI is Spanish-only for now; these helpers remain for backward-compat with stored data.

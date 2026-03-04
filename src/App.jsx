@@ -19,23 +19,22 @@ import { auth, db, googleProvider }         from './firebase.js';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
   collection, doc, setDoc, getDoc, updateDoc, deleteDoc,
-  addDoc, query, where, onSnapshot, serverTimestamp,
+  addDoc, query, where, onSnapshot, serverTimestamp, runTransaction,
 } from 'firebase/firestore';
 
 // Default achievements for platform usage
 const POINTS_PER_WEEKLY_UPDATE = 5;
 const MILESTONE_50_POINTS = 100;
 
-/** Returns true if weekOf (YYYY-MM-DD) is the current week or previous week (late submission). */
+/** Returns true if weekOf (YYYY-MM-DD, any day) falls in current or previous week (Monday–Sunday). */
 function isWeekEligibleForPoints(weekOf) {
-  if (!weekOf || typeof weekOf !== 'string') return false;
+  const monday = normalizeWeekOfToMonday(weekOf);
+  if (!monday) return false;
+  const thisMonday = getMondayOfWeekLocal();
   const d = new Date();
-  const day = d.getDay() || 7; // Sun=0 → treat as 7
-  d.setDate(d.getDate() - (day - 1));
-  const thisMonday = d.toISOString().split('T')[0];
   d.setDate(d.getDate() - 7);
-  const lastMonday = d.toISOString().split('T')[0];
-  return weekOf === thisMonday || weekOf === lastMonday;
+  const lastMonday = getMondayOfWeekLocal(d);
+  return monday === thisMonday || monday === lastMonday;
 }
 
 // ── Internal modules ──────────────────────────────────────────────────────────
@@ -45,7 +44,7 @@ import {
   EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS,
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, MERIT_TIERS,
 } from './constants.js';
-import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded } from './utils.js';
+import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMondayOfWeekLocal, normalizeWeekOfToMonday } from './utils.js';
 
 // ── Shared UI atoms ───────────────────────────────────────────────────────────
 import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
@@ -676,14 +675,56 @@ export default function App() {
       : [membershipId];
     await Promise.all(idsToUpdate.map((id) => updateDoc(doc(db, 'memberships', id), payload)));
 
-    // Auto-award 50 pts for profile 100%: at least one song OR one book (no need for all 3)
-    const hasSongOrBook = (payload.whatIListenTo?.length >= 1) || (payload.bookThatMarkedMe?.length >= 1);
-    if (hasSongOrBook && currentTeam && authUser) {
+    // Auto-award 50 pts for "Perfil completo" ONLY when all profile fields are filled.
+    // Also require at least one culture entry. Award is locked/idempotent via deterministic event doc ID.
+    const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
+    const isNonEmptyBilingual = (v) => {
+      const es = ensureString(getL(v, 'es')).trim();
+      const en = ensureString(getL(v, 'en')).trim();
+      return es.length > 0 || en.length > 0;
+    };
+    const hasNonEmptyTagList = (arr) =>
+      Array.isArray(arr) && arr.some((t) => ensureString(t).trim().length > 0);
+    const hasCulture = (() => {
+      const hasListen = Array.isArray(payload.whatIListenTo) && payload.whatIListenTo.some((it) => {
+        if (typeof it === 'string') return it.trim().length > 0;
+        return (it?.title || '').trim().length > 0;
+      });
+      const hasBook = Array.isArray(payload.bookThatMarkedMe) && payload.bookThatMarkedMe.some((t) => ensureString(t).trim().length > 0);
+      const hasIdea = Array.isArray(payload.ideaThatMotivatesMe) && payload.ideaThatMotivatesMe.some((t) => ensureString(t).trim().length > 0);
+      const hasQuote = Array.isArray(payload.quoteThatMovesMe) && payload.quoteThatMovesMe.some((t) => ensureString(t).trim().length > 0);
+      const hasLegacySong = isNonEmptyString(payload.songOnRepeatTitle);
+      return hasListen || hasBook || hasIdea || hasQuote || hasLegacySong;
+    })();
+
+    const isProfileComplete =
+      isNonEmptyString(payload.displayName) &&
+      isNonEmptyString(payload.email) &&
+      isNonEmptyBilingual(payload.bio) &&
+      isNonEmptyBilingual(payload.hobbies) &&
+      isNonEmptyString(payload.career) &&
+      isNonEmptyString(payload.semester) &&
+      isNonEmptyString(payload.university) &&
+      isNonEmptyBilingual(payload.currentObjective) &&
+      isNonEmptyBilingual(payload.currentChallenge) &&
+      hasNonEmptyTagList(payload.lookingForHelpIn) &&
+      hasNonEmptyTagList(payload.iCanHelpWith) &&
+      hasNonEmptyTagList(payload.skillsToLearnThisSemester) &&
+      hasNonEmptyTagList(payload.skillsICanTeach) &&
+      isNonEmptyBilingual(payload.funFact) &&
+      isNonEmptyString(payload.personalityTag) &&
+      hasCulture;
+
+    if (isProfileComplete && currentTeam && authUser) {
+      const meritEventsRef = collection(db, 'meritEvents');
       for (const mid of idsToUpdate) {
-        if (!teamMemberships.some((mm) => mm.id === mid)) continue;
-        const already = teamMeritEvents.some((e) => e.type === 'award' && e.membershipId === mid && e.evidence === 'profile_complete_50');
-        if (!already) {
-          await addDoc(collection(db, 'meritEvents'), {
+        if (!teamMemberships.some((mm) => mm.id === mid)) continue; // award only for current team membership
+        const awardId = `auto_profile_complete_50_${currentTeam.id}_${mid}`;
+        const awardRef = doc(meritEventsRef, awardId);
+        await runTransaction(db, async (tx) => {
+          const snap = await tx.get(awardRef);
+          if (snap.exists()) return; // locked: already awarded
+          tx.set(awardRef, {
             teamId:            currentTeam.id,
             membershipId:      mid,
             meritId:           null,
@@ -695,9 +736,9 @@ export default function App() {
             autoAward:         true,
             awardedByUserId:   authUser.uid,
             awardedByName:     userProfile?.displayName || authUser.email || '—',
-            createdAt:        serverTimestamp(),
+            createdAt:         serverTimestamp(),
           });
-        }
+        });
       }
     }
     // Firestore listener will update teamMemberships; profileMember derives from it
@@ -705,55 +746,67 @@ export default function App() {
 
   // ── Weekly status ───────────────────────────────────────────────────────────
   // One document per member per week.  Doc ID: `{membershipId}_{weekOf}`.
-  // Auto-awards: 5 pts per new weekly update; 100 pts when member hits 50 updates.
-  const handleSaveWeeklyStatus = async ({ membershipId, weekOf, advanced, failedAt, learned }) => {
+  // Auto-awards: 5 pts only for the FIRST save of that week (one award per week); 100 pts at 50 updates.
+  const handleSaveWeeklyStatus = async ({ membershipId, weekOf: weekOfParam, advanced, failedAt, learned }) => {
     if (!currentTeam || !authUser) return;
     const m = teamMemberships.find((mm) => mm.id === membershipId);
     if (!m) return;
-    // Only the member themselves (or an admin) can post
     const canPost = isPlatformAdmin || memberRole === 'teamAdmin' || m.userId === authUser.uid;
     if (!canPost) return;
+    const weekOf = normalizeWeekOfToMonday(weekOfParam) || weekOfParam || getMondayOfWeekLocal();
     const docId = `${membershipId}_${weekOf}`;
     const statusRef = doc(db, 'weeklyStatuses', docId);
-    const existed = (await getDoc(statusRef)).exists();
-    await setDoc(statusRef, {
-      teamId:       currentTeam.id,
-      membershipId,
-      userId:       authUser.uid,
-      displayName:  m.displayName || '',
-      weekOf,
-      advanced:     advanced  || '',
-      failedAt:     failedAt  || '',
-      learned:      learned   || '',
-      updatedAt:    serverTimestamp(),
-    }, { merge: true });
+    const meritEventsRef = collection(db, 'meritEvents');
+    const doAward = isWeekEligibleForPoints(weekOf);
 
-    // Auto-award points only for NEW weekly updates (not edits)
-    // and only when weekOf is current or previous week (prevents farming by backfilling)
-    if (!existed && isWeekEligibleForPoints(weekOf)) {
-      await addDoc(collection(db, 'meritEvents'), {
+    const didAwardThisWeek = await runTransaction(db, async (tx) => {
+      const statusSnap = await tx.get(statusRef);
+      const existed = statusSnap.exists();
+
+      tx.set(statusRef, {
         teamId:       currentTeam.id,
         membershipId,
-        meritId:      null,
-        meritName:    'Actualización semanal',
-        meritLogo:    '📝',
-        points:       POINTS_PER_WEEKLY_UPDATE,
-        type:         'award',
-        evidence:     weekOf,
-        autoAward:    true,
-        awardedByUserId: authUser.uid,
-        awardedByName:  userProfile?.displayName || authUser.email || '—',
-        createdAt:    serverTimestamp(),
-      });
-      // Check 50-update milestone
+        userId:       authUser.uid,
+        displayName:  m.displayName || '',
+        weekOf,
+        advanced:     advanced  || '',
+        failedAt:     failedAt  || '',
+        learned:      learned   || '',
+        updatedAt:    serverTimestamp(),
+      }, { merge: true });
+
+      // Only one system award per week: grant 5 pts only on first save for this week (not on edits)
+      if (!existed && doAward) {
+        const eventRef = doc(meritEventsRef);
+        tx.set(eventRef, {
+          teamId:       currentTeam.id,
+          membershipId,
+          meritId:      null,
+          meritName:    'Actualización semanal',
+          meritLogo:    '📝',
+          points:       POINTS_PER_WEEKLY_UPDATE,
+          type:         'award',
+          evidence:     weekOf,
+          autoAward:    true,
+          awardedByUserId: authUser.uid,
+          awardedByName:  userProfile?.displayName || authUser.email || '—',
+          createdAt:    serverTimestamp(),
+        });
+        return true;
+      }
+      return false;
+    });
+
+    // 50-update milestone only when we actually awarded (first save of the week)
+    if (didAwardThisWeek) {
       const memberStatuses = teamWeeklyStatuses.filter((s) => s.membershipId === membershipId);
-      const count = memberStatuses.length + 1; // +1 for the one we just saved
+      const count = memberStatuses.length + 1;
       if (count >= 50) {
         const alreadyAwarded = teamMeritEvents.some(
           (e) => e.membershipId === membershipId && e.evidence === 'milestone_50',
         );
         if (!alreadyAwarded) {
-          await addDoc(collection(db, 'meritEvents'), {
+          await addDoc(meritEventsRef, {
             teamId:       currentTeam.id,
             membershipId,
             meritId:      null,

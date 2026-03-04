@@ -9,14 +9,7 @@ import LangContext              from '../i18n/LangContext.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS as DEFAULT_PERSONALITY_TAGS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
-import { getL, toL, fillL, ensureString } from '../utils.js';
-
-function currentWeekMonday() {
-  const d  = new Date();
-  const day = d.getDay() || 7;
-  d.setDate(d.getDate() - (day - 1));
-  return d.toISOString().split('T')[0];
-}
+import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday } from '../utils.js';
 
 function isValidSongUrl(url) {
   if (!url) return true;
@@ -101,8 +94,9 @@ export default function ProfilePageView({
   if (!membership) return null;
 
   const cat     = categories.find((c) => c.id === membership.categoryId);
-  const weekOf  = currentWeekMonday();
-  const thisWeek = weeklyStatuses.find((s) => s.weekOf === weekOf);
+  const weekOf  = getMondayOfWeekLocal(); // Monday–Sunday week, local time (weeks start Monday)
+  // Match by week: normalize stored weekOf to Monday so any day (e.g. 2026-03-03) matches current week Monday (2026-03-02)
+  const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToMonday(s.weekOf) === weekOf);
   const totalPoints = meritEvents
     .filter((e) => e.type === 'award')
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
