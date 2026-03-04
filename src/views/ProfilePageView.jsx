@@ -527,9 +527,11 @@ export default function ProfilePageView({
                         >
                           <span className="text-xl shrink-0">{evt.meritLogo || '🏆'}</span>
                           <div>
-                            <p className="text-sm font-medium text-slate-200">{evt.meritName || t('merit')}</p>
+                            <p className="text-sm font-medium text-slate-200">
+                              {evt.meritName || t('merit')}{count > 1 && <span className="text-slate-400 ml-1">×{count}</span>}
+                            </p>
                             <p className="text-xs text-amber-400/90">
-                              +{(evt.points || 0) * count} pts{count > 1 && <span className="text-slate-400 ml-1">×{count}</span>}
+                              +{(evt.points || 0) * count} pts
                             </p>
                           </div>
                         </div>

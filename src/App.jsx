@@ -827,7 +827,7 @@ export default function App() {
 
   // ── Merits ─────────────────────────────────────────────────────────────────
 
-  const handleCreateMerit = async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader', tags = [], achievementTypes = [], domains = [], tier = null) => {
+  const handleCreateMerit = async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader', tags = [], achievementTypes = [], domains = [], tier = null, repeatable = true) => {
     if (!currentTeam) { alert('No team selected.'); return; }
     if (!canCreateMerit) { alert('No permission to create logros.'); return; }
     // Leaders may only create logros for their own category (not global)
@@ -851,6 +851,7 @@ export default function App() {
         achievementTypes: Array.isArray(achievementTypes) ? achievementTypes.filter(Boolean) : [],
         domains:          Array.isArray(domains) ? domains.filter(Boolean) : [],
         tier:             tier || null,
+        repeatable:       repeatable !== false,
         createdAt: serverTimestamp(),
       });
     } catch (err) {
@@ -878,6 +879,16 @@ export default function App() {
     if (!canEdit && memberRole === 'leader' && !isPlatformAdmin) {
       if (merit.categoryId && merit.categoryId !== currentMembership?.categoryId) {
         alert('Como Líder, solo puedes otorgar logros dentro de tu categoría asignada.');
+        return;
+      }
+    }
+    // If merit is single-use (not repeatable), block duplicate award to same member
+    if (merit.repeatable === false) {
+      const alreadyAwarded = teamMeritEvents.some(
+        (e) => e.type === 'award' && e.meritId === meritId && e.membershipId === membershipId
+      );
+      if (alreadyAwarded) {
+        alert(t('merit_award_once_error') || 'Este logro solo se puede otorgar una vez por persona. Ya fue otorgado a este miembro.');
         return;
       }
     }
