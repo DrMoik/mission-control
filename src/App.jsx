@@ -628,8 +628,7 @@ export default function App() {
       ? userMemberships.filter((um) => um.userId === authUser.uid).map((um) => um.id)
       : [membershipId];
     await Promise.all(idsToUpdate.map((id) => updateDoc(doc(db, 'memberships', id), payload)));
-    // Keep the open profile modal in sync without waiting for Firestore
-    setProfileMember((prev) => prev?.id === membershipId ? { ...prev, ...payload } : prev);
+    // Firestore listener will update teamMemberships; profileMember derives from it
   };
 
   // ── Weekly status ───────────────────────────────────────────────────────────
