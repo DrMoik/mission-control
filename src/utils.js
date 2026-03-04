@@ -76,6 +76,45 @@ export const ensureString = (val, lang = 'es') => {
   return String(val);
 };
 
+// ── Image compression for Firestore (1MB doc limit) ──────────────────────────
+
+/** Max bytes per image to stay under Firestore doc limit. */
+const MAX_IMAGE_BYTES = 120000;
+
+/**
+ * Compresses a data URL if it exceeds maxBytes. Returns original if not a data URL
+ * or if already small enough. Uses canvas resize + JPEG quality reduction.
+ */
+export async function compressDataUrlIfNeeded(dataUrl, maxBytes = MAX_IMAGE_BYTES) {
+  if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return dataUrl;
+  if (dataUrl.length <= maxBytes * 1.4) return dataUrl; // base64 ~1.37× raw bytes
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      const maxDim = 640;
+      const scale = Math.min(1, maxDim / Math.max(w, h));
+      const cw = Math.round(w * scale);
+      const ch = Math.round(h * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = cw;
+      canvas.height = ch;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, cw, ch);
+      let quality = 0.82;
+      let result = canvas.toDataURL('image/jpeg', quality);
+      while (result.length > maxBytes * 1.4 && quality > 0.4) {
+        quality -= 0.12;
+        result = canvas.toDataURL('image/jpeg', quality);
+      }
+      resolve(result);
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 // ── Media helpers ─────────────────────────────────────────────────────────────
 
 /**

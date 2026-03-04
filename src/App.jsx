@@ -42,7 +42,7 @@ function isWeekEligibleForPoints(weekOf) {
 import TRANSLATIONS                from './i18n/translations.js';
 import LangContext                 from './i18n/LangContext.js';
 import { EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS } from './constants.js';
-import { atLeast, tsToDate, getL, ensureString } from './utils.js';
+import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded } from './utils.js';
 
 // ── Shared UI atoms ───────────────────────────────────────────────────────────
 import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
@@ -593,12 +593,13 @@ export default function App() {
     if (!m) return;
     const canEditThis = isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && m.userId === authUser.uid);
     if (!canEditThis) return;
-    // Build a safe update object — only include keys that are explicitly present
-    // in `updates` so we never overwrite fields the caller didn't touch.
+    // Compress data URLs to stay under Firestore 1MB doc limit
+    const photoURL = await compressDataUrlIfNeeded(updates.photoURL ?? m.photoURL ?? null);
+    const coverPhotoURL = await compressDataUrlIfNeeded(updates.coverPhotoURL ?? m.coverPhotoURL ?? '');
     const payload = {
       displayName:   updates.displayName   || m.displayName,
-      photoURL:      updates.photoURL      ?? m.photoURL ?? null,
-      coverPhotoURL: updates.coverPhotoURL ?? m.coverPhotoURL ?? '',
+      photoURL:      photoURL ?? m.photoURL ?? null,
+      coverPhotoURL: coverPhotoURL || '',
       // Bilingual fields
       bio:           updates.bio           ?? m.bio     ?? '',
       hobbies:       updates.hobbies       ?? m.hobbies ?? '',

@@ -128,15 +128,21 @@ export default function ProfileModal({
       return;
     }
     setSongUrlError('');
-    await onSave(membership.id, {
-      ...draft,
-      bio:              fillL(draft.bio),
-      hobbies:          fillL(draft.hobbies),
-      currentObjective: fillL(draft.currentObjective),
-      currentChallenge: fillL(draft.currentChallenge),
-      funFact:          fillL(draft.funFact),
-    });
-    setEditing(false);
+    try {
+      await onSave(membership.id, {
+        ...draft,
+        bio:              fillL(draft.bio),
+        hobbies:          fillL(draft.hobbies),
+        currentObjective: fillL(draft.currentObjective),
+        currentChallenge: fillL(draft.currentChallenge),
+        funFact:          fillL(draft.funFact),
+      });
+      setEditing(false);
+      onClose();
+    } catch (err) {
+      console.error('Profile save failed:', err);
+      alert(t('save_failed') || `Save failed: ${err.message}`);
+    }
   };
 
   // ── Weekly status helpers ──────────────────────────────────────────────────
