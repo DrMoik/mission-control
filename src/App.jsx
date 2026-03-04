@@ -50,7 +50,6 @@ import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
 // ── Modals ────────────────────────────────────────────────────────────────────
 import ProfilePageView            from './views/ProfilePageView.jsx';
 import JoinRequestModal            from './components/JoinRequestModal.jsx';
-import PlatformConfigSection       from './components/PlatformConfigSection.jsx';
 
 // ── Full-page views ───────────────────────────────────────────────────────────
 import OverviewView                from './views/OverviewView.jsx';
@@ -501,7 +500,7 @@ export default function App() {
   };
 
   const handleSaveTeamMeritTags = async (achievementTypes, domains) => {
-    if (!currentTeam || !canEdit) return;
+    if (!currentTeam || (!canEdit && !isPlatformAdmin)) return;
     await updateDoc(doc(db, 'teams', currentTeam.id), {
       achievementTypes: Array.isArray(achievementTypes) ? achievementTypes.filter(Boolean) : [],
       domains:          Array.isArray(domains)          ? domains.filter(Boolean)          : [],
@@ -1396,11 +1395,6 @@ export default function App() {
                     </button>
                   </form>
                 </div>
-                <PlatformConfigSection
-                  platformConfig={platformConfig}
-                  onSave={handleSavePlatformConfig}
-                  t={t}
-                />
               </>
             )}
 

@@ -183,15 +183,15 @@ export default function MeritsView({
         />
       )}
 
-      {/* ── Platform config: platform admin edits global defaults ── */}
-      {isPlatformAdmin && platformConfig && onSavePlatformConfig && (
+      {/* ── Platform config: platform admin edits global defaults (tipos y categorías de logros) ── */}
+      {isPlatformAdmin && onSavePlatformConfig && (
         <PlatformConfigSection
-          platformConfig={platformConfig}
+          platformConfig={platformConfig ?? undefined}
           onSave={onSavePlatformConfig}
         />
       )}
-      {/* ── Team tags: team admin edits their team's types/domains ── */}
-      {canEdit && teamTags && onSaveTeamMeritTags && (
+      {/* ── Team tags: team admin and platform admin can edit this team's types/domains ── */}
+      {(canEdit || isPlatformAdmin) && teamTags && onSaveTeamMeritTags && (
         <PlatformConfigSection
           teamTags={teamTags}
           onSaveTeamTags={onSaveTeamMeritTags}
