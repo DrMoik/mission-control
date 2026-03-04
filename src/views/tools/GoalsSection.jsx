@@ -24,9 +24,11 @@ export default function GoalsSection({
   onCreateGoal, onUpdateGoal, onDeleteGoal,
 }) {
   const { t, lang } = React.useContext(LangContext);
-  const [form,       setForm]       = useState({ objective: { en: '', es: '' }, owner: '', dueDate: '', categoryId: '' });
-  const [expandedId, setExpandedId] = useState(null);
-  const [newKR,      setNewKR]      = useState({});
+  const [form,          setForm]          = useState({ objective: { en: '', es: '' }, owner: '', dueDate: '', categoryId: '' });
+  const [expandedId,     setExpandedId]    = useState(null);
+  const [newKR,          setNewKR]         = useState({});
+  const [editingGoalId,  setEditingGoalId] = useState(null);
+  const [editGoalDraft,  setEditGoalDraft] = useState({ objective: { en: '', es: '' }, owner: '', dueDate: '', categoryId: '' });
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 
@@ -64,6 +66,28 @@ export default function GoalsSection({
 
   const toggleStatus = async (goal) => {
     await onUpdateGoal(goal.id, { status: goal.status === 'active' ? 'completed' : 'active' });
+  };
+
+  const startEditGoal = (goal) => {
+    setEditingGoalId(goal.id);
+    setEditGoalDraft({
+      objective:  toL(goal.objective),
+      owner:      goal.owner || '',
+      dueDate:    goal.dueDate || '',
+      categoryId: goal.categoryId || '',
+    });
+  };
+
+  const handleSaveGoalEdit = async (e) => {
+    e.preventDefault();
+    if (!editingGoalId) return;
+    await onUpdateGoal(editingGoalId, {
+      objective:  fillL(editGoalDraft.objective),
+      owner:      editGoalDraft.owner,
+      dueDate:    editGoalDraft.dueDate,
+      categoryId: editGoalDraft.categoryId || null,
+    });
+    setEditingGoalId(null);
   };
 
   // ── Derived ────────────────────────────────────────────────────────────────
@@ -145,6 +169,8 @@ export default function GoalsSection({
                 <div className="flex items-center gap-2 shrink-0">
                   {canEditThis && (
                     <>
+                      <button onClick={(e) => { e.stopPropagation(); startEditGoal(goal); }}
+                        className="text-[11px] text-amber-400 underline">{t('edit')}</button>
                       <button onClick={(e) => { e.stopPropagation(); toggleStatus(goal); }}
                         className={`text-[11px] underline ${isDone ? 'text-slate-400' : 'text-emerald-400'}`}>
                         {isDone ? t('reopen_btn') : t('complete_btn')}
@@ -170,6 +196,34 @@ export default function GoalsSection({
                 </div>
               )}
             </div>
+
+            {/* Edit goal form */}
+            {editingGoalId === goal.id && (
+              <form onSubmit={handleSaveGoalEdit} className="border-t border-slate-700 px-4 py-3 space-y-3 bg-slate-900/40">
+                <div className="text-xs text-amber-400/90">{t('edit')} {t('goal_ph')}</div>
+                <BilingualField
+                  label={`${t('goal_ph')} *`}
+                  value={editGoalDraft.objective}
+                  onChange={(v) => setEditGoalDraft((f) => ({ ...f, objective: v }))}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <input value={editGoalDraft.owner} onChange={(e) => setEditGoalDraft((f) => ({ ...f, owner: e.target.value }))}
+                    placeholder={t('owner_ph')}
+                    className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
+                  <input type="date" value={editGoalDraft.dueDate} onChange={(e) => setEditGoalDraft((f) => ({ ...f, dueDate: e.target.value }))}
+                    className="w-36 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
+                  <select value={editGoalDraft.categoryId} onChange={(e) => setEditGoalDraft((f) => ({ ...f, categoryId: e.target.value }))}
+                    className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
+                    <option value="">{t('scope_global')}</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
+                    ))}
+                  </select>
+                  <button type="submit" className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded">{t('save')}</button>
+                  <button type="button" onClick={() => setEditingGoalId(null)} className="px-3 py-1.5 bg-slate-600 text-slate-300 text-xs rounded">{t('cancel')}</button>
+                </div>
+              </form>
+            )}
 
             {/* Expanded key results */}
             {isExpanded && (

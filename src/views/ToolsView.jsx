@@ -94,7 +94,7 @@ function ScopeFilter({ value, onChange, categories, userCategoryId, canEdit }) {
  *   canEdit:           boolean,           // admin-level
  *   canEditTools:      boolean,           // leader+ level (global tools)
  *   resolveCanEdit:    function(item): boolean,
- *   onCreateEvent, onDeleteEvent, onUpdateSwot,
+ *   onCreateEvent, onUpdateEvent, onDeleteEvent, onUpdateSwot,
  *   onCreateBoard, onUpdateBoard, onDeleteBoard,
  *   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
  *   onCreateGoal, onUpdateGoal, onDeleteGoal,
@@ -104,7 +104,7 @@ export default function ToolsView({
   team, teamEvents, teamBoards, teamMeetings, teamGoals,
   categories, currentMembership, memberRole, canEdit, canEditTools,
   resolveCanEdit,
-  onCreateEvent, onDeleteEvent, onUpdateSwot,
+  onCreateEvent, onUpdateEvent, onDeleteEvent, onUpdateSwot,
   onCreateBoard,  onUpdateBoard,  onDeleteBoard,
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
   onCreateGoal,   onUpdateGoal,   onDeleteGoal,
@@ -119,6 +119,8 @@ export default function ToolsView({
     description: { en: '', es: '' },
     categoryId:  '',
   });
+  const [editingEventId, setEditingEventId] = useState(null);
+  const [editEventDraft,  setEditEventDraft] = useState({ title: { en: '', es: '' }, date: '', description: { en: '', es: '' }, categoryId: '' });
   const [editingSwot, setEditingSwot] = useState(false);
   const [swotDraft,   setSwotDraft]   = useState(null);
 
@@ -144,6 +146,7 @@ export default function ToolsView({
   }, [team?.id, eisenhowerData]);
 
   // Pugh Matrix: reference, criteria, alternatives, scores; persisted in localStorage
+  const [editingEisenhowerItem, setEditingEisenhowerItem] = useState(null); // { key, id } or null
   const [pughData, setPughData] = useState({ reference: '', criteria: [], alternatives: [], scores: {} });
   React.useEffect(() => {
     if (!team?.id || typeof localStorage === 'undefined') return;
@@ -226,6 +229,29 @@ export default function ToolsView({
     setNewEvent({ title: { en: '', es: '' }, date: '', description: { en: '', es: '' }, categoryId: '' });
   };
 
+  const startEditEvent = (evt) => {
+    const d = evt.date?.toDate ? evt.date.toDate() : new Date(evt.date);
+    setEditingEventId(evt.id);
+    setEditEventDraft({
+      title:       toL(evt.title),
+      date:        d.toISOString().slice(0, 10),
+      description: toL(evt.description),
+      categoryId:  evt.categoryId || '',
+    });
+  };
+
+  const handleUpdateEvent = async (e) => {
+    e.preventDefault();
+    if (!editingEventId) return;
+    await onUpdateEvent(editingEventId, {
+      title:       fillL(editEventDraft.title),
+      date:        editEventDraft.date,
+      description: fillL(editEventDraft.description),
+      categoryId:  editEventDraft.categoryId || null,
+    });
+    setEditingEventId(null);
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -261,7 +287,7 @@ export default function ToolsView({
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
 
-          {canCreate && (
+          {canCreate && !editingEventId && (
             <form onSubmit={handleAddEvent} className="bg-slate-800 rounded-lg p-4 space-y-3">
               <BilingualField
                 label={`${t('event_title_label')} *`}
@@ -293,6 +319,42 @@ export default function ToolsView({
                 <button type="submit" className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded self-end">
                   {t('add_event_btn')}
                 </button>
+              </div>
+            </form>
+          )}
+
+          {editingEventId && (
+            <form onSubmit={handleUpdateEvent} className="bg-slate-800 rounded-lg p-4 space-y-3 border border-amber-700/50">
+              <div className="text-xs text-amber-400/90 mb-1">{t('edit')} {t('event_title_label')}</div>
+              <BilingualField
+                label={`${t('event_title_label')} *`}
+                value={editEventDraft.title}
+                onChange={(v) => setEditEventDraft((n) => ({ ...n, title: v }))}
+                placeholder={{ en: t('event_title_ph'), es: t('event_title_ph') }}
+              />
+              <BilingualField
+                label={t('description')}
+                value={editEventDraft.description}
+                onChange={(v) => setEditEventDraft((n) => ({ ...n, description: v }))}
+              />
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="w-40">
+                  <label className="text-xs text-slate-400 block mb-1">{t('event_date')} *</label>
+                  <input type="date" value={editEventDraft.date} onChange={(e) => setEditEventDraft((v) => ({ ...v, date: e.target.value }))}
+                    required className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 block mb-1">{t('scope_label')}</label>
+                  <select value={editEventDraft.categoryId} onChange={(e) => setEditEventDraft((v) => ({ ...v, categoryId: e.target.value }))}
+                    className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
+                    <option value="">{t('scope_global')}</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded self-end">{t('save')}</button>
+                <button type="button" onClick={() => setEditingEventId(null)} className="px-3 py-1.5 bg-slate-600 text-slate-300 text-xs rounded self-end">{t('cancel')}</button>
               </div>
             </form>
           )}
@@ -335,9 +397,14 @@ export default function ToolsView({
                         )}
                       </div>
                       {canDelEvt && (
-                        <button onClick={() => onDeleteEvent(evt.id)} className="shrink-0 text-[11px] text-red-400 underline">
-                          {t('delete')}
-                        </button>
+                        <div className="flex gap-2 shrink-0">
+                          <button type="button" onClick={() => startEditEvent(evt)} className="text-[11px] text-amber-400 underline">
+                            {t('edit')}
+                          </button>
+                          <button type="button" onClick={() => onDeleteEvent(evt.id)} className="text-[11px] text-red-400 underline">
+                            {t('delete')}
+                          </button>
+                        </div>
                       )}
                     </div>
                   );
@@ -428,22 +495,56 @@ export default function ToolsView({
               <div key={key} className={`border-2 ${border} ${bg} rounded-lg p-4`}>
                 <div className="font-semibold text-sm mb-3">{t(labelKey)}</div>
                 <div className="space-y-2">
-                  {(eisenhowerData[key] || []).map((item) => (
-                    <div key={item.id} className="flex items-center gap-2 group">
-                      <span className="text-slate-400 text-xs shrink-0">•</span>
-                      <span className="text-sm text-slate-200 flex-1 truncate">{item.text || ''}</span>
-                      <button
-                        type="button"
-                        onClick={() => setEisenhowerData((d) => ({
-                          ...d,
-                          [key]: (d[key] || []).filter((i) => i.id !== item.id),
-                        }))}
-                        className="text-red-400 text-xs opacity-0 group-hover:opacity-100 hover:underline shrink-0"
-                      >
-                        {t('delete')}
-                      </button>
-                    </div>
-                  ))}
+                  {(eisenhowerData[key] || []).map((item) => {
+                    const isEditing = editingEisenhowerItem?.key === key && editingEisenhowerItem?.id === item.id;
+                    return (
+                      <div key={item.id} className="flex items-center gap-2 group">
+                        <span className="text-slate-400 text-xs shrink-0">•</span>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            defaultValue={item.text || ''}
+                            autoFocus
+                            className="flex-1 min-w-0 px-2 py-1 bg-slate-900 border border-emerald-600 rounded text-xs text-slate-200"
+                            onBlur={(e) => {
+                              const v = e.target.value?.trim();
+                              if (v !== undefined) {
+                                setEisenhowerData((d) => ({
+                                  ...d,
+                                  [key]: (d[key] || []).map((i) => (i.id === item.id ? { ...i, text: v || i.text } : i)),
+                                }));
+                              }
+                              setEditingEisenhowerItem(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.target.blur();
+                              }
+                              if (e.key === 'Escape') setEditingEisenhowerItem(null);
+                            }}
+                          />
+                        ) : (
+                          <span
+                            className="text-sm text-slate-200 flex-1 truncate cursor-pointer hover:text-emerald-300"
+                            onClick={() => setEditingEisenhowerItem({ key, id: item.id })}
+                            title={t('edit')}
+                          >
+                            {item.text || ''}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setEisenhowerData((d) => ({
+                            ...d,
+                            [key]: (d[key] || []).filter((i) => i.id !== item.id),
+                          }))}
+                          className="text-red-400 text-xs opacity-0 group-hover:opacity-100 hover:underline shrink-0"
+                        >
+                          {t('delete')}
+                        </button>
+                      </div>
+                    );
+                  })}
                   <div className="flex gap-2 mt-1">
                     <input
                       type="text"

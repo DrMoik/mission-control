@@ -1035,6 +1035,18 @@ export default function App() {
     });
   };
 
+  const handleUpdateEvent = async (eventId, { title, date, description, categoryId }) => {
+    const evt = teamEvents.find((e) => e.id === eventId);
+    if (!evt || !canEditToolItem(evt)) return;
+    await updateDoc(doc(db, 'teamEvents', eventId), {
+      title:       title ?? evt.title,
+      date:        date != null ? new Date(date) : evt.date,
+      description: description ?? evt.description ?? '',
+      categoryId:  categoryId ?? evt.categoryId ?? null,
+      ...lastEditedStamp(),
+    });
+  };
+
   const handleDeleteEvent = async (eventId) => {
     const evt = teamEvents.find((e) => e.id === eventId);
     if (!canEditToolItem(evt)) return;
@@ -1696,6 +1708,7 @@ export default function App() {
                 canEditTools={canEditTools}
                 resolveCanEdit={canEditToolItem}
                 onCreateEvent={handleCreateEvent}
+                onUpdateEvent={handleUpdateEvent}
                 onDeleteEvent={handleDeleteEvent}
                 onUpdateSwot={handleUpdateSwot}
                 onCreateBoard={handleCreateBoard}
