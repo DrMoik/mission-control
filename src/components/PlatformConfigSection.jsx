@@ -1,6 +1,7 @@
 // ─── PlatformConfigSection ───────────────────────────────────────────────────
-// Platform admin can edit merit achievement types and domains (area tags).
-// These are used as defaults when creating teams and when creating logros.
+// Edits merit achievement types and domains (area tags).
+// Mode 1: platformConfig + onSave → platform admin edits global defaults.
+// Mode 2: teamTags + onSaveTeamTags → team admin edits their team's tags.
 
 import React, { useState, useEffect } from 'react';
 import LangContext from '../i18n/LangContext.js';
@@ -9,13 +10,21 @@ import { MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS } from '../constants.js';
 export default function PlatformConfigSection({
   platformConfig,
   onSave,
+  teamTags,
+  onSaveTeamTags,
+  label: labelOverride,
   t,
 }) {
   const { t: tCtx } = React.useContext(LangContext);
   const tFn = t || tCtx;
+  const isTeamMode = Boolean(teamTags && onSaveTeamTags);
 
-  const typesDefault = platformConfig?.achievementTypes?.length ? platformConfig.achievementTypes : MERIT_ACHIEVEMENT_TYPES;
-  const domainsDefault = platformConfig?.domains?.length ? platformConfig.domains : MERIT_DOMAINS;
+  const typesDefault = isTeamMode
+    ? (teamTags?.achievementTypes?.length ? teamTags.achievementTypes : MERIT_ACHIEVEMENT_TYPES)
+    : (platformConfig?.achievementTypes?.length ? platformConfig.achievementTypes : MERIT_ACHIEVEMENT_TYPES);
+  const domainsDefault = isTeamMode
+    ? (teamTags?.domains?.length ? teamTags.domains : MERIT_DOMAINS)
+    : (platformConfig?.domains?.length ? platformConfig.domains : MERIT_DOMAINS);
 
   const [types, setTypes] = useState(typesDefault.join(', '));
   const [domains, setDomains] = useState(domainsDefault.join(', '));
@@ -25,7 +34,7 @@ export default function PlatformConfigSection({
   useEffect(() => {
     setTypes(typesDefault.join(', '));
     setDomains(domainsDefault.join(', '));
-  }, [platformConfig]);
+  }, [isTeamMode ? teamTags : platformConfig]);
 
   const parseList = (s) => (s || '')
     .split(/[,\n]+/)
@@ -41,7 +50,8 @@ export default function PlatformConfigSection({
       setSaving(false);
       return;
     }
-    await onSave(achievementTypes, domainsArr);
+    if (isTeamMode) await onSaveTeamTags(achievementTypes, domainsArr);
+    else await onSave(achievementTypes, domainsArr);
     setSaving(false);
   };
 
@@ -56,13 +66,13 @@ export default function PlatformConfigSection({
         onClick={() => setOpen((o) => !o)}
         className="w-full text-left flex items-center justify-between text-sm font-semibold text-slate-200 hover:text-white transition-colors"
       >
-        <span>{tFn('platform_config_tags') || 'Etiquetas de área y tipo (logros)'}</span>
+        <span>{labelOverride || (isTeamMode ? (tFn('team_config_tags') || 'Etiquetas de área y tipo de este equipo') : (tFn('platform_config_tags') || 'Etiquetas de área y tipo (logros)'))}</span>
         <span className="text-slate-500">{open ? '▼' : '▶'}</span>
       </button>
       {open && (
         <div className="mt-3 space-y-3 pt-3 border-t border-slate-700">
           <p className="text-[11px] text-slate-500">
-            {tFn('platform_config_help') || 'Estas etiquetas se usan al crear logros. Los equipos nuevos usan estos valores por defecto.'}
+            {isTeamMode ? (tFn('team_config_help') || 'Estas etiquetas se usan al crear logros en este equipo.') : (tFn('platform_config_help') || 'Estas etiquetas se usan al crear logros. Los equipos nuevos usan estos valores por defecto.')}
           </p>
           <div>
             <label className="text-[11px] text-slate-500 block mb-1">{tFn('merit_attr_types') || 'Tipos'}</label>

@@ -354,9 +354,9 @@ export default function App() {
     [allTeams, selectedTeamId],
   );
 
-  // Platform config overrides constants for merit tags; defaults used when creating teams
-  const meritAchievementTypes = (platformConfig?.achievementTypes?.length ? platformConfig.achievementTypes : MERIT_ACHIEVEMENT_TYPES);
-  const meritDomains         = (platformConfig?.domains?.length ? platformConfig.domains : MERIT_DOMAINS);
+  // Merit tags: team overrides, then platform config, then constants
+  const meritAchievementTypes = (currentTeam?.achievementTypes?.length ? currentTeam.achievementTypes : (platformConfig?.achievementTypes?.length ? platformConfig.achievementTypes : MERIT_ACHIEVEMENT_TYPES));
+  const meritDomains         = (currentTeam?.domains?.length ? currentTeam.domains : (platformConfig?.domains?.length ? platformConfig.domains : MERIT_DOMAINS));
 
   const myTeams = useMemo(() => {
     const ids = new Set(userMemberships.map((m) => m.teamId));
@@ -498,6 +498,14 @@ export default function App() {
       updatedAt:       serverTimestamp(),
     };
     await setDoc(ref, data, { merge: true });
+  };
+
+  const handleSaveTeamMeritTags = async (achievementTypes, domains) => {
+    if (!currentTeam || !canEdit) return;
+    await updateDoc(doc(db, 'teams', currentTeam.id), {
+      achievementTypes: Array.isArray(achievementTypes) ? achievementTypes.filter(Boolean) : [],
+      domains:          Array.isArray(domains)          ? domains.filter(Boolean)          : [],
+    });
   };
 
   // ── Memberships ────────────────────────────────────────────────────────────
@@ -1629,6 +1637,8 @@ export default function App() {
                 domains={meritDomains}
                 platformConfig={platformConfig}
                 onSavePlatformConfig={handleSavePlatformConfig}
+                teamTags={currentTeam ? { achievementTypes: currentTeam.achievementTypes, domains: currentTeam.domains } : null}
+                onSaveTeamMeritTags={handleSaveTeamMeritTags}
                 onCreateMerit={handleCreateMerit}
                 onDeleteMerit={handleDeleteMerit}
                 onAwardMerit={handleAwardMerit}

@@ -25,7 +25,7 @@ export default function MeritsView({
   merits, categories, memberships, meritEvents, userProfile,
   canEdit, canCreateMerit, canAward, currentMembership, memberRole, isPlatformAdmin,
   achievementTypes = MERIT_ACHIEVEMENT_TYPES, domains = MERIT_DOMAINS,
-  platformConfig, onSavePlatformConfig,
+  platformConfig, onSavePlatformConfig, teamTags, onSaveTeamMeritTags,
   onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
   const { t, lang } = React.useContext(LangContext);
@@ -183,11 +183,18 @@ export default function MeritsView({
         />
       )}
 
-      {/* ── Platform config: admin edits area/type tags (defaults for new teams) ── */}
+      {/* ── Platform config: platform admin edits global defaults ── */}
       {isPlatformAdmin && platformConfig && onSavePlatformConfig && (
         <PlatformConfigSection
           platformConfig={platformConfig}
           onSave={onSavePlatformConfig}
+        />
+      )}
+      {/* ── Team tags: team admin edits their team's types/domains ── */}
+      {canEdit && teamTags && onSaveTeamMeritTags && (
+        <PlatformConfigSection
+          teamTags={teamTags}
+          onSaveTeamTags={onSaveTeamMeritTags}
         />
       )}
 
