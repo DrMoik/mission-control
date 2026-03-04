@@ -5,33 +5,42 @@
 //  3. Award form (leader +)
 //  4. Audit log with edit/revoke (platformAdmin)
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import LangContext              from '../i18n/LangContext.js';
 import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS, MERIT_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS, MERIT_TIERS } from '../constants.js';
 import { tsToDate, getL, fillL, ensureString } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { BilingualField, TagInput } from '../components/ui/index.js';
+import PlatformConfigSection    from '../components/PlatformConfigSection.jsx';
 
 /**
  * @param {{
  *   merits, categories, memberships, meritEvents,
- *   canEdit, canAward, currentMembership, memberRole, isPlatformAdmin,
+ *   canEdit, canCreateMerit, canAward, currentMembership, memberRole, isPlatformAdmin,
+ *   achievementTypes, domains, platformConfig, onSavePlatformConfig,
  *   onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile
  * }} props
  */
 export default function MeritsView({
   merits, categories, memberships, meritEvents, userProfile,
-  canEdit, canAward, currentMembership, memberRole, isPlatformAdmin,
+  canEdit, canCreateMerit, canAward, currentMembership, memberRole, isPlatformAdmin,
+  achievementTypes = MERIT_ACHIEVEMENT_TYPES, domains = MERIT_DOMAINS,
+  platformConfig, onSavePlatformConfig,
   onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
   const { t, lang } = React.useContext(LangContext);
 
+  // Leaders can only create for their area; pre-fill categoryId
+  const leaderCategoryId = (memberRole === 'leader' && !isPlatformAdmin) ? currentMembership?.categoryId : null;
   const [meritForm, setMeritForm] = useState({
-    name: '', points: 100, categoryId: '', logo: '🏆', assignableBy: 'leader',
+    name: '', points: 100, categoryId: leaderCategoryId || '', logo: '🏆', assignableBy: 'leader',
     tags: [], achievementTypes: [], domains: [], tier: '',
     shortDescription: { en: '', es: '' },
     longDescription:  { en: '', es: '' },
   });
+  useEffect(() => {
+    if (leaderCategoryId) setMeritForm((f) => ({ ...f, categoryId: leaderCategoryId }));
+  }, [leaderCategoryId]);
   const [detailMerit,     setDetailMerit]     = useState(null);  // merit shown in popup
   const [showIconPicker,  setShowIconPicker]  = useState(false);
   const [cropSrc,         setCropSrc]         = useState(null);
@@ -147,7 +156,7 @@ export default function MeritsView({
       meritForm.tier || null,
     );
     setMeritForm({
-      name: '', points: 100, categoryId: '', logo: '🏆', assignableBy: 'leader',
+      name: '', points: 100, categoryId: leaderCategoryId || '', logo: '🏆', assignableBy: 'leader',
       tags: [], achievementTypes: [], domains: [], tier: '',
       shortDescription: { en: '', es: '' },
       longDescription:  { en: '', es: '' },
@@ -174,8 +183,16 @@ export default function MeritsView({
         />
       )}
 
-      {/* ── Define merit form (admin / advisor) ── */}
-      {canEdit && (
+      {/* ── Platform config: admin edits area/type tags (defaults for new teams) ── */}
+      {isPlatformAdmin && platformConfig && onSavePlatformConfig && (
+        <PlatformConfigSection
+          platformConfig={platformConfig}
+          onSave={onSavePlatformConfig}
+        />
+      )}
+
+      {/* ── Define merit form (admin / leader for their area) ── */}
+      {canCreateMerit && (
         <div className="bg-slate-800 rounded-lg p-4 space-y-3">
           <div className="text-xs text-slate-400">{t('define_merit')}</div>
 
@@ -256,17 +273,23 @@ export default function MeritsView({
               />
             </div>
 
-            {/* Category */}
+            {/* Category — leaders restricted to their area only */}
             <div className="flex-1 min-w-[120px]">
               <label className="text-[11px] text-slate-500 block mb-1">{t('category')}</label>
-              <select
-                value={meritForm.categoryId}
-                onChange={(e) => setMeritForm((f) => ({ ...f, categoryId: e.target.value }))}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
-              >
-                <option value="">{t('global_category')}</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
-              </select>
+              {leaderCategoryId ? (
+                <div className="px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs text-slate-300">
+                  {ensureString(categories.find((c) => c.id === leaderCategoryId)?.name) || t('category')}
+                </div>
+              ) : (
+                <select
+                  value={meritForm.categoryId}
+                  onChange={(e) => setMeritForm((f) => ({ ...f, categoryId: e.target.value }))}
+                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                >
+                  <option value="">{t('global_category')}</option>
+                  {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
+                </select>
+              )}
             </div>
             {/* Assignable by — who can award this logro */}
             <div className="flex-1 min-w-[120px]">
@@ -292,7 +315,7 @@ export default function MeritsView({
           <div className="space-y-2">
             <label className="text-[11px] text-slate-500 block">{t('merit_attr_types')}</label>
             <div className="flex flex-wrap gap-1">
-              {MERIT_ACHIEVEMENT_TYPES.map((type) => {
+              {achievementTypes.map((type) => {
                 const sel = (meritForm.achievementTypes || []).includes(type);
                 return (
                   <button key={type} type="button"
@@ -307,7 +330,7 @@ export default function MeritsView({
             </div>
             <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_domains')}</label>
             <div className="flex flex-wrap gap-1">
-              {MERIT_DOMAINS.map((d) => {
+              {domains.map((d) => {
                 const sel = (meritForm.domains || []).includes(d);
                 return (
                   <button key={d} type="button"
@@ -458,7 +481,7 @@ export default function MeritsView({
                   className={`text-[10px] px-2 py-0.5 rounded ${gridScopeFilter === c.id ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{ensureString(c.name)}</button>
               ))}
               <span className="text-[10px] text-slate-500 ml-2">{t('merit_filter_type')}:</span>
-              {MERIT_ACHIEVEMENT_TYPES.slice(0, 6).map((type) => {
+              {achievementTypes.slice(0, 6).map((type) => {
                 const sel = gridTypeFilters.includes(type);
                 return (
                   <button key={type} type="button"
@@ -467,7 +490,7 @@ export default function MeritsView({
                 );
               })}
               <span className="text-[10px] text-slate-500 ml-2">{t('merit_filter_domain')}:</span>
-              {MERIT_DOMAINS.map((d) => {
+              {domains.map((d) => {
                 const sel = gridDomainFilters.includes(d);
                 return (
                   <button key={d} type="button"
@@ -594,7 +617,7 @@ export default function MeritsView({
                   <button key={c.id} type="button" onClick={() => setMeritScopeFilter(meritScopeFilter === c.id ? '' : c.id)}
                     className={`text-[10px] px-2 py-0.5 rounded ${meritScopeFilter === c.id ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{ensureString(c.name)}</button>
                 ))}
-                {MERIT_ACHIEVEMENT_TYPES.map((type) => {
+                {achievementTypes.map((type) => {
                   const sel = meritTypeFilters.includes(type);
                   return (
                     <button key={type} type="button"
@@ -602,7 +625,7 @@ export default function MeritsView({
                       className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_type_' + type)}</button>
                   );
                 })}
-                {MERIT_DOMAINS.map((d) => {
+                {domains.map((d) => {
                   const sel = meritDomainFilters.includes(d);
                   return (
                     <button key={d} type="button"

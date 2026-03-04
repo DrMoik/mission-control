@@ -41,7 +41,7 @@ function isWeekEligibleForPoints(weekOf) {
 // ── Internal modules ──────────────────────────────────────────────────────────
 import TRANSLATIONS                from './i18n/translations.js';
 import LangContext                 from './i18n/LangContext.js';
-import { EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS } from './constants.js';
+import { EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString } from './utils.js';
 
 // ── Shared UI atoms ───────────────────────────────────────────────────────────
@@ -50,6 +50,7 @@ import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
 // ── Modals ────────────────────────────────────────────────────────────────────
 import ProfilePageView            from './views/ProfilePageView.jsx';
 import JoinRequestModal            from './components/JoinRequestModal.jsx';
+import PlatformConfigSection       from './components/PlatformConfigSection.jsx';
 
 // ── Full-page views ───────────────────────────────────────────────────────────
 import OverviewView                from './views/OverviewView.jsx';
@@ -171,6 +172,7 @@ export default function App() {
   const [teamWeeklyStatuses,  setTeamWeeklyStatuses]  = useState([]);
   const [teamFundingAccounts,  setTeamFundingAccounts]  = useState([]);
   const [teamFundingEntries,  setTeamFundingEntries]  = useState([]);
+  const [platformConfig,      setPlatformConfig]      = useState(null);       // { achievementTypes, domains }
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [navCollapsed,   setNavCollapsed]   = useState(false);
@@ -241,6 +243,14 @@ export default function App() {
       setAllTeams(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
   }, []);
+
+  // Platform config (achievement types, domains) — readable by all; editable by platform admin
+  useEffect(() => {
+    if (!authUser) { setPlatformConfig(null); return; }
+    return onSnapshot(doc(db, 'platformConfig', 'config'), (snap) => {
+      setPlatformConfig(snap.exists() ? snap.data() : null);
+    }, () => setPlatformConfig(null));
+  }, [authUser]);
 
   // Categories for every team (needed for the join-request form before a team is selected)
   useEffect(() => {
@@ -333,6 +343,8 @@ export default function App() {
   const canEdit         = effectiveAdmin || effectiveRole === 'teamAdmin' || effectiveRole === 'facultyAdvisor';
   const canAward        = effectiveAdmin || atLeast(effectiveRole, 'leader');
   const canEditTools    = canEdit || atLeast(effectiveRole, 'leader');
+  // Leaders can create logros only for their category; admins can create any
+  const canCreateMerit  = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
   const isMember        = effectiveAdmin || Boolean(currentMembership);
   // Real permission level — unaffected by preview mode (used for UI controls)
   const isAdminLevel    = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor';
@@ -341,6 +353,10 @@ export default function App() {
     () => allTeams.find((t) => t.id === selectedTeamId) || null,
     [allTeams, selectedTeamId],
   );
+
+  // Platform config overrides constants for merit tags; defaults used when creating teams
+  const meritAchievementTypes = (platformConfig?.achievementTypes?.length ? platformConfig.achievementTypes : MERIT_ACHIEVEMENT_TYPES);
+  const meritDomains         = (platformConfig?.domains?.length ? platformConfig.domains : MERIT_DOMAINS);
 
   const myTeams = useMemo(() => {
     const ids = new Set(userMemberships.map((m) => m.teamId));
@@ -471,6 +487,17 @@ export default function App() {
     await deleteDoc(doc(db, 'teams', teamId));
     // If we were inside the deleted team, return to the picker
     if (selectedTeamId === teamId) setSelectedTeamId(null);
+  };
+
+  const handleSavePlatformConfig = async (achievementTypes, domains) => {
+    if (!isPlatformAdmin) return;
+    const ref = doc(db, 'platformConfig', 'config');
+    const data = {
+      achievementTypes: Array.isArray(achievementTypes) ? achievementTypes.filter(Boolean) : MERIT_ACHIEVEMENT_TYPES,
+      domains:          Array.isArray(domains)          ? domains.filter(Boolean)          : MERIT_DOMAINS,
+      updatedAt:       serverTimestamp(),
+    };
+    await setDoc(ref, data, { merge: true });
   };
 
   // ── Memberships ────────────────────────────────────────────────────────────
@@ -804,7 +831,14 @@ export default function App() {
 
   const handleCreateMerit = async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader', tags = [], achievementTypes = [], domains = [], tier = null) => {
     if (!currentTeam) { alert('No team selected.'); return; }
-    if (!canEdit)     { alert('No permission to create logros.'); return; }
+    if (!canCreateMerit) { alert('No permission to create logros.'); return; }
+    // Leaders may only create logros for their own category (not global)
+    if (memberRole === 'leader' && !isPlatformAdmin) {
+      if (!categoryId || categoryId !== currentMembership?.categoryId) {
+        alert(t('leader_create_merit_category_only') || 'Como Líder, solo puedes crear logros para tu área asignada.');
+        return;
+      }
+    }
     try {
       await addDoc(collection(db, 'merits'), {
         teamId: currentTeam.id,
@@ -1334,17 +1368,24 @@ export default function App() {
             )}
 
             {isPlatformAdmin && (
-              <div className="bg-slate-800 rounded-xl p-4">
-                <h2 className="text-sm font-semibold mb-3">{t('create_new_team')}</h2>
-                <form onSubmit={(e) => { e.preventDefault(); handleCreateTeam(e.target.name.value); e.target.reset(); }}
-                  className="flex gap-2">
-                  <input name="name" placeholder={t('team_name_placeholder')} required
-                    className="flex-1 px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm" />
-                  <button type="submit" className="px-4 py-2 bg-emerald-500 text-black text-xs font-semibold rounded">
-                    {t('create')}
-                  </button>
-                </form>
-              </div>
+              <>
+                <div className="bg-slate-800 rounded-xl p-4">
+                  <h2 className="text-sm font-semibold mb-3">{t('create_new_team')}</h2>
+                  <form onSubmit={(e) => { e.preventDefault(); handleCreateTeam(e.target.name.value); e.target.reset(); }}
+                    className="flex gap-2">
+                    <input name="name" placeholder={t('team_name_placeholder')} required
+                      className="flex-1 px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm" />
+                    <button type="submit" className="px-4 py-2 bg-emerald-500 text-black text-xs font-semibold rounded">
+                      {t('create')}
+                    </button>
+                  </form>
+                </div>
+                <PlatformConfigSection
+                  platformConfig={platformConfig}
+                  onSave={handleSavePlatformConfig}
+                  t={t}
+                />
+              </>
             )}
 
             {activeMyTeams.length === 0 && pendingMyTeams.length === 0 && otherTeams.length === 0 && (
@@ -1571,10 +1612,15 @@ export default function App() {
                 meritEvents={teamMeritEvents}
                 userProfile={userProfile}
                 canEdit={canEdit}
+                canCreateMerit={canCreateMerit}
                 canAward={canAward}
                 currentMembership={currentMembership}
                 memberRole={memberRole}
                 isPlatformAdmin={isPlatformAdmin}
+                achievementTypes={meritAchievementTypes}
+                domains={meritDomains}
+                platformConfig={platformConfig}
+                onSavePlatformConfig={handleSavePlatformConfig}
                 onCreateMerit={handleCreateMerit}
                 onDeleteMerit={handleDeleteMerit}
                 onAwardMerit={handleAwardMerit}

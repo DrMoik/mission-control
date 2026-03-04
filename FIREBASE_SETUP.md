@@ -182,12 +182,15 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════
     //  MERITS
     //  Visible to any active team member.
-    //  Only team admins can create, edit, or delete definitions.
+    //  Team admins can create/edit/delete. Leaders can create only for their category.
     // ═══════════════════════════════════════════════════════════
 
     match /merits/{meritId} {
       allow read: if isActiveMember(resource.data.teamId);
-      allow create: if isTeamAdmin(request.resource.data.teamId);
+      allow create: if isTeamAdmin(request.resource.data.teamId) ||
+        (isLeaderOrAbove(request.resource.data.teamId) &&
+         request.resource.data.categoryId != null &&
+         request.resource.data.categoryId == membershipDoc(request.resource.data.teamId).data.categoryId);
       allow update: if isTeamAdmin(resource.data.teamId);
       allow delete: if isTeamAdmin(resource.data.teamId);
     }
