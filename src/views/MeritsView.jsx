@@ -11,7 +11,6 @@ import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS, MERIT_TAG_SUGGESTIONS, MERIT_ACHIEV
 import { tsToDate, getL, fillL, ensureString } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { BilingualField, TagInput } from '../components/ui/index.js';
-import PlatformConfigSection    from '../components/PlatformConfigSection.jsx';
 
 /**
  * @param {{
@@ -41,6 +40,33 @@ export default function MeritsView({
   useEffect(() => {
     if (leaderCategoryId) setMeritForm((f) => ({ ...f, categoryId: leaderCategoryId }));
   }, [leaderCategoryId]);
+
+  // Inline edit of team types/domains (inside "Define a new merit")
+  const [teamTagsTypesStr,   setTeamTagsTypesStr]   = useState(() => achievementTypes.join(', '));
+  const [teamTagsDomainsStr, setTeamTagsDomainsStr] = useState(() => domains.join(', '));
+  const [teamTagsSaving,     setTeamTagsSaving]     = useState(false);
+  useEffect(() => {
+    setTeamTagsTypesStr(achievementTypes.join(', '));
+    setTeamTagsDomainsStr(domains.join(', '));
+  }, [achievementTypes, domains]);
+  const parseList = (s) => (s || '').split(/[,\n]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+  const handleSaveTeamTags = async () => {
+    if (!onSaveTeamMeritTags) return;
+    const typesArr = parseList(teamTagsTypesStr);
+    const domainsArr = parseList(teamTagsDomainsStr);
+    if (typesArr.length === 0 || domainsArr.length === 0) {
+      alert(t('platform_config_min_one') || 'Cada lista debe tener al menos un valor.');
+      return;
+    }
+    setTeamTagsSaving(true);
+    await onSaveTeamMeritTags(typesArr, domainsArr);
+    setTeamTagsSaving(false);
+  };
+  const resetTeamTagsToDefaults = () => {
+    setTeamTagsTypesStr(MERIT_ACHIEVEMENT_TYPES.join(', '));
+    setTeamTagsDomainsStr(MERIT_DOMAINS.join(', '));
+  };
+
   const [detailMerit,     setDetailMerit]     = useState(null);  // merit shown in popup
   const [showIconPicker,  setShowIconPicker]  = useState(false);
   const [cropSrc,         setCropSrc]         = useState(null);
@@ -183,18 +209,49 @@ export default function MeritsView({
         />
       )}
 
-      {/* ── Team tags (tipos y categorías): defaults when team is created; team/platform admin edit here ── */}
-      {(canEdit || isPlatformAdmin) && teamTags && onSaveTeamMeritTags && (
-        <PlatformConfigSection
-          teamTags={teamTags}
-          onSaveTeamTags={onSaveTeamMeritTags}
-        />
-      )}
-
       {/* ── Define merit form (admin / leader for their area) ── */}
       {canCreateMerit && (
         <div className="bg-slate-800 rounded-lg p-4 space-y-3">
           <div className="text-xs text-slate-400">{t('define_merit')}</div>
+
+          {/* Edit team types/domains (admin only) — inside this section */}
+          {(canEdit || isPlatformAdmin) && onSaveTeamMeritTags && (
+            <div className="border-t border-slate-700 pt-3 space-y-2">
+              <p className="text-[11px] text-slate-500 font-medium">{t('team_config_tags') || 'Tipos y categorías disponibles para este equipo'}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] text-slate-500 block mb-0.5">{t('merit_attr_types')}</label>
+                  <textarea
+                    value={teamTagsTypesStr}
+                    onChange={(e) => setTeamTagsTypesStr(e.target.value)}
+                    rows={2}
+                    placeholder="technical, leadership, ..."
+                    className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-500 block mb-0.5">{t('merit_attr_domains')}</label>
+                  <textarea
+                    value={teamTagsDomainsStr}
+                    onChange={(e) => setTeamTagsDomainsStr(e.target.value)}
+                    rows={2}
+                    placeholder="software, hardware, ..."
+                    className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs font-mono"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={handleSaveTeamTags} disabled={teamTagsSaving}
+                  className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded hover:bg-emerald-400 disabled:opacity-50">
+                  {teamTagsSaving ? '…' : t('save')}
+                </button>
+                <button type="button" onClick={resetTeamTagsToDefaults}
+                  className="px-3 py-1.5 bg-slate-600 text-slate-300 text-xs rounded hover:bg-slate-500">
+                  {t('platform_config_reset') || 'Restaurar valores por defecto'}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2 items-end">
             {/* Logo picker */}
