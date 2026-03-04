@@ -17,7 +17,7 @@ import PlatformConfigSection    from '../components/PlatformConfigSection.jsx';
  * @param {{
  *   merits, categories, memberships, meritEvents,
  *   canEdit, canCreateMerit, canAward, currentMembership, memberRole, isPlatformAdmin,
- *   achievementTypes, domains, platformConfig, onSavePlatformConfig,
+ *   achievementTypes, domains,
  *   onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile
  * }} props
  */
@@ -25,7 +25,7 @@ export default function MeritsView({
   merits, categories, memberships, meritEvents, userProfile,
   canEdit, canCreateMerit, canAward, currentMembership, memberRole, isPlatformAdmin,
   achievementTypes = MERIT_ACHIEVEMENT_TYPES, domains = MERIT_DOMAINS,
-  platformConfig, onSavePlatformConfig, teamTags, onSaveTeamMeritTags,
+  teamTags, onSaveTeamMeritTags,
   onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
   const { t, lang } = React.useContext(LangContext);
@@ -183,14 +183,7 @@ export default function MeritsView({
         />
       )}
 
-      {/* ── Platform config: platform admin edits global defaults (tipos y categorías de logros) ── */}
-      {isPlatformAdmin && onSavePlatformConfig && (
-        <PlatformConfigSection
-          platformConfig={platformConfig ?? undefined}
-          onSave={onSavePlatformConfig}
-        />
-      )}
-      {/* ── Team tags: team admin and platform admin can edit this team's types/domains ── */}
+      {/* ── Team tags (tipos y categorías): defaults when team is created; team/platform admin edit here ── */}
       {(canEdit || isPlatformAdmin) && teamTags && onSaveTeamMeritTags && (
         <PlatformConfigSection
           teamTags={teamTags}

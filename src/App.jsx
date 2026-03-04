@@ -171,7 +171,6 @@ export default function App() {
   const [teamWeeklyStatuses,  setTeamWeeklyStatuses]  = useState([]);
   const [teamFundingAccounts,  setTeamFundingAccounts]  = useState([]);
   const [teamFundingEntries,  setTeamFundingEntries]  = useState([]);
-  const [platformConfig,      setPlatformConfig]      = useState(null);       // { achievementTypes, domains }
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [navCollapsed,   setNavCollapsed]   = useState(false);
@@ -242,14 +241,6 @@ export default function App() {
       setAllTeams(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
   }, []);
-
-  // Platform config (achievement types, domains) — readable by all; editable by platform admin
-  useEffect(() => {
-    if (!authUser) { setPlatformConfig(null); return; }
-    return onSnapshot(doc(db, 'platformConfig', 'config'), (snap) => {
-      setPlatformConfig(snap.exists() ? snap.data() : null);
-    }, () => setPlatformConfig(null));
-  }, [authUser]);
 
   // Categories for every team (needed for the join-request form before a team is selected)
   useEffect(() => {
@@ -354,8 +345,9 @@ export default function App() {
   );
 
   // Merit tags: team overrides, then platform config, then constants
-  const meritAchievementTypes = (currentTeam?.achievementTypes?.length ? currentTeam.achievementTypes : (platformConfig?.achievementTypes?.length ? platformConfig.achievementTypes : MERIT_ACHIEVEMENT_TYPES));
-  const meritDomains         = (currentTeam?.domains?.length ? currentTeam.domains : (platformConfig?.domains?.length ? platformConfig.domains : MERIT_DOMAINS));
+  // Team tags; new teams get defaults from constants in handleCreateTeam
+  const meritAchievementTypes = (currentTeam?.achievementTypes?.length ? currentTeam.achievementTypes : MERIT_ACHIEVEMENT_TYPES);
+  const meritDomains         = (currentTeam?.domains?.length ? currentTeam.domains : MERIT_DOMAINS);
 
   const myTeams = useMemo(() => {
     const ids = new Set(userMemberships.map((m) => m.teamId));
@@ -427,6 +419,8 @@ export default function App() {
         name,
         createdAt: serverTimestamp(),
         overview: { tagline: '', about: '', history: '', objectives: '', kpis: [] },
+        achievementTypes: MERIT_ACHIEVEMENT_TYPES,
+        domains:          MERIT_DOMAINS,
       });
       // Seed default categories
       for (const catName of ['Aspirants', 'Mechanics', 'Software', 'Sciences']) {
@@ -486,17 +480,6 @@ export default function App() {
     await deleteDoc(doc(db, 'teams', teamId));
     // If we were inside the deleted team, return to the picker
     if (selectedTeamId === teamId) setSelectedTeamId(null);
-  };
-
-  const handleSavePlatformConfig = async (achievementTypes, domains) => {
-    if (!isPlatformAdmin) return;
-    const ref = doc(db, 'platformConfig', 'config');
-    const data = {
-      achievementTypes: Array.isArray(achievementTypes) ? achievementTypes.filter(Boolean) : MERIT_ACHIEVEMENT_TYPES,
-      domains:          Array.isArray(domains)          ? domains.filter(Boolean)          : MERIT_DOMAINS,
-      updatedAt:       serverTimestamp(),
-    };
-    await setDoc(ref, data, { merge: true });
   };
 
   const handleSaveTeamMeritTags = async (achievementTypes, domains) => {
@@ -1629,8 +1612,6 @@ export default function App() {
                 isPlatformAdmin={isPlatformAdmin}
                 achievementTypes={meritAchievementTypes}
                 domains={meritDomains}
-                platformConfig={platformConfig}
-                onSavePlatformConfig={handleSavePlatformConfig}
                 teamTags={currentTeam ? { achievementTypes: currentTeam.achievementTypes, domains: currentTeam.domains } : null}
                 onSaveTeamMeritTags={handleSaveTeamMeritTags}
                 onCreateMerit={handleCreateMerit}
