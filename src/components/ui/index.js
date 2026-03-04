@@ -9,3 +9,4 @@ export { default as GoogleIcon }      from './GoogleIcon.jsx';
 export { default as BilingualField }  from './BilingualField.jsx';
 export { default as TagInput }        from './TagInput.jsx';
 export { default as CultureListField } from './CultureListField.jsx';
+export { default as CultureSongField } from './CultureSongField.jsx';

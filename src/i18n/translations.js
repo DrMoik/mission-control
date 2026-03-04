@@ -185,6 +185,7 @@ const TRANSLATIONS = {
     merit_filter_tier:     'Tier',
     merit_repeatable:      'Can be awarded multiple times',
     merit_award_once_error:'This merit can only be awarded once per person. It has already been awarded to this member.',
+    merit_self_award_error:'You cannot award merits to yourself.',
     merit_type_technical:  'Technical',
     merit_type_leadership: 'Leadership',
     merit_type_collaboration: 'Collaboration',
@@ -383,6 +384,8 @@ const TRANSLATIONS = {
     tab_retro:    'Retrospective',
     tab_meetings: 'Meeting Notes',
     tab_goals:    'Goals / OKRs',
+    tab_eisenhower: 'Eisenhower Matrix',
+    tab_pugh:     'Pugh Matrix',
 
     // ── Tools — how-to label ──────────────────────────────────────────────────
     how_to_use: 'How to use this tool',
@@ -415,6 +418,27 @@ const TRANSLATIONS = {
       'Record meeting agendas, attendees, notes, and action-item checklists. Action items can be checked off as they are completed.',
     tool_desc_goals:
       'Define Objectives and Key Results (OKRs). Each goal has one objective and multiple measurable key results with progress sliders.',
+    tool_desc_eisenhower:
+      'Prioritize tasks by urgency and importance. Do first: urgent and important. Schedule: important, not urgent. Delegate: urgent, not important. Eliminate: neither.',
+    tool_desc_pugh:
+      'Compare alternatives against a reference option using criteria. Score each alternative +1 (better), 0 (same), or -1 (worse). The option with the highest total wins.',
+
+    eisenhower_do_first:  'Do first',
+    eisenhower_schedule:  'Schedule',
+    eisenhower_delegate:  'Delegate',
+    eisenhower_eliminate: 'Eliminate',
+    eisenhower_urgent:    'Urgent',
+    eisenhower_important:'Important',
+    eisenhower_add_item:  'Add item',
+    pugh_reference:       'Reference',
+    pugh_alternatives:    'Alternatives',
+    pugh_criteria:        'Criteria',
+    pugh_add_criterion:   'Add criterion',
+    pugh_add_alternative: 'Add alternative',
+    pugh_score_better:    'Better (+1)',
+    pugh_score_same:      'Same (0)',
+    pugh_score_worse:     'Worse (-1)',
+    pugh_total:           'Total',
 
     // ── Feed ──────────────────────────────────────────────────────────────────
     feed_title:       'Team Feed',
@@ -773,6 +797,7 @@ const TRANSLATIONS = {
     merit_filter_tier:     'Nivel',
     merit_repeatable:      'Se puede otorgar varias veces',
     merit_award_once_error:'Este logro solo se puede otorgar una vez por persona. Ya fue otorgado a este miembro.',
+    merit_self_award_error:'No puedes otorgarte logros a ti mismo.',
     merit_type_technical:  'Técnico',
     merit_type_leadership: 'Liderazgo',
     merit_type_collaboration: 'Colaboración',
@@ -969,6 +994,8 @@ const TRANSLATIONS = {
     tab_retro:    'Retrospectiva',
     tab_meetings: 'Notas de Reunión',
     tab_goals:    'Objetivos / OKRs',
+    tab_eisenhower: 'Matriz Eisenhower',
+    tab_pugh:     'Matriz de Pugh',
 
     // ── Tools — etiqueta de instrucciones ────────────────────────────────────
     how_to_use: 'Cómo usar esta herramienta',
@@ -1001,6 +1028,27 @@ const TRANSLATIONS = {
       'Registra agendas, asistentes, notas y listas de puntos de acción. Los puntos de acción se pueden marcar como completados.',
     tool_desc_goals:
       'Define Objetivos y Resultados Clave (OKRs). Cada objetivo tiene varios resultados medibles con barra de progreso deslizable.',
+    tool_desc_eisenhower:
+      'Prioriza tareas por urgencia e importancia. Haz primero: urgente e importante. Programa: importante, no urgente. Delega: urgente, no importante. Elimina: ninguna.',
+    tool_desc_pugh:
+      'Compara alternativas contra una opción de referencia usando criterios. Puntúa cada alternativa +1 (mejor), 0 (igual) o -1 (peor). La opción con mayor total gana.',
+
+    eisenhower_do_first:  'Hacer primero',
+    eisenhower_schedule:  'Programar',
+    eisenhower_delegate:  'Delegar',
+    eisenhower_eliminate: 'Eliminar',
+    eisenhower_urgent:    'Urgente',
+    eisenhower_important:'Importante',
+    eisenhower_add_item:  'Agregar elemento',
+    pugh_reference:       'Referencia',
+    pugh_alternatives:    'Alternativas',
+    pugh_criteria:        'Criterios',
+    pugh_add_criterion:   'Agregar criterio',
+    pugh_add_alternative: 'Agregar alternativa',
+    pugh_score_better:    'Mejor (+1)',
+    pugh_score_same:      'Igual (0)',
+    pugh_score_worse:     'Peor (-1)',
+    pugh_total:           'Total',
 
     // ── Feed ──────────────────────────────────────────────────────────────────
     feed_title:       'Feed del Equipo',

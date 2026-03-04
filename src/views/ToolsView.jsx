@@ -122,6 +122,43 @@ export default function ToolsView({
   const [editingSwot, setEditingSwot] = useState(false);
   const [swotDraft,   setSwotDraft]   = useState(null);
 
+  // Eisenhower Matrix: 4 quadrants (Do first, Schedule, Delegate, Eliminate), persisted in localStorage
+  const EISENHOWER_KEYS = ['q1', 'q2', 'q3', 'q4'];
+  const [eisenhowerData, setEisenhowerData] = useState({ q1: [], q2: [], q3: [], q4: [] });
+  React.useEffect(() => {
+    if (!team?.id || typeof localStorage === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(`eisenhower_${team.id}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        EISENHOWER_KEYS.forEach((k) => { if (!Array.isArray(parsed[k])) parsed[k] = []; });
+        setEisenhowerData(parsed);
+      }
+    } catch (_) {}
+  }, [team?.id]);
+  React.useEffect(() => {
+    if (!team?.id || typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(`eisenhower_${team.id}`, JSON.stringify(eisenhowerData));
+    } catch (_) {}
+  }, [team?.id, eisenhowerData]);
+
+  // Pugh Matrix: reference, criteria, alternatives, scores; persisted in localStorage
+  const [pughData, setPughData] = useState({ reference: '', criteria: [], alternatives: [], scores: {} });
+  React.useEffect(() => {
+    if (!team?.id || typeof localStorage === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(`pugh_${team.id}`);
+      if (raw) setPughData(JSON.parse(raw));
+    } catch (_) {}
+  }, [team?.id]);
+  React.useEffect(() => {
+    if (!team?.id || typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(`pugh_${team.id}`, JSON.stringify(pughData));
+    } catch (_) {}
+  }, [team?.id, pughData]);
+
   const userCategoryId = currentMembership?.categoryId || null;
   const swot           = team?.swot || {};
 
@@ -198,13 +235,15 @@ export default function ToolsView({
       {/* Tool tab bar */}
       <div className="flex gap-2 flex-wrap">
         {[
-          ['calendar', t('tab_calendar')],
-          ['swot',     t('tab_swot')],
-          ['boards',   t('tab_kanban')],
-          ['scrum',    t('tab_scrum')],
-          ['retro',    t('tab_retro')],
-          ['meetings', t('tab_meetings')],
-          ['goals',    t('tab_goals')],
+          ['calendar',   t('tab_calendar')],
+          ['swot',       t('tab_swot')],
+          ['eisenhower', t('tab_eisenhower')],
+          ['pugh',       t('tab_pugh')],
+          ['boards',     t('tab_kanban')],
+          ['scrum',      t('tab_scrum')],
+          ['retro',      t('tab_retro')],
+          ['meetings',   t('tab_meetings')],
+          ['goals',      t('tab_goals')],
         ].map(([id, label]) => (
           <button key={id} onClick={() => { setToolTab(id); setScopeFilter('all'); }}
             className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors
@@ -371,6 +410,208 @@ export default function ToolsView({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════ EISENHOWER MATRIX ══════════ */}
+      {toolTab === 'eisenhower' && (
+        <div className="space-y-4">
+          <HowToUse descKey="tool_desc_eisenhower" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              { key: 'q1', labelKey: 'eisenhower_do_first',  border: 'border-red-600',     bg: 'bg-red-950/20' },
+              { key: 'q2', labelKey: 'eisenhower_schedule',   border: 'border-emerald-600', bg: 'bg-emerald-950/20' },
+              { key: 'q3', labelKey: 'eisenhower_delegate',  border: 'border-amber-600',   bg: 'bg-amber-950/20' },
+              { key: 'q4', labelKey: 'eisenhower_eliminate', border: 'border-slate-600',   bg: 'bg-slate-800/40' },
+            ].map(({ key, labelKey, border, bg }) => (
+              <div key={key} className={`border-2 ${border} ${bg} rounded-lg p-4`}>
+                <div className="font-semibold text-sm mb-3">{t(labelKey)}</div>
+                <div className="space-y-2">
+                  {(eisenhowerData[key] || []).map((item) => (
+                    <div key={item.id} className="flex items-center gap-2 group">
+                      <span className="text-slate-400 text-xs shrink-0">•</span>
+                      <span className="text-sm text-slate-200 flex-1 truncate">{item.text || ''}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEisenhowerData((d) => ({
+                          ...d,
+                          [key]: (d[key] || []).filter((i) => i.id !== item.id),
+                        }))}
+                        className="text-red-400 text-xs opacity-0 group-hover:opacity-100 hover:underline shrink-0"
+                      >
+                        {t('delete')}
+                      </button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      type="text"
+                      placeholder={t('eisenhower_add_item')}
+                      className="flex-1 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter') return;
+                        e.preventDefault();
+                        const v = e.target.value?.trim();
+                        if (!v) return;
+                        setEisenhowerData((d) => ({
+                          ...d,
+                          [key]: [...(d[key] || []), { id: `e-${Date.now()}-${Math.random().toString(36).slice(2)}`, text: v }],
+                        }));
+                        e.target.value = '';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        const input = e.target.closest('div').querySelector('input');
+                        const v = input?.value?.trim();
+                        if (!v) return;
+                        setEisenhowerData((d) => ({
+                          ...d,
+                          [key]: [...(d[key] || []), { id: `e-${Date.now()}-${Math.random().toString(36).slice(2)}`, text: v }],
+                        }));
+                        if (input) input.value = '';
+                      }}
+                      className="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded shrink-0"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-slate-500">
+            {t('eisenhower_urgent')} ↔ columns · {t('eisenhower_important')} ↔ rows
+          </p>
+        </div>
+      )}
+
+      {/* ══════════ PUGH MATRIX ══════════ */}
+      {toolTab === 'pugh' && (
+        <div className="space-y-4">
+          <HowToUse descKey="tool_desc_pugh" />
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="min-w-[180px]">
+              <label className="text-[11px] text-slate-500 block mb-1">{t('pugh_reference')}</label>
+              <input
+                type="text"
+                value={pughData.reference || ''}
+                onChange={(e) => setPughData((d) => ({ ...d, reference: e.target.value }))}
+                placeholder={t('pugh_reference')}
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setPughData((d) => ({ ...d, criteria: [...(d.criteria || []), { id: `c-${Date.now()}`, name: '' }] }))}
+              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded"
+            >
+              {t('pugh_add_criterion')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPughData((d) => ({ ...d, alternatives: [...(d.alternatives || []), { id: `a-${Date.now()}`, name: '' }] }))}
+              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded"
+            >
+              {t('pugh_add_alternative')}
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse bg-slate-800/60 rounded-lg overflow-hidden">
+              <thead>
+                <tr className="border-b border-slate-700">
+                  <th className="px-3 py-2 text-left text-slate-400 font-semibold">{t('pugh_criteria')}</th>
+                  <th className="px-3 py-2 text-left text-slate-500 bg-slate-900/60">{pughData.reference || '—'}</th>
+                  {(pughData.alternatives || []).map((alt) => (
+                    <th key={alt.id} className="px-3 py-2 text-left text-slate-400 min-w-[100px]">
+                      <input
+                        type="text"
+                        value={alt.name || ''}
+                        onChange={(e) => setPughData((d) => ({
+                          ...d,
+                          alternatives: d.alternatives.map((a) => a.id === alt.id ? { ...a, name: e.target.value } : a),
+                        }))}
+                        placeholder={t('pugh_alternatives')}
+                        className="w-full bg-transparent border-b border-slate-600 focus:outline-none focus:border-emerald-500 text-slate-200"
+                      />
+                    </th>
+                  ))}
+                  <th className="px-3 py-2 text-center text-slate-500 font-semibold w-14">{t('pugh_total')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(pughData.criteria || []).map((crit) => (
+                  <tr key={crit.id} className="border-b border-slate-700/50">
+                    <td className="px-3 py-1.5">
+                      <input
+                        type="text"
+                        value={crit.name || ''}
+                        onChange={(e) => setPughData((d) => ({
+                          ...d,
+                          criteria: d.criteria.map((c) => c.id === crit.id ? { ...c, name: e.target.value } : c),
+                        }))}
+                        placeholder={t('pugh_criteria')}
+                        className="w-full bg-transparent border-b border-slate-600 focus:outline-none focus:border-emerald-500 text-slate-200"
+                      />
+                    </td>
+                    <td className="px-3 py-1.5 text-slate-500 text-center">0</td>
+                    {(pughData.alternatives || []).map((alt) => {
+                      const score = (pughData.scores || {})[crit.id]?.[alt.id] ?? null;
+                      return (
+                        <td key={alt.id} className="px-1 py-1.5 text-center">
+                          <select
+                            value={score === null ? '' : String(score)}
+                            onChange={(e) => {
+                              const v = e.target.value === '' ? null : Number(e.target.value);
+                              setPughData((d) => {
+                                const scores = { ...(d.scores || {}), [crit.id]: { ...(d.scores || {})[crit.id], [alt.id]: v } };
+                                return { ...d, scores };
+                              });
+                            }}
+                            className="bg-slate-900 border border-slate-600 rounded px-1 py-0.5 text-slate-300 w-12"
+                          >
+                            <option value="">—</option>
+                            <option value="1">+1</option>
+                            <option value="0">0</option>
+                            <option value="-1">−1</option>
+                          </select>
+                        </td>
+                      );
+                    })}
+                    <td className="px-2 py-1.5" />
+                  </tr>
+                ))}
+                {(pughData.criteria || []).length === 0 && (
+                  <tr>
+                    <td colSpan={(pughData.alternatives || []).length + 3} className="px-3 py-4 text-slate-500 text-center">
+                      {t('pugh_add_criterion')} / {t('pugh_add_alternative')}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              {(pughData.alternatives || []).length > 0 && (pughData.criteria || []).length > 0 && (
+                <tfoot>
+                  <tr className="border-t-2 border-slate-600 bg-slate-900/40">
+                    <td className="px-3 py-2 font-semibold text-slate-300">{t('pugh_total')}</td>
+                    <td className="px-3 py-2 text-center text-slate-500">—</td>
+                    {(pughData.alternatives || []).map((alt) => {
+                      const total = (pughData.criteria || []).reduce((sum, crit) => {
+                        const s = (pughData.scores || {})[crit.id]?.[alt.id];
+                        return sum + (s === null || s === undefined ? 0 : s);
+                      }, 0);
+                      return (
+                        <td key={alt.id} className="px-3 py-2 text-center font-mono font-bold text-emerald-400">
+                          {total > 0 ? `+${total}` : total}
+                        </td>
+                      );
+                    })}
+                    <td className="px-2 py-2" />
+                  </tr>
+                </tfoot>
+              )}
+            </table>
           </div>
         </div>
       )}

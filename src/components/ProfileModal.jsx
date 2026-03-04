@@ -15,7 +15,7 @@
 import React, { useState, useMemo } from 'react';
 import LangContext              from '../i18n/LangContext.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
-import { RoleBadge, BilingualField, TagInput, CultureListField } from './ui/index.js';
+import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from './ui/index.js';
 import ImageCropModal           from './ImageCropModal.jsx';
 import { getL, toL, fillL, ensureString } from '../utils.js';
 
@@ -104,8 +104,11 @@ export default function ProfileModal({
       iCanHelpWith:              membership.iCanHelpWith              || [],
       skillsToLearnThisSemester: membership.skillsToLearnThisSemester || [],
       skillsICanTeach:           membership.skillsICanTeach           || [],
-      // Culture — up to 3 per field; migrate old songOnRepeatTitle to whatIListenTo
-      whatIListenTo:      (membership.whatIListenTo?.length ? membership.whatIListenTo : (membership.songOnRepeatTitle ? [membership.songOnRepeatTitle] : [])).map((t) => typeof t === 'string' ? t : ensureString(t, lang)),
+      // Culture — up to 3 per field; migrate old songOnRepeatTitle/songOnRepeatUrl to whatIListenTo
+      whatIListenTo:      (() => {
+        const raw = membership.whatIListenTo?.length ? membership.whatIListenTo : (membership.songOnRepeatTitle ? [{ title: membership.songOnRepeatTitle, url: membership.songOnRepeatUrl || '' }] : []);
+        return raw.map((t) => typeof t === 'string' ? { title: t, url: '' } : { title: ensureString(t?.title ?? t?.text, lang), url: t?.url ?? '' });
+      })(),
       bookThatMarkedMe:   (membership.bookThatMarkedMe   || []).map((t) => typeof t === 'string' ? t : ensureString(t, lang)),
       ideaThatMotivatesMe: (membership.ideaThatMotivatesMe || []).map((t) => typeof t === 'string' ? t : ensureString(t, lang)),
       quoteThatMovesMe:   (membership.quoteThatMovesMe   || []).map((t) => typeof t === 'string' ? t : ensureString(t, lang)),
@@ -124,7 +127,7 @@ export default function ProfileModal({
         currentObjective: fillL(draft.currentObjective),
         currentChallenge: fillL(draft.currentChallenge),
         funFact:          fillL(draft.funFact),
-        whatIListenTo:             (draft.whatIListenTo || []).filter(Boolean),
+        whatIListenTo:             (draft.whatIListenTo || []).filter((t) => (typeof t === 'string' ? t : t?.title)?.trim()).map((t) => typeof t === 'string' ? { title: t.trim(), url: '' } : { title: (t.title || '').trim(), url: (t.url || '').trim() }),
         bookThatMarkedMe:          (draft.bookThatMarkedMe || []).filter(Boolean),
         ideaThatMotivatesMe:       (draft.ideaThatMotivatesMe || []).filter(Boolean),
         quoteThatMovesMe:          (draft.quoteThatMovesMe || []).filter(Boolean),
@@ -316,8 +319,8 @@ export default function ProfileModal({
               {/* ── Culture ── */}
               <div className="border-t border-slate-700 pt-3 space-y-4">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_culture')}</p>
-                <CultureListField label={t('culture_what_i_listen')} value={draft.whatIListenTo || []} onChange={(v) => set('whatIListenTo', v)}
-                  placeholder={t('song_title_ph')} addLabel={t('culture_add')} maxItems={3} />
+                <CultureSongField label={t('culture_what_i_listen')} value={draft.whatIListenTo || []} onChange={(v) => set('whatIListenTo', v)}
+                  titlePlaceholder={t('song_title_ph')} urlPlaceholder={t('song_url_ph')} addLabel={t('culture_add')} maxItems={3} />
                 <CultureListField label={t('culture_book_that_marked')} value={draft.bookThatMarkedMe || []} onChange={(v) => set('bookThatMarkedMe', v)}
                   placeholder="e.g. Sapiens" addLabel={t('culture_add')} maxItems={3} />
                 <CultureListField label={t('culture_idea_that_motivates')} value={draft.ideaThatMotivatesMe || []} onChange={(v) => set('ideaThatMotivatesMe', v)}
@@ -466,7 +469,17 @@ export default function ProfileModal({
                     {membership.whatIListenTo?.length > 0 && (
                       <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
                         <p className="text-[10px] text-slate-500 mb-1">{t('culture_what_i_listen')}</p>
-                        <ul className="text-sm text-slate-200 space-y-0.5">{membership.whatIListenTo.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
+                        <ul className="text-sm text-slate-200 space-y-0.5">
+                          {membership.whatIListenTo.map((s, i) => {
+                            const title = typeof s === 'string' ? s : ensureString(s?.title ?? s?.text, lang);
+                            const url = typeof s === 'object' && s ? (s.url || '') : '';
+                            return (
+                              <li key={i}>
+                                {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:text-emerald-200 underline">{title || t('song_on_repeat')}</a> : (title || '—')}
+                              </li>
+                            );
+                          })}
+                        </ul>
                       </div>
                     )}
                     {membership.bookThatMarkedMe?.length > 0 && (

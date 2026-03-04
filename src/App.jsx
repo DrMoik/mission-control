@@ -613,7 +613,9 @@ export default function App() {
       // ── Community profile — Culture ───────────────────────────────────────
       songOnRepeatTitle:  updates.songOnRepeatTitle  ?? m.songOnRepeatTitle  ?? '',
       songOnRepeatUrl:    updates.songOnRepeatUrl    ?? m.songOnRepeatUrl    ?? '',
-      whatIListenTo:      Array.isArray(updates.whatIListenTo) ? updates.whatIListenTo.filter(Boolean) : (m.whatIListenTo ?? []),
+      whatIListenTo:      Array.isArray(updates.whatIListenTo)
+        ? updates.whatIListenTo.filter((t) => (typeof t === 'string' ? t : t?.title)?.trim()).map((t) => typeof t === 'string' ? { title: t.trim(), url: '' } : { title: (t.title || '').trim(), url: (t.url || '').trim() })
+        : (m.whatIListenTo ?? []),
       bookThatMarkedMe:   Array.isArray(updates.bookThatMarkedMe) ? updates.bookThatMarkedMe.filter(Boolean) : (m.bookThatMarkedMe ?? []),
       ideaThatMotivatesMe: Array.isArray(updates.ideaThatMotivatesMe) ? updates.ideaThatMotivatesMe.filter(Boolean) : (m.ideaThatMotivatesMe ?? []),
       quoteThatMovesMe:   Array.isArray(updates.quoteThatMovesMe) ? updates.quoteThatMovesMe.filter(Boolean) : (m.quoteThatMovesMe ?? []),
@@ -626,6 +628,31 @@ export default function App() {
       ? userMemberships.filter((um) => um.userId === authUser.uid).map((um) => um.id)
       : [membershipId];
     await Promise.all(idsToUpdate.map((id) => updateDoc(doc(db, 'memberships', id), payload)));
+
+    // Auto-award 50 pts for profile 100%: at least one song OR one book (no need for all 3)
+    const hasSongOrBook = (payload.whatIListenTo?.length >= 1) || (payload.bookThatMarkedMe?.length >= 1);
+    if (hasSongOrBook && currentTeam && authUser) {
+      for (const mid of idsToUpdate) {
+        if (!teamMemberships.some((mm) => mm.id === mid)) continue;
+        const already = teamMeritEvents.some((e) => e.type === 'award' && e.membershipId === mid && e.evidence === 'profile_complete_50');
+        if (!already) {
+          await addDoc(collection(db, 'meritEvents'), {
+            teamId:            currentTeam.id,
+            membershipId:      mid,
+            meritId:           null,
+            meritName:         'Perfil completo',
+            meritLogo:         '✅',
+            points:            50,
+            type:              'award',
+            evidence:          'profile_complete_50',
+            autoAward:         true,
+            awardedByUserId:   authUser.uid,
+            awardedByName:     userProfile?.displayName || authUser.email || '—',
+            createdAt:        serverTimestamp(),
+          });
+        }
+      }
+    }
     // Firestore listener will update teamMemberships; profileMember derives from it
   };
 
@@ -881,6 +908,11 @@ export default function App() {
         alert('Como Líder, solo puedes otorgar logros dentro de tu categoría asignada.');
         return;
       }
+    }
+    // Block self-assignment of merits except for platform admin (testing)
+    if (membershipId === currentMembership?.id && !isPlatformAdmin) {
+      alert(t('merit_self_award_error') || 'No puedes otorgarte logros a ti mismo.');
+      return;
     }
     // If merit is single-use (not repeatable), block duplicate award to same member
     if (merit.repeatable === false) {
