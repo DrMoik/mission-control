@@ -461,36 +461,33 @@ export default function ToolsView({
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
           <p className="text-xs text-slate-400">{t('swot_desc')}</p>
 
-          {/* New SWOT form — always visible; disabled when no permission */}
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-600/60">
-            <div className="text-xs font-medium text-slate-300 mb-3">{t('create_new')} FODA / SWOT</div>
-            {!canEditTools && (
-              <p className="text-xs text-amber-400/90 mb-3">{t('tools_create_leader_only')}</p>
-            )}
-            <form onSubmit={handleCreateSwotSubmit} className="flex flex-wrap gap-2 items-end">
-              <input
-                value={newSwotName}
-                onChange={(e) => setNewSwotName(e.target.value)}
-                placeholder={t('swot_name_ph')}
-                disabled={!canEditTools}
-                className="flex-1 min-w-[160px] px-3 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
-              />
-              <select
-                value={newSwotCategoryId}
-                onChange={(e) => setNewSwotCategoryId(e.target.value)}
-                disabled={!canEditTools}
-                className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <option value="">{t('scope_global')}</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
-                ))}
-              </select>
-              <button type="submit" disabled={!canEditTools} className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-600 disabled:hover:bg-slate-600 disabled:opacity-70 disabled:cursor-not-allowed text-black text-sm font-semibold rounded">
-                {t('new_swot_btn')}
-              </button>
-            </form>
-          </div>
+          {/* New SWOT form — only shown when user can create */}
+          {canEditTools && (
+            <div className="bg-slate-800 rounded-lg p-4 border border-slate-600/60">
+              <div className="text-xs font-medium text-slate-300 mb-3">{t('create_new')} FODA / SWOT</div>
+              <form onSubmit={handleCreateSwotSubmit} className="flex flex-wrap gap-2 items-end">
+                <input
+                  value={newSwotName}
+                  onChange={(e) => setNewSwotName(e.target.value)}
+                  placeholder={t('swot_name_ph')}
+                  className="flex-1 min-w-[160px] px-3 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm text-slate-200"
+                />
+                <select
+                  value={newSwotCategoryId}
+                  onChange={(e) => setNewSwotCategoryId(e.target.value)}
+                  className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300"
+                >
+                  <option value="">{t('scope_global')}</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
+                  ))}
+                </select>
+                <button type="submit" className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold rounded">
+                  {t('new_swot_btn')}
+                </button>
+              </form>
+            </div>
+          )}
 
           {/* List of SWOT entries to select */}
           {visibleSwots.length > 0 && (
@@ -581,7 +578,7 @@ export default function ToolsView({
           )}
 
           {visibleSwots.length === 0 && (
-            <p className="text-xs text-slate-500 italic">{canEditTools ? t('create_above') : t('nothing_yet')}</p>
+            <p className="text-xs text-slate-500 italic">{t('nothing_yet')}</p>
           )}
         </div>
       )}
@@ -592,46 +589,42 @@ export default function ToolsView({
           <HowToUse descKey="tool_desc_eisenhower" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-600/60">
-            <div className="text-xs font-medium text-slate-300 mb-3">{t('create_new')} Eisenhower</div>
-            {!canCreate && (
-              <p className="text-xs text-amber-400/90 mb-3">{t('tools_create_leader_only')}</p>
-            )}
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!canCreate) return;
-                const name = (newEisenhowerName || '').trim() || t('eisenhower_new_matrix');
-                const id = await onCreateEisenhower({ name, categoryId: newEisenhowerCategoryId || null });
-                setNewEisenhowerName('');
-                setNewEisenhowerCategoryId('');
-                if (id) setSelectedEisenhowerId(id);
-              }}
-              className="flex flex-wrap gap-2 items-end"
-            >
-              <input
-                value={newEisenhowerName}
-                onChange={(e) => setNewEisenhowerName(e.target.value)}
-                placeholder={t('eisenhower_matrix_name_ph')}
-                disabled={!canCreate}
-                className="min-w-[140px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
-              />
-              <select
-                value={newEisenhowerCategoryId}
-                onChange={(e) => setNewEisenhowerCategoryId(e.target.value)}
-                disabled={!canCreate}
-                className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300 disabled:opacity-60 disabled:cursor-not-allowed"
+          {canCreate && (
+            <div className="bg-slate-800 rounded-lg p-4 border border-slate-600/60">
+              <div className="text-xs font-medium text-slate-300 mb-3">{t('create_new')} Eisenhower</div>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const name = (newEisenhowerName || '').trim() || t('eisenhower_new_matrix');
+                  const id = await onCreateEisenhower({ name, categoryId: newEisenhowerCategoryId || null });
+                  setNewEisenhowerName('');
+                  setNewEisenhowerCategoryId('');
+                  if (id) setSelectedEisenhowerId(id);
+                }}
+                className="flex flex-wrap gap-2 items-end"
               >
-                <option value="">{t('scope_global')}</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
-                ))}
-              </select>
-              <button type="submit" disabled={!canCreate} className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-600 disabled:hover:bg-slate-600 disabled:opacity-70 disabled:cursor-not-allowed text-black text-sm font-semibold rounded">
-                {t('eisenhower_new_matrix')}
-              </button>
-            </form>
-          </div>
+                <input
+                  value={newEisenhowerName}
+                  onChange={(e) => setNewEisenhowerName(e.target.value)}
+                  placeholder={t('eisenhower_matrix_name_ph')}
+                  className="min-w-[140px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200"
+                />
+                <select
+                  value={newEisenhowerCategoryId}
+                  onChange={(e) => setNewEisenhowerCategoryId(e.target.value)}
+                  className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300"
+                >
+                  <option value="">{t('scope_global')}</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
+                  ))}
+                </select>
+                <button type="submit" className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold rounded">
+                  {t('eisenhower_new_matrix')}
+                </button>
+              </form>
+            </div>
+          )}
           {visibleEisenhowerList.length > 0 && (
             <div className="flex flex-wrap gap-2 items-center">
               {visibleEisenhowerList.map((m) => (
@@ -762,7 +755,7 @@ export default function ToolsView({
           </>
           )}
           {visibleEisenhowerList.length === 0 && (
-            <p className="text-xs text-slate-500 italic">{canCreate ? t('eisenhower_new_matrix') + ' ' + (t('create_above') || '') : t('nothing_yet')}</p>
+            <p className="text-xs text-slate-500 italic">{t('nothing_yet')}</p>
           )}
         </div>
       )}
@@ -773,46 +766,42 @@ export default function ToolsView({
           <HowToUse descKey="tool_desc_pugh" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-600/60">
-            <div className="text-xs font-medium text-slate-300 mb-3">{t('create_new')} Pugh</div>
-            {!canCreate && (
-              <p className="text-xs text-amber-400/90 mb-3">{t('tools_create_leader_only')}</p>
-            )}
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!canCreate) return;
-                const name = (newPughName || '').trim() || t('pugh_new_matrix');
-                const id = await onCreatePugh({ name, categoryId: newPughCategoryId || null });
-                setNewPughName('');
-                setNewPughCategoryId('');
-                if (id) setSelectedPughId(id);
-              }}
-              className="flex flex-wrap gap-2 items-end"
-            >
-              <input
-                value={newPughName}
-                onChange={(e) => setNewPughName(e.target.value)}
-                placeholder={t('pugh_matrix_name_ph')}
-                disabled={!canCreate}
-                className="min-w-[140px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 disabled:opacity-60 disabled:cursor-not-allowed"
-              />
-              <select
-                value={newPughCategoryId}
-                onChange={(e) => setNewPughCategoryId(e.target.value)}
-                disabled={!canCreate}
-                className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300 disabled:opacity-60 disabled:cursor-not-allowed"
+          {canCreate && (
+            <div className="bg-slate-800 rounded-lg p-4 border border-slate-600/60">
+              <div className="text-xs font-medium text-slate-300 mb-3">{t('create_new')} Pugh</div>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const name = (newPughName || '').trim() || t('pugh_new_matrix');
+                  const id = await onCreatePugh({ name, categoryId: newPughCategoryId || null });
+                  setNewPughName('');
+                  setNewPughCategoryId('');
+                  if (id) setSelectedPughId(id);
+                }}
+                className="flex flex-wrap gap-2 items-end"
               >
-                <option value="">{t('scope_global')}</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
-                ))}
-              </select>
-              <button type="submit" disabled={!canCreate} className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-600 disabled:hover:bg-slate-600 disabled:opacity-70 disabled:cursor-not-allowed text-black text-sm font-semibold rounded">
-                {t('pugh_new_matrix')}
-              </button>
-            </form>
-          </div>
+                <input
+                  value={newPughName}
+                  onChange={(e) => setNewPughName(e.target.value)}
+                  placeholder={t('pugh_matrix_name_ph')}
+                  className="min-w-[140px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200"
+                />
+                <select
+                  value={newPughCategoryId}
+                  onChange={(e) => setNewPughCategoryId(e.target.value)}
+                  className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300"
+                >
+                  <option value="">{t('scope_global')}</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
+                  ))}
+                </select>
+                <button type="submit" className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold rounded">
+                  {t('pugh_new_matrix')}
+                </button>
+              </form>
+            </div>
+          )}
           {visiblePughList.length > 0 && (
             <div className="flex flex-wrap gap-2 items-center">
               {visiblePughList.map((m) => (
