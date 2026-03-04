@@ -106,7 +106,7 @@ export default function PlatformConfigSection({
               onClick={resetToDefaults}
               className="px-3 py-1.5 bg-slate-600 text-slate-300 text-xs rounded hover:bg-slate-500"
             >
-              {tFn('platform_config_reset') || 'Restaurar valores por defecto'}
+              {tFn('platform_config_reset') || 'Reset'}
             </button>
           </div>
         </div>

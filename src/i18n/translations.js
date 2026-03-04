@@ -207,6 +207,8 @@ const TRANSLATIONS = {
     award:                 'Award',
     merit_audit_log:       'Merit Audit Log',
     platform_admin_editable:'Platform Admin: rows are editable',
+    platform_config_reset:  'Reset',
+    platform_config_min_one:'Each list must have at least one value.',
     pts_label:             'pts',
     // Merit descriptions
     short_description:     'Short description',
@@ -791,6 +793,8 @@ const TRANSLATIONS = {
     award:                 'Otorgar',
     merit_audit_log:       'Registro de Logros',
     platform_admin_editable:'Admin de Plataforma: las filas son editables',
+    platform_config_reset:  'Restaurar',
+    platform_config_min_one:'Cada lista debe tener al menos un valor.',
     pts_label:             'pts',
     short_description:     'Descripción breve',
     long_description:      'Cómo obtenerlo',

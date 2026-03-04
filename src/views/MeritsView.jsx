@@ -247,7 +247,7 @@ export default function MeritsView({
                 </button>
                 <button type="button" onClick={resetTeamTagsToDefaults}
                   className="px-3 py-1.5 bg-slate-600 text-slate-300 text-xs rounded hover:bg-slate-500">
-                  {t('platform_config_reset') || 'Restaurar valores por defecto'}
+                  {t('platform_config_reset') || 'Reset'}
                 </button>
               </div>
             </div>
@@ -380,7 +380,7 @@ export default function MeritsView({
                       ...f, achievementTypes: sel ? (f.achievementTypes || []).filter((t) => t !== type) : [...(f.achievementTypes || []), type],
                     }))}
                     className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
-                    {t('merit_type_' + type)}
+                    {type}
                   </button>
                 );
               })}
@@ -395,7 +395,7 @@ export default function MeritsView({
                       ...f, domains: sel ? (f.domains || []).filter((x) => x !== d) : [...(f.domains || []), d],
                     }))}
                     className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
-                    {t('merit_domain_' + d)}
+                    {d}
                   </button>
                 );
               })}
@@ -543,7 +543,7 @@ export default function MeritsView({
                 return (
                   <button key={type} type="button"
                     onClick={() => setGridTypeFilters(sel ? gridTypeFilters.filter((t) => t !== type) : [...gridTypeFilters, type])}
-                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_type_' + type)}</button>
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{type}</button>
                 );
               })}
               <span className="text-[10px] text-slate-500 ml-2">{t('merit_filter_domain')}:</span>
@@ -552,7 +552,7 @@ export default function MeritsView({
                 return (
                   <button key={d} type="button"
                     onClick={() => setGridDomainFilters(sel ? gridDomainFilters.filter((x) => x !== d) : [...gridDomainFilters, d])}
-                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_domain_' + d)}</button>
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{d}</button>
                 );
               })}
               <span className="text-[10px] text-slate-500 ml-2">{t('merit_filter_tier')}:</span>
@@ -596,7 +596,7 @@ export default function MeritsView({
                   <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className="font-mono text-emerald-400 font-bold">{m.points} {t('pts_label')}</span>
                     {m.categoryId ? <span className="truncate">· {ensureString(categories.find((c) => c.id === m.categoryId)?.name)}</span> : <span>· {t('global_category')}</span>}
-                    {(m.achievementTypes || []).length > 0 && <span>· {(m.achievementTypes || []).map((x) => t('merit_type_' + x)).join(', ')}</span>}
+                    {(m.achievementTypes || []).length > 0 && <span>· {(m.achievementTypes || []).join(', ')}</span>}
                     {m.tier && <span>· {t('merit_tier_' + m.tier)}</span>}
                   </div>
                   {getL(m.shortDescription, lang) && (
@@ -679,7 +679,7 @@ export default function MeritsView({
                   return (
                     <button key={type} type="button"
                       onClick={() => setMeritTypeFilters(sel ? meritTypeFilters.filter((t) => t !== type) : [...meritTypeFilters, type])}
-                      className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_type_' + type)}</button>
+                      className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{type}</button>
                   );
                 })}
                 {domains.map((d) => {
@@ -687,7 +687,7 @@ export default function MeritsView({
                   return (
                     <button key={d} type="button"
                       onClick={() => setMeritDomainFilters(sel ? meritDomainFilters.filter((x) => x !== d) : [...meritDomainFilters, d])}
-                      className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_domain_' + d)}</button>
+                      className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{d}</button>
                   );
                 })}
                 {MERIT_TIERS.map((tier) => {
@@ -725,7 +725,7 @@ export default function MeritsView({
                           <span className="text-[10px] text-slate-500">
                             {m.points} {t('pts_label')}
                             {m.categoryId ? ` · ${ensureString(categories.find((c) => c.id === m.categoryId)?.name)}` : ` · ${t('global_category')}`}
-                            {(m.achievementTypes || []).length > 0 && ` · ${(m.achievementTypes || []).map((x) => t('merit_type_' + x)).join(', ')}`}
+                            {(m.achievementTypes || []).length > 0 && ` · ${(m.achievementTypes || []).join(', ')}`}
                             {m.tier && ` · ${t('merit_tier_' + m.tier)}`}
                           </span>
                         </div>
