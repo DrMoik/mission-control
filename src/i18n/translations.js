@@ -486,6 +486,11 @@ const TRANSLATIONS = {
 
     // ── Profile — Culture ─────────────────────────────────────────────────────
     section_culture:           'Culture',
+    culture_what_i_listen:     'What I listen to',
+    culture_book_that_marked:  'Book that marked me',
+    culture_idea_that_motivates:'Idea that motivates me',
+    culture_quote_that_moves: 'Quote that moves me',
+    culture_add:               '+ Add',
     song_on_repeat:            'Song on repeat',
     song_title_label:          'Song / Artist',
     song_url_label:            'Link (Spotify, YouTube…)',
@@ -1066,6 +1071,11 @@ const TRANSLATIONS = {
 
     // ── Profile — Cultura ─────────────────────────────────────────────────────
     section_culture:           'Cultura',
+    culture_what_i_listen:     'Lo que escucho',
+    culture_book_that_marked:  'Libro que me marcó',
+    culture_idea_that_motivates:'Idea que me motiva',
+    culture_quote_that_moves:  'Frase que me mueve',
+    culture_add:               '+ Agregar',
     song_on_repeat:            'Canción en repeat',
     song_title_label:          'Canción / Artista',
     song_url_label:            'Enlace (Spotify, YouTube…)',

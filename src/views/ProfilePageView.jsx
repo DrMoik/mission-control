@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import LangContext              from '../i18n/LangContext.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
-import { RoleBadge, BilingualField, TagInput } from '../components/ui/index.js';
+import { RoleBadge, BilingualField, TagInput, CultureListField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { getL, toL, fillL, ensureString } from '../utils.js';
 
@@ -99,7 +99,6 @@ export default function ProfilePageView({
   const [cropTarget, setCropTarget] = useState(null);
   const [editingWeekly, setEditingWeekly] = useState(false);
   const [weeklyDraft,   setWeeklyDraft]   = useState({ advanced: '', failedAt: '', learned: '' });
-  const [songUrlError,  setSongUrlError]  = useState('');
 
   if (!membership) return null;
 
@@ -128,21 +127,17 @@ export default function ProfilePageView({
       iCanHelpWith:              normTags(membership.iCanHelpWith),
       skillsToLearnThisSemester: normTags(membership.skillsToLearnThisSemester),
       skillsICanTeach:           normTags(membership.skillsICanTeach),
-      songOnRepeatTitle:  membership.songOnRepeatTitle  || '',
-      songOnRepeatUrl:    membership.songOnRepeatUrl    || '',
+      whatIListenTo:      membership.whatIListenTo       || [],
+      bookThatMarkedMe:   membership.bookThatMarkedMe   || [],
+      ideaThatMotivatesMe: membership.ideaThatMotivatesMe || [],
+      quoteThatMovesMe:   membership.quoteThatMovesMe   || [],
       funFact:            toL(membership.funFact),
       personalityTag:     membership.personalityTag     || '',
     });
-    setSongUrlError('');
     setEditing(true);
   };
 
   const handleSave = async () => {
-    if (draft.songOnRepeatUrl && !isValidSongUrl(draft.songOnRepeatUrl)) {
-      setSongUrlError(t('invalid_song_url'));
-      return;
-    }
-    setSongUrlError('');
     try {
       await onSave(membership.id, {
         ...draft,
@@ -155,6 +150,10 @@ export default function ProfilePageView({
       iCanHelpWith:              (draft.iCanHelpWith || []).map((t) => ensureString(t)),
       skillsToLearnThisSemester: (draft.skillsToLearnThisSemester || []).map((t) => ensureString(t)),
       skillsICanTeach:           (draft.skillsICanTeach || []).map((t) => ensureString(t)),
+      whatIListenTo:             (draft.whatIListenTo || []).filter(Boolean),
+      bookThatMarkedMe:          (draft.bookThatMarkedMe || []).filter(Boolean),
+      ideaThatMotivatesMe:       (draft.ideaThatMotivatesMe || []).filter(Boolean),
+      quoteThatMovesMe:          (draft.quoteThatMovesMe || []).filter(Boolean),
       });
       setEditing(false);
     } catch (err) {
@@ -317,24 +316,16 @@ export default function ProfilePageView({
                 placeholder={{ en: t('fun_fact_ph'), es: t('fun_fact_ph') }} />
             </div>
 
-            <div className="border-t border-slate-700 pt-3 space-y-3">
+            <div className="border-t border-slate-700 pt-3 space-y-4">
               <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_culture')}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[11px] text-slate-500 block mb-0.5">{t('song_title_label')}</label>
-                  <AutoGrowInput value={draft.songOnRepeatTitle} onChange={(v) => set('songOnRepeatTitle', v)}
-                    placeholder={t('song_title_ph')}
-                    className="w-full min-w-0 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
-                </div>
-                <div>
-                  <label className="text-[11px] text-slate-500 block mb-0.5">{t('song_url_label')}</label>
-                  <input value={draft.songOnRepeatUrl}
-                    onChange={(e) => { set('songOnRepeatUrl', e.target.value); setSongUrlError(''); }}
-                    placeholder={t('song_url_ph')}
-                    className={`w-full px-2 py-1.5 bg-slate-800 border rounded text-xs ${songUrlError ? 'border-red-500' : 'border-slate-600'}`} />
-                  {songUrlError && <p className="text-[10px] text-red-400 mt-0.5">{songUrlError}</p>}
-                </div>
-              </div>
+              <CultureListField label={t('culture_what_i_listen')} value={draft.whatIListenTo || []} onChange={(v) => set('whatIListenTo', v)}
+                placeholder={t('song_title_ph')} addLabel={t('culture_add')} maxItems={3} />
+              <CultureListField label={t('culture_book_that_marked')} value={draft.bookThatMarkedMe || []} onChange={(v) => set('bookThatMarkedMe', v)}
+                placeholder="e.g. Sapiens" addLabel={t('culture_add')} maxItems={3} />
+              <CultureListField label={t('culture_idea_that_motivates')} value={draft.ideaThatMotivatesMe || []} onChange={(v) => set('ideaThatMotivatesMe', v)}
+                placeholder="e.g. Build something people love" addLabel={t('culture_add')} maxItems={3} />
+              <CultureListField label={t('culture_quote_that_moves')} value={draft.quoteThatMovesMe || []} onChange={(v) => set('quoteThatMovesMe', v)}
+                placeholder="e.g. The best time to plant a tree was 20 years ago" addLabel={t('culture_add')} maxItems={3} />
               <div>
                 <label className="text-[11px] text-slate-500 block mb-0.5">{t('personality_tag_label')}</label>
                 <select value={draft.personalityTag} onChange={(e) => set('personalityTag', e.target.value)}
@@ -550,23 +541,39 @@ export default function ProfilePageView({
               )}
             </div>
 
-            {membership.songOnRepeatTitle && (
-              <div className="min-w-0">
+            {((membership.whatIListenTo?.length) || (membership.bookThatMarkedMe?.length) || (membership.ideaThatMotivatesMe?.length) || (membership.quoteThatMovesMe?.length)) ? (
+              <div className="min-w-0 space-y-3">
                 <SectionHeading label={t('section_culture')} />
-                <div className="flex items-center gap-3 bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] text-slate-500">{t('song_on_repeat')}</p>
-                    <p className="text-sm text-slate-200 truncate">{ensureString(membership.songOnRepeatTitle, lang)}</p>
-                  </div>
-                  {membership.songOnRepeatUrl && isValidSongUrl(membership.songOnRepeatUrl) && (
-                    <a href={membership.songOnRepeatUrl} target="_blank" rel="noopener noreferrer"
-                      className="shrink-0 text-xs text-emerald-400 underline hover:text-emerald-300">{t('listen_link')}</a>
+                <div className="space-y-2">
+                  {membership.whatIListenTo?.length > 0 && (
+                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_what_i_listen')}</p>
+                      <ul className="text-sm text-slate-200 space-y-0.5">{membership.whatIListenTo.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
+                    </div>
+                  )}
+                  {membership.bookThatMarkedMe?.length > 0 && (
+                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_book_that_marked')}</p>
+                      <ul className="text-sm text-slate-200 space-y-0.5">{membership.bookThatMarkedMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
+                    </div>
+                  )}
+                  {membership.ideaThatMotivatesMe?.length > 0 && (
+                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_idea_that_motivates')}</p>
+                      <ul className="text-sm text-slate-200 space-y-0.5">{membership.ideaThatMotivatesMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
+                    </div>
+                  )}
+                  {membership.quoteThatMovesMe?.length > 0 && (
+                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_quote_that_moves')}</p>
+                      <ul className="text-sm text-slate-200 space-y-0.5 italic">{membership.quoteThatMovesMe.map((s, i) => <li key={i}>&quot;{ensureString(s, lang)}&quot;</li>)}</ul>
+                    </div>
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {!getL(membership.bio, lang) && !getL(membership.hobbies, lang) && !getL(membership.funFact, lang) && !getL(membership.currentObjective, lang) && !getL(membership.currentChallenge, lang) && !membership.lookingForHelpIn?.length && !membership.iCanHelpWith?.length && !membership.songOnRepeatTitle && !thisWeek && (
+            {!getL(membership.bio, lang) && !getL(membership.hobbies, lang) && !getL(membership.funFact, lang) && !getL(membership.currentObjective, lang) && !getL(membership.currentChallenge, lang) && !membership.lookingForHelpIn?.length && !membership.iCanHelpWith?.length && !(membership.whatIListenTo?.length) && !(membership.bookThatMarkedMe?.length) && !(membership.ideaThatMotivatesMe?.length) && !(membership.quoteThatMovesMe?.length) && !thisWeek && (
               <p className="text-xs text-slate-600 italic text-center py-4 col-span-full">{t('no_profile_info')}</p>
             )}
             </div>

@@ -529,6 +529,10 @@ export default function App() {
       skillsICanTeach:   otherMembership.skillsICanTeach ?? [],
       songOnRepeatTitle: otherMembership.songOnRepeatTitle ?? '',
       songOnRepeatUrl:   otherMembership.songOnRepeatUrl ?? '',
+      whatIListenTo:     otherMembership.whatIListenTo ?? [],
+      bookThatMarkedMe:  otherMembership.bookThatMarkedMe ?? [],
+      ideaThatMotivatesMe: otherMembership.ideaThatMotivatesMe ?? [],
+      quoteThatMovesMe:  otherMembership.quoteThatMovesMe ?? [],
       funFact:           otherMembership.funFact ?? '',
       personalityTag:    otherMembership.personalityTag ?? '',
     } : { displayName: userProfile.displayName, photoURL: userProfile.photoURL || null, ...EMPTY_PROFILE };
@@ -619,6 +623,10 @@ export default function App() {
       // ── Community profile — Culture ───────────────────────────────────────
       songOnRepeatTitle:  updates.songOnRepeatTitle  ?? m.songOnRepeatTitle  ?? '',
       songOnRepeatUrl:    updates.songOnRepeatUrl    ?? m.songOnRepeatUrl    ?? '',
+      whatIListenTo:      Array.isArray(updates.whatIListenTo) ? updates.whatIListenTo.filter(Boolean) : (m.whatIListenTo ?? []),
+      bookThatMarkedMe:   Array.isArray(updates.bookThatMarkedMe) ? updates.bookThatMarkedMe.filter(Boolean) : (m.bookThatMarkedMe ?? []),
+      ideaThatMotivatesMe: Array.isArray(updates.ideaThatMotivatesMe) ? updates.ideaThatMotivatesMe.filter(Boolean) : (m.ideaThatMotivatesMe ?? []),
+      quoteThatMovesMe:   Array.isArray(updates.quoteThatMovesMe) ? updates.quoteThatMovesMe.filter(Boolean) : (m.quoteThatMovesMe ?? []),
       funFact:            updates.funFact            ?? m.funFact            ?? '',
       personalityTag:     updates.personalityTag     ?? m.personalityTag     ?? '',
     };

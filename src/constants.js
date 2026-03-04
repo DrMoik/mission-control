@@ -91,6 +91,10 @@ export const EMPTY_PROFILE = {
   semester:      '',
   university:    '',
   coverPhotoURL: '',
+  whatIListenTo:       [],
+  bookThatMarkedMe:   [],
+  ideaThatMotivatesMe:[],
+  quoteThatMovesMe:   [],
 };
 
 /**
