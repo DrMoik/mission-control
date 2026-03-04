@@ -909,6 +909,14 @@ export default function App() {
         return;
       }
     }
+    // Leaders may only award to members of their own area
+    if (memberRole === 'leader' && !isPlatformAdmin) {
+      const targetMember = teamMemberships.find((mm) => mm.id === membershipId);
+      if (targetMember && currentMembership?.categoryId && targetMember.categoryId !== currentMembership.categoryId) {
+        alert(t('merit_leader_area_only') || 'Como Líder, solo puedes otorgar reconocimiento a miembros de tu área.');
+        return;
+      }
+    }
     // Block self-assignment of merits except for platform admin (testing)
     if (membershipId === currentMembership?.id && !isPlatformAdmin) {
       alert(t('merit_self_award_error') || 'No puedes otorgarte logros a ti mismo.');

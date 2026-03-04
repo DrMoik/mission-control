@@ -518,12 +518,13 @@ export default function ProfilePageView({
                     const groups = {};
                     awards.forEach((evt) => {
                       const key = `${evt.meritId || ''}_${evt.meritName || ''}_${evt.points || 0}`;
-                      if (!groups[key]) groups[key] = { evt, count: 0 };
+                      if (!groups[key]) groups[key] = { evt, count: 0, autoAward: false };
                       groups[key].count++;
+                      if (evt.autoAward) groups[key].autoAward = true;
                     });
                     return Object.values(groups)
                       .sort((a, b) => (b.evt.createdAt?.seconds || 0) - (a.evt.createdAt?.seconds || 0))
-                      .map(({ evt, count }) => (
+                      .map(({ evt, count, autoAward }) => (
                         <div
                           key={evt.id}
                           className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 rounded-lg px-3 py-2"
@@ -535,6 +536,7 @@ export default function ProfilePageView({
                             </p>
                             <p className="text-xs text-amber-400/90">
                               +{(evt.points || 0) * count} pts
+                              {autoAward && <span className="text-slate-500 ml-1">· {t('merit_awarded_by_system')}</span>}
                             </p>
                           </div>
                         </div>

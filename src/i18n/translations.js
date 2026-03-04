@@ -209,6 +209,8 @@ const TRANSLATIONS = {
     evidence_optional:     'URL or description…',
     award:                 'Award',
     merit_audit_log:       'Merit Audit Log',
+    merit_awarded_by_system:'System',
+    merit_leader_area_only: 'As a Leader you can only award recognition to members of your area.',
     platform_admin_editable:'Platform Admin: rows are editable',
     platform_config_reset:  'Reset',
     platform_config_min_one:'Each list must have at least one value.',
@@ -844,6 +846,8 @@ const TRANSLATIONS = {
     assignable_by_teamAdmin:'Team Admin',
     assignable_by_facultyAdvisor: 'Faculty Advisor',
     awarded_by:            'Reconocido por',
+    merit_awarded_by_system:'Sistema',
+    merit_leader_area_only: 'Como Líder solo puedes otorgar reconocimiento a miembros de tu área.',
     no_assignable_logros:   'No tienes asignados logros que puedas otorgar (solo puedes otorgar los que coinciden con tu rol).',
 
     // ── Leaderboard ───────────────────────────────────────────────────────────

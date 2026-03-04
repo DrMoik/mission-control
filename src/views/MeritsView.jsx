@@ -91,6 +91,13 @@ export default function MeritsView({
   const [editEventDraft,  setEditEventDraft]  = useState({ points: '', evidence: '' });
 
   const activeMembers = memberships.filter((m) => m.status === 'active');
+  // Leaders can only award members of their own area; teamAdmin/facultyAdvisor/platformAdmin see all
+  const membersForAward = useMemo(() => {
+    if (memberRole === 'leader' && !isPlatformAdmin && currentMembership?.categoryId) {
+      return activeMembers.filter((m) => m.categoryId === currentMembership.categoryId);
+    }
+    return activeMembers;
+  }, [activeMembers, memberRole, isPlatformAdmin, currentMembership?.categoryId]);
 
   // Assignable merits: teamAdmin/facultyAdvisor see all; leaders see global + their category only
   const assignableMerits = useMemo(() => {
@@ -650,7 +657,7 @@ export default function MeritsView({
                   className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
                 >
                   <option value="">{t('select_member')}</option>
-                  {activeMembers.map((m) => (
+                  {membersForAward.map((m) => (
                     <option key={m.id} value={m.id}>{ensureString(m.displayName)} ({t('role_' + m.role) || m.role})</option>
                   ))}
                 </select>
@@ -842,11 +849,11 @@ export default function MeritsView({
                         )}
                       </td>
                       <td className="px-3 py-2 text-slate-400 text-[11px]">
-                        {evt.awardedByName || (() => {
+                        {evt.autoAward ? t('merit_awarded_by_system') : (evt.awardedByName || (() => {
                           const uid = evt.awardedByUserId || evt.createdByUserId;
-                          const m = memberships.find((mm) => mm.userId === uid);
-                          return m ? ensureString(m.displayName) : '—';
-                        })()}
+                          const memb = memberships.find((mm) => mm.userId === uid);
+                          return memb ? ensureString(memb.displayName) : '—';
+                        })())}
                       </td>
                       <td className="px-3 py-2 text-slate-400 max-w-[160px] truncate">
                         {isEditing ? (
