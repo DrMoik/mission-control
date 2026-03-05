@@ -1158,7 +1158,6 @@ export default function App() {
     });
   };
 
-  const handleAssignMeritToTask = () => {}; // no-op; merits are system-assigned on grade
   const handleGradeTask = async (taskId, grade) => {
     if (!currentTeam || !authUser || !currentMembership) return;
     const task = teamTasks.find((t) => t.id === taskId);
@@ -2089,7 +2088,6 @@ export default function App() {
                 currentMembership={currentMembership}
                 onRequestTaskReview={handleRequestTaskReview}
                 onGradeTask={handleGradeTask}
-                onAssignMeritToTask={handleAssignMeritToTask}
                 onDeleteTask={handleDeleteTask}
                 tsToDate={tsToDate}
               />
