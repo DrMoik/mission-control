@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import LangContext              from '../i18n/LangContext.js';
-import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS as DEFAULT_PERSONALITY_TAGS } from '../constants.js';
+import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay } from '../utils.js';
@@ -84,7 +84,7 @@ export default function ProfilePageView({
   const { t, lang } = React.useContext(LangContext);
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
   const semesterOptions = semesterOptionsProp ?? SEMESTER_OPTIONS;
-  const personalityTags = personalityTagsProp ?? DEFAULT_PERSONALITY_TAGS;
+  const personalityTags = personalityTagsProp ?? PERSONALITY_TAGS_DEFAULT;
   const [editing,    setEditing]    = useState(false);
   const [draft,      setDraft]      = useState({});
   const [cropTarget, setCropTarget] = useState(null);
@@ -332,7 +332,12 @@ export default function ProfilePageView({
                 <select value={draft.personalityTag} onChange={(e) => set('personalityTag', e.target.value)}
                   className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs">
                   <option value="">{t('select_placeholder')}</option>
-                  {personalityTags.map((k) => <option key={k} value={k}>{t(k)}</option>)}
+                  {(() => {
+                    const tags = typeof personalityTags === 'object' && !Array.isArray(personalityTags)
+                      ? Object.entries(personalityTags)
+                      : (Array.isArray(personalityTags) ? personalityTags : Object.entries(PERSONALITY_TAGS_DEFAULT)).map((k) => Array.isArray(k) ? k : [k, t(k)]);
+                    return tags.map(([k, label]) => <option key={k} value={k}>{label}</option>);
+                  })()}
                 </select>
               </div>
             </div>
@@ -351,7 +356,9 @@ export default function ProfilePageView({
                     </span>
                   )}
                   {ensureString(membership.personalityTag, lang) && (
-                    <span className="text-[10px] bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/50">{t(ensureString(membership.personalityTag, lang))}</span>
+                    <span className="text-[10px] bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/50">
+                      {(personalityTags && personalityTags[membership.personalityTag]) || membership.personalityTag}
+                    </span>
                   )}
                   {membership.ghost && (
                     <span className="text-[10px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded">{t('external_member')}</span>

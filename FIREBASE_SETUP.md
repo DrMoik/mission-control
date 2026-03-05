@@ -211,8 +211,22 @@ service cloud.firestore {
       allow create: if isLeaderOrAbove(request.resource.data.teamId) ||
         (request.resource.data.autoAward == true &&
          get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid);
-      allow update: if isPlatformAdmin();
+      allow update: if isPlatformAdmin() ||
+        (isActiveMember(resource.data.teamId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']) &&
+         resource.data.points == 5 &&
+         request.resource.data.points == 25);
       allow delete: if isPlatformAdmin();
+    }
+
+    // Migration locks (weekly merit 5→25 pts). Any active member can read/write.
+    match /migrations/{migrationId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Perfil completo lock (one award per user globally). User writes their own lock.
+    match /profileCompleteLocks/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -489,6 +503,8 @@ Your app will be live at `https://quantum-robotics-48d7e.web.app`
 | `teamMeetings` | `teamId`, `title`, `date`, `attendees`, `notes`, `actionItems[]`, `categoryId` | Active team members |
 | `teamGoals` | `teamId`, `objective`, `owner`, `dueDate`, `keyResults[]`, `status`, `categoryId` | Active team members |
 | `weeklyStatuses` | `teamId`, `membershipId`, `weekOf`, `advanced`, `failedAt`, `learned` | Active team members |
+| `migrations` | `doneAt`, `updated` (lock for weekly 5→25 pts migration) | Any signed-in user |
+| `profileCompleteLocks` | `createdAt`, `teamId` (one Perfil completo award per user) | Own doc only |
 
 ### Catalogación global / por área (herramientas PM)
 

@@ -20,11 +20,10 @@ import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
   collection, doc, setDoc, getDoc, updateDoc, deleteDoc,
   addDoc, query, where, onSnapshot, serverTimestamp, runTransaction,
+  getDocs, writeBatch,
 } from 'firebase/firestore';
 
-// Default achievements for platform usage
-const POINTS_PER_WEEKLY_UPDATE = 25;
-const MILESTONE_50_POINTS = 100;
+// System merit points: use team config or defaults (see handleSaveSystemMeritPoints)
 
 /** Returns true if weekOf (YYYY-MM-DD, any day) falls in current or previous week (Monday–Sunday). */
 function isWeekEligibleForPoints(weekOf) {
@@ -42,8 +41,9 @@ import TRANSLATIONS                from './i18n/translations.js';
 import LangContext                 from './i18n/LangContext.js';
 import {
   EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS,
-  CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, MERIT_TIERS,
+  CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, PERSONALITY_TAGS_DEFAULT, MERIT_TIERS,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
+  SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES,
 } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMondayOfWeekLocal, normalizeWeekOfToMonday } from './utils.js';
 
@@ -330,6 +330,33 @@ export default function App() {
     return () => unsubs.forEach((u) => u());
   }, [selectedTeamId, authUser]);
 
+  // Retroactive migration: update "Actualización semanal" merits from 5 → 25 pts (runs once per team)
+  useEffect(() => {
+    if (!selectedTeamId || !authUser) return;
+    const lockId = `weekly_25_${selectedTeamId}`;
+    const lockRef = doc(db, 'migrations', lockId);
+    const meritEventsRef = collection(db, 'meritEvents');
+    (async () => {
+      try {
+        const lockSnap = await getDoc(lockRef);
+        if (lockSnap.exists()) return;
+        const q = query(
+          meritEventsRef,
+          where('teamId', '==', selectedTeamId),
+          where('meritName', '==', SYSTEM_MERIT_NAMES.weeklyUpdate),
+          where('points', '==', 5),
+        );
+        const snap = await getDocs(q);
+        for (const d of snap.docs) {
+          await updateDoc(d.ref, { points: 25 });
+        }
+        await setDoc(lockRef, { doneAt: serverTimestamp(), updated: snap.size });
+      } catch (e) {
+        console.warn('Migration weekly_25:', e);
+      }
+    })();
+  }, [selectedTeamId, authUser]);
+
   // ────────────────────────────────────────────────────────────────────────────
   // DERIVED STATE — permissions and computed data
   // ────────────────────────────────────────────────────────────────────────────
@@ -375,7 +402,18 @@ export default function App() {
   // Dropdown options: team overrides (from Admin tab) or constants
   const careerOptions        = (currentTeam?.careerOptions?.length ? currentTeam.careerOptions : CAREER_OPTIONS);
   const semesterOptions      = (currentTeam?.semesterOptions?.length ? currentTeam.semesterOptions : SEMESTER_OPTIONS);
-  const personalityTags      = (currentTeam?.personalityTags?.length ? currentTeam.personalityTags : PERSONALITY_TAGS);
+  const personalityTags = useMemo(() => {
+    const t = currentTeam?.personalityTags;
+    if (t && typeof t === 'object' && !Array.isArray(t) && Object.keys(t).length > 0) return t;
+    if (Array.isArray(t) && t.length > 0) return Object.fromEntries(t.map((k) => [k, PERSONALITY_TAGS_DEFAULT[k] || k]));
+    return PERSONALITY_TAGS_DEFAULT;
+  }, [currentTeam?.personalityTags]);
+
+  const systemMeritPoints = useMemo(() => ({
+    weeklyUpdate:    currentTeam?.pointsPerWeeklyUpdate ?? SYSTEM_MERIT_POINTS_DEFAULT.weeklyUpdate,
+    profileComplete: currentTeam?.pointsPerProfileComplete ?? SYSTEM_MERIT_POINTS_DEFAULT.profileComplete,
+    milestone50:     currentTeam?.pointsPerMilestone50 ?? SYSTEM_MERIT_POINTS_DEFAULT.milestone50,
+  }), [currentTeam?.pointsPerWeeklyUpdate, currentTeam?.pointsPerProfileComplete, currentTeam?.pointsPerMilestone50]);
   const meritTiers           = (currentTeam?.meritTiers?.length ? currentTeam.meritTiers : MERIT_TIERS);
 
   const myTeams = useMemo(() => {
@@ -533,10 +571,6 @@ export default function App() {
     if (!currentTeam || !canEdit) return;
     await updateDoc(doc(db, 'teams', currentTeam.id), { semesterOptions: Array.isArray(arr) ? arr : [] });
   };
-  const handleSaveTeamPersonalityTags = async (arr) => {
-    if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), { personalityTags: Array.isArray(arr) ? arr : [] });
-  };
   const handleSaveTeamCollabSuggestions = async (arr) => {
     if (!currentTeam || !canEdit) return;
     await updateDoc(doc(db, 'teams', currentTeam.id), { collabTagSuggestions: Array.isArray(arr) ? arr : [] });
@@ -547,10 +581,80 @@ export default function App() {
   };
   const handleSaveTaskGradePoints = async ({ individual, team }) => {
     if (!currentTeam || !canEdit) return;
+    const ptsInd = individual || TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT;
+    const ptsTeam = team || TASK_GRADE_POINTS_TEAM_DEFAULT;
     await updateDoc(doc(db, 'teams', currentTeam.id), {
-      taskGradePointsIndividual: individual || TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT,
-      taskGradePointsTeam:       team || TASK_GRADE_POINTS_TEAM_DEFAULT,
+      taskGradePointsIndividual: ptsInd,
+      taskGradePointsTeam:       ptsTeam,
     });
+    // Retroactively update all "Tarea revisada" merit events
+    const meritEventsRef = collection(db, 'meritEvents');
+    const q = query(meritEventsRef, where('teamId', '==', currentTeam.id), where('meritName', '==', 'Tarea revisada'));
+    const snap = await getDocs(q);
+    const BATCH_SIZE = 500;
+    let batch = writeBatch(db);
+    let count = 0;
+    for (const d of snap.docs) {
+      const evt = d.data();
+      const grade = evt.taskGrade || (evt.evidence && /\((\w+)\)$/.exec(evt.evidence)?.[1]);
+      const scope = evt.taskCompletionScope || 'individual';
+      if (!grade || !TASK_GRADES.includes(grade)) continue;
+      const newPoints = scope === 'team' ? (ptsTeam[grade] ?? 0) : (ptsInd[grade] ?? 0);
+      if (evt.points !== newPoints) {
+        batch.update(d.ref, { points: newPoints });
+        count++;
+        if (count >= BATCH_SIZE) {
+          await batch.commit();
+          batch = writeBatch(db);
+          count = 0;
+        }
+      }
+    }
+    if (count > 0) await batch.commit();
+  };
+
+  const handleSaveSystemMeritPoints = async (points) => {
+    if (!currentTeam || !canEdit) return;
+    const { weeklyUpdate, profileComplete, milestone50 } = points;
+    await updateDoc(doc(db, 'teams', currentTeam.id), {
+      pointsPerWeeklyUpdate:    weeklyUpdate ?? SYSTEM_MERIT_POINTS_DEFAULT.weeklyUpdate,
+      pointsPerProfileComplete: profileComplete ?? SYSTEM_MERIT_POINTS_DEFAULT.profileComplete,
+      pointsPerMilestone50:    milestone50 ?? SYSTEM_MERIT_POINTS_DEFAULT.milestone50,
+    });
+    // Retroactively update all existing meritEvents for this team (Actualización semanal, Perfil completo, 50 actualizaciones)
+    const meritEventsRef = collection(db, 'meritEvents');
+    const q = query(meritEventsRef, where('teamId', '==', currentTeam.id));
+    const snap = await getDocs(q);
+    const BATCH_SIZE = 500;
+    let batch = writeBatch(db);
+    let count = 0;
+    for (const d of snap.docs) {
+      const evt = d.data();
+      let newPoints = null;
+      if (evt.meritName === SYSTEM_MERIT_NAMES.weeklyUpdate && evt.autoAward) newPoints = weeklyUpdate;
+      else if (evt.meritName === SYSTEM_MERIT_NAMES.profileComplete || evt.evidence === 'profile_complete_50') newPoints = profileComplete;
+      else if (evt.meritName === SYSTEM_MERIT_NAMES.milestone50 || evt.evidence === 'milestone_50') newPoints = milestone50;
+      if (newPoints != null && evt.points !== newPoints) {
+        batch.update(d.ref, { points: newPoints });
+        count++;
+        if (count >= BATCH_SIZE) {
+          await batch.commit();
+          batch = writeBatch(db);
+          count = 0;
+        }
+      }
+    }
+    if (count > 0) await batch.commit();
+  };
+
+  const handleSaveTeamPersonalityTags = async (dictOrArr) => {
+    if (!currentTeam || !canEdit) return;
+    const payload = (typeof dictOrArr === 'object' && !Array.isArray(dictOrArr))
+      ? dictOrArr
+      : Array.isArray(dictOrArr)
+        ? Object.fromEntries((dictOrArr || []).map((k) => [k, PERSONALITY_TAGS_DEFAULT[k] || k]))
+        : PERSONALITY_TAGS_DEFAULT;
+    await updateDoc(doc(db, 'teams', currentTeam.id), { personalityTags: payload });
   };
 
   // ── Memberships ────────────────────────────────────────────────────────────
@@ -735,22 +839,27 @@ export default function App() {
       hasBirthdate &&
       hasCulture;
 
+    // Perfil completo: award once per user globally. Lock in profileCompleteLocks/{userId}.
     if (isProfileComplete && currentTeam && authUser) {
+      const lockRef = doc(db, 'profileCompleteLocks', authUser.uid);
       const meritEventsRef = collection(db, 'meritEvents');
-      for (const mid of idsToUpdate) {
-        if (!teamMemberships.some((mm) => mm.id === mid)) continue; // award only for current team membership
-        const awardId = `auto_profile_complete_50_${currentTeam.id}_${mid}`;
-        const awardRef = doc(meritEventsRef, awardId);
-        await runTransaction(db, async (tx) => {
-          const snap = await tx.get(awardRef);
-          if (snap.exists()) return; // locked: already awarded
+      const midsToAward = idsToUpdate.filter((mid) => teamMemberships.some((mm) => mm.id === mid));
+      if (midsToAward.length === 0) return;
+      await runTransaction(db, async (tx) => {
+        const lockSnap = await tx.get(lockRef);
+        if (lockSnap.exists()) return; // already awarded once globally
+        for (const mid of midsToAward) {
+          const awardId = `auto_profile_complete_50_${currentTeam.id}_${mid}`;
+          const awardRef = doc(meritEventsRef, awardId);
+          const awardSnap = await tx.get(awardRef);
+          if (awardSnap.exists()) continue; // belt-and-suspenders: per-membership lock
           tx.set(awardRef, {
             teamId:            currentTeam.id,
             membershipId:      mid,
             meritId:           null,
-            meritName:         'Perfil completo',
+            meritName:         SYSTEM_MERIT_NAMES.profileComplete,
             meritLogo:         '✅',
-            points:            50,
+            points:            systemMeritPoints.profileComplete,
             type:              'award',
             evidence:          'profile_complete_50',
             autoAward:         true,
@@ -758,15 +867,16 @@ export default function App() {
             awardedByName:     userProfile?.displayName || authUser.email || '—',
             createdAt:         serverTimestamp(),
           });
-        });
-      }
+        }
+        tx.set(lockRef, { createdAt: serverTimestamp(), teamId: currentTeam.id });
+      });
     }
     // Firestore listener will update teamMemberships; profileMember derives from it
   };
 
   // ── Weekly status ───────────────────────────────────────────────────────────
   // One document per member per week.  Doc ID: `{membershipId}_{weekOf}`.
-  // Auto-awards: 5 pts only for the FIRST save of that week (one award per week); 100 pts at 50 updates.
+  // Auto-awards: 25 pts only for the FIRST save of that week (one award per week); 100 pts at 50 updates.
   const handleSaveWeeklyStatus = async ({ membershipId, weekOf: weekOfParam, advanced, failedAt, learned }) => {
     if (!currentTeam || !authUser) return;
     const m = teamMemberships.find((mm) => mm.id === membershipId);
@@ -795,16 +905,16 @@ export default function App() {
         updatedAt:    serverTimestamp(),
       }, { merge: true });
 
-      // Only one system award per week: grant 5 pts only on first save for this week (not on edits)
+      // Only one system award per week: grant 25 pts only on first save for this week (not on edits)
       if (!existed && doAward) {
         const eventRef = doc(meritEventsRef);
         tx.set(eventRef, {
           teamId:       currentTeam.id,
           membershipId,
           meritId:      null,
-          meritName:    'Actualización semanal',
+          meritName:    SYSTEM_MERIT_NAMES.weeklyUpdate,
           meritLogo:    '📝',
-          points:       POINTS_PER_WEEKLY_UPDATE,
+          points:       systemMeritPoints.weeklyUpdate,
           type:         'award',
           evidence:     weekOf,
           autoAward:    true,
@@ -830,9 +940,9 @@ export default function App() {
             teamId:       currentTeam.id,
             membershipId,
             meritId:      null,
-            meritName:    '50 actualizaciones',
+            meritName:    SYSTEM_MERIT_NAMES.milestone50,
             meritLogo:    '🎯',
-            points:       MILESTONE_50_POINTS,
+            points:       systemMeritPoints.milestone50,
             type:         'award',
             evidence:     'milestone_50',
             autoAward:    true,
@@ -1182,6 +1292,7 @@ export default function App() {
     const meritName = 'Tarea revisada';
     const evidence = `${(task.title || '').trim()} (${grade})`;
     const awardedByName = currentMembership.displayName || userProfile?.displayName || authUser?.email || '—';
+    const taskScope = assigneeIds.length > 1 ? 'team' : 'individual';
     const meritEventsRef = collection(db, 'meritEvents');
     for (const membershipId of assigneeIds) {
       await addDoc(meritEventsRef, {
@@ -1196,7 +1307,8 @@ export default function App() {
         awardedByUserId:       authUser?.uid ?? null,
         awardedByName,
         taskId,
-        taskCompletionScope:   assigneeIds.length > 1 ? 'team' : 'individual',
+        taskCompletionScope:   taskScope,
+        taskGrade:             grade,
         createdAt:            serverTimestamp(),
       });
     }
@@ -2108,6 +2220,7 @@ export default function App() {
                 onSaveCollabSuggestions={handleSaveTeamCollabSuggestions}
                 onSaveMeritTags={handleSaveTeamMeritTags}
                 onSaveMeritTiers={handleSaveTeamMeritTiers}
+                onSaveSystemMeritPoints={handleSaveSystemMeritPoints}
                 onSaveTaskGradePoints={handleSaveTaskGradePoints}
               />
             )}
