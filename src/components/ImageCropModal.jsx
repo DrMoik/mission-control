@@ -256,7 +256,18 @@ export default function ImageCropModal({
           <p className="text-center text-slate-500 text-xs mt-2">{t('image_loading_msg')}</p>
         )}
         {status === 'error' && (
-          <p className="text-center text-amber-400 text-xs mt-2">{t('image_error_msg')}</p>
+          <div className="text-center mt-2 space-y-2">
+            <p className="text-amber-400 text-xs">{t('image_error_msg')}</p>
+            {src && (src.startsWith('http://') || src.startsWith('https://')) && (
+              <button
+                type="button"
+                onClick={() => onApply(src)}
+                className="text-xs text-emerald-400 hover:text-emerald-300 underline"
+              >
+                {t('image_use_url')}
+              </button>
+            )}
+          </div>
         )}
 
         {/* Zoom slider */}

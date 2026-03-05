@@ -742,6 +742,7 @@ export const STRINGS = {
     drag_instruction:  'Arrastra para reposicionar · rueda del ratón o deslizador para zoom',
     image_loading_msg: 'Cargando…',
     image_error_msg:   'No se pudo cargar la imagen. Verifica la URL.',
+    image_use_url:     'Usar URL sin recortar',
     zoom_label:        'Zoom',
     apply_btn:         'Aplicar',
     remove_image:      'Quitar imagen',
