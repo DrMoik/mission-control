@@ -21,7 +21,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../strings.js';
-import { isBlockedImageHost } from '../utils.js';
+import { isBlockedImageHost, isNoCorsImageHost } from '../utils.js';
 
 export default function ImageCropModal({
   src,
@@ -67,13 +67,16 @@ export default function ImageCropModal({
   // For http(s) URLs we set crossOrigin = 'anonymous' so the canvas is not tainted
   // and handleApply can produce a new data URL; if the server doesn't send CORS
   // the image will fail to load and we show error.
+  // For Reddit etc. (isNoCorsImageHost): skip crossOrigin so the image loads and displays;
+  // Apply will catch tainted canvas and return the original URL.
   useEffect(() => {
     setStatus('loading');
     imgRef.current = null;
 
     const img = new Image();
     const isDataUrl = typeof src === 'string' && (src.startsWith('data:') || src.startsWith('blob:'));
-    if (!isDataUrl && typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://'))) {
+    const isHttp = typeof src === 'string' && (src.startsWith('http://') || src.startsWith('https://'));
+    if (!isDataUrl && isHttp && !isNoCorsImageHost(src)) {
       img.crossOrigin = 'anonymous';
     }
     img.onload = () => {

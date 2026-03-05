@@ -216,6 +216,17 @@ export function isBlockedImageHost(url) {
   } catch { return false; }
 }
 
+// Domains where CORS fails but image loads without it — load without crossOrigin so it displays;
+// Apply will fall back to original URL (canvas tainted).
+const NO_CORS_IMAGE_HOSTS = ['redd.it', 'reddit.com', 'i.redd.it', 'external-preview.redd.it'];
+export function isNoCorsImageHost(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return NO_CORS_IMAGE_HOSTS.some((h) => host.includes(h));
+  } catch { return false; }
+}
+
 // ── Media helpers ─────────────────────────────────────────────────────────────
 
 /**
