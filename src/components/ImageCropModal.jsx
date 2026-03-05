@@ -259,9 +259,12 @@ export default function ImageCropModal({
         {status === 'error' && (
           <div className="text-center mt-2 space-y-2">
             <p className="text-amber-400 text-xs">
-              {src && isBlockedImageHost(src) ? t('image_blocked_host') : t('image_error_msg')}
+              {src && isBlockedImageHost(src) ? t('image_forbidden_url') : t('image_error_msg')}
             </p>
-            {src && (src.startsWith('http://') || src.startsWith('https://')) && !isBlockedImageHost(src) && (
+            {src && isBlockedImageHost(src) && (
+              <p className="text-slate-500 text-[10px]">{t('image_blocked_host')}</p>
+            )}
+            {src && (src.startsWith('http://') || src.startsWith('https://')) && (
               <button
                 type="button"
                 onClick={() => onApply(src)}

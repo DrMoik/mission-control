@@ -742,6 +742,7 @@ export const STRINGS = {
     drag_instruction:  'Arrastra para reposicionar · rueda del ratón o deslizador para zoom',
     image_loading_msg: 'Cargando…',
     image_error_msg:   'No se pudo cargar la imagen. Verifica la URL.',
+    image_forbidden_url:'URL prohibida — Instagram y Facebook bloquean la incrustación.',
     image_blocked_host:'Las URLs de Instagram y Facebook bloquean la incrustación. Descarga la imagen y súbela a imgur.com o usa otra URL.',
     image_use_url:     'Usar URL sin recortar',
     zoom_label:        'Zoom',
