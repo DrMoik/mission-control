@@ -89,6 +89,7 @@ export default function ProfilePageView({
   const [cropTarget, setCropTarget] = useState(null);
   const [editingWeekly, setEditingWeekly] = useState(false);
   const [weeklyDraft,   setWeeklyDraft]   = useState({ advanced: '', failedAt: '', learned: '' });
+  const [savingWeekly,  setSavingWeekly]  = useState(false);
 
   if (!membership) return null;
 
@@ -153,7 +154,9 @@ export default function ProfilePageView({
       setEditing(false);
     } catch (err) {
       console.error('Profile save failed:', err);
-      alert(t('save_failed') || `Save failed: ${err.message}`);
+      const msg = (err?.message || '').toLowerCase();
+      const isImage = msg.includes('image') || msg.includes('size') || msg.includes('quota') || msg.includes('too large');
+      alert(isImage ? `${t('save_failed')} ${t('save_failed_image')}` : `${t('save_failed')} ${err?.message || ''}`);
     }
   };
 
@@ -167,12 +170,24 @@ export default function ProfilePageView({
   };
 
   const handleSaveWeekly = async () => {
-    await onSaveWeeklyStatus?.({
-      membershipId: membership.id,
-      weekOf,
-      ...weeklyDraft,
-    });
-    setEditingWeekly(false);
+    if (!onSaveWeeklyStatus) {
+      alert(t('save_weekly_failed') || 'No se puede guardar el estatus semanal.');
+      return;
+    }
+    setSavingWeekly(true);
+    try {
+      await onSaveWeeklyStatus({
+        membershipId: membership.id,
+        weekOf,
+        ...weeklyDraft,
+      });
+      setEditingWeekly(false);
+    } catch (err) {
+      console.error('Weekly status save failed:', err);
+      alert(t('save_weekly_failed') || `Error: ${err?.message || ''}`);
+    } finally {
+      setSavingWeekly(false);
+    }
   };
 
   const set = (key, val) => setDraft((d) => ({ ...d, [key]: val }));
@@ -434,8 +449,10 @@ export default function ProfilePageView({
                     </div>
                   ))}
                   <div className="flex gap-2 justify-end">
-                    <button onClick={() => setEditingWeekly(false)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
-                    <button onClick={handleSaveWeekly} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded">{t('save')}</button>
+                    <button onClick={() => setEditingWeekly(false)} disabled={savingWeekly} className="text-xs text-slate-400 underline disabled:opacity-50">{t('cancel')}</button>
+                    <button onClick={handleSaveWeekly} disabled={savingWeekly} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded disabled:opacity-60">
+                      {savingWeekly ? '…' : t('save')}
+                    </button>
                   </div>
                 </div>
               ) : thisWeek ? (

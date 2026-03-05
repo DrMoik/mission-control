@@ -156,38 +156,50 @@ export const ensureString = (val, lang = 'es') => {
 };
 
 // ── Image compression for Firestore (1MB doc limit) ──────────────────────────
+// Profile photos are the main thing every user can publish; keep limits low so
+// membership docs (photo + cover + text) stay under 1MB.
 
-/** Max bytes per image to stay under Firestore doc limit. */
-const MAX_IMAGE_BYTES = 120000;
+/** Max bytes per image to stay under Firestore doc limit. Lower for members who can only edit photo. */
+const MAX_IMAGE_BYTES = 50000;
 
 /**
  * Compresses a data URL if it exceeds maxBytes. Returns original if not a data URL
  * or if already small enough. Uses canvas resize + JPEG quality reduction.
+ * Progressively reduces dimensions and quality until under limit.
+ * Guarantees output stays under limit (critical for lower-ranking members who can only edit photo).
  */
 export async function compressDataUrlIfNeeded(dataUrl, maxBytes = MAX_IMAGE_BYTES) {
   if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return dataUrl;
-  if (dataUrl.length <= maxBytes * 1.4) return dataUrl; // base64 ~1.37× raw bytes
+  const limit = maxBytes * 1.4; // base64 ~1.37× raw bytes
+  if (dataUrl.length <= limit) return dataUrl;
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       const w = img.naturalWidth;
       const h = img.naturalHeight;
-      const maxDim = 640;
-      const scale = Math.min(1, maxDim / Math.max(w, h));
-      const cw = Math.round(w * scale);
-      const ch = Math.round(h * scale);
-      const canvas = document.createElement('canvas');
-      canvas.width = cw;
-      canvas.height = ch;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, cw, ch);
-      let quality = 0.82;
-      let result = canvas.toDataURL('image/jpeg', quality);
-      while (result.length > maxBytes * 1.4 && quality > 0.4) {
-        quality -= 0.12;
-        result = canvas.toDataURL('image/jpeg', quality);
+      const tryOutput = (maxDim, startQuality) => {
+        const scale = Math.min(1, maxDim / Math.max(w, h));
+        const cw = Math.max(1, Math.round(w * scale));
+        const ch = Math.max(1, Math.round(h * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = cw;
+        canvas.height = ch;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
+        for (let q = startQuality; q >= 0.05; q -= 0.05) {
+          const result = canvas.toDataURL('image/jpeg', q);
+          if (result.length <= limit) return result;
+        }
+        return canvas.toDataURL('image/jpeg', 0.05);
+      };
+      for (const maxDim of [400, 320, 256, 128, 96, 64]) {
+        const result = tryOutput(maxDim, 0.75);
+        if (result.length <= limit) {
+          resolve(result);
+          return;
+        }
       }
-      resolve(result);
+      resolve(tryOutput(64, 0.2));
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;

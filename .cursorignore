@@ -1,0 +1,33 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+dist-ssr
+build
+
+# Test coverage
+coverage
+
+# Version control
+.git
+
+# Logs
+*.log
+logs
+
+# Data files
+*.json
+*.csv
+
+# Generated / lock files
+*.map
+*.lock
+package-lock.json
+
+# Firebase cache
+.firebase
+
+# Editor / IDE
+.vscode
+.idea

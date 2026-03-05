@@ -587,7 +587,8 @@ export default function App() {
     if (!currentTeam) return;
     const m = teamMemberships.find((mm) => mm.id === membershipId);
     if (!m) return;
-    const canEditThis = isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && m.userId === authUser.uid);
+    const isOwnProfile = authUser && (m.userId === authUser.uid || currentMembership?.id === membershipId);
+    const canEditThis = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || isOwnProfile;
     if (!canEditThis) return;
     // Compress data URLs to stay under Firestore 1MB doc limit
     const photoURL = await compressDataUrlIfNeeded(updates.photoURL ?? m.photoURL ?? null);
@@ -713,11 +714,13 @@ export default function App() {
   // One document per member per week.  Doc ID: `{membershipId}_{weekOf}`.
   // Auto-awards: 25 pts only for the FIRST save of that week (one award per week); 100 pts at 50 updates.
   const handleSaveWeeklyStatus = async ({ membershipId, weekOf: weekOfParam, advanced, failedAt, learned }) => {
-    if (!currentTeam || !authUser) return;
+    if (!currentTeam || !authUser) throw new Error('No hay equipo o sesión activa.');
     const m = teamMemberships.find((mm) => mm.id === membershipId);
-    if (!m) return;
-    const canPost = isPlatformAdmin || memberRole === 'teamAdmin' || m.userId === authUser.uid;
-    if (!canPost) return;
+    if (!m) throw new Error('Miembro no encontrado.');
+    // Any member can post their own weekly status; admins can post for anyone
+    const isOwnStatus = currentMembership?.id === membershipId || m?.userId === authUser?.uid;
+    const canPost = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || isOwnStatus;
+    if (!canPost) throw new Error('No tienes permiso para publicar.');
     const weekOf = normalizeWeekOfToMonday(weekOfParam) || weekOfParam || getMondayOfWeekLocal();
     const docId = `${membershipId}_${weekOf}`;
     const statusRef = doc(db, 'weeklyStatuses', docId);
@@ -2075,7 +2078,7 @@ export default function App() {
                   membership={currentMembership}
                   categories={teamCategories}
                   meritEvents={teamMeritEvents.filter((e) => e.membershipId === currentMembership.id)}
-                  canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && currentMembership.userId === authUser.uid)}
+                  canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || (authUser && (currentMembership.userId === authUser.uid || view === 'myprofile'))}
                   onSave={handleUpdateMemberProfile}
                   weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
                   onSaveWeeklyStatus={handleSaveWeeklyStatus}
@@ -2102,7 +2105,7 @@ export default function App() {
                 membership={profileMember}
                 categories={teamCategories}
                 meritEvents={teamMeritEvents.filter((e) => e.membershipId === profileMember.id)}
-                canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || (authUser && profileMember.userId === authUser.uid)}
+                canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || (authUser && profileMember.userId === authUser.uid)}
                 onSave={handleUpdateMemberProfile}
                 weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
                 onSaveWeeklyStatus={handleSaveWeeklyStatus}

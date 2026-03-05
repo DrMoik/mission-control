@@ -105,6 +105,16 @@ service cloud.firestore {
       );
     }
 
+    // Member with team access (active or pending) — for weekly status: lower-ranked/pending members can post their own
+    function canPostOwnWeeklyStatus(teamId) {
+      return request.auth != null && (
+        isPlatformAdmin() || (
+          membershipExists(teamId) &&
+          membershipDoc(teamId).data.status in ['active', 'pending']
+        )
+      );
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  USERS
     //  Each user reads/writes only their own profile.
@@ -388,16 +398,31 @@ service cloud.firestore {
 
     // ═══════════════════════════════════════════════════════════
     //  WEEKLY STATUSES (profile mission updates)
-    //  Active members can read all in their team.
-    //  Members can create/update their own (membershipId matches).
+    //  Active and pending members can read all in their team.
+    //  Members can create/update their own (verify via membership.userId).
+    //  Lower-ranking and pending members can post their own status.
+    //  Team admins can post for any member.
+    //  Uses get(membership) so it works regardless of membership ID format.
     // ═══════════════════════════════════════════════════════════
 
     match /weeklyStatuses/{statusId} {
-      allow read: if isActiveMember(resource.data.teamId);
-      allow create: if isActiveMember(request.resource.data.teamId) &&
-        request.resource.data.membershipId == request.auth.uid + '_' + request.resource.data.teamId;
-      allow update: if isActiveMember(resource.data.teamId) &&
-        resource.data.membershipId == request.auth.uid + '_' + resource.data.teamId;
+      allow read: if canPostOwnWeeklyStatus(resource.data.teamId);
+      allow create: if request.auth != null && (
+        isPlatformAdmin() ||
+        isTeamAdmin(request.resource.data.teamId) ||
+        (exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
+         get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid &&
+         get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.teamId == request.resource.data.teamId &&
+         get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.status in ['active', 'pending'])
+      );
+      allow update: if request.auth != null && (
+        isPlatformAdmin() ||
+        isTeamAdmin(resource.data.teamId) ||
+        (exists(/databases/$(database)/documents/memberships/$(resource.data.membershipId)) &&
+         get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.userId == request.auth.uid &&
+         get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.teamId == resource.data.teamId &&
+         get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.status in ['active', 'pending'])
+      );
       allow delete: if isTeamAdmin(resource.data.teamId);
     }
 

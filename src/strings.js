@@ -105,7 +105,9 @@ export const STRINGS = {
     // ── Common actions ────────────────────────────────────────────────────────
     edit:         'Editar',
     save:         'Guardar',
-    save_failed:   'Error al guardar. La imagen puede ser muy grande — prueba con una foto más pequeña.',
+    save_failed:   'Error al guardar.',
+    save_failed_image: 'La imagen puede ser muy grande — prueba con una foto más pequeña.',
+    save_weekly_failed: 'Error al guardar el estatus semanal.',
     cancel:       'Cancelar',
     delete:       'Eliminar',
     add:          'Agregar',

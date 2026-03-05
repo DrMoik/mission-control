@@ -1,0 +1,23 @@
+# AI Workspace Rules
+
+## Memory safety
+
+- Always search the workspace using semantic search before opening files.
+- Only open files that are directly relevant to the current task.
+- Never load the entire repository unless explicitly required.
+
+## Efficiency
+
+- Work with small file sets.
+- Avoid scanning large directories unless necessary.
+- Limit exploration to files directly connected to the problem.
+
+## Repository safety
+
+- Ignore dependency folders, build outputs, logs, and generated assets.
+
+## Editing strategy
+
+- Prefer minimal targeted edits.
+- Avoid large refactors unless explicitly requested.
+- Open at most a few files per reasoning step.
