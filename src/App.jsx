@@ -1721,7 +1721,7 @@ export default function App() {
       { id: 'members',     label: t('nav_members'),     icon: '◉' },
       { id: 'merits',      label: t('nav_merits'),      icon: '★' },
       { id: 'leaderboard', label: t('nav_leaderboard'), icon: '▲' },
-      { id: 'calendar',    label: t('nav_calendar'),    icon: '📅' },
+      { id: 'calendar',    label: t('nav_calendar'),    icon: '◐' },
       { id: 'tools',       label: t('nav_tools'),       icon: '⊙' },
       { id: 'academy',     label: t('nav_academy'),     icon: '◈' },
       { id: 'funding',     label: t('nav_funding'),     icon: '¤' },

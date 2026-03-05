@@ -67,7 +67,7 @@ export default function CalendarView({
         const name = ensureString(m.displayName, lang) || '?';
         return {
           id:           `birthday-${m.id}`,
-          title:        { en: `🎂 ${name}`, es: `🎂 ${name}` },
+          title:        { en: `Cumpleaños de ${name}`, es: `Cumpleaños de ${name}` },
           date:         dateStr,
           categoryId:   m.categoryId || null,
           isBirthday:   true,
@@ -136,7 +136,7 @@ export default function CalendarView({
       <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
         <input type="checkbox" checked={showBirthdays} onChange={(e) => setShowBirthdays(e.target.checked)}
           className="rounded border-slate-600 bg-slate-800 text-pink-500 focus:ring-pink-500" />
-        <span>🎂 Ver fechas</span>
+        <span>{t('calendar_filter_birthdays')}</span>
       </label>
 
       {canCreate && !editingEventId && (
@@ -235,7 +235,7 @@ export default function CalendarView({
                     <div className="mt-1">
                       {evt.isBirthday
                         ? <span className="text-[9px] bg-pink-900/40 text-pink-300 px-1.5 py-0.5 rounded-full">
-                            🎂
+                            {t('calendar_filter_birthdays')}
                           </span>
                         : catName
                           ? <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded-full">
