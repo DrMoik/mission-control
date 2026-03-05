@@ -30,6 +30,29 @@ export const tsToDate = (ts) => {
 // ── Week (Monday–Sunday) helpers ──────────────────────────────────────────
 // All in local time so week boundaries don't shift with timezone.
 
+/**
+ * Parse a calendar/event date (Firestore Timestamp or YYYY-MM-DD string) to a local Date.
+ * For date-only strings, uses explicit local construction to avoid UTC-midnight shifting
+ * (new Date("2025-03-15") parses as UTC midnight → can show as previous day in local TZ).
+ */
+export function parseCalendarDate(val) {
+  if (!val) return new Date(0);
+  if (typeof val.toDate === 'function') {
+    const d = val.toDate();
+    // Firestore Timestamp may be UTC midnight; reconstruct in local time to avoid day shift
+    const y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
+    return new Date(y, m, day);
+  }
+  const raw = typeof val === 'string' ? val.trim() : String(val);
+  // Strip time/timezone (e.g. "2025-03-15T00:00:00.000Z" → "2025-03-15") to avoid UTC-midnight = previous day in local TZ
+  const s = raw.split(/[TZ\s]/)[0];
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  // Fallback: append T12:00 to avoid UTC midnight shifting for date-only strings
+  if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) return new Date(s + 'T12:00:00');
+  return new Date(val);
+}
+
 /** Format birthdate string (YYYY-MM-DD or MM-DD) for display as "15 de marzo". */
 export function formatBirthdateDisplay(birthdate) {
   if (!birthdate || typeof birthdate !== 'string') return '';

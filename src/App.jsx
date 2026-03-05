@@ -57,6 +57,7 @@ import JoinRequestModal            from './components/JoinRequestModal.jsx';
 import OverviewView                from './views/OverviewView.jsx';
 import CategoriesView              from './views/CategoriesView.jsx';
 import LeaderboardView             from './views/LeaderboardView.jsx';
+import CalendarView                from './views/CalendarView.jsx';
 import ToolsView                   from './views/ToolsView.jsx';
 import AcademyView                 from './views/AcademyView.jsx';
 import FeedView                    from './views/FeedView.jsx';
@@ -201,7 +202,7 @@ export default function App() {
     ? teamMemberships.find((m) => m.id === profileMemberId) || null
     : null;
 
-  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'tools', 'academy', 'funding', 'tasks', 'myprofile', 'profile', 'admin']);
+  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'tasks', 'myprofile', 'profile', 'admin']);
   const isViewValid = validViews.has(view);
 
   // Redirect invalid paths to /overview (only when team is selected, to avoid running in team picker)
@@ -1892,6 +1893,7 @@ export default function App() {
       { id: 'members',     label: t('nav_members'),     icon: '◉' },
       { id: 'merits',      label: t('nav_merits'),      icon: '★' },
       { id: 'leaderboard', label: t('nav_leaderboard'), icon: '▲' },
+      { id: 'calendar',    label: t('nav_calendar'),    icon: '📅' },
       { id: 'tools',       label: t('nav_tools'),       icon: '⊙' },
       { id: 'academy',     label: t('nav_academy'),     icon: '◈' },
       { id: 'funding',     label: t('nav_funding'),     icon: '¤' },
@@ -2125,6 +2127,21 @@ export default function App() {
                 leaderboard={leaderboard}
                 memberships={teamMemberships}
                 onViewProfile={handleViewProfile}
+              />
+            )}
+
+            {view === 'calendar' && isAtLeastRookie && (
+              <CalendarView
+                teamEvents={teamEvents}
+                categories={teamCategories}
+                memberships={teamMemberships}
+                currentMembership={currentMembership}
+                canEdit={canEdit}
+                canEditTools={canEditTools}
+                resolveCanEdit={canEditToolItem}
+                onCreateEvent={handleCreateEvent}
+                onUpdateEvent={handleUpdateEvent}
+                onDeleteEvent={handleDeleteEvent}
               />
             )}
 
