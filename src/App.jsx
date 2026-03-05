@@ -2084,13 +2084,10 @@ export default function App() {
             {view === 'tasks' && isAtLeastRookie && (
               <TasksView
                 tasks={teamTasks}
-                merits={teamMerits}
                 memberships={teamMemberships}
                 currentMembership={currentMembership}
-                memberRole={memberRole}
-                canEdit={canEdit}
                 onRequestTaskReview={handleRequestTaskReview}
-                onAssignMeritToTask={handleAssignMeritToTask}
+                onGradeTask={handleGradeTask}
                 onDeleteTask={handleDeleteTask}
                 tsToDate={tsToDate}
               />
