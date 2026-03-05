@@ -170,7 +170,7 @@ export default function TasksView({
             onClick={() => setShowCompleted((s) => !s)}
             className="text-sm text-slate-400 hover:text-slate-300"
           >
-            {showCompleted ? '▼' : '▶'} {t('task_completed')} ({completed.length})
+            <span className={`inline-block transition-transform ${showCompleted ? '' : '-rotate-90'}`}>▼</span> {t('task_completed')} ({completed.length})
           </button>
           {showCompleted && (
             <div className="space-y-2 mt-2">

@@ -25,6 +25,7 @@ import BoardView   from './BoardView.jsx';
  *   canAssignTask?: function(assigneeMembershipId: string): boolean,
  *   memberships?:   object[],          // for "Assign to" on cards (execute tools only)
  *   currentMembership?: object | null,
+ *   memberRole?:     string | null,    // for leader-only hint in assign UI
  * }} props
  */
 export default function BoardTypeSection({
@@ -33,6 +34,7 @@ export default function BoardTypeSection({
   onCreateBoard, onUpdateBoard, onDeleteBoard,
   onCreateTask, canAssignTask, memberships = [],
   currentMembership = null,
+  memberRole = null,
 }) {
   const { t, lang } = React.useContext(LangContext);
   const [newBoardName,    setNewBoardName]    = useState('');
@@ -205,6 +207,7 @@ export default function BoardTypeSection({
             categories={categories}
             onAssignCard={onCreateTask && canAssignTask ? handleAssignCard : undefined}
             currentMembership={currentMembership}
+            memberRole={memberRole}
           />
         </>
       )}

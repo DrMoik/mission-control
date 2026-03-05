@@ -67,7 +67,7 @@ export default function PlatformConfigSection({
         className="w-full text-left flex items-center justify-between text-sm font-semibold text-slate-200 hover:text-white transition-colors"
       >
         <span>{labelOverride || (isTeamMode ? (tFn('team_config_tags') || 'Etiquetas de área y tipo de este equipo') : (tFn('platform_config_tags') || 'Etiquetas de área y tipo (logros)'))}</span>
-        <span className="text-slate-500">{open ? '▼' : '▶'}</span>
+        <span className={`inline-block text-slate-500 transition-transform ${open ? '' : '-rotate-90'}`}>▼</span>
       </button>
       {open && (
         <div className="mt-3 space-y-3 pt-3 border-t border-slate-700">

@@ -19,21 +19,33 @@ import { ensureString } from '../../utils.js';
  *   categories?:   object[],
  *   onAssignCard?: function(columnId, cardId, cardTitle, assigneeMembershipId, assigneeDisplayName): Promise<void>,
  *   currentMembership?: object | null,
+ *   memberRole?:     string | null,
  * }} props
  */
 export default function BoardView({
   board, canEditThis, onUpdateBoard, onDeleteBoard,
   onCreateTask, canAssignTask, memberships = [], categories = [],
   onAssignCard, currentMembership = null,
+  memberRole = null,
 }) {
   const { t, lang } = React.useContext(LangContext);
   const [newCardTitles, setNewCardTitles] = useState({});
   const [assigningCardId, setAssigningCardId] = useState(null);
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState(new Set());
+  const [assignSearchQuery, setAssignSearchQuery] = useState('');
+  const [assignAreaFilter, setAssignAreaFilter] = useState('');
 
   const assignableMembers = (memberships || []).filter(
     (m) => m.status === 'active' && m.id !== currentMembership?.id && canAssignTask?.(m.id),
   );
+
+  const filteredAssignable = assignableMembers.filter((m) => {
+    const name = (ensureString(m.displayName, lang) || '').toLowerCase();
+    const query = (assignSearchQuery || '').trim().toLowerCase();
+    const matchesSearch = !query || name.includes(query);
+    const matchesArea = !assignAreaFilter || m.categoryId === assignAreaFilter;
+    return matchesSearch && matchesArea;
+  });
 
   // ── Card mutations ─────────────────────────────────────────────────────────
 
@@ -105,30 +117,71 @@ export default function BoardView({
                     {canEditThis && onAssignCard && assignableMembers.length > 0 && !card.assigneeMembershipIds?.length && !card.assigneeMembershipId && (
                       <div className="mt-1.5 relative">
                         {!isAssigning ? (
-                          <button type="button" onClick={() => { setAssigningCardId(card.id); setSelectedAssigneeIds(new Set()); }}
+                          <button type="button" onClick={() => { setAssigningCardId(card.id); setSelectedAssigneeIds(new Set()); setAssignSearchQuery(''); setAssignAreaFilter(''); }}
                             className="text-[10px] text-emerald-400 hover:underline">
                             {t('task_assign')}
                           </button>
                         ) : (
                           <div className="space-y-1.5">
-                            <div className="flex flex-wrap gap-1.5">
-                              {assignableMembers.map((m) => {
-                                const checked = selectedAssigneeIds.has(m.id);
-                                return (
-                                  <label key={m.id} className="flex items-center gap-1 text-[10px] text-slate-300 cursor-pointer">
-                                    <input type="checkbox" checked={checked}
-                                      onChange={() => {
-                                        setSelectedAssigneeIds((prev) => {
-                                          const next = new Set(prev);
-                                          if (next.has(m.id)) next.delete(m.id);
-                                          else next.add(m.id);
-                                          return next;
-                                        });
-                                      }} />
-                                    {ensureString(m.displayName, lang)}
-                                  </label>
-                                );
-                              })}
+                            <input
+                              type="text"
+                              value={assignSearchQuery}
+                              onChange={(e) => setAssignSearchQuery(e.target.value)}
+                              placeholder={t('task_assign_search')}
+                              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-[11px] text-slate-200 placeholder-slate-500"
+                              autoFocus
+                            />
+                            {(() => {
+                              const areasInList = [...new Set(assignableMembers.map((m) => m.categoryId).filter(Boolean))];
+                              const showAreaFilter = areasInList.length > 1 && categories?.length > 0;
+                              const isLeader = memberRole === 'leader' && currentMembership?.categoryId;
+                              const leaderAreaName = isLeader && categories?.length
+                                ? ensureString(categories.find((c) => c.id === currentMembership?.categoryId)?.name, lang)
+                                : null;
+                              return (
+                                <>
+                                  {isLeader && leaderAreaName && (
+                                    <p className="text-[10px] text-slate-500">{t('task_assign_your_area')}: {leaderAreaName}</p>
+                                  )}
+                                  {showAreaFilter ? (
+                                    <select
+                                      value={assignAreaFilter}
+                                      onChange={(e) => setAssignAreaFilter(e.target.value)}
+                                      className="w-full px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[10px] text-slate-300"
+                                    >
+                                      <option value="">{t('task_filter_area')}</option>
+                                      {categories.filter((c) => areasInList.includes(c.id)).map((c) => (
+                                        <option key={c.id} value={c.id}>{ensureString(c.name, lang)}</option>
+                                      ))}
+                                    </select>
+                                  ) : null}
+                                </>
+                              );
+                            })()}
+                            <div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
+                              {filteredAssignable.length === 0 ? (
+                                <p className="text-[10px] text-slate-500 italic py-1">{t('task_assign_no_match')}</p>
+                              ) : (
+                                filteredAssignable.map((m) => {
+                                  const checked = selectedAssigneeIds.has(m.id);
+                                  const cat = categories?.find((c) => c.id === m.categoryId);
+                                  return (
+                                    <label key={m.id} className="flex items-center gap-1.5 text-[10px] text-slate-300 cursor-pointer hover:bg-slate-600/50 rounded px-1 py-0.5">
+                                      <input type="checkbox" checked={checked}
+                                        onChange={() => {
+                                          setSelectedAssigneeIds((prev) => {
+                                            const next = new Set(prev);
+                                            if (next.has(m.id)) next.delete(m.id);
+                                            else next.add(m.id);
+                                            return next;
+                                          });
+                                        }} />
+                                      <span>{ensureString(m.displayName, lang)}</span>
+                                      {cat && <span className="text-slate-500 text-[9px]">({ensureString(cat.name, lang)})</span>}
+                                    </label>
+                                  );
+                                })
+                              )}
                             </div>
                             <div className="flex gap-1">
                               <button type="button"
@@ -142,12 +195,14 @@ export default function BoardView({
                                   await onAssignCard(col.id, card.id, cardTitle, ids, names);
                                   setAssigningCardId(null);
                                   setSelectedAssigneeIds(new Set());
+                                  setAssignSearchQuery('');
+                                  setAssignAreaFilter('');
                                 }}
                                 disabled={selectedAssigneeIds.size === 0}
                                 className="text-[10px] bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-2 py-1 rounded">
                                 {t('task_assign')}
                               </button>
-                              <button type="button" onClick={() => { setAssigningCardId(null); setSelectedAssigneeIds(new Set()); }}
+                              <button type="button" onClick={() => { setAssigningCardId(null); setSelectedAssigneeIds(new Set()); setAssignSearchQuery(''); setAssignAreaFilter(''); }}
                                 className="text-[10px] text-slate-500 hover:underline">{t('cancel')}</button>
                             </div>
                           </div>

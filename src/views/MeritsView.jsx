@@ -536,7 +536,7 @@ export default function MeritsView({
                 <button type="button" onClick={() => setGridFilterOpenTipo((v) => !v)}
                   className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
                   {t('merit_filter_type')} {gridTypeFilters.length > 0 && `(${gridTypeFilters.length})`}
-                  <span className="text-slate-500">{gridFilterOpenTipo ? '▼' : '▶'}</span>
+                  <span className={`inline-block text-slate-500 transition-transform ${gridFilterOpenTipo ? '' : '-rotate-90'}`}>▼</span>
                 </button>
                 {gridFilterOpenTipo && (
                   <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">
@@ -556,7 +556,7 @@ export default function MeritsView({
                   className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
                   {t('merit_filter_scope')} / {t('merit_filter_domain')}
                   {(gridScopeFilter || gridDomainFilters.length > 0) && ` (${(gridScopeFilter ? 1 : 0) + gridDomainFilters.length})`}
-                  <span className="text-slate-500">{gridFilterOpenCategoria ? '▼' : '▶'}</span>
+                  <span className={`inline-block text-slate-500 transition-transform ${gridFilterOpenCategoria ? '' : '-rotate-90'}`}>▼</span>
                 </button>
                 {gridFilterOpenCategoria && (
                   <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700 space-y-2">
@@ -587,7 +587,7 @@ export default function MeritsView({
                 <button type="button" onClick={() => setGridFilterOpenNivel((v) => !v)}
                   className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
                   {t('merit_filter_tier')} {gridTierFilter && `(${t('merit_tier_' + gridTierFilter)})`}
-                  <span className="text-slate-500">{gridFilterOpenNivel ? '▼' : '▶'}</span>
+                  <span className={`inline-block text-slate-500 transition-transform ${gridFilterOpenNivel ? '' : '-rotate-90'}`}>▼</span>
                 </button>
                 {gridFilterOpenNivel && (
                   <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">
@@ -702,7 +702,7 @@ export default function MeritsView({
                   <button type="button" onClick={() => setAwardFilterOpenTipo((v) => !v)}
                     className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
                     {t('merit_filter_type')} {meritTypeFilters.length > 0 && `(${meritTypeFilters.length})`}
-                    <span className="text-slate-500">{awardFilterOpenTipo ? '▼' : '▶'}</span>
+                    <span className={`inline-block text-slate-500 transition-transform ${awardFilterOpenTipo ? '' : '-rotate-90'}`}>▼</span>
                   </button>
                   {awardFilterOpenTipo && (
                     <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">
@@ -722,7 +722,7 @@ export default function MeritsView({
                     className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
                     {t('merit_filter_scope')} / {t('merit_filter_domain')}
                     {(meritScopeFilter || meritDomainFilters.length > 0) && ` (${(meritScopeFilter ? 1 : 0) + meritDomainFilters.length})`}
-                    <span className="text-slate-500">{awardFilterOpenCategoria ? '▼' : '▶'}</span>
+                    <span className={`inline-block text-slate-500 transition-transform ${awardFilterOpenCategoria ? '' : '-rotate-90'}`}>▼</span>
                   </button>
                   {awardFilterOpenCategoria && (
                     <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700 space-y-2">
@@ -753,7 +753,7 @@ export default function MeritsView({
                   <button type="button" onClick={() => setAwardFilterOpenNivel((v) => !v)}
                     className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
                     {t('merit_filter_tier')} {meritTierFilter && `(${t('merit_tier_' + meritTierFilter)})`}
-                    <span className="text-slate-500">{awardFilterOpenNivel ? '▼' : '▶'}</span>
+                    <span className={`inline-block text-slate-500 transition-transform ${awardFilterOpenNivel ? '' : '-rotate-90'}`}>▼</span>
                   </button>
                   {awardFilterOpenNivel && (
                     <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">

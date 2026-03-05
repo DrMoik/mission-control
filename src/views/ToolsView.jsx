@@ -44,7 +44,10 @@ function HowToUse({ descKey }) {
     <div className="bg-slate-800/60 border border-slate-700 rounded-lg text-xs">
       <button onClick={() => setOpen((s) => !s)}
         className="w-full text-left px-3 py-2 flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors">
-        <span className="font-semibold">{open ? '▼' : '▶'} {t('how_to_use') || 'How to use'}</span>
+        <span className="font-semibold inline-flex items-center gap-1">
+              <span className={`inline-block text-slate-400 transition-transform ${open ? '' : '-rotate-90'}`}>▼</span>
+              {t('how_to_use') || 'How to use'}
+            </span>
       </button>
       {open && (
         <p className="px-4 pb-3 text-slate-400 leading-relaxed">{t(descKey)}</p>
@@ -1049,6 +1052,7 @@ export default function ToolsView({
             canAssignTask={canAssignTask}
             memberships={memberships}
             currentMembership={currentMembership}
+            memberRole={memberRole}
           />
         </div>
       )}
@@ -1080,6 +1084,7 @@ export default function ToolsView({
             canAssignTask={canAssignTask}
             memberships={memberships}
             currentMembership={currentMembership}
+            memberRole={memberRole}
           />
         </div>
       )}

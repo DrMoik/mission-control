@@ -455,11 +455,14 @@ Open [http://localhost:5173](http://localhost:5173)
 npm install -g firebase-tools
 firebase login
 firebase init hosting   # set public dir to "dist", SPA: yes
-npm run build
-firebase deploy
+npm run deploy:firebase
 ```
 
 Your app will be live at `https://quantum-robotics-48d7e.web.app`
+
+**Deployment targets:**
+- **GitHub Pages** (preferred): Uses `npm run build` → deploys via Actions to `drmoik.github.io/mission-control/`
+- **Firebase** (fallback): Use `npm run deploy:firebase` → deploys to `https://quantum-robotics-48d7e.web.app`
 
 ---
 
