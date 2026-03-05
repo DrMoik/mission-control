@@ -738,10 +738,11 @@ export const STRINGS = {
     apply_btn:         'Aplicar',
     remove_image:      'Quitar imagen',
   };
-/** Lookup string by key. Functions are called with remaining args: t('key', arg1, arg2). */
+/** Lookup string by key. For display: t('key'). For interpolated: t('key', arg1, arg2) or t('key')(arg1, arg2). */
 export const t = (k, ...args) => {
   const v = STRINGS[k];
-  return typeof v === 'function' ? v(...args) : (v ?? k);
+  if (typeof v === 'function') return args.length > 0 ? v(...args) : v;
+  return v ?? k;
 };
 
 /** UI language (Spanish only). Use with getL/ensureString for bilingual data. */

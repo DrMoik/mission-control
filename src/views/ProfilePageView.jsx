@@ -334,7 +334,8 @@ export default function ProfilePageView({
                   {(() => {
                     const tags = typeof personalityTags === 'object' && !Array.isArray(personalityTags)
                       ? Object.entries(personalityTags)
-                      : (Array.isArray(personalityTags) ? personalityTags : Object.entries(PERSONALITY_TAGS_DEFAULT)).map((k) => Array.isArray(k) ? k : [k, t(k)]);
+                      : (Array.isArray(personalityTags) ? personalityTags : Object.keys(PERSONALITY_TAGS_DEFAULT)).map((k) =>
+                          Array.isArray(k) ? k : [k, (PERSONALITY_TAGS_DEFAULT[k] || ensureString(k, lang))]);
                     return tags.map(([k, label]) => <option key={k} value={k}>{label}</option>);
                   })()}
                 </select>
