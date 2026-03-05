@@ -21,6 +21,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../strings.js';
+import { isBlockedImageHost } from '../utils.js';
 
 export default function ImageCropModal({
   src,
@@ -257,8 +258,10 @@ export default function ImageCropModal({
         )}
         {status === 'error' && (
           <div className="text-center mt-2 space-y-2">
-            <p className="text-amber-400 text-xs">{t('image_error_msg')}</p>
-            {src && (src.startsWith('http://') || src.startsWith('https://')) && (
+            <p className="text-amber-400 text-xs">
+              {src && isBlockedImageHost(src) ? t('image_blocked_host') : t('image_error_msg')}
+            </p>
+            {src && (src.startsWith('http://') || src.startsWith('https://')) && !isBlockedImageHost(src) && (
               <button
                 type="button"
                 onClick={() => onApply(src)}

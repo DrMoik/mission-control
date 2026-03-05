@@ -206,6 +206,16 @@ export async function compressDataUrlIfNeeded(dataUrl, maxBytes = MAX_IMAGE_BYTE
   });
 }
 
+// Domains that block embedding (CORS/CORP) — Instagram, Facebook CDN
+const BLOCKED_IMAGE_HOSTS = ['cdninstagram.com', 'fbcdn.net', 'facebook.com', 'instagram.com'];
+export function isBlockedImageHost(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return BLOCKED_IMAGE_HOSTS.some((h) => host.includes(h));
+  } catch { return false; }
+}
+
 // ── Media helpers ─────────────────────────────────────────────────────────────
 
 /**

@@ -17,7 +17,7 @@ import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from './ui/index.js';
 import ImageCropModal           from './ImageCropModal.jsx';
-import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay } from '../utils.js';
+import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay, isBlockedImageHost } from '../utils.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -252,6 +252,9 @@ export default function ProfileModal({
                     className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded transition-colors">
                     {t('reframe_profile')}
                   </button>
+                  {draft.photoURL && isBlockedImageHost(draft.photoURL) && (
+                    <p className="w-full text-[10px] text-amber-400 mt-0.5">{t('image_blocked_host')}</p>
+                  )}
                 </div>
               </div>
 
@@ -270,6 +273,9 @@ export default function ProfileModal({
                     className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded transition-colors">
                     {t('reframe_cover')}
                   </button>
+                  {draft.coverPhotoURL && isBlockedImageHost(draft.coverPhotoURL) && (
+                    <p className="w-full text-[10px] text-amber-400 mt-0.5">{t('image_blocked_host')}</p>
+                  )}
                 </div>
               </div>
 
