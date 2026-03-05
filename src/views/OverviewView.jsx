@@ -7,12 +7,11 @@
 // the value field stays monolingual (it's usually a number or short code).
 
 import React, { useState } from 'react';
-import LangContext             from '../i18n/LangContext.js';
+import { t, lang } from '../strings.js';
 import { BilingualField }      from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString } from '../utils.js';
 
 export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamModules, canEdit, onSave }) {
-  const { t, lang } = React.useContext(LangContext);
   const [editing, setEditing] = useState(false);
   const [draft,   setDraft]   = useState(null);
 

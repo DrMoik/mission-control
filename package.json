@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "vitest",
+    "test:watch": "vitest",
     "build:firebase": "cross-env VITE_BASE=/ vite build",
     "deploy:firebase": "npm run build:firebase && firebase deploy",
     "lint": "eslint .",
@@ -32,6 +34,7 @@
     "globals": "^16.5.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vitest": "^3.2.4"
   }
 }

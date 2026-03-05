@@ -4,7 +4,7 @@
 // the assigner (task responsible) assigns a merit from the catalog (points set by admin).
 
 import React, { useState } from 'react';
-import LangContext from '../i18n/LangContext.js';
+import { t, lang } from '../strings.js';
 import { ensureString } from '../utils.js';
 import { TASK_GRADES } from '../constants.js';
 
@@ -17,7 +17,6 @@ export default function TasksView({
   onDeleteTask,
   tsToDate,
 }) {
-  const { t, lang } = React.useContext(LangContext);
   const [showCompleted, setShowCompleted] = useState(false);
 
   const getAssigneeIds = (task) =>

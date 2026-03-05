@@ -20,7 +20,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import LangContext from '../i18n/LangContext.js';
+import { t } from '../strings.js';
 
 export default function ImageCropModal({
   src,
@@ -31,7 +31,6 @@ export default function ImageCropModal({
   label      = 'Reframe Image',
   focusTop   = false,  // when true, initial crop favors top (face/head) for portrait photos
 }) {
-  const { t } = React.useContext(LangContext);
 
   // Refs
   const previewRef    = React.useRef(null); // visible <canvas>

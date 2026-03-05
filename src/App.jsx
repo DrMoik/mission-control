@@ -9,19 +9,20 @@
 // Business logic that lives elsewhere:
 //   constants.js   — static lookup tables (roles, careers, …)
 //   utils.js       — pure helper functions (rankOf, tsToDate, …)
-//   i18n/          — translations + LangContext
+//   strings.js     — t() and STRINGS (Spanish only)
 //   components/    — shared modals and UI atoms
 //   views/         — one file per full-page view
 
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { auth, db, googleProvider }         from './firebase.js';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from './firebase.js';
 import {
   collection, doc, setDoc, getDoc, updateDoc, deleteDoc,
   addDoc, query, where, onSnapshot, serverTimestamp, runTransaction,
   getDocs, writeBatch,
 } from 'firebase/firestore';
+import { useAuth } from './hooks/useAuth.js';
+import { useFirebaseSubscriptions } from './hooks/useFirebaseSubscriptions.js';
 
 // System merit points: use team config or defaults (see handleSaveSystemMeritPoints)
 
@@ -37,8 +38,7 @@ function isWeekEligibleForPoints(weekOf) {
 }
 
 // ── Internal modules ──────────────────────────────────────────────────────────
-import TRANSLATIONS                from './i18n/translations.js';
-import LangContext                 from './i18n/LangContext.js';
+import { t, lang }                 from './strings.js';
 import {
   EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS,
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, PERSONALITY_TAGS_DEFAULT, MERIT_TIERS,
@@ -140,48 +140,37 @@ function InlineTeamRename({ team, isPlatformAdmin, onRename, onDelete, t }) {
 
 export default function App() {
 
-  // ── Language ───────────────────────────────────────────────────────────────
-  // Spanish only for now. Bilingual toggle commented out — will deal with that later.
-  const lang = 'es';
-  const t = React.useCallback(
-    (key) => TRANSLATIONS.es?.[key] ?? key,
-    [],
-  );
-  // const [lang, setLang] = useState(() => localStorage.getItem('mc_lang') || 'es');
-  // const handleSetLang = (l) => { setLang(l); localStorage.setItem('mc_lang', l); };
-
-  // ── Firebase Auth ──────────────────────────────────────────────────────────
-  const [authUser,    setAuthUser]    = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState(null);
-
   // ── Team selection ─────────────────────────────────────────────────────────
-  const [selectedTeamId,    setSelectedTeamId]    = useState(null);
-  const [joinTarget,        setJoinTarget]        = useState(null);       // team the user wants to join
-  const [allTeamCategories, setAllTeamCategories] = useState({});         // { teamId: [categories] }
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [joinTarget, setJoinTarget] = useState(null);
 
-  // ── Live Firestore data ────────────────────────────────────────────────────
-  const [allTeams,            setAllTeams]            = useState([]);
-  const [userMemberships,     setUserMemberships]     = useState([]);
-  const [teamMemberships,     setTeamMemberships]     = useState([]);
-  const [teamCategories,      setTeamCategories]      = useState([]);
-  const [teamMerits,          setTeamMerits]          = useState([]);
-  const [teamMeritEvents,     setTeamMeritEvents]     = useState([]);
-  const [teamModules,         setTeamModules]         = useState([]);
-  const [teamModuleAttempts,  setTeamModuleAttempts]  = useState([]);
-  const [teamEvents,          setTeamEvents]          = useState([]);
-  const [teamSwots,           setTeamSwots]           = useState([]);
-  const [teamEisenhowers,     setTeamEisenhowers]     = useState([]);
-  const [teamPughs,           setTeamPughs]           = useState([]);
-  const [teamBoards,          setTeamBoards]          = useState([]);
-  const [teamPosts,           setTeamPosts]           = useState([]);
-  const [teamComments,        setTeamComments]        = useState([]);
-  const [teamMeetings,        setTeamMeetings]        = useState([]);
-  const [teamGoals,           setTeamGoals]           = useState([]);
-  const [teamWeeklyStatuses,  setTeamWeeklyStatuses]  = useState([]);
-  const [teamFundingAccounts,  setTeamFundingAccounts]  = useState([]);
-  const [teamFundingEntries,  setTeamFundingEntries]  = useState([]);
-  const [teamTasks,            setTeamTasks]            = useState([]);
+  const onSignOut = useCallback(() => setSelectedTeamId(null), []);
+  const { authUser, authLoading, userProfile, handleGoogleSignIn, handleSignOut } = useAuth({ onSignOut });
+
+  const {
+    allTeams,
+    allTeamCategories,
+    userMemberships,
+    teamMemberships,
+    teamCategories,
+    teamMerits,
+    teamMeritEvents,
+    teamModules,
+    teamModuleAttempts,
+    teamEvents,
+    teamSwots,
+    teamEisenhowers,
+    teamPughs,
+    teamBoards,
+    teamPosts,
+    teamComments,
+    teamMeetings,
+    teamGoals,
+    teamWeeklyStatuses,
+    teamFundingAccounts,
+    teamFundingEntries,
+    teamTasks,
+  } = useFirebaseSubscriptions({ authUser, selectedTeamId });
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [navCollapsed,   setNavCollapsed]   = useState(false);
@@ -209,154 +198,6 @@ export default function App() {
   useEffect(() => {
     if (selectedTeamId && !isViewValid) navigate('/overview', { replace: true });
   }, [selectedTeamId, isViewValid, navigate]);
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // EFFECTS — Firebase subscriptions
-  // ────────────────────────────────────────────────────────────────────────────
-
-  // Ref to cleanly cancel the user-profile listener on sign-out
-  const profileUnsubRef = React.useRef(null);
-
-  // Auth state — create user doc on first sign-in, subscribe to live updates
-  useEffect(() => {
-    return onAuthStateChanged(auth, async (user) => {
-      if (profileUnsubRef.current) { profileUnsubRef.current(); profileUnsubRef.current = null; }
-      setAuthUser(user);
-      if (user) {
-        const ref  = doc(db, 'users', user.uid);
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
-          await setDoc(ref, {
-            uid: user.uid,
-            displayName: user.displayName || user.email,
-            email: user.email,
-            photoURL: user.photoURL || null,
-            platformRole: 'user',
-            createdAt: serverTimestamp(),
-          });
-        }
-        profileUnsubRef.current = onSnapshot(ref, (s) => {
-          if (s.exists()) setUserProfile(s.data());
-        });
-      } else {
-        setUserProfile(null);
-        setSelectedTeamId(null);
-      }
-      setAuthLoading(false);
-    });
-  }, []);
-
-  // All teams (public — needed for the unauthenticated team browser)
-  useEffect(() => {
-    return onSnapshot(collection(db, 'teams'), (snap) => {
-      setAllTeams(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
-  }, []);
-
-  // Categories for every team (needed for the join-request form before a team is selected)
-  useEffect(() => {
-    return onSnapshot(collection(db, 'categories'), (snap) => {
-      const map = {};
-      snap.docs.forEach((d) => {
-        const data = { id: d.id, ...d.data() };
-        if (!map[data.teamId]) map[data.teamId] = [];
-        map[data.teamId].push(data);
-      });
-      setAllTeamCategories(map);
-    });
-  }, []);
-
-  // Current user's memberships across all teams
-  useEffect(() => {
-    if (!authUser) { setUserMemberships([]); return; }
-    const q = query(collection(db, 'memberships'), where('userId', '==', authUser.uid));
-    return onSnapshot(q, (snap) => {
-      setUserMemberships(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
-  }, [authUser]);
-
-  // All data for the selected team — resets when team changes
-  useEffect(() => {
-    if (!selectedTeamId) return;
-    const unsubs = [];
-
-    const sub = (q, setter, transform) =>
-      unsubs.push(onSnapshot(q, (snap) => {
-        const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setter(transform ? transform(rows) : rows);
-      }));
-
-    sub(query(collection(db, 'memberships'),  where('teamId', '==', selectedTeamId)), setTeamMemberships);
-    sub(query(collection(db, 'categories'),   where('teamId', '==', selectedTeamId)), setTeamCategories,
-      (rows) => [...rows].sort((a, b) => a.name.localeCompare(b.name)));
-    sub(query(collection(db, 'merits'),       where('teamId', '==', selectedTeamId)), setTeamMerits);
-    sub(query(collection(db, 'meritEvents'),  where('teamId', '==', selectedTeamId)), setTeamMeritEvents,
-      (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)));
-    sub(query(collection(db, 'modules'),      where('teamId', '==', selectedTeamId)), setTeamModules,
-      (rows) => [...rows].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)));
-    sub(query(collection(db, 'teamEvents'),   where('teamId', '==', selectedTeamId)), setTeamEvents,
-      (rows) => [...rows].sort((a, b) => tsToDate(a.date) - tsToDate(b.date)));
-    sub(query(collection(db, 'teamSwots'),    where('teamId', '==', selectedTeamId)), setTeamSwots,
-      (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')));
-    sub(query(collection(db, 'teamEisenhowers'), where('teamId', '==', selectedTeamId)), setTeamEisenhowers,
-      (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')));
-    sub(query(collection(db, 'teamPughs'),    where('teamId', '==', selectedTeamId)), setTeamPughs,
-      (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')));
-    sub(query(collection(db, 'teamBoards'),   where('teamId', '==', selectedTeamId)), setTeamBoards);
-    sub(query(collection(db, 'posts'),        where('teamId', '==', selectedTeamId)), setTeamPosts,
-      (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)));
-    sub(query(collection(db, 'comments'),     where('teamId', '==', selectedTeamId)), setTeamComments);
-    sub(query(collection(db, 'teamMeetings'),    where('teamId', '==', selectedTeamId)), setTeamMeetings);
-    sub(query(collection(db, 'teamGoals'),       where('teamId', '==', selectedTeamId)), setTeamGoals);
-    sub(query(collection(db, 'weeklyStatuses'),  where('teamId', '==', selectedTeamId)), setTeamWeeklyStatuses,
-      (rows) => [...rows].sort((a, b) => (b.weekOf || '').localeCompare(a.weekOf || '')));
-    sub(query(collection(db, 'teamFundingAccounts'), where('teamId', '==', selectedTeamId)), setTeamFundingAccounts,
-      (rows) => [...rows].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)));
-    sub(query(collection(db, 'teamFundingEntries'), where('teamId', '==', selectedTeamId)), setTeamFundingEntries,
-      (rows) => [...rows].sort((a, b) => (b.date || '').localeCompare(a.date || '')));
-    sub(query(collection(db, 'tasks'), where('teamId', '==', selectedTeamId)), setTeamTasks,
-      (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)));
-
-    // Module attempts are filtered per user to respect Firestore rules
-    if (authUser) {
-      unsubs.push(onSnapshot(
-        query(collection(db, 'moduleAttempts'),
-          where('teamId', '==', selectedTeamId),
-          where('userId', '==', authUser.uid),
-        ),
-        (snap) => setTeamModuleAttempts(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-      ));
-    }
-
-    return () => unsubs.forEach((u) => u());
-  }, [selectedTeamId, authUser]);
-
-  // Retroactive migration: update "Actualización semanal" merits from 5 → 25 pts (runs once per team)
-  useEffect(() => {
-    if (!selectedTeamId || !authUser) return;
-    const lockId = `weekly_25_${selectedTeamId}`;
-    const lockRef = doc(db, 'migrations', lockId);
-    const meritEventsRef = collection(db, 'meritEvents');
-    (async () => {
-      try {
-        const lockSnap = await getDoc(lockRef);
-        if (lockSnap.exists()) return;
-        const q = query(
-          meritEventsRef,
-          where('teamId', '==', selectedTeamId),
-          where('meritName', '==', SYSTEM_MERIT_NAMES.weeklyUpdate),
-          where('points', '==', 5),
-        );
-        const snap = await getDocs(q);
-        for (const d of snap.docs) {
-          await updateDoc(d.ref, { points: 25 });
-        }
-        await setDoc(lockRef, { doneAt: serverTimestamp(), updated: snap.size });
-      } catch (e) {
-        console.warn('Migration weekly_25:', e);
-      }
-    })();
-  }, [selectedTeamId, authUser]);
 
   // ────────────────────────────────────────────────────────────────────────────
   // DERIVED STATE — permissions and computed data
@@ -471,13 +312,6 @@ export default function App() {
   // ────────────────────────────────────────────────────────────────────────────
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-
-  const handleGoogleSignIn = async () => {
-    try { await signInWithPopup(auth, googleProvider); }
-    catch (e) { if (e.code !== 'auth/popup-closed-by-user') alert(e.message); }
-  };
-
-  const handleSignOut = () => { signOut(auth); setSelectedTeamId(null); };
 
   // ── Teams ──────────────────────────────────────────────────────────────────
 
@@ -1652,18 +1486,15 @@ export default function App() {
   // ── Loading splash ─────────────────────────────────────────────────────────
   if (authLoading) {
     return (
-      <LangContext.Provider value={{ lang, t, setLang: () => {} }}>
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-          <div className="text-slate-400 text-sm">{t('loading')}</div>
-        </div>
-      </LangContext.Provider>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-slate-400 text-sm">{t('loading')}</div>
+      </div>
     );
   }
 
   // ── Unauthenticated — public team browser ──────────────────────────────────
   if (!authUser) {
     return (
-      <LangContext.Provider value={{ lang, t, setLang: () => {} }}>
         <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
           <header className="border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -1699,7 +1530,6 @@ export default function App() {
             </div>
           </main>
         </div>
-      </LangContext.Provider>
     );
   }
 
@@ -1760,7 +1590,6 @@ export default function App() {
     };
 
     return (
-      <LangContext.Provider value={{ lang, t, setLang: () => {} }}>
         <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
           {joinTarget && (
             <JoinRequestModal
@@ -1879,7 +1708,6 @@ export default function App() {
             )}
           </main>
         </div>
-      </LangContext.Provider>
     );
   }
 
@@ -1904,7 +1732,6 @@ export default function App() {
   ];
 
   return (
-    <LangContext.Provider value={{ lang, t, setLang: () => {} }}>
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
 
 
@@ -2309,6 +2136,5 @@ export default function App() {
         <div className="md:hidden h-14 shrink-0" />
 
       </div>
-    </LangContext.Provider>
   );
 }

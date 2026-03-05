@@ -4,7 +4,7 @@
 // Edit permission is resolved per-goal via resolveCanEdit().
 
 import React, { useState }    from 'react';
-import LangContext              from '../../i18n/LangContext.js';
+import { t, lang } from '../../strings.js';
 import { BilingualField }       from '../../components/ui/index.js';
 import { getL, toL, fillL, ensureString } from '../../utils.js';
 
@@ -23,7 +23,6 @@ export default function GoalsSection({
   goals, categories, canCreate, resolveCanEdit,
   onCreateGoal, onUpdateGoal, onDeleteGoal,
 }) {
-  const { t, lang } = React.useContext(LangContext);
   const [form,          setForm]          = useState({ objective: { en: '', es: '' }, owner: '', dueDate: '', categoryId: '' });
   const [expandedId,     setExpandedId]    = useState(null);
   const [newKR,          setNewKR]         = useState({});

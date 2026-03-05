@@ -4,7 +4,7 @@
 // The admin sees this motivation text in the pending requests list.
 
 import React, { useState } from 'react';
-import LangContext from '../i18n/LangContext.js';
+import { t, lang } from '../strings.js';
 import { getL, ensureString } from '../utils.js';
 
 /**
@@ -16,7 +16,6 @@ import { getL, ensureString } from '../utils.js';
  * }} props
  */
 export default function JoinRequestModal({ team, categories, onSubmit, onCancel }) {
-  const { t, lang } = React.useContext(LangContext);
   const [categoryId,  setCategoryId]  = useState('');
   const [motivation,  setMotivation]  = useState('');
 

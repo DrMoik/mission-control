@@ -13,7 +13,7 @@
 // Tag fields handled by TagInput.
 
 import React, { useState, useMemo } from 'react';
-import LangContext              from '../i18n/LangContext.js';
+import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from './ui/index.js';
 import ImageCropModal           from './ImageCropModal.jsx';
@@ -59,7 +59,6 @@ export default function ProfileModal({
   weeklyStatuses = [], onSaveWeeklyStatus,
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp,
 }) {
-  const { t, lang } = React.useContext(LangContext);
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
   const semesterOptions = semesterOptionsProp ?? SEMESTER_OPTIONS;
   const [editing,    setEditing]    = useState(false);
@@ -262,7 +261,7 @@ export default function ProfileModal({
               {/* Birthdate / University / Career / Semester */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
-                  <label className="text-[11px] text-slate-500 block mb-0.5">{t('birthdate_label')}</label>
+                  <label className="text-[11px] text-slate-500 block mb-0.5">Fecha de nacimiento</label>
                   <input type="date" value={draft.birthdate || ''} onChange={(e) => set('birthdate', e.target.value)}
                     className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
                 </div>
@@ -391,10 +390,7 @@ export default function ProfileModal({
                   {(membership.birthdate || membership.university || membership.career || membership.semester || membership.email) && (
                     <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
                       {membership.birthdate && (
-                        <span className="inline-flex items-center gap-1">
-                          <span className="text-slate-500">🎂</span>
-                          <span>{t('birthdate_label')}: {formatBirthdateDisplay(membership.birthdate)}</span>
-                        </span>
+                        <span>🎂 {formatBirthdateDisplay(membership.birthdate)}</span>
                       )}
                       {membership.university && <span>{membership.university}</span>}
                       {membership.career     && <span>{membership.career}</span>}

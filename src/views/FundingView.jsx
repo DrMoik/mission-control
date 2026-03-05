@@ -5,7 +5,7 @@
 // All team members can view; leaders+ can add/edit entries and accounts.
 
 import React, { useState } from 'react';
-import LangContext from '../i18n/LangContext.js';
+import { t } from '../strings.js';
 
 function formatMoney(n) {
   if (n == null || isNaN(n)) return '—';
@@ -39,7 +39,6 @@ export default function FundingView({
   onCreateEntry,
   onDeleteEntry,
 }) {
-  const { t } = React.useContext(LangContext);
   const [addingAccount, setAddingAccount] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState(null);
   const [accountDraft, setAccountDraft] = useState({});

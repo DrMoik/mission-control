@@ -3,7 +3,7 @@
 // or all-time.  Medal colours for top 3 positions.
 
 import React, { useState } from 'react';
-import LangContext      from '../i18n/LangContext.js';
+import { t } from '../strings.js';
 import { RoleBadge, MemberAvatar } from '../components/ui/index.js';
 
 /**
@@ -14,7 +14,6 @@ import { RoleBadge, MemberAvatar } from '../components/ui/index.js';
  * }} props
  */
 export default function LeaderboardView({ leaderboard, memberships, onViewProfile }) {
-  const { t }  = React.useContext(LangContext);
   const [tab,  setTab] = useState('season');
 
   const rows = tab === 'season' ? leaderboard.season : leaderboard.allTime;

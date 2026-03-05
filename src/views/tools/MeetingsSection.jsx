@@ -4,7 +4,7 @@
 // Edit permission is resolved per-meeting via resolveCanEdit().
 
 import React, { useState }       from 'react';
-import LangContext                from '../../i18n/LangContext.js';
+import { t, lang } from '../../strings.js';
 import { BilingualField }        from '../../components/ui/index.js';
 import { getL, toL, fillL, ensureString } from '../../utils.js';
 
@@ -23,7 +23,6 @@ export default function MeetingsSection({
   meetings, categories, canCreate, resolveCanEdit,
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
 }) {
-  const { t, lang } = React.useContext(LangContext);
 
   const emptyForm = () => ({ title: { en: '', es: '' }, date: '', attendees: '', notes: { en: '', es: '' }, categoryId: '' });
 

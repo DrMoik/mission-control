@@ -13,11 +13,10 @@
 // UX:  type to see dropdown; click or Enter to add from suggestion; Enter/comma adds custom tag.
 
 import React, { useState, useRef, useEffect } from 'react';
-import LangContext from '../../i18n/LangContext.js';
+import { t, lang } from '../../strings.js';
 import { ensureString } from '../../utils.js';
 
 export default function TagInput({ label, value = [], onChange, placeholder = 'Add tag…', maxTags, suggestions = [] }) {
-  const { t, lang } = React.useContext(LangContext);
   const [input, setInput] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);

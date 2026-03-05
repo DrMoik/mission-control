@@ -6,7 +6,7 @@
 //  4. Audit log with edit/revoke (platformAdmin)
 
 import React, { useState, useMemo, useEffect } from 'react';
-import LangContext              from '../i18n/LangContext.js';
+import { t, lang } from '../strings.js';
 import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS, MERIT_TIERS } from '../constants.js';
 import { tsToDate, getL, fillL, ensureString } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
@@ -28,7 +28,6 @@ export default function MeritsView({
   teamTags, onSaveTeamMeritTags,
   onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
-  const { t, lang } = React.useContext(LangContext);
   const achievementTypes = achievementTypesProp ?? MERIT_ACHIEVEMENT_TYPES;
   const domains = domainsProp ?? MERIT_DOMAINS;
   const meritTiers = meritTiersProp ?? MERIT_TIERS;

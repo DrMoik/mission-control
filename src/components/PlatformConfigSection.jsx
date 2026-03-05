@@ -4,7 +4,7 @@
 // Mode 2: teamTags + onSaveTeamTags → team admin edits their team's tags.
 
 import React, { useState, useEffect } from 'react';
-import LangContext from '../i18n/LangContext.js';
+import { t } from '../strings.js';
 import { MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS } from '../constants.js';
 
 export default function PlatformConfigSection({
@@ -13,10 +13,9 @@ export default function PlatformConfigSection({
   teamTags,
   onSaveTeamTags,
   label: labelOverride,
-  t,
+  t: tProp,
 }) {
-  const { t: tCtx } = React.useContext(LangContext);
-  const tFn = t || tCtx;
+  const tFn = tProp || t;
   const isTeamMode = Boolean(teamTags && onSaveTeamTags);
 
   const typesDefault = isTeamMode

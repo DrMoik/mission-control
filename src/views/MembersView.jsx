@@ -6,7 +6,7 @@
 //  - Strike management and suspensions
 
 import React, { useState, useMemo } from 'react';
-import LangContext   from '../i18n/LangContext.js';
+import { t } from '../strings.js';
 import { ROLE_ORDER, CAREER_OPTIONS } from '../constants.js';
 import { RoleBadge, StrikePips, MemberAvatar } from '../components/ui/index.js';
 import { ensureString } from '../utils.js';
@@ -33,7 +33,6 @@ export default function MembersView({
   onUpdateRole, onAssignCategory, onAddStrike, onRemoveStrike,
   onViewProfile, onCreateGhostMember, onApproveMember, onRejectMember,
 }) {
-  const { t } = React.useContext(LangContext);
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
 
   const [search,        setSearch]        = useState('');

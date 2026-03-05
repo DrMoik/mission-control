@@ -2,73 +2,9 @@
 // Standalone calendar tab: events + birthdays. Scope filter (global/area), birthday checkbox.
 
 import React, { useState, useMemo, useCallback } from 'react';
-import LangContext from '../i18n/LangContext.js';
-import { BilingualField } from '../components/ui/index.js';
+import { t, lang } from '../strings.js';
+import { BilingualField, HowToUse, ScopeFilter } from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString, parseCalendarDate } from '../utils.js';
-
-// ── HowToUse banner ────────────────────────────────────────────────────────────
-function HowToUse({ descKey }) {
-  const { t } = React.useContext(LangContext);
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg text-xs">
-      <button onClick={() => setOpen((s) => !s)}
-        className="w-full text-left px-3 py-2 flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors">
-        <span className="font-semibold inline-flex items-center gap-1">
-          <span className={`inline-block text-slate-400 transition-transform ${open ? '' : '-rotate-90'}`}>▼</span>
-          {t('how_to_use') || 'How to use'}
-        </span>
-      </button>
-      {open && (
-        <div className="px-4 pb-3 text-slate-400 leading-relaxed space-y-2">
-          <p className="whitespace-pre-line">{t(descKey)}</p>
-          {(() => {
-            const ex = t(descKey + '_example');
-            const ln = t(descKey + '_link');
-            const hasEx = ex && ex !== descKey + '_example';
-            const hasLn = ln && ln.startsWith('http');
-            return (
-              <>
-                {hasEx && <p className="text-slate-500 text-[11px] italic">{t('tool_example')}: {ex}</p>}
-                {hasLn && (
-                  <a href={ln} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline text-[11px] block">
-                    {t('tool_more_info')} →
-                  </a>
-                )}
-              </>
-            );
-          })()}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── ScopeFilter ────────────────────────────────────────────────────────────────
-function ScopeFilter({ value, onChange, categories, userCategoryId, canEdit }) {
-  const { t, lang } = React.useContext(LangContext);
-  const options = [
-    { id: 'all',    label: t('scope_filter_all')    },
-    { id: 'global', label: t('scope_filter_global') },
-    ...categories
-      .filter((c) => canEdit || c.id === userCategoryId)
-      .map((c) => ({ id: c.id, label: ensureString(c.name, lang) })),
-  ];
-  return (
-    <div className="flex gap-1.5 flex-wrap">
-      {options.map((opt) => (
-        <button key={opt.id} onClick={() => onChange(opt.id)}
-          className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-            value === opt.id
-              ? 'bg-emerald-500 text-black'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-          }`}>
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export default function CalendarView({
   teamEvents = [],
@@ -82,7 +18,6 @@ export default function CalendarView({
   onUpdateEvent,
   onDeleteEvent,
 }) {
-  const { t, lang } = React.useContext(LangContext);
   const userCategoryId = currentMembership?.categoryId || null;
 
   const [scopeFilter, setScopeFilter] = useState('all');
@@ -132,7 +67,7 @@ export default function CalendarView({
         const name = ensureString(m.displayName, lang) || '?';
         return {
           id:           `birthday-${m.id}`,
-          title:        { en: `Birthday of ${name}`, es: `Cumpleaños de ${name}` },
+          title:        { en: `🎂 ${name}`, es: `🎂 ${name}` },
           date:         dateStr,
           categoryId:   m.categoryId || null,
           isBirthday:   true,
@@ -201,7 +136,7 @@ export default function CalendarView({
       <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
         <input type="checkbox" checked={showBirthdays} onChange={(e) => setShowBirthdays(e.target.checked)}
           className="rounded border-slate-600 bg-slate-800 text-pink-500 focus:ring-pink-500" />
-        <span>🎂 {t('calendar_filter_birthdays')}</span>
+        <span>🎂 Ver fechas</span>
       </label>
 
       {canCreate && !editingEventId && (
@@ -300,7 +235,7 @@ export default function CalendarView({
                     <div className="mt-1">
                       {evt.isBirthday
                         ? <span className="text-[9px] bg-pink-900/40 text-pink-300 px-1.5 py-0.5 rounded-full">
-                            🎂 {t('calendar_filter_birthdays')}
+                            🎂
                           </span>
                         : catName
                           ? <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded-full">

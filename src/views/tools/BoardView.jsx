@@ -4,7 +4,7 @@
 // Shows "last edited by" stamp at the bottom.
 
 import React, { useState } from 'react';
-import LangContext from '../../i18n/LangContext.js';
+import { t, lang } from '../../strings.js';
 import { ensureString } from '../../utils.js';
 
 /**
@@ -28,7 +28,6 @@ export default function BoardView({
   onAssignCard, currentMembership = null,
   memberRole = null,
 }) {
-  const { t, lang } = React.useContext(LangContext);
   const [newCardTitles, setNewCardTitles] = useState({});
   const [assigningCardId, setAssigningCardId] = useState(null);
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState(new Set());

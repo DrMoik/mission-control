@@ -16,8 +16,8 @@
 //  className?    — extra classes on the outer wrapper
 
 import React, { useRef, useEffect } from 'react';
-import LangContext from '../../i18n/LangContext.js';
-import { toL }     from '../../utils.js';
+import { lang } from '../../strings.js';
+import { toL } from '../../utils.js';
 
 // Auto-grow textarea: height expands with content
 function AutoGrowTextarea({ value, onChange, placeholder, maxLength, className, rows }) {
@@ -61,7 +61,6 @@ export default function BilingualField({
   label, value, onChange, multiline = false, rows = 3,
   placeholder, maxLength, required, className = '',
 }) {
-  const { lang } = React.useContext(LangContext);
   const val = toL(value);
 
   const ph = (l) => {

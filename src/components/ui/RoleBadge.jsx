@@ -3,7 +3,7 @@
 // Uses the translation key `role_<roleId>` so the label adapts to the active language.
 
 import React from 'react';
-import LangContext from '../../i18n/LangContext.js';
+import { t } from '../../strings.js';
 
 /** Tailwind colour classes per role. Falls back to slate if unknown. */
 const ROLE_COLORS = {
@@ -20,7 +20,6 @@ const ROLE_COLORS = {
  * @param {{ role: string }} props
  */
 export default function RoleBadge({ role }) {
-  const { t } = React.useContext(LangContext);
   const colorClass = ROLE_COLORS[role] || 'bg-slate-700 text-slate-300';
   // Prefer translated label; fall back to the raw role string
   const label = t('role_' + role) || role;

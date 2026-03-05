@@ -5,7 +5,7 @@
 // Bilingual: title, description; each topic has title, content. videoUrl is plain string.
 
 import React, { useState } from 'react';
-import LangContext from '../i18n/LangContext.js';
+import { t, lang } from '../strings.js';
 import { toEmbedUrl, tsToDate, getL, toL, fillL } from '../utils.js';
 import { BilingualField } from '../components/ui/index.js';
 
@@ -20,8 +20,6 @@ export default function AcademyView({
   onDeleteModule,
   onRequestModuleReview,
 }) {
-  const { t, lang } = React.useContext(LangContext);
-
   const [selectedId, setSelectedId] = useState(null);
   const [editingModule, setEditingModule] = useState(null);
   const [showNewForm, setShowNewForm] = useState(false);

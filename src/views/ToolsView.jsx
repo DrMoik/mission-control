@@ -20,11 +20,11 @@
 //   ③ "Last edited by" on every item
 
 import React, { useState, useMemo } from 'react';
-import LangContext             from '../i18n/LangContext.js';
+import { t, lang } from '../strings.js';
 import BoardTypeSection        from './tools/BoardTypeSection.jsx';
 import MeetingsSection         from './tools/MeetingsSection.jsx';
 import GoalsSection            from './tools/GoalsSection.jsx';
-import { BilingualField }      from '../components/ui/index.js';
+import { BilingualField, HowToUse, ScopeFilter } from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString, tsToDate, parseCalendarDate } from '../utils.js';
 
 // SWOT quadrant metadata (colours are language-independent)
@@ -34,73 +34,6 @@ const SWOT_META = [
   { key: 'opportunities', labelKey: 'swot_opportunities', border: 'border-blue-600',    bg: 'bg-blue-950/20'    },
   { key: 'threats',       labelKey: 'swot_threats',       border: 'border-amber-600',   bg: 'bg-amber-950/20'   },
 ];
-
-// ── HowToUse banner ────────────────────────────────────────────────────────────
-// Collapsible grey banner shown at the top of every tool tab.
-function HowToUse({ descKey }) {
-  const { t } = React.useContext(LangContext);
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg text-xs">
-      <button onClick={() => setOpen((s) => !s)}
-        className="w-full text-left px-3 py-2 flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors">
-        <span className="font-semibold inline-flex items-center gap-1">
-              <span className={`inline-block text-slate-400 transition-transform ${open ? '' : '-rotate-90'}`}>▼</span>
-              {t('how_to_use') || 'How to use'}
-            </span>
-      </button>
-      {open && (
-        <div className="px-4 pb-3 text-slate-400 leading-relaxed space-y-2">
-          <p className="whitespace-pre-line">{t(descKey)}</p>
-          {(() => {
-            const ex = t(descKey + '_example');
-            const ln = t(descKey + '_link');
-            const hasEx = ex && ex !== descKey + '_example';
-            const hasLn = ln && ln.startsWith('http');
-            return (
-              <>
-                {hasEx && <p className="text-slate-500 text-[11px] italic">{t('tool_example')}: {ex}</p>}
-                {hasLn && (
-                  <a href={ln} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline text-[11px] block">
-                    {t('tool_more_info')} →
-                  </a>
-                )}
-              </>
-            );
-          })()}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── ScopeFilter ────────────────────────────────────────────────────────────────
-// Tab strip: "All accessible" / "Global only" / per-category
-function ScopeFilter({ value, onChange, categories, userCategoryId, canEdit }) {
-  const { t, lang } = React.useContext(LangContext);
-  const options = [
-    { id: 'all',    label: t('scope_filter_all')    },
-    { id: 'global', label: t('scope_filter_global') },
-    // Only show a category filter if the user belongs to one (or is admin)
-    ...categories
-      .filter((c) => canEdit || c.id === userCategoryId)
-      .map((c) => ({ id: c.id, label: ensureString(c.name, lang) })),
-  ];
-  return (
-    <div className="flex gap-1.5 flex-wrap">
-      {options.map((opt) => (
-        <button key={opt.id} onClick={() => onChange(opt.id)}
-          className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-            value === opt.id
-              ? 'bg-emerald-500 text-black'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-          }`}>
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 /**
  * @param {{
@@ -139,8 +72,6 @@ export default function ToolsView({
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
   onCreateGoal,   onUpdateGoal,   onDeleteGoal,
 }) {
-  const { t, lang } = React.useContext(LangContext);
-
   const [toolTab,     setToolTab]     = useState('boards');
   const [scopeFilter, setScopeFilter] = useState('all');
   const [selectedSwotId, setSelectedSwotId] = useState(null);

@@ -3,7 +3,7 @@
 // per-post comments.  Authors and admins may delete their own content.
 
 import React, { useState } from 'react';
-import LangContext from '../i18n/LangContext.js';
+import { t } from '../strings.js';
 import { tsToDate } from '../utils.js';
 
 /**
@@ -22,9 +22,8 @@ import { tsToDate } from '../utils.js';
  */
 export default function FeedView({
   posts, comments, authUser, canEdit, memberships,
-  onCreatePost, onDeletePost, onCreateComment, onDeleteComment, onViewProfile,
+  onCreatePost, onDeletePost, onCreateComment, onDeleteComment,   onViewProfile,
 }) {
-  const { t } = React.useContext(LangContext);
   const [newContent,     setNewContent]     = useState('');
   const [newImageUrl,    setNewImageUrl]    = useState('');
   const [showImageField, setShowImageField] = useState(false);

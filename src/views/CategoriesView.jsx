@@ -3,16 +3,14 @@
 // Admins can create, rename, and delete categories.
 
 import React, { useState } from 'react';
-import LangContext              from '../i18n/LangContext.js';
-import { BilingualField }       from '../components/ui/index.js';
+import { t, lang } from '../strings.js';
+import { BilingualField } from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString } from '../utils.js';
 
 export default function CategoriesView({
   categories, memberships, canEdit,
   onCreateCategory, onDeleteCategory, onUpdateCategory, onViewProfile,
 }) {
-  const { t, lang } = React.useContext(LangContext);
-
   const [newName,   setNewName]   = useState('');
   const [newDesc,   setNewDesc]   = useState({ en: '', es: '' });
   const [editingId, setEditingId] = useState(null);

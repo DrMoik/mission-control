@@ -5,7 +5,7 @@
 //   • TAREAS — Puntos por calificación (retroactivo)
 
 import React, { useState } from 'react';
-import LangContext from '../i18n/LangContext.js';
+import { t } from '../strings.js';
 import {
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT,
   COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS, MERIT_TIERS,
@@ -53,10 +53,9 @@ export default function AdminView({
   onSaveMeritTiers,
   onSaveSystemMeritPoints,
   onSaveTaskGradePoints,
-  t,
+  t: tProp,
 }) {
-  const { t: tCtx } = React.useContext(LangContext);
-  const tFn = t || tCtx;
+  const tFn = tProp || t;
   const [saving, setSaving] = useState(null);
 
   if (!team) return null;

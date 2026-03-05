@@ -5,4 +5,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: process.env.VITE_BASE || '/mission-control/',  // GitHub Pages default; use VITE_BASE=/ for Firebase
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.js'],
+  },
 })

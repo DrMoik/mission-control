@@ -10,3 +10,5 @@ export { default as BilingualField }  from './BilingualField.jsx';
 export { default as TagInput }        from './TagInput.jsx';
 export { default as CultureListField } from './CultureListField.jsx';
 export { default as CultureSongField } from './CultureSongField.jsx';
+export { default as HowToUse }       from './HowToUse.jsx';
+export { default as ScopeFilter }    from './ScopeFilter.jsx';

@@ -5,7 +5,7 @@
 //
 
 import React, { useState, useEffect, useRef } from 'react';
-import LangContext              from '../i18n/LangContext.js';
+import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
@@ -81,7 +81,6 @@ export default function ProfilePageView({
   weeklyStatuses = [], onSaveWeeklyStatus, suggestedTags = [],
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp, personalityTags: personalityTagsProp,
 }) {
-  const { t, lang } = React.useContext(LangContext);
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
   const semesterOptions = semesterOptionsProp ?? SEMESTER_OPTIONS;
   const personalityTags = personalityTagsProp ?? PERSONALITY_TAGS_DEFAULT;
@@ -265,7 +264,7 @@ export default function ProfilePageView({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               <div>
-                <label className="text-[11px] text-slate-500 block mb-0.5">{t('birthdate_label')}</label>
+                <label className="text-[11px] text-slate-500 block mb-0.5">Fecha de nacimiento</label>
                 <input type="date" value={draft.birthdate || ''} onChange={(e) => set('birthdate', e.target.value)}
                   className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
               </div>
@@ -367,10 +366,7 @@ export default function ProfilePageView({
                 {(membership.birthdate || membership.university || membership.career || membership.semester || membership.email) && (
                   <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
                     {membership.birthdate && (
-                      <span className="inline-flex items-center gap-1">
-                        <span className="text-slate-500">🎂</span>
-                        <span>{t('birthdate_label')}: {formatBirthdateDisplay(membership.birthdate)}</span>
-                      </span>
+                      <span>🎂 {formatBirthdateDisplay(membership.birthdate)}</span>
                     )}
                     {membership.university && <span>{ensureString(membership.university, lang)}</span>}
                     {membership.career     && <span>{ensureString(membership.career, lang)}</span>}

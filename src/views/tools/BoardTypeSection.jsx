@@ -4,7 +4,7 @@
 // and delegating per-board edit permission to BoardView via resolveCanEdit().
 
 import React, { useState } from 'react';
-import LangContext from '../../i18n/LangContext.js';
+import { t, lang } from '../../strings.js';
 import { ensureString } from '../../utils.js';
 import BoardView   from './BoardView.jsx';
 
@@ -36,7 +36,6 @@ export default function BoardTypeSection({
   currentMembership = null,
   memberRole = null,
 }) {
-  const { t, lang } = React.useContext(LangContext);
   const [newBoardName,    setNewBoardName]    = useState('');
   const [newCategoryId,   setNewCategoryId]   = useState('');  // '' = global
   const [selectedBoardId, setSelectedBoardId] = useState(null);
