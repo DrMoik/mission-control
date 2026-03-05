@@ -38,7 +38,7 @@ export const COLLAB_TAG_SUGGESTIONS = [
 export const ADMIN_PLACEHOLDERS = {
   careers:    'Ingeniería Mecánica, Informática, Robótica, …',
   semesters:  '1º, 2º, 3º, Posgrado, Docente, …',
-  personality:'clave: texto mostrado\nptag_creative: Creativo/a\nptag_analytical: Analítico/a\nptag_solver: Resolvedor de problemas\nptag_mentor: Mentor/a',
+  personality:'etiqueta: texto mostrado\nptag_creative: Creativo/a\nptag_analytical: Analítico/a\nptag_solver: Resolvedor de problemas\nptag_mentor: Mentor/a',
   collab:     'OpenCV, Python, CAD, soldadura, impresión 3D, mentoría, documentación, …',
   types:      'técnico, liderazgo, colaboración, innovación, hito, …',
   domains:    'software, hardware, mecánica, electrónica, diseño, investigación, …',
