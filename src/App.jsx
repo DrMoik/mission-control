@@ -644,8 +644,8 @@ export default function App() {
       birthdate:          updates.birthdate          ?? m.birthdate          ?? '',
     };
     // When user edits their own profile, sync to all their memberships (shared profile across teams)
-    const isOwnProfile = authUser && m.userId === authUser.uid;
-    const idsToUpdate = isOwnProfile
+    const isOwnMembership = authUser && m.userId === authUser.uid;
+    const idsToUpdate = isOwnMembership
       ? userMemberships.filter((um) => um.userId === authUser.uid).map((um) => um.id)
       : [membershipId];
     await Promise.all(idsToUpdate.map((id) => updateDoc(doc(db, 'memberships', id), payload)));
