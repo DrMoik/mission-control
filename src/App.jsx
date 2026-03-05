@@ -562,10 +562,24 @@ export default function App() {
     await updateDoc(doc(db, 'memberships', membershipId), { categoryId: categoryId || null });
   };
 
+  // Admins with a category can only add/remove strikes for members in their area.
+  // Area leaders (leader + categoryId) can strike only members in their area.
+  // Leaders cannot remove their own strikes.
+  const canStrike = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
+  const canStrikeMember = (member) => {
+    if (!canStrike) return false;
+    if (isPlatformAdmin) return true;
+    if (canEdit && !currentMembership?.categoryId) return true; // global admin
+    return member?.categoryId === currentMembership?.categoryId;
+  };
+  const canRemoveStrikeMember = (member) =>
+    canStrikeMember(member) && !(memberRole === 'leader' && !isPlatformAdmin && currentMembership?.id === member?.id);
+
   const handleAddStrike = async (membershipId) => {
-    if (!canEdit) return;
+    if (!canStrike) return;
     const m = teamMemberships.find((mm) => mm.id === membershipId);
     if (!m) return;
+    if (!canStrikeMember(m)) return;
     const newStrikes = (m.strikes || 0) + 1;
     await updateDoc(doc(db, 'memberships', membershipId), {
       strikes: newStrikes,
@@ -574,9 +588,12 @@ export default function App() {
   };
 
   const handleRemoveStrike = async (membershipId) => {
-    if (!canEdit) return;
+    if (!canStrike) return;
     const m = teamMemberships.find((mm) => mm.id === membershipId);
     if (!m) return;
+    if (!canStrikeMember(m)) return;
+    // Leaders cannot remove their own strikes
+    if (memberRole === 'leader' && !isPlatformAdmin && currentMembership?.id === membershipId) return;
     await updateDoc(doc(db, 'memberships', membershipId), {
       strikes: Math.max(0, (m.strikes || 0) - 1),
       status: 'active',
@@ -1912,6 +1929,9 @@ export default function App() {
                 categories={teamCategories}
                 memberships={teamMemberships}
                 canEdit={canEdit}
+                canStrike={canStrike}
+                canStrikeMember={canStrikeMember}
+                canRemoveStrikeMember={canRemoveStrikeMember}
                 isPlatformAdmin={isPlatformAdmin}
                 careerOptions={careerOptions}
                 onUpdateRole={handleUpdateMemberRole}

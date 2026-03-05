@@ -115,6 +115,16 @@ service cloud.firestore {
       );
     }
 
+    // Area leader (leader + categoryId) can add/remove strikes only for members in their area
+    function isAreaLeaderCanStrikeTarget(teamId, targetCategoryId) {
+      return request.auth != null
+        && membershipExists(teamId)
+        && membershipDoc(teamId).data.status == 'active'
+        && membershipDoc(teamId).data.role == 'leader'
+        && membershipDoc(teamId).data.get('categoryId', '') != ''
+        && targetCategoryId == membershipDoc(teamId).data.categoryId;
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  USERS
     //  Each user reads/writes only their own profile.
@@ -169,9 +179,11 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid
       );
 
-      // Team admins can update any membership; members can update only their own (profile fields).
-      // Members must not change role, status, teamId, userId, or strikes.
+      // Team admins can update any membership; area leaders can update strikes/status only for members in their area.
+      // Members can update only their own profile (not role, status, teamId, userId, or strikes).
       allow update: if isTeamAdmin(resource.data.teamId)
+        || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']))
         || (request.auth != null
             && resource.data.userId == request.auth.uid
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'teamId', 'userId', 'strikes']));
@@ -558,7 +570,8 @@ Colecciones afectadas: `teamEvents`, `teamSwots`, `teamEisenhowers`, `teamPughs`
 ## Strike System
 
 - Each member starts with 0 strikes
-- Team Admins can add or remove strikes from the **Categories** tab
+- **Team Admins** and **Faculty Advisors** can add or remove strikes for any member
+- **Area Leaders** (leader with an assigned category) can add or remove strikes only for members in their area
 - At **3 strikes** the membership is automatically suspended
 - Suspended members lose access to all team tabs (Firestore rules enforce this server-side)
 - Admins can **Reinstate** a suspended member (removes one strike, restores active status)

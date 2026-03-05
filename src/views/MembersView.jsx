@@ -19,6 +19,9 @@ import { ensureString } from '../utils.js';
  *   isPlatformAdmin:      boolean,
  *   onUpdateRole:         function(membershipId, role) → Promise
  *   onAssignCategory:     function(membershipId, catId) → Promise
+ *   canStrike:            boolean  (can add/remove strikes — admins or area leaders)
+ *   canStrikeMember:      function(member) → boolean  (can strike this specific member, e.g. same area for leaders)
+ *   canRemoveStrikeMember: function(member) → boolean  (can remove strike — leaders cannot remove their own)
  *   onAddStrike:          function(membershipId) → Promise
  *   onRemoveStrike:       function(membershipId) → Promise
  *   onViewProfile:        function(membership)
@@ -28,8 +31,8 @@ import { ensureString } from '../utils.js';
  * }} props
  */
 export default function MembersView({
-  categories, memberships, canEdit, isPlatformAdmin,
-  careerOptions: careerOptionsProp,
+  categories, memberships, canEdit, canStrike, canStrikeMember, canRemoveStrikeMember,
+  isPlatformAdmin, careerOptions: careerOptionsProp,
   onUpdateRole, onAssignCategory, onAddStrike, onRemoveStrike,
   onViewProfile, onCreateGhostMember, onApproveMember, onRejectMember,
 }) {
@@ -314,13 +317,13 @@ export default function MembersView({
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
                       <StrikePips count={m.strikes || 0} />
-                      {canEdit && (
+                      {(canStrikeMember ? canStrikeMember(m) : canEdit) && (
                         <div className="flex gap-1">
                           <button onClick={() => onAddStrike(m.id)}
                             className="text-[10px] text-red-400 border border-red-800 rounded px-1 hover:bg-red-900/30">
                             +
                           </button>
-                          {(m.strikes || 0) > 0 && (
+                          {(m.strikes || 0) > 0 && (canRemoveStrikeMember ? canRemoveStrikeMember(m) : canEdit) && (
                             <button onClick={() => onRemoveStrike(m.id)}
                               className="text-[10px] text-slate-400 border border-slate-600 rounded px-1 hover:bg-slate-700">
                               −
@@ -342,8 +345,8 @@ export default function MembersView({
         </div>
       </div>
 
-      {/* Suspended members (admins only) */}
-      {canEdit && suspended.length > 0 && (
+      {/* Suspended members (admins and area leaders) */}
+      {(canEdit || canStrike) && suspended.length > 0 && (
         <div className="bg-slate-800 rounded-lg overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-700 text-xs text-red-400 font-semibold">
             {`Suspendidos (${suspended.length}) — 3 faltas alcanzadas`}
@@ -363,9 +366,11 @@ export default function MembersView({
                     <td className="px-3 py-2">{ensureString(m.displayName)}</td>
                     <td className="px-3 py-2"><StrikePips count={m.strikes || 0} /></td>
                     <td className="px-3 py-2">
-                      <button onClick={() => onRemoveStrike(m.id)} className="text-[11px] text-emerald-400 underline">
-                        {t('reinstate')}
-                      </button>
+                      {(canRemoveStrikeMember ? canRemoveStrikeMember(m) : (canStrikeMember ? canStrikeMember(m) : canEdit)) && (
+                        <button onClick={() => onRemoveStrike(m.id)} className="text-[11px] text-emerald-400 underline">
+                          {t('reinstate')}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
