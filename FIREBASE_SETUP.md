@@ -246,6 +246,27 @@ service cloud.firestore {
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  TASKS (assigned by area leader or admins)
+    //  Active members can read all team tasks. Create: leaders+ (app restricts leaders to their area).
+    //  Update: assignee (mark complete) or leaders+. Delete: assignee, assigner, or team admin.
+    // ═══════════════════════════════════════════════════════════
+
+    match /tasks/{taskId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isActiveMember(resource.data.teamId) && (
+        get(/databases/$(database)/documents/memberships/$(resource.data.assigneeMembershipId)).data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)).data.userId == request.auth.uid ||
+        isLeaderOrAbove(resource.data.teamId)
+      );
+      allow delete: if isActiveMember(resource.data.teamId) && (
+        get(/databases/$(database)/documents/memberships/$(resource.data.assigneeMembershipId)).data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)).data.userId == request.auth.uid ||
+        isTeamAdmin(resource.data.teamId)
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  CALENDAR EVENTS
     //  Any active member can see. Leaders+ can manage.
     // ═══════════════════════════════════════════════════════════
@@ -452,8 +473,9 @@ Your app will be live at `https://quantum-robotics-48d7e.web.app`
 | `categories` | `teamId`, `name`, `description` | Active team members |
 | `merits` | `teamId`, `name`, `points`, `categoryId`, `achievementTypes[]`, `domains[]`, `tier`, `tags[]` | Active team members |
 | `meritEvents` | `teamId`, `membershipId`, `meritId`, `points`, `type`, `evidence` | Active team members |
-| `modules` | `teamId`, `title`, `content`, `videoUrl`, `retrievalPrompt` | Rookie+ members |
-| `moduleAttempts` | `teamId`, `moduleId`, `userId`, `answer`, `completedAt` | Own doc + team admins |
+| `modules` | `teamId`, `title`, `description`, `topics[]` (each: `id`, `title`, `content`, `videoUrl`), `order` | Rookie+ members |
+| `moduleAttempts` | `teamId`, `moduleId`, `userId`, `membershipId`, `status` (`requested_review` / `approved`), `requestedAt` | Own doc + team admins |
+| `tasks` | `teamId`, `assigneeMembershipIds[]`, `assignedByMembershipId`, `assignedByName`, `title`, `description`, `dueDate?`, `status` (`pending`/`pending_review`/`completed`), `grade?`, `createdAt`, `completedAt?`, `requestedReviewAt?` | Active team members |
 | `teamEvents` | `teamId`, `title`, `date`, `description`, `createdBy`, `categoryId` | Active team members |
 | `teamSwots` | `teamId`, `name`, `strengths`, `weaknesses`, `opportunities`, `threats`, `categoryId` | Active team members |
 | `teamEisenhowers` | `teamId`, `name`, `quadrants`, `categoryId` | Active team members |

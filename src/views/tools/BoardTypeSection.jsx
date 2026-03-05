@@ -21,12 +21,18 @@ import BoardView   from './BoardView.jsx';
  *   onCreateBoard:  function(name, type, columns, categoryId): Promise<void>,
  *   onUpdateBoard:  function(id, updates): Promise<void>,
  *   onDeleteBoard:  function(id): Promise<void>,
+ *   onCreateTask?:  function({ assigneeMembershipId, title, description, dueDate }): Promise<void>,
+ *   canAssignTask?: function(assigneeMembershipId: string): boolean,
+ *   memberships?:   object[],          // for "Assign to" on cards (execute tools only)
+ *   currentMembership?: object | null,
  * }} props
  */
 export default function BoardTypeSection({
   boards, boardType, defaultColumns, emptyText, placeholder,
   categories, canCreate, resolveCanEdit,
   onCreateBoard, onUpdateBoard, onDeleteBoard,
+  onCreateTask, canAssignTask, memberships = [],
+  currentMembership = null,
 }) {
   const { t, lang } = React.useContext(LangContext);
   const [newBoardName,    setNewBoardName]    = useState('');
@@ -38,6 +44,34 @@ export default function BoardTypeSection({
 
   const selectedBoard = boards.find((b) => b.id === selectedBoardId) || boards[0] || null;
   const canEditSelected = selectedBoard && resolveCanEdit(selectedBoard);
+
+  const handleAssignCard = async (columnId, cardId, cardTitle, assigneeMembershipIds, assigneeDisplayNames) => {
+    const ids = Array.isArray(assigneeMembershipIds) ? assigneeMembershipIds : [assigneeMembershipIds];
+    const names = Array.isArray(assigneeDisplayNames) ? assigneeDisplayNames : [assigneeDisplayNames];
+    if (!selectedBoard || !onCreateTask || ids.length === 0) return;
+    for (const id of ids) { if (!canAssignTask?.(id)) return; }
+    const boardName = ensureString(selectedBoard.name, lang) || selectedBoard.id;
+    await onCreateTask({
+      assigneeMembershipIds: ids,
+      title: cardTitle,
+      description: boardName,
+      dueDate: null,
+    });
+    const assignedByNamesStr = names.join(', ');
+    const newColumns = (selectedBoard.columns || []).map((col) =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: (col.cards || []).map((c) =>
+              c.id === cardId
+                ? { ...c, assigneeMembershipIds: ids, assignedByNames: assignedByNamesStr }
+                : c,
+            ),
+          }
+        : col,
+    );
+    await onUpdateBoard(selectedBoard.id, { columns: newColumns });
+  };
 
   const startEditBoard = () => {
     if (!selectedBoard) return;
@@ -165,6 +199,12 @@ export default function BoardTypeSection({
             canEditThis={resolveCanEdit(selectedBoard)}
             onUpdateBoard={onUpdateBoard}
             onDeleteBoard={onDeleteBoard}
+            onCreateTask={onCreateTask}
+            canAssignTask={canAssignTask}
+            memberships={memberships}
+            categories={categories}
+            onAssignCard={onCreateTask && canAssignTask ? handleAssignCard : undefined}
+            currentMembership={currentMembership}
           />
         </>
       )}

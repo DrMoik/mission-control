@@ -13,11 +13,27 @@ import { ensureString } from '../../utils.js';
  *   canEditThis:   boolean,   // pre-resolved by parent via resolveCanEdit(board)
  *   onUpdateBoard: function(id: string, updates: object): Promise<void>,
  *   onDeleteBoard: function(id: string): Promise<void>,
+ *   onCreateTask?: function,
+ *   canAssignTask?: function(assigneeMembershipId: string): boolean,
+ *   memberships?:  object[],
+ *   categories?:   object[],
+ *   onAssignCard?: function(columnId, cardId, cardTitle, assigneeMembershipId, assigneeDisplayName): Promise<void>,
+ *   currentMembership?: object | null,
  * }} props
  */
-export default function BoardView({ board, canEditThis, onUpdateBoard, onDeleteBoard }) {
+export default function BoardView({
+  board, canEditThis, onUpdateBoard, onDeleteBoard,
+  onCreateTask, canAssignTask, memberships = [], categories = [],
+  onAssignCard, currentMembership = null,
+}) {
   const { t, lang } = React.useContext(LangContext);
   const [newCardTitles, setNewCardTitles] = useState({});
+  const [assigningCardId, setAssigningCardId] = useState(null);
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState(new Set());
+
+  const assignableMembers = (memberships || []).filter(
+    (m) => m.status === 'active' && m.id !== currentMembership?.id && canAssignTask?.(m.id),
+  );
 
   // ── Card mutations ─────────────────────────────────────────────────────────
 
@@ -71,27 +87,86 @@ export default function BoardView({ board, canEditThis, onUpdateBoard, onDeleteB
             </div>
 
             <div className="space-y-1.5">
-              {col.cards.map((card) => (
-                <div key={card.id} className="bg-slate-700 rounded p-2.5 text-xs group">
-                  <div className="flex items-start justify-between gap-1">
-                    <span className="text-slate-100 font-medium">{ensureString(card.title, lang)}</span>
-                    {canEditThis && (
-                      <button onClick={() => deleteCard(col.id, card.id)}
-                        className="opacity-0 group-hover:opacity-100 text-red-400 shrink-0 transition-opacity">✕</button>
+              {col.cards.map((card) => {
+                const cardTitle = ensureString(card.title, lang);
+                const isAssigning = assigningCardId === card.id;
+                return (
+                  <div key={card.id} className="bg-slate-700 rounded p-2.5 text-xs group">
+                    <div className="flex items-start justify-between gap-1">
+                      <span className="text-slate-100 font-medium">{cardTitle}</span>
+                      {canEditThis && (
+                        <button onClick={() => deleteCard(col.id, card.id)}
+                          className="opacity-0 group-hover:opacity-100 text-red-400 shrink-0 transition-opacity">✕</button>
+                      )}
+                    </div>
+                    {(card.assignedByNames || card.assignedByName) && (
+                      <p className="text-[10px] text-slate-500 mt-0.5">{t('task_assigned_to')}: {card.assignedByNames || card.assignedByName}</p>
+                    )}
+                    {canEditThis && onAssignCard && assignableMembers.length > 0 && !card.assigneeMembershipIds?.length && !card.assigneeMembershipId && (
+                      <div className="mt-1.5 relative">
+                        {!isAssigning ? (
+                          <button type="button" onClick={() => { setAssigningCardId(card.id); setSelectedAssigneeIds(new Set()); }}
+                            className="text-[10px] text-emerald-400 hover:underline">
+                            {t('task_assign')}
+                          </button>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap gap-1.5">
+                              {assignableMembers.map((m) => {
+                                const checked = selectedAssigneeIds.has(m.id);
+                                return (
+                                  <label key={m.id} className="flex items-center gap-1 text-[10px] text-slate-300 cursor-pointer">
+                                    <input type="checkbox" checked={checked}
+                                      onChange={() => {
+                                        setSelectedAssigneeIds((prev) => {
+                                          const next = new Set(prev);
+                                          if (next.has(m.id)) next.delete(m.id);
+                                          else next.add(m.id);
+                                          return next;
+                                        });
+                                      }} />
+                                    {ensureString(m.displayName, lang)}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                            <div className="flex gap-1">
+                              <button type="button"
+                                onClick={async () => {
+                                  if (selectedAssigneeIds.size === 0) return;
+                                  const ids = Array.from(selectedAssigneeIds);
+                                  const names = ids.map((id) => {
+                                    const m = assignableMembers.find((x) => x.id === id);
+                                    return m ? ensureString(m.displayName, lang) : '';
+                                  }).filter(Boolean);
+                                  await onAssignCard(col.id, card.id, cardTitle, ids, names);
+                                  setAssigningCardId(null);
+                                  setSelectedAssigneeIds(new Set());
+                                }}
+                                disabled={selectedAssigneeIds.size === 0}
+                                className="text-[10px] bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-2 py-1 rounded">
+                                {t('task_assign')}
+                              </button>
+                              <button type="button" onClick={() => { setAssigningCardId(null); setSelectedAssigneeIds(new Set()); }}
+                                className="text-[10px] text-slate-500 hover:underline">{t('cancel')}</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {canEditThis && board.columns.length > 1 && (
+                      <div className="flex gap-1 mt-1.5 flex-wrap">
+                        {board.columns.filter((c) => c.id !== col.id).map((target) => (
+                          <button key={target.id} onClick={() => moveCard(card.id, col.id, target.id)}
+                            className="text-[10px] text-slate-400 hover:text-emerald-400 border border-slate-600 rounded px-1 transition-colors">
+                            {t('move_to')} {ensureString(target.name, lang)}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  {canEditThis && board.columns.length > 1 && (
-                    <div className="flex gap-1 mt-1.5 flex-wrap">
-                      {board.columns.filter((c) => c.id !== col.id).map((target) => (
-                        <button key={target.id} onClick={() => moveCard(card.id, col.id, target.id)}
-                          className="text-[10px] text-slate-400 hover:text-emerald-400 border border-slate-600 rounded px-1 transition-colors">
-                          {t('move_to')} {ensureString(target.name, lang)}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {canEditThis && (

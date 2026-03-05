@@ -7,6 +7,7 @@ import LangContext from '../i18n/LangContext.js';
 import {
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, COLLAB_TAG_SUGGESTIONS,
   MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS, MERIT_TIERS,
+  TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
 } from '../constants.js';
 
 const parseList = (s, allowEmpty = false) =>
@@ -20,6 +21,7 @@ export default function AdminView({
   onSaveCollabSuggestions,
   onSaveMeritTags,
   onSaveMeritTiers,
+  onSaveTaskGradePoints,
   t,
 }) {
   const { t: tCtx } = React.useContext(LangContext);
@@ -35,6 +37,12 @@ export default function AdminView({
   const achievementTypes = team.achievementTypes?.length ? team.achievementTypes : MERIT_ACHIEVEMENT_TYPES;
   const domains = team.domains?.length ? team.domains : MERIT_DOMAINS;
   const meritTiers = team.meritTiers?.length ? team.meritTiers : MERIT_TIERS;
+  const taskGradeIndividual = team.taskGradePointsIndividual && Object.keys(team.taskGradePointsIndividual).length
+    ? team.taskGradePointsIndividual
+    : TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT;
+  const taskGradeTeam = team.taskGradePointsTeam && Object.keys(team.taskGradePointsTeam).length
+    ? team.taskGradePointsTeam
+    : TASK_GRADE_POINTS_TEAM_DEFAULT;
 
   const save = async (key, fn, value) => {
     setSaving(key);
@@ -216,6 +224,64 @@ export default function AdminView({
             className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
           >
             {saving === 'tiers' ? tFn('saving') || 'Saving…' : tFn('save')}
+          </button>
+        </section>
+
+        <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
+          <h3 className="text-sm font-semibold text-emerald-400">{tFn('admin_task_grade_points') || 'Task completion points'}</h3>
+          <p className="text-[11px] text-slate-500">{tFn('admin_task_grade_points_hint') || 'Points awarded when assigner grades a completed task. Individual = 1 assignee. Team = 2+ assignees.'}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="text-xs font-semibold text-slate-400 mb-2">{tFn('admin_task_grade_individual') || 'Individual'}</h4>
+              <div className="flex flex-wrap gap-3">
+                {TASK_GRADES.map((g) => (
+                  <div key={g} className="flex items-center gap-1.5">
+                    <label className="text-[11px] text-slate-400 capitalize">{tFn(`task_grade_${g}`) || g}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      defaultValue={taskGradeIndividual[g] ?? 0}
+                      id={`admin-task-ind-${g}`}
+                      className="w-14 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-xs"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-slate-400 mb-2">{tFn('admin_task_grade_team') || 'Team (per member)'}</h4>
+              <div className="flex flex-wrap gap-3">
+                {TASK_GRADES.map((g) => (
+                  <div key={g} className="flex items-center gap-1.5">
+                    <label className="text-[11px] text-slate-400 capitalize">{tFn(`task_grade_${g}`) || g}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      defaultValue={taskGradeTeam[g] ?? 0}
+                      id={`admin-task-team-${g}`}
+                      className="w-14 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-xs"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const individual = {};
+              const team = {};
+              TASK_GRADES.forEach((g) => {
+                const indEl = document.getElementById(`admin-task-ind-${g}`);
+                const teamEl = document.getElementById(`admin-task-team-${g}`);
+                individual[g] = Math.max(0, parseInt(indEl?.value || '0', 10) || 0);
+                team[g] = Math.max(0, parseInt(teamEl?.value || '0', 10) || 0);
+              });
+              save('taskGrade', onSaveTaskGradePoints, { individual, team });
+            }}
+            disabled={saving === 'taskGrade'}
+            className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+          >
+            {saving === 'taskGrade' ? tFn('saving') || 'Saving…' : tFn('save')}
           </button>
         </section>
       </div>

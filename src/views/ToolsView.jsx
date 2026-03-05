@@ -107,8 +107,9 @@ function ScopeFilter({ value, onChange, categories, userCategoryId, canEdit }) {
  */
 export default function ToolsView({
   team, teamEvents, teamSwots = [], teamEisenhowers = [], teamPughs = [], teamBoards, teamMeetings, teamGoals,
-  categories, currentMembership, memberRole, canEdit, canEditTools,
+  categories, memberships = [], currentMembership, memberRole, canEdit, canEditTools,
   resolveCanEdit,
+  onCreateTask, canAssignTask,
   onCreateEvent, onUpdateEvent, onDeleteEvent,
   onCreateSwot, onUpdateSwot, onDeleteSwot,
   onCreateEisenhower, onUpdateEisenhower, onDeleteEisenhower,
@@ -296,25 +297,39 @@ export default function ToolsView({
     <div className="space-y-4">
       <h2 className="text-base font-semibold">{t('team_tools_title')}</h2>
 
-      {/* Tool tab bar */}
-      <div className="flex gap-2 flex-wrap">
-        {[
-          ['calendar',   t('tab_calendar')],
-          ['swot',       t('tab_swot')],
-          ['eisenhower', t('tab_eisenhower')],
-          ['pugh',       t('tab_pugh')],
-          ['boards',     t('tab_kanban')],
-          ['scrum',      t('tab_scrum')],
-          ['retro',      t('tab_retro')],
-          ['meetings',   t('tab_meetings')],
-          ['goals',      t('tab_goals')],
-        ].map(([id, label]) => (
-          <button key={id} onClick={() => { setToolTab(id); setScopeFilter('all'); }}
-            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors
-              ${toolTab === id ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>
-            {label}
-          </button>
-        ))}
+      {/* Tool tab bar — grouped by function: Identify & plan vs Execute */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mr-1">{t('tools_group_identify_plan')}</span>
+          {[
+            ['swot', t('tab_swot')],
+            ['eisenhower', t('tab_eisenhower')],
+            ['pugh', t('tab_pugh')],
+            ['goals', t('tab_goals')],
+          ].map(([id, label]) => (
+            <button key={id} onClick={() => { setToolTab(id); setScopeFilter('all'); }}
+              className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors
+                ${toolTab === id ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mr-1">{t('tools_group_execute')}</span>
+          {[
+            ['calendar', t('tab_calendar')],
+            ['boards', t('tab_kanban')],
+            ['scrum', t('tab_scrum')],
+            ['retro', t('tab_retro')],
+            ['meetings', t('tab_meetings')],
+          ].map(([id, label]) => (
+            <button key={id} onClick={() => { setToolTab(id); setScopeFilter('all'); }}
+              className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors
+                ${toolTab === id ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ══════════ CALENDAR ══════════ */}
@@ -1030,6 +1045,10 @@ export default function ToolsView({
             onCreateBoard={onCreateBoard}
             onUpdateBoard={onUpdateBoard}
             onDeleteBoard={onDeleteBoard}
+            onCreateTask={onCreateTask}
+            canAssignTask={canAssignTask}
+            memberships={memberships}
+            currentMembership={currentMembership}
           />
         </div>
       )}
@@ -1057,6 +1076,10 @@ export default function ToolsView({
             onCreateBoard={onCreateBoard}
             onUpdateBoard={onUpdateBoard}
             onDeleteBoard={onDeleteBoard}
+            onCreateTask={onCreateTask}
+            canAssignTask={canAssignTask}
+            memberships={memberships}
+            currentMembership={currentMembership}
           />
         </div>
       )}

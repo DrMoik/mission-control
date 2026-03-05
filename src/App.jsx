@@ -43,6 +43,7 @@ import LangContext                 from './i18n/LangContext.js';
 import {
   EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS,
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, MERIT_TIERS,
+  TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
 } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMondayOfWeekLocal, normalizeWeekOfToMonday } from './utils.js';
 
@@ -60,6 +61,7 @@ import ToolsView                   from './views/ToolsView.jsx';
 import AcademyView                 from './views/AcademyView.jsx';
 import FeedView                    from './views/FeedView.jsx';
 import FundingView                 from './views/FundingView.jsx';
+import TasksView                   from './views/TasksView.jsx';
 
 const ProfilePageView = lazy(() => import('./views/ProfilePageView.jsx'));
 const MembersView     = lazy(() => import('./views/MembersView.jsx'));
@@ -178,6 +180,7 @@ export default function App() {
   const [teamWeeklyStatuses,  setTeamWeeklyStatuses]  = useState([]);
   const [teamFundingAccounts,  setTeamFundingAccounts]  = useState([]);
   const [teamFundingEntries,  setTeamFundingEntries]  = useState([]);
+  const [teamTasks,            setTeamTasks]            = useState([]);
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [navCollapsed,   setNavCollapsed]   = useState(false);
@@ -198,7 +201,7 @@ export default function App() {
     ? teamMemberships.find((m) => m.id === profileMemberId) || null
     : null;
 
-  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'tools', 'academy', 'funding', 'myprofile', 'profile', 'admin']);
+  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'tools', 'academy', 'funding', 'tasks', 'myprofile', 'profile', 'admin']);
   const isViewValid = validViews.has(view);
 
   // Redirect invalid paths to /overview (only when team is selected, to avoid running in team picker)
@@ -310,6 +313,8 @@ export default function App() {
       (rows) => [...rows].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)));
     sub(query(collection(db, 'teamFundingEntries'), where('teamId', '==', selectedTeamId)), setTeamFundingEntries,
       (rows) => [...rows].sort((a, b) => (b.date || '').localeCompare(a.date || '')));
+    sub(query(collection(db, 'tasks'), where('teamId', '==', selectedTeamId)), setTeamTasks,
+      (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)));
 
     // Module attempts are filtered per user to respect Firestore rules
     if (authUser) {
@@ -451,14 +456,19 @@ export default function App() {
       for (const catName of ['Aspirants', 'Mechanics', 'Software', 'Sciences']) {
         await addDoc(collection(db, 'categories'), { teamId: teamRef.id, name: catName, description: '' });
       }
-      // Seed a welcome module
+      // Seed a welcome module (topics-based; one topic)
       await addDoc(collection(db, 'modules'), {
         teamId: teamRef.id,
-        title: 'Welcome to the Team',
-        description: 'Start here before exploring anything else.',
-        content: 'Read this module and answer the retrieval prompt below to get started.',
-        videoUrl: '',
-        retrievalPrompt: 'In 2–3 sentences, describe your goals for joining this team.',
+        title: { en: 'Welcome to the Team', es: 'Bienvenido al equipo' },
+        description: { en: 'Start here before exploring anything else.', es: 'Empieza aquí antes de explorar.' },
+        topics: [
+          {
+            id: 'welcome-1',
+            title: { en: 'Getting started', es: 'Para comenzar' },
+            content: { en: 'Read this module. When you finish, use "Request review" so a mentor can evaluate you.', es: 'Lee este módulo. Al terminar, usa "Solicitar revisión" para que un mentor te evalúe.' },
+            videoUrl: '',
+          },
+        ],
         order: 0,
         createdAt: serverTimestamp(),
       });
@@ -534,6 +544,13 @@ export default function App() {
   const handleSaveTeamMeritTiers = async (arr) => {
     if (!currentTeam || !canEdit) return;
     await updateDoc(doc(db, 'teams', currentTeam.id), { meritTiers: Array.isArray(arr) ? arr : [] });
+  };
+  const handleSaveTaskGradePoints = async ({ individual, team }) => {
+    if (!currentTeam || !canEdit) return;
+    await updateDoc(doc(db, 'teams', currentTeam.id), {
+      taskGradePointsIndividual: individual || TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT,
+      taskGradePointsTeam:       team || TASK_GRADE_POINTS_TEAM_DEFAULT,
+    });
   };
 
   // ── Memberships ────────────────────────────────────────────────────────────
@@ -1053,7 +1070,6 @@ export default function App() {
     if (!canEdit) return;
     const evt = teamMeritEvents.find((e) => e.id === eventId);
     if (!evt || evt.type !== 'award') return;
-    // Delete the original award document so it cannot be revoked again
     await deleteDoc(doc(db, 'meritEvents', eventId));
   };
 
@@ -1084,17 +1100,129 @@ export default function App() {
     await deleteDoc(doc(db, 'modules', moduleId));
   };
 
-  const handleCompleteModule = async (moduleId, answer) => {
+  const handleRequestModuleReview = async (moduleId) => {
     if (!authUser || !currentMembership || !currentTeam) return;
-    if (!answer.trim()) { alert('Please provide a response before completing.'); return; }
+    const existing = teamModuleAttempts.find(
+      (a) => a.moduleId === moduleId && a.membershipId === currentMembership.id,
+    );
+    if (existing) return; // already requested or approved
     await addDoc(collection(db, 'moduleAttempts'), {
       teamId:       currentTeam.id,
       moduleId,
       userId:       authUser.uid,
       membershipId: currentMembership.id,
-      answer:       answer.trim(),
-      completedAt:  serverTimestamp(),
+      status:       'requested_review',
+      requestedAt:  serverTimestamp(),
     });
+  };
+
+  // ── Tasks (assigned by area leader or admins) ─────────────────────────────
+  const canAssignTask = (assigneeMembershipId) => {
+    if (!currentTeam || !authUser) return false;
+    if (canEdit) return true;
+    if (memberRole !== 'leader' || !currentMembership?.categoryId) return false;
+    const assignee = teamMemberships.find((m) => m.id === assigneeMembershipId);
+    return assignee?.categoryId === currentMembership.categoryId;
+  };
+
+  const handleCreateTask = async ({ assigneeMembershipId, assigneeMembershipIds, title, description, dueDate }) => {
+    if (!currentTeam || !currentMembership) return;
+    const ids = Array.isArray(assigneeMembershipIds) && assigneeMembershipIds.length > 0
+      ? assigneeMembershipIds
+      : (assigneeMembershipId ? [assigneeMembershipId] : []);
+    if (ids.length === 0) return;
+    for (const id of ids) { if (!canAssignTask(id)) return; }
+    await addDoc(collection(db, 'tasks'), {
+      teamId:                 currentTeam.id,
+      assigneeMembershipIds:  ids,
+      assignedByMembershipId: currentMembership.id,
+      assignedByName:         currentMembership.displayName || userProfile?.displayName || authUser?.email || '—',
+      title:                  (title || '').trim(),
+      description:            (description || '').trim() || null,
+      dueDate:                dueDate || null,
+      status:                 'pending',
+      createdAt:              serverTimestamp(),
+    });
+  };
+
+  const handleRequestTaskReview = async (taskId) => {
+    if (!currentTeam || !authUser) return;
+    const task = teamTasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const isAssignee = assigneeIds.includes(currentMembership?.id);
+    if (!isAssignee || (task.status || 'pending') !== 'pending') return;
+    await updateDoc(doc(db, 'tasks', taskId), {
+      status:            'pending_review',
+      requestedReviewAt: serverTimestamp(),
+    });
+  };
+
+  const handleGradeTask = async (taskId, grade) => {
+    if (!currentTeam || !authUser || !currentMembership) return;
+    const task = teamTasks.find((t) => t.id === taskId);
+    if (!task || task.status !== 'pending_review') return;
+    if (task.assignedByMembershipId !== currentMembership.id) return;
+    if (!TASK_GRADES.includes(grade)) return;
+    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const ptsInd = currentTeam.taskGradePointsIndividual || TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT;
+    const ptsTeam = currentTeam.taskGradePointsTeam || TASK_GRADE_POINTS_TEAM_DEFAULT;
+    const pointsPerMember = assigneeIds.length > 1
+      ? (ptsTeam[grade] ?? 0)
+      : (ptsInd[grade] ?? 0);
+    await updateDoc(doc(db, 'tasks', taskId), {
+      status:               'completed',
+      grade,
+      completedAt:          serverTimestamp(),
+      gradedByMembershipId:  currentMembership.id,
+    });
+    const meritName = 'Tarea revisada';
+    const evidence = `${(task.title || '').trim()} (${grade})`;
+    const awardedByName = currentMembership.displayName || userProfile?.displayName || authUser?.email || '—';
+    const meritEventsRef = collection(db, 'meritEvents');
+    for (const membershipId of assigneeIds) {
+      await addDoc(meritEventsRef, {
+        teamId:                currentTeam.id,
+        membershipId,
+        meritId:               null,
+        meritName,
+        meritLogo:             '✓',
+        points:                pointsPerMember,
+        type:                 'award',
+        evidence,
+        awardedByUserId:       authUser?.uid ?? null,
+        awardedByName,
+        taskId,
+        taskCompletionScope:   assigneeIds.length > 1 ? 'team' : 'individual',
+        createdAt:            serverTimestamp(),
+      });
+    }
+  };
+
+  const handleCompleteTask = async (taskId) => {
+    if (!currentTeam || !authUser) return;
+    const task = teamTasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const isAssignee = assigneeIds.includes(currentMembership?.id);
+    const isAdmin = canEdit;
+    if (!isAssignee && !isAdmin) return;
+    await updateDoc(doc(db, 'tasks', taskId), {
+      status:      'completed',
+      completedAt: serverTimestamp(),
+    });
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (!currentTeam) return;
+    const task = teamTasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const isAssignee = assigneeIds.includes(currentMembership?.id);
+    const isAdmin = canEdit;
+    const isAssigner = task.assignedByMembershipId === currentMembership?.id;
+    if (!isAssignee && !isAdmin && !isAssigner) return;
+    await deleteDoc(doc(db, 'tasks', taskId));
   };
 
   // ── Tools: shared permission helper ───────────────────────────────────────
@@ -1652,6 +1780,7 @@ export default function App() {
       { id: 'tools',       label: t('nav_tools'),       icon: '⊙' },
       { id: 'academy',     label: t('nav_academy'),     icon: '◈' },
       { id: 'funding',     label: t('nav_funding'),     icon: '¤' },
+      { id: 'tasks',       label: t('nav_tasks'),       icon: '☐' },
     ] : []),
     ...(currentMembership ? [{ id: 'myprofile', label: t('nav_myprofile'), icon: '☺' }] : []),
     ...(canEdit ? [{ id: 'admin', label: t('nav_admin'), icon: '⚙' }] : []),
@@ -1895,11 +2024,14 @@ export default function App() {
                 teamMeetings={teamMeetings}
                 teamGoals={teamGoals}
                 categories={teamCategories}
+                memberships={teamMemberships}
                 currentMembership={currentMembership}
                 memberRole={memberRole}
                 canEdit={canEdit}
                 canEditTools={canEditTools}
                 resolveCanEdit={canEditToolItem}
+                onCreateTask={handleCreateTask}
+                canAssignTask={canAssignTask}
                 onCreateEvent={handleCreateEvent}
                 onUpdateEvent={handleUpdateEvent}
                 onDeleteEvent={handleDeleteEvent}
@@ -1932,7 +2064,7 @@ export default function App() {
                 onCreateModule={handleCreateModule}
                 onUpdateModule={handleUpdateModule}
                 onDeleteModule={handleDeleteModule}
-                onCompleteModule={handleCompleteModule}
+                onRequestModuleReview={handleRequestModuleReview}
               />
             )}
 
@@ -1949,6 +2081,21 @@ export default function App() {
               />
             )}
 
+            {view === 'tasks' && isAtLeastRookie && (
+              <TasksView
+                tasks={teamTasks}
+                merits={teamMerits}
+                memberships={teamMemberships}
+                currentMembership={currentMembership}
+                memberRole={memberRole}
+                canEdit={canEdit}
+                onRequestTaskReview={handleRequestTaskReview}
+                onAssignMeritToTask={handleAssignMeritToTask}
+                onDeleteTask={handleDeleteTask}
+                tsToDate={tsToDate}
+              />
+            )}
+
             {/* My Profile — full page */}
             {view === 'admin' && canEdit && (
               <AdminView
@@ -1961,6 +2108,7 @@ export default function App() {
                 onSaveCollabSuggestions={handleSaveTeamCollabSuggestions}
                 onSaveMeritTags={handleSaveTeamMeritTags}
                 onSaveMeritTiers={handleSaveTeamMeritTiers}
+                onSaveTaskGradePoints={handleSaveTaskGradePoints}
               />
             )}
 

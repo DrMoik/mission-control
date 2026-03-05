@@ -133,3 +133,13 @@ export const MERIT_ICONS = [
   // Places & Navigation
   '🏠','🏢','🏭','🗼','🗽','⛩️','🎑','🏞️','🗺️','🧭',
 ];
+
+/** Task review grades (assigner rates completed work). Points configurable in Admin. */
+export const TASK_GRADES = ['ok', 'good', 'excellent', 'perfect'];
+
+/** Default points per grade when task is individual (1 assignee). Admin can override. */
+export const TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT = { ok: 5, good: 10, excellent: 15, perfect: 20 };
+
+/** Default points per assignee when task is team (2+ assignees). Admin can override. */
+export const TASK_GRADE_POINTS_TEAM_DEFAULT = { ok: 2, good: 4, excellent: 7, perfect: 10 };
+
