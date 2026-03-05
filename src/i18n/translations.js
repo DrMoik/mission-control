@@ -968,9 +968,12 @@ const TRANSLATIONS = {
     task_mark_done:      'Marcar hecha',
     task_assigned_by:    'Asignada por',
     task_assigned_to:    'Asignada a',
-    task_assign_search:  'Buscar por nombre…',
+    task_assign_search:  'Escribe nombre para buscar…',
     task_assign_no_match:'Sin coincidencias',
     task_assign_your_area:'Solo tu área',
+    task_assign_hint:    'Escribe para buscar por nombre. Haz clic en un resultado para asignar (puedes elegir varios).',
+    task_assign_type_to_search: 'Escribe al menos 1 carácter para ver resultados.',
+    task_assign_selected:'Seleccionados',
     task_filter_area:    'Todas las áreas',
     task_from_pm_tools:  'Las tareas se crean desde herramientas de gestión de proyecto (p. ej. tableros SCRUM).',
     task_request_review:   'Solicitar Revisión',
@@ -1103,6 +1106,8 @@ const TRANSLATIONS = {
     scope_select_ph:      'Seleccionar alcance…',
     scope_filter_all:     'Todo accesible',
     scope_filter_global:  'Solo Global',
+    calendar_filter_all:  'Todos',
+    calendar_filter_birthdays: 'Cumpleaños',
     last_edited_by:       (name, date) => `Última edición por ${name} el ${date}`,
     last_edited_never:    'Nunca editado',
     category_only_hint:   'Solo visible para miembros de esta área',
@@ -1111,23 +1116,44 @@ const TRANSLATIONS = {
 
     // ── Tools — descripciones de uso ─────────────────────────────────────────
     tool_desc_calendar:
-      'Registra eventos, competencias, fechas límite e hitos. Los eventos globales son visibles para todos; los de área solo para esa área.',
+      'Registra eventos, competencias, fechas límite e hitos del equipo.\n\n• Global: visible para todos los miembros.\n• Por área: solo visible para esa categoría.\n• Cumpleaños: se añaden automáticamente cuando los miembros completan su fecha de nacimiento en el perfil.\n\nUsa "Todos" para ver eventos + cumpleaños, o "Cumpleaños" para ver solo cumpleaños.',
     tool_desc_swot:
-      'Mapea las Fortalezas, Oportunidades, Debilidades y Amenazas del equipo para guiar sesiones de planeación estratégica. Solo global.',
+      'Análisis FODA: mapea Fortalezas, Oportunidades, Debilidades y Amenazas del equipo para guiar sesiones de planeación estratégica.\n\nSiempre global. El resultado alimenta el plan con Eisenhower o Pugh.',
     tool_desc_kanban:
-      'Visualiza el trabajo en columnas (Por Hacer / En Progreso / Hecho). Ideal para rastrear tareas en un sprint o flujo de trabajo.',
+      'Visualiza el trabajo en columnas: Por Hacer → En Progreso → Hecho.\n\n• Añade tarjetas con el campo de texto.\n• Usa "Asignar" para crear tareas: escribe en la barra de búsqueda, filtra por área si eres admin, haz clic en el nombre.\n• Arrastra conceptualmente con "Mover a" entre columnas.',
     tool_desc_scrum:
-      'Ejecuta Sprints ágiles con el flujo Product Backlog → Sprint Backlog → En Progreso → Hecho. Cada tablero representa un Sprint.',
+      'Ejecuta Sprints ágiles: Product Backlog → Sprint Backlog → En Progreso → Hecho.\n\n• Cada tablero = un Sprint.\n• Asignar tarea: barra de búsqueda, escribe nombre, clic para asignar.\n• Los asignados ven la tarea en la pestaña Tareas y pueden solicitar revisión.',
     tool_desc_retro:
-      'Reflexiona tras cada Sprint: ¿qué salió bien, qué mejorar y cuáles son las acciones concretas? Una retrospectiva por Sprint.',
+      'Retrospectiva tras cada Sprint.\n\n• Qué salió bien: celebra éxitos.\n• Qué mejorar: identifica problemas.\n• Acciones: tareas concretas para el siguiente ciclo.\n\nUsa el resultado para planear el siguiente Sprint.',
     tool_desc_meetings:
-      'Registra agendas, asistentes, notas y listas de puntos de acción. Los puntos de acción se pueden marcar como completados.',
+      'Registra reuniones con agenda, asistentes y notas.\n\n• Lista de puntos de acción: cada uno se puede marcar completado.\n• Alcance global o por área según visibilidad.',
     tool_desc_goals:
-      'Define Objetivos y Resultados Clave (OKRs). Cada objetivo tiene varios resultados medibles con barra de progreso deslizable.',
+      'Objetivos y Resultados Clave (OKRs).\n\n• Objetivo: meta cualitativa (ej. "Lanzar MVP").\n• Resultados clave: métricas medibles con barra de progreso.\n• Ajusta la barra según avance real.',
     tool_desc_eisenhower:
-      'Prioriza tareas por urgencia e importancia. Haz primero: urgente e importante. Programa: importante, no urgente. Delega: urgente, no importante. Elimina: ninguna.',
+      'Matriz de priorización por urgencia e importancia.\n\n• Cuadrante 1: urgente e importante (hacer hoy).\n• Cuadrante 2: importante, no urgente (programar).\n• Cuadrante 3: urgente, no importante (delegar).\n• Cuadrante 4: ninguna (eliminar o posponer).',
     tool_desc_pugh:
-      'Compara alternativas contra una opción de referencia usando criterios. Puntúa cada alternativa +1 (mejor), 0 (igual) o -1 (peor). La opción con mayor total gana.',
+      'Compara alternativas contra una opción de referencia.\n\n• Referencia: opción actual o baseline.\n• Alternativas: A, B, C…\n• Criterios: costo, tiempo, calidad…\n• Puntúa +1 (mejor), 0 (igual), -1 (peor). La opción con mayor total gana.',
+
+    tool_example:     'Ejemplo',
+    tool_more_info:   'Más información',
+    tool_desc_kanban_example: 'Escribe "María" en la barra de búsqueda, filtra por área si tienes varias, haz clic en el nombre para asignar. La tarea aparecerá en la pestaña Tareas del asignado.',
+    tool_desc_kanban_link: 'https://es.wikipedia.org/wiki/Kanban',
+    tool_desc_scrum_example: 'Crea un Sprint "Q1 Semana 3", añade tarjetas al backlog, asigna con la búsqueda (ej. "Carlos"), mueve las tarjetas entre columnas según avance.',
+    tool_desc_scrum_link: 'https://www.scrum.org/resources/what-is-scrum',
+    tool_desc_retro_example: 'Tras un Sprint, añade puntos en "Qué salió bien" y "Qué mejorar", luego crea acciones concretas en la tercera columna.',
+    tool_desc_retro_link: 'https://www.atlassian.com/team-playbook/plays/retrospective',
+    tool_desc_swot_example: 'Fortalezas: "Equipo con experiencia en Python". Debilidades: "Falta documentación". Oportunidades: "Nuevo cliente potencial". Amenazas: "Competencia fuerte".',
+    tool_desc_swot_link: 'https://es.wikipedia.org/wiki/An%C3%A1lisis_DAFO',
+    tool_desc_eisenhower_example: 'Urgente e importante: bug en producción. Importante no urgente: refactorizar módulo. Urgente no importante: reunión que puede delegar. Ninguna: tarea obsoleta.',
+    tool_desc_eisenhower_link: 'https://es.wikipedia.org/wiki/Matriz_de_Eisenhower',
+    tool_desc_pugh_example: 'Referencia: "Sistema actual". Alternativas: A (Cloud), B (On-premise). Criterios: costo, escalabilidad, mantenimiento. Puntúa +1/-1 y suma.',
+    tool_desc_pugh_link: 'https://en.wikipedia.org/wiki/Pugh_control',
+    tool_desc_goals_example: 'Objetivo: "Lanzar MVP en Q1". Resultados clave: "Completar 10 user stories", "Tests al 80%". Ajusta la barra de progreso según avance.',
+    tool_desc_goals_link: 'https://es.wikipedia.org/wiki/Objetivos_y_resultados_clave',
+    tool_desc_calendar_example: 'Evento global: "Competencia regional - 15 Mar". Evento por área: "Revisión de diseño Mecánica - 20 Mar" con alcance Mecánica.',
+    tool_desc_calendar_link: 'https://es.wikipedia.org/wiki/Calendario',
+    tool_desc_meetings_example: 'Registra agenda, asistentes y notas. Marca los puntos de acción como completados cuando se cumplan.',
+    tool_desc_meetings_link: 'https://www.atlassian.com/team-playbook/plays/meeting-notes',
 
     eisenhower_do_first:  'Hacer primero',
     eisenhower_schedule:  'Programar',
@@ -1199,6 +1225,7 @@ const TRANSLATIONS = {
     save_profile:       'Guardar Perfil',
     external_member:    'Externo',
     about_label:        'Acerca de mí',
+    birthdate_label:    'Cumpleaños',
     no_profile_info:    'Aún no se ha agregado información de perfil.',
     no_info:            'Sin información',
     member_not_found:   'Miembro no encontrado.',

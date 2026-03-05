@@ -39,13 +39,14 @@ export default function BoardView({
     (m) => m.status === 'active' && m.id !== currentMembership?.id && canAssignTask?.(m.id),
   );
 
+  const searchQuery = (assignSearchQuery || '').trim().toLowerCase();
   const filteredAssignable = assignableMembers.filter((m) => {
     const name = (ensureString(m.displayName, lang) || '').toLowerCase();
-    const query = (assignSearchQuery || '').trim().toLowerCase();
-    const matchesSearch = !query || name.includes(query);
+    const matchesSearch = !searchQuery || name.includes(searchQuery);
     const matchesArea = !assignAreaFilter || m.categoryId === assignAreaFilter;
     return matchesSearch && matchesArea;
   });
+  const showResults = searchQuery.length >= 1;
 
   // ── Card mutations ─────────────────────────────────────────────────────────
 
@@ -128,9 +129,10 @@ export default function BoardView({
                               value={assignSearchQuery}
                               onChange={(e) => setAssignSearchQuery(e.target.value)}
                               placeholder={t('task_assign_search')}
-                              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-[11px] text-slate-200 placeholder-slate-500"
+                              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm text-slate-200 placeholder-slate-500"
                               autoFocus
                             />
+                            <p className="text-[10px] text-slate-500">{t('task_assign_hint')}</p>
                             {(() => {
                               const areasInList = [...new Set(assignableMembers.map((m) => m.categoryId).filter(Boolean))];
                               const showAreaFilter = areasInList.length > 1 && categories?.length > 0;
@@ -158,27 +160,40 @@ export default function BoardView({
                                 </>
                               );
                             })()}
+                            {selectedAssigneeIds.size > 0 && (
+                              <p className="text-[10px] text-emerald-400">{t('task_assign_selected')}: {selectedAssigneeIds.size}</p>
+                            )}
                             <div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
-                              {filteredAssignable.length === 0 ? (
+                              {!showResults ? (
+                                <p className="text-[10px] text-slate-500 italic py-1">{t('task_assign_type_to_search')}</p>
+                              ) : filteredAssignable.length === 0 ? (
                                 <p className="text-[10px] text-slate-500 italic py-1">{t('task_assign_no_match')}</p>
                               ) : (
                                 filteredAssignable.map((m) => {
-                                  const checked = selectedAssigneeIds.has(m.id);
+                                  const selected = selectedAssigneeIds.has(m.id);
                                   const cat = categories?.find((c) => c.id === m.categoryId);
                                   return (
-                                    <label key={m.id} className="flex items-center gap-1.5 text-[10px] text-slate-300 cursor-pointer hover:bg-slate-600/50 rounded px-1 py-0.5">
-                                      <input type="checkbox" checked={checked}
-                                        onChange={() => {
-                                          setSelectedAssigneeIds((prev) => {
-                                            const next = new Set(prev);
-                                            if (next.has(m.id)) next.delete(m.id);
-                                            else next.add(m.id);
-                                            return next;
-                                          });
-                                        }} />
-                                      <span>{ensureString(m.displayName, lang)}</span>
-                                      {cat && <span className="text-slate-500 text-[9px]">({ensureString(cat.name, lang)})</span>}
-                                    </label>
+                                    <button
+                                      key={m.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedAssigneeIds((prev) => {
+                                          const next = new Set(prev);
+                                          if (next.has(m.id)) next.delete(m.id);
+                                          else next.add(m.id);
+                                          return next;
+                                        });
+                                      }}
+                                      className={`w-full text-left px-2 py-1.5 rounded text-[11px] transition-colors ${
+                                        selected
+                                          ? 'bg-emerald-600/40 text-emerald-200 border border-emerald-500/50'
+                                          : 'text-slate-300 hover:bg-slate-600/50 border border-transparent'
+                                      }`}
+                                    >
+                                      <span className="font-medium">{ensureString(m.displayName, lang)}</span>
+                                      {cat && <span className="text-slate-500 text-[9px] ml-1">({ensureString(cat.name, lang)})</span>}
+                                      {selected && <span className="float-right text-emerald-400">✓</span>}
+                                    </button>
                                   );
                                 })
                               )}

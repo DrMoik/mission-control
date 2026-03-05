@@ -93,6 +93,7 @@ export const PERSONALITY_TAGS = [
 /** Default values for a fresh membership profile. */
 export const EMPTY_PROFILE = {
   bio:           '',
+  birthdate:     '',
   hobbies:       '',
   career:        '',
   semester:      '',

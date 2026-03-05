@@ -23,7 +23,7 @@ import {
 } from 'firebase/firestore';
 
 // Default achievements for platform usage
-const POINTS_PER_WEEKLY_UPDATE = 5;
+const POINTS_PER_WEEKLY_UPDATE = 25;
 const MILESTONE_50_POINTS = 100;
 
 /** Returns true if weekOf (YYYY-MM-DD, any day) falls in current or previous week (Monday–Sunday). */
@@ -684,6 +684,7 @@ export default function App() {
       quoteThatMovesMe:   Array.isArray(updates.quoteThatMovesMe) ? updates.quoteThatMovesMe.filter(Boolean) : (m.quoteThatMovesMe ?? []),
       funFact:            updates.funFact            ?? m.funFact            ?? '',
       personalityTag:     updates.personalityTag     ?? m.personalityTag     ?? '',
+      birthdate:          updates.birthdate          ?? m.birthdate          ?? '',
     };
     // When user edits their own profile, sync to all their memberships (shared profile across teams)
     const isOwnProfile = authUser && m.userId === authUser.uid;
@@ -714,6 +715,7 @@ export default function App() {
       return hasListen || hasBook || hasIdea || hasQuote || hasLegacySong;
     })();
 
+    const hasBirthdate = isNonEmptyString(payload.birthdate) && payload.birthdate.trim().length >= 5; // MM-DD or YYYY-MM-DD
     const isProfileComplete =
       isNonEmptyString(payload.displayName) &&
       isNonEmptyString(payload.email) &&
@@ -730,6 +732,7 @@ export default function App() {
       hasNonEmptyTagList(payload.skillsICanTeach) &&
       isNonEmptyBilingual(payload.funFact) &&
       isNonEmptyString(payload.personalityTag) &&
+      hasBirthdate &&
       hasCulture;
 
     if (isProfileComplete && currentTeam && authUser) {

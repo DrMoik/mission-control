@@ -30,6 +30,26 @@ export const tsToDate = (ts) => {
 // ── Week (Monday–Sunday) helpers ──────────────────────────────────────────
 // All in local time so week boundaries don't shift with timezone.
 
+/** Format birthdate string (YYYY-MM-DD or MM-DD) for display as "15 de marzo". */
+export function formatBirthdateDisplay(birthdate) {
+  if (!birthdate || typeof birthdate !== 'string') return '';
+  const s = birthdate.trim();
+  if (s.length < 5) return s;
+  const parts = s.split('-');
+  let year, month, day;
+  if (parts.length >= 3) {
+    [year, month, day] = parts;
+  } else if (parts.length >= 2) {
+    [month, day] = parts;
+    year = new Date().getFullYear();
+  } else return s;
+  const m = parseInt(month, 10);
+  const d = parseInt(day, 10);
+  if (isNaN(m) || isNaN(d)) return s;
+  const date = new Date(year, m - 1, d);
+  return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' });
+}
+
 /** Format a Date as YYYY-MM-DD in local time (no UTC shift). */
 export function dateToLocalYYYYMMDD(d) {
   const y = d.getFullYear();

@@ -25,7 +25,7 @@ import BoardTypeSection        from './tools/BoardTypeSection.jsx';
 import MeetingsSection         from './tools/MeetingsSection.jsx';
 import GoalsSection            from './tools/GoalsSection.jsx';
 import { BilingualField }      from '../components/ui/index.js';
-import { getL, toL, fillL, ensureString } from '../utils.js';
+import { getL, toL, fillL, ensureString, tsToDate } from '../utils.js';
 
 // SWOT quadrant metadata (colours are language-independent)
 const SWOT_META = [
@@ -50,7 +50,25 @@ function HowToUse({ descKey }) {
             </span>
       </button>
       {open && (
-        <p className="px-4 pb-3 text-slate-400 leading-relaxed">{t(descKey)}</p>
+        <div className="px-4 pb-3 text-slate-400 leading-relaxed space-y-2">
+          <p className="whitespace-pre-line">{t(descKey)}</p>
+          {(() => {
+            const ex = t(descKey + '_example');
+            const ln = t(descKey + '_link');
+            const hasEx = ex && ex !== descKey + '_example';
+            const hasLn = ln && ln.startsWith('http');
+            return (
+              <>
+                {hasEx && <p className="text-slate-500 text-[11px] italic">{t('tool_example')}: {ex}</p>}
+                {hasLn && (
+                  <a href={ln} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline text-[11px] block">
+                    {t('tool_more_info')} →
+                  </a>
+                )}
+              </>
+            );
+          })()}
+        </div>
       )}
     </div>
   );
@@ -125,6 +143,7 @@ export default function ToolsView({
 
   const [toolTab,     setToolTab]     = useState('calendar');
   const [scopeFilter, setScopeFilter] = useState('all');
+  const [calendarViewFilter, setCalendarViewFilter] = useState('all'); // 'all' | 'birthdays'
   const [newEvent,    setNewEvent]    = useState({
     title:       { en: '', es: '' },
     date:        '',
@@ -196,8 +215,49 @@ export default function ToolsView({
     });
   }, [isVisible, scopeFilter]);
 
+  // Birthday events from memberships (virtual, not stored)
+  const birthdayEvents = useMemo(() => {
+    const year = new Date().getFullYear();
+    return (memberships || [])
+      .filter((m) => m.birthdate && typeof m.birthdate === 'string' && m.birthdate.trim().length >= 5)
+      .map((m) => {
+        const s = m.birthdate.trim();
+        const parts = s.split('-');
+        let month, day;
+        if (parts.length >= 3) {
+          [, month, day] = parts;
+        } else if (parts.length >= 2) {
+          [month, day] = parts;
+        } else return null;
+        const mNum = parseInt(month, 10);
+        const dNum = parseInt(day, 10);
+        if (isNaN(mNum) || isNaN(dNum) || mNum < 1 || mNum > 12 || dNum < 1 || dNum > 31) return null;
+        const dateStr = `${year}-${String(mNum).padStart(2, '0')}-${String(dNum).padStart(2, '0')}`;
+        const name = ensureString(m.displayName, lang) || '?';
+        return {
+          id:           `birthday-${m.id}`,
+          title:        { en: `Birthday of ${name}`, es: `Cumpleaños de ${name}` },
+          date:         dateStr,
+          categoryId:   null,
+          isBirthday:   true,
+        };
+      })
+      .filter(Boolean);
+  }, [memberships, lang]);
+
   // Derived filtered collections
-  const visibleEvents   = useMemo(() => filterItems(teamEvents),   [filterItems, teamEvents]);
+  const filteredTeamEvents = useMemo(() => filterItems(teamEvents), [filterItems, teamEvents]);
+  const visibleEvents = useMemo(() => {
+    const team = filteredTeamEvents || [];
+    const birthdays = birthdayEvents || [];
+    if (calendarViewFilter === 'birthdays') return [...birthdays].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const merged = [...team, ...birthdays];
+    return merged.sort((a, b) => {
+      const da = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+      const db = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+      return da - db;
+    });
+  }, [filteredTeamEvents, birthdayEvents, calendarViewFilter]);
   const visibleSwots    = useMemo(() => filterItems(teamSwots),    [filterItems, teamSwots]);
   const visibleBoards   = useMemo(() => filterItems(teamBoards),   [filterItems, teamBoards]);
   const visibleMeetings = useMemo(() => filterItems(teamMeetings), [filterItems, teamMeetings]);
@@ -343,7 +403,23 @@ export default function ToolsView({
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
 
-          {canCreate && !editingEventId && (
+          <div className="flex gap-1.5 flex-wrap items-center">
+            {[
+              { id: 'all', label: t('calendar_filter_all') },
+              { id: 'birthdays', label: t('calendar_filter_birthdays') },
+            ].map((opt) => (
+              <button key={opt.id} onClick={() => setCalendarViewFilter(opt.id)}
+                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
+                  calendarViewFilter === opt.id
+                    ? 'bg-pink-500 text-white'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                }`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {canCreate && !editingEventId && calendarViewFilter === 'all' && (
             <form onSubmit={handleAddEvent} className="bg-slate-800 rounded-lg p-4 space-y-3">
               <BilingualField
                 label={`${t('event_title_label')} *`}
@@ -379,7 +455,7 @@ export default function ToolsView({
             </form>
           )}
 
-          {editingEventId && (
+          {editingEventId && calendarViewFilter === 'all' && (
             <form onSubmit={handleUpdateEvent} className="bg-slate-800 rounded-lg p-4 space-y-3 border border-amber-700/50">
               <div className="text-xs text-amber-400/90 mb-1">{t('edit')} {t('event_title_label')}</div>
               <BilingualField
@@ -425,7 +501,7 @@ export default function ToolsView({
                   const isPast    = d < new Date();
                   const catName   = evt.categoryId
                     ? ensureString(categories.find((c) => c.id === evt.categoryId)?.name, lang) : null;
-                  const canDelEvt = resolveCanEdit(evt);
+                  const canDelEvt = !evt.isBirthday && resolveCanEdit(evt);
                   return (
                     <div key={evt.id} className={`flex items-start gap-4 px-4 py-3 ${isPast ? 'opacity-40' : ''}`}>
                       <div className="shrink-0 bg-slate-700 rounded-lg p-2 text-center w-14">
@@ -438,11 +514,15 @@ export default function ToolsView({
                         {getL(evt.description, lang) && <div className="text-xs text-slate-400 mt-0.5">{getL(evt.description, lang)}</div>}
                         {/* Scope badge */}
                         <div className="mt-1">
-                          {catName
-                            ? <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded-full">
-                                {t('scope_category')} {catName}
+                          {evt.isBirthday
+                            ? <span className="text-[9px] bg-pink-900/40 text-pink-300 px-1.5 py-0.5 rounded-full">
+                                🎂 {t('calendar_filter_birthdays')}
                               </span>
-                            : <span className="text-[9px] bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded-full">Global</span>
+                            : catName
+                              ? <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded-full">
+                                  {t('scope_category')} {catName}
+                                </span>
+                              : <span className="text-[9px] bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded-full">Global</span>
                           }
                         </div>
                         {isPast && <div className="text-[10px] text-slate-600 mt-0.5">{t('past_label')}</div>}

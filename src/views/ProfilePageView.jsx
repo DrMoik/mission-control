@@ -9,7 +9,7 @@ import LangContext              from '../i18n/LangContext.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS as DEFAULT_PERSONALITY_TAGS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
-import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday } from '../utils.js';
+import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay } from '../utils.js';
 
 function isValidSongUrl(url) {
   if (!url) return true;
@@ -128,6 +128,7 @@ export default function ProfilePageView({
       quoteThatMovesMe:   membership.quoteThatMovesMe   || [],
       funFact:            toL(membership.funFact),
       personalityTag:     membership.personalityTag     || '',
+      birthdate:          membership.birthdate          || '',
     });
     setEditing(true);
   };
@@ -262,7 +263,12 @@ export default function ProfilePageView({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <div>
+                <label className="text-[11px] text-slate-500 block mb-0.5">{t('birthdate_label')}</label>
+                <input type="date" value={draft.birthdate || ''} onChange={(e) => set('birthdate', e.target.value)}
+                  className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
+              </div>
               <div>
                 <label className="text-[11px] text-slate-500 block mb-0.5">{t('university')}</label>
                 <AutoGrowInput value={draft.university} onChange={(v) => set('university', v)}
@@ -351,8 +357,14 @@ export default function ProfilePageView({
                     <span className="text-[10px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded">{t('external_member')}</span>
                   )}
                 </div>
-                {(membership.university || membership.career || membership.semester || membership.email) && (
+                {(membership.birthdate || membership.university || membership.career || membership.semester || membership.email) && (
                   <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
+                    {membership.birthdate && (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-slate-500">🎂</span>
+                        <span>{t('birthdate_label')}: {formatBirthdateDisplay(membership.birthdate)}</span>
+                      </span>
+                    )}
                     {membership.university && <span>{ensureString(membership.university, lang)}</span>}
                     {membership.career     && <span>{ensureString(membership.career, lang)}</span>}
                     {membership.semester   && (
