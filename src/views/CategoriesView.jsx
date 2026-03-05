@@ -106,7 +106,7 @@ export default function CategoriesView({
                       <div className="flex-1">
                         <div className="font-semibold text-sm">{ensureString(cat.name, lang)}</div>
                         {cat.description && <div className="text-xs text-slate-400 mt-0.5">{getL(cat.description, lang)}</div>}
-                        <div className="text-xs text-slate-500 mt-0.5">{t('member_s')(catMembers.length)}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{`${catMembers.length} miembro${catMembers.length !== 1 ? 's' : ''}`}</div>
                       </div>
                       {canEdit && (
                         <div className="flex gap-2 shrink-0">

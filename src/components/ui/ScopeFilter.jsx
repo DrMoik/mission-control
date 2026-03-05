@@ -13,11 +13,11 @@ import { ensureString } from '../../utils.js';
  *   canEdit: boolean,
  * }} props
  */
-export default function ScopeFilter({ value, onChange, categories, userCategoryId, canEdit }) {
+export default function ScopeFilter({ value, onChange, categories = [], userCategoryId, canEdit }) {
   const options = [
     { id: 'all',    label: 'Todos'    },
     { id: 'global', label: 'Global'   },
-    ...categories
+    ...(categories || [])
       .filter((c) => canEdit || c.id === userCategoryId)
       .map((c) => ({ id: c.id, label: ensureString(c.name) })),
   ];

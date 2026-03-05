@@ -10,7 +10,7 @@ export const STRINGS = {
     sign_out:          'Cerrar Sesión',
     exit_preview:      'Salir de Vista Previa',
     preview_as:        'Vista previa como…',
-    preview_banner:    (role) => `Modo Vista Previa — viendo como ${role}. Esto es lo que ve un ${role}.`,
+    preview_banner:    'Modo Vista Previa',
     expand_menu:       'Expandir menú',
     collapse_menu:     'Contraer menú',
     more_btn:          'Más',
@@ -144,7 +144,7 @@ export const STRINGS = {
     no_members_cat:   'Sin miembros en esta área.',
     cat_placeholder:  'ej. Mecánica',
     desc_placeholder: 'Descripción…',
-    member_s:         (n) => `${n} miembro${n !== 1 ? 's' : ''}`,
+    member_s:         'miembros',
     no_members_yet:   'Sin miembros aún',
     add_cat_name:     'Nombre de la nueva área',
     edit_category:    'Editando:',
@@ -184,7 +184,7 @@ export const STRINGS = {
     all_roles:            'Todos los roles',
     all_categories_opt:   'Todas las áreas',
     clear_filters:        'Limpiar',
-    showing_of:           (n, total) => `${n} de ${total} miembros`,
+    showing_of:           'miembros',
     th_member:            'Miembro',
     th_role:              'Rol',
     th_category:          'Área',
@@ -192,7 +192,7 @@ export const STRINGS = {
     th_action:            'Acción',
     external_badge:       '(externo)',
     no_members_filter:    'Ningún miembro coincide con los filtros.',
-    suspended_header:     (n) => `Suspendidos (${n}) — 3 faltas alcanzadas`,
+    suspended_header:     'Suspendidos',
     reinstate:            'Reactivar',
 
     // ── Logros (antes Méritos) ─────────────────────────────────────────────────
@@ -337,7 +337,7 @@ export const STRINGS = {
     embed_label:          'Embed:',
     url_parse_err:        'No se pudo analizar la URL',
     retrieval_ph:         'Pregunta de recuperación — los miembros deben responderla para completar el módulo *',
-    modules_list:         (n) => `Módulos (${n})`,
+    modules_list:         'Módulos',
     select_module_msg:    'Selecciona un módulo de la lista.',
     retrieval_label:      'Pregunta de recuperación:',
     must_submit_msg:      'Debes enviar una respuesta para marcar esto como completado.',
@@ -379,6 +379,12 @@ export const STRINGS = {
     task_assign_merit:     'Asignar logro…',
     task_assign_merit_hint: 'Elige un logro del catálogo para asignar. Los puntos los define el admin.',
     task_assigned_merit_label: 'Logro asignado',
+    task_grade_label:     'Calificación',
+    task_grade_hint:      'Califica el trabajo completado.',
+    task_grade_ok:        'Ok',
+    task_grade_good:      'Bien',
+    task_grade_excellent: 'Excelente',
+    task_grade_perfect:   'Perfecto',
 
     // ── Tools ─────────────────────────────────────────────────────────────────
     tools_title:       'Herramientas',
@@ -457,7 +463,7 @@ export const STRINGS = {
     action_items_label:   'Puntos de Acción',
     add_action_ph:        'Agregar punto de acción…',
     tbd_label:            'Por definir',
-    action_done_of:       (d, total) => `${d}/${total} puntos de acción listos`,
+    action_done_of:       'puntos de acción listos',
     new_meeting_btn:      'Nueva Reunión',
     add_meeting_btn:      'Agregar Reunión',
     meeting_title_ph:     'Título de la reunión',
@@ -477,7 +483,7 @@ export const STRINGS = {
     owner_ph:          'Responsable',
     no_goals_add:      'Aún no hay objetivos. Agrega uno arriba.',
     completed_badge:   'Completado',
-    key_result_s:      (n) => `${n} resultado${n !== 1 ? 's' : ''} clave`,
+    key_result_s:      'resultados clave',
     reopen_btn:        'Reabrir',
     complete_btn:      'Completar',
     overall_progress:  'Progreso general',
@@ -505,7 +511,7 @@ export const STRINGS = {
     scope_filter_global:  'Solo Global',
     calendar_filter_all:  'Todos',
     calendar_filter_birthdays: 'Cumpleaños',
-    last_edited_by:       (name, date) => `Última edición por ${name} el ${date}`,
+    last_edited_by:       'Última edición',
     last_edited_never:    'Nunca editado',
     category_only_hint:   'Solo visible para miembros de esta área',
     no_access_tool:       'No tienes acceso a esta herramienta.',
@@ -593,7 +599,7 @@ export const STRINGS = {
     remove_image_btn: 'Quitar imagen',
     add_image_btn:    'Agregar URL de imagen',
     no_posts_first:   '¡Aún no hay publicaciones. ¡Sé el primero en compartir algo!',
-    comment_toggle:   (n) => `${n} comentario${n !== 1 ? 's' : ''}`,
+    comment_toggle:   'comentarios',
     add_a_comment_btn:'Agregar un comentario',
     write_comment_ph: 'Escribe un comentario… (Enter para enviar)',
     reply_btn:        'Responder',
@@ -698,13 +704,13 @@ export const STRINGS = {
     post_weekly_status:      'Publicar Estatus Semanal',
     update_weekly_status:    'Actualizar Esta Semana',
     no_weekly_status:        'Sin estatus publicado esta semana.',
-    weekly_posted_by:        (name) => `Publicado por ${name}`,
-    week_of:                 (date) => `Semana del ${date}`,
+    weekly_posted_by:        'Publicado por',
+    week_of:                 'Semana',
 
     // ── Miembros — filtro de colaboración ─────────────────────────────────────
     filter_collab:           'Filtro de habilidades',
     collab_filter_ph:        'Filtrar por habilidad…',
-    match_found:             (name) => `${name} puede ayudar con esto`,
+    match_found:             'puede ayudar con esto',
     clear_skill_filter:      'Limpiar filtro',
     collab_match_hint:       'Coincidencia',
 
@@ -738,12 +744,8 @@ export const STRINGS = {
     apply_btn:         'Aplicar',
     remove_image:      'Quitar imagen',
   };
-/** Lookup string by key. For display: t('key'). For interpolated: t('key', arg1, arg2) or t('key')(arg1, arg2). */
-export const t = (k, ...args) => {
-  const v = STRINGS[k];
-  if (typeof v === 'function') return args.length > 0 ? v(...args) : v;
-  return v ?? k;
-};
+/** Lookup string by key. Returns STRINGS[k] or k. */
+export const t = (k) => STRINGS[k] ?? k;
 
 /** UI language (Spanish only). Use with getL/ensureString for bilingual data. */
 export const lang = 'es';

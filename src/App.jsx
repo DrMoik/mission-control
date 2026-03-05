@@ -38,7 +38,7 @@ function isWeekEligibleForPoints(weekOf) {
 }
 
 // ── Internal modules ──────────────────────────────────────────────────────────
-import { t, lang }                 from './strings.js';
+import { t, lang, STRINGS }         from './strings.js';
 import {
   EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS,
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, PERSONALITY_TAGS_DEFAULT, MERIT_TIERS,
@@ -1840,7 +1840,7 @@ export default function App() {
         {/* ── Preview mode banner ── */}
         {previewRole && (
           <div className="bg-amber-500 text-black text-xs font-semibold px-4 py-2 flex items-center justify-between shrink-0">
-            <span className="truncate">{t('preview_banner')(t('role_' + previewRole))}</span>
+            <span className="truncate">{`Modo Vista Previa — viendo como ${STRINGS['role_' + previewRole] ?? previewRole}.`}</span>
             <button onClick={() => setPreviewRole(null)} className="underline ml-3 shrink-0">{t('exit_preview')}</button>
           </div>
         )}
@@ -1865,7 +1865,7 @@ export default function App() {
 
           {/* Main content area */}
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-900/50">
-            <Suspense fallback={<div className="py-12 text-center text-slate-400 text-sm">{typeof t === 'function' ? t('loading') : '…'}</div>}>
+            <Suspense fallback={<div className="py-12 text-center text-slate-400 text-sm">{t('loading')}</div>}>
             {view === 'overview' && (
               <OverviewView
                 team={currentTeam}

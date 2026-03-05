@@ -247,7 +247,7 @@ export default function CalendarView({
                     {isPast && <div className="text-[10px] text-slate-600 mt-0.5">{t('past_label')}</div>}
                     {evt.lastEditedBy && (
                       <div className="text-[10px] text-slate-600 mt-0.5">
-                        {t('last_edited_by')(evt.lastEditedBy, evt.lastEditedAt?.toDate?.().toLocaleDateString() ?? '')}
+                        {`Última edición por ${evt.lastEditedBy} el ${evt.lastEditedAt?.toDate?.().toLocaleDateString() ?? ''}`}
                       </div>
                     )}
                   </div>

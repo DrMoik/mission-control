@@ -319,7 +319,7 @@ export default function ToolsView({
               </div>
               {selectedSwot.lastEditedBy && !editingSwot && (
                 <p className="text-[10px] text-slate-600">
-                  {t('last_edited_by')(selectedSwot.lastEditedBy, selectedSwot.lastEditedAt?.toDate?.().toLocaleDateString() ?? '')}
+                  {`Última edición por ${selectedSwot.lastEditedBy} el ${selectedSwot.lastEditedAt?.toDate?.().toLocaleDateString() ?? ''}`}
                 </p>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

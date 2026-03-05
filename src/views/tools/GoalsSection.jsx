@@ -162,7 +162,7 @@ export default function GoalsSection({
                   <div className="text-xs text-slate-400 mt-0.5 flex gap-3 flex-wrap">
                     {goal.owner   && <span>{goal.owner}</span>}
                     {goal.dueDate && <span>{goal.dueDate}</span>}
-                    {krs.length > 0 && <span>{t('key_result_s')(krs.length)}</span>}
+                    {krs.length > 0 && <span>{`${krs.length} resultado${krs.length !== 1 ? 's' : ''} clave`}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -262,10 +262,7 @@ export default function GoalsSection({
                 {/* Last edited */}
                 {goal.lastEditedBy && (
                   <p className="text-[10px] text-slate-600 text-right">
-                    {t('last_edited_by')(
-                      goal.lastEditedBy,
-                      goal.lastEditedAt?.toDate?.().toLocaleDateString() ?? '',
-                    )}
+                    {`Última edición por ${goal.lastEditedBy} el ${goal.lastEditedAt?.toDate?.().toLocaleDateString() ?? ''}`}
                   </p>
                 )}
               </div>

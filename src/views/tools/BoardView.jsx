@@ -256,10 +256,7 @@ export default function BoardView({
       {/* Last edited stamp */}
       {board.lastEditedBy && (
         <p className="text-[10px] text-slate-600 text-right">
-          {t('last_edited_by')(
-            board.lastEditedBy,
-            board.lastEditedAt?.toDate?.().toLocaleDateString() ?? '',
-          )}
+          {`Última edición por ${board.lastEditedBy} el ${board.lastEditedAt?.toDate?.().toLocaleDateString() ?? ''}`}
         </p>
       )}
     </div>

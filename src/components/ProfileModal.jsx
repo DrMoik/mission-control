@@ -536,7 +536,7 @@ export default function ProfileModal({
               ) : thisWeek ? (
                 <div className="bg-slate-800/60 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-slate-500">{t('week_of')(new Date(weekOf + 'T12:00').toLocaleDateString())}</p>
+                    <p className="text-[10px] text-slate-500">{`Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`}</p>
                     {canEditThis && (
                       <button onClick={startWeeklyEdit} className="text-[11px] text-amber-400 underline">{t('edit')}</button>
                     )}

@@ -264,7 +264,7 @@ export default function MembersView({
       {/* Active members table */}
       <div className="bg-slate-800 rounded-lg overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-700 text-xs text-slate-400 font-semibold">
-          {t('showing_of')(filtered.length, active.length)}
+          {`${filtered.length} de ${active.length} miembros`}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
@@ -346,7 +346,7 @@ export default function MembersView({
       {canEdit && suspended.length > 0 && (
         <div className="bg-slate-800 rounded-lg overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-700 text-xs text-red-400 font-semibold">
-            {t('suspended_header')(suspended.length)}
+            {`Suspendidos (${suspended.length}) — 3 faltas alcanzadas`}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">

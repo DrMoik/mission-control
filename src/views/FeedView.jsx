@@ -127,7 +127,7 @@ export default function FeedView({
               <button onClick={() => setExpandedPostId(isExpanded ? null : post.id)}
                 className="text-xs text-slate-400 hover:text-slate-200 transition-colors">
                 {postComments.length > 0
-                  ? t('comment_toggle')(postComments.length)
+                  ? `${postComments.length} comentario${postComments.length !== 1 ? 's' : ''}`
                   : t('add_a_comment_btn')
                 } {isExpanded ? '▲' : '▼'}
               </button>

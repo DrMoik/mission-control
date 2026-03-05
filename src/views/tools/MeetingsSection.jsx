@@ -149,7 +149,7 @@ export default function MeetingsSection({
                 {m.attendees && <div className="text-xs text-slate-400 mt-0.5">{m.attendees}</div>}
                 {(m.actionItems || []).length > 0 && (
                   <div className="text-xs text-slate-500 mt-0.5">
-                    {t('action_done_of')(done, (m.actionItems || []).length)}
+                    {`${done}/${(m.actionItems || []).length} puntos de acción listos`}
                   </div>
                 )}
                 {/* Scope badge */}
@@ -206,10 +206,7 @@ export default function MeetingsSection({
                 {/* Last edited */}
                 {m.lastEditedBy && (
                   <p className="text-[10px] text-slate-600 text-right">
-                    {t('last_edited_by')(
-                      m.lastEditedBy,
-                      m.lastEditedAt?.toDate?.().toLocaleDateString() ?? '',
-                    )}
+                    {`Última edición por ${m.lastEditedBy} el ${m.lastEditedAt?.toDate?.().toLocaleDateString() ?? ''}`}
                   </p>
                 )}
               </div>

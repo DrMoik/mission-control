@@ -221,7 +221,7 @@ export default function AcademyView({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-slate-800 rounded-lg p-3 space-y-1">
-          <div className="text-xs text-slate-400 mb-2">{t('modules_list')(modules.length)}</div>
+          <div className="text-xs text-slate-400 mb-2">{`Módulos (${modules.length})`}</div>
           {modules.length === 0 && <div className="text-xs text-slate-500">{t('no_modules')}</div>}
           {modules.map((m) => {
             const hasAttempt = moduleAttempts.some((a) => a.moduleId === m.id);
