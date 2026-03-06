@@ -15,18 +15,18 @@ import { BilingualField } from '../components/ui/index.js';
 /**
  * @param {{
  *   merits, categories, memberships, meritEvents,
- *   canEdit, canCreateMerit, canAward, currentMembership, memberRole, isPlatformAdmin,
+ *   canEdit, canCreateMerit, canAward, canEditMerit, currentMembership, memberRole, isPlatformAdmin,
  *   achievementTypes, domains,
- *   onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile
+ *   onCreateMerit, onUpdateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile
  * }} props
  */
 export default function MeritsView({
   merits, categories, memberships, meritEvents, userProfile,
-  canEdit, canCreateMerit, canAward, currentMembership, memberRole, isPlatformAdmin,
+  canEdit, canCreateMerit, canAward, canEditMerit, currentMembership, memberRole, isPlatformAdmin,
   achievementTypes: achievementTypesProp, domains: domainsProp,
   meritTiers: meritTiersProp,
   teamTags, onSaveTeamMeritTags,
-  onCreateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
+  onCreateMerit, onUpdateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
   const achievementTypes = achievementTypesProp ?? MERIT_ACHIEVEMENT_TYPES;
   const domains = domainsProp ?? MERIT_DOMAINS;
@@ -43,6 +43,29 @@ export default function MeritsView({
   useEffect(() => {
     if (leaderCategoryId) setMeritForm((f) => ({ ...f, categoryId: leaderCategoryId }));
   }, [leaderCategoryId]);
+
+  // Sync edit form when editingMerit changes
+  useEffect(() => {
+    if (!editingMerit) {
+      setEditForm(null);
+      return;
+    }
+    const m = editingMerit;
+    setEditForm({
+      name: m.name || '',
+      points: m.points ?? 100,
+      categoryId: m.categoryId || '',
+      logo: m.logo || '🏆',
+      assignableBy: m.assignableBy || 'leader',
+      tags: m.tags || [],
+      achievementTypes: m.achievementTypes || [],
+      domains: m.domains || [],
+      tier: m.tier || '',
+      repeatable: m.repeatable !== false,
+      shortDescription: typeof m.shortDescription === 'object' ? m.shortDescription : { en: getL(m.shortDescription, 'en') || '', es: getL(m.shortDescription, 'es') || '' },
+      longDescription:  typeof m.longDescription === 'object' ? m.longDescription : { en: getL(m.longDescription, 'en') || '', es: getL(m.longDescription, 'es') || '' },
+    });
+  }, [editingMerit]);
 
   // Inline edit of team types/domains (inside "Define a new merit")
   const [teamTagsTypesStr,   setTeamTagsTypesStr]   = useState(() => achievementTypes.join(', '));
@@ -71,6 +94,8 @@ export default function MeritsView({
   };
 
   const [detailMerit,     setDetailMerit]     = useState(null);  // merit shown in popup
+  const [editingMerit,    setEditingMerit]    = useState(null); // merit being edited
+  const [editForm,        setEditForm]        = useState(null);  // draft for edit (synced from editingMerit)
   const [showIconPicker,  setShowIconPicker]  = useState(false);
   const [cropSrc,         setCropSrc]         = useState(null);
   const [awardForm,       setAwardForm]       = useState({ membershipId: '', meritId: '', evidence: '' });
@@ -634,13 +659,25 @@ export default function MeritsView({
                     <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{getL(m.shortDescription, lang)}</p>
                   )}
                 </div>
-                {canEdit && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDeleteMerit(m.id); }}
-                    className="text-[11px] text-red-400 hover:text-red-300 underline shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    {t('delete')}
-                  </button>
+                {(canEditMerit ? canEditMerit(m) : canEdit) && (
+                  <div className="flex gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {onUpdateMerit && (canEditMerit ? canEditMerit(m) : canEdit) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDetailMerit(null); setEditingMerit(m); }}
+                        className="text-[11px] text-emerald-400 hover:text-emerald-300 underline"
+                      >
+                        {t('edit')}
+                      </button>
+                    )}
+                    {(canEditMerit ? canEditMerit(m) : canEdit) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDeleteMerit(m.id); }}
+                        className="text-[11px] text-red-400 hover:text-red-300 underline"
+                      >
+                        {t('delete')}
+                      </button>
+                    )}
+                  </div>
                 )}
               </button>
             ))}

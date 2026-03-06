@@ -125,6 +125,14 @@ service cloud.firestore {
         && targetCategoryId == membershipDoc(teamId).data.categoryId;
     }
 
+    // Leader can edit a merit only if it belongs to their area (merit.categoryId == leader's categoryId)
+    function isLeaderCanEditMerit(teamId, meritCategoryId) {
+      return isLeaderOrAbove(teamId)
+        && membershipDoc(teamId).data.role == 'leader'
+        && meritCategoryId != null
+        && meritCategoryId == membershipDoc(teamId).data.get('categoryId', null);
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  USERS
     //  Each user reads/writes only their own profile.
@@ -209,7 +217,7 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════
     //  MERITS
     //  Visible to any active team member.
-    //  Team admins can create/edit/delete. Leaders can create only for their category.
+    //  Admins can create/edit/delete any. Leaders can create/edit/delete only for their area.
     // ═══════════════════════════════════════════════════════════
 
     match /merits/{meritId} {
@@ -218,8 +226,10 @@ service cloud.firestore {
         (isLeaderOrAbove(request.resource.data.teamId) &&
          request.resource.data.categoryId != null &&
          request.resource.data.categoryId == membershipDoc(request.resource.data.teamId).data.categoryId);
-      allow update: if isTeamAdmin(resource.data.teamId);
-      allow delete: if isTeamAdmin(resource.data.teamId);
+      allow update: if isTeamAdmin(resource.data.teamId) ||
+        isLeaderCanEditMerit(resource.data.teamId, resource.data.get('categoryId', null));
+      allow delete: if isTeamAdmin(resource.data.teamId) ||
+        isLeaderCanEditMerit(resource.data.teamId, resource.data.get('categoryId', null));
     }
 
     // ═══════════════════════════════════════════════════════════

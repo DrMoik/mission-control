@@ -974,8 +974,39 @@ export default function App() {
   };
 
   const handleDeleteMerit = async (meritId) => {
-    if (!canEdit) return;
+    const merit = teamMerits.find((m) => m.id === meritId);
+    if (!merit || !canEditMerit(merit)) return;
     await deleteDoc(doc(db, 'merits', meritId));
+  };
+
+  const canEditMerit = React.useCallback((merit) => {
+    if (canEdit) return true;
+    if (memberRole === 'leader' && currentMembership?.categoryId && merit?.categoryId === currentMembership.categoryId) return true;
+    return false;
+  }, [canEdit, memberRole, currentMembership?.categoryId]);
+
+  const handleUpdateMerit = async (meritId, updates) => {
+    const merit = teamMerits.find((m) => m.id === meritId);
+    if (!merit || !canEditMerit(merit)) return;
+    try {
+      await updateDoc(doc(db, 'merits', meritId), {
+        name:             updates.name             ?? merit.name,
+        points:           Number(updates.points ?? merit.points),
+        categoryId:       updates.categoryId       ?? merit.categoryId ?? null,
+        logo:             updates.logo             ?? merit.logo ?? '🏆',
+        shortDescription: updates.shortDescription ?? merit.shortDescription ?? '',
+        longDescription:  updates.longDescription  ?? merit.longDescription ?? '',
+        assignableBy:     updates.assignableBy     ?? merit.assignableBy ?? 'leader',
+        tags:             Array.isArray(updates.tags) ? updates.tags.filter(Boolean) : (merit.tags || []),
+        achievementTypes: Array.isArray(updates.achievementTypes) ? updates.achievementTypes.filter(Boolean) : (merit.achievementTypes || []),
+        domains:          Array.isArray(updates.domains) ? updates.domains.filter(Boolean) : (merit.domains || []),
+        tier:             updates.tier ?? merit.tier ?? null,
+        repeatable:       updates.repeatable !== undefined ? updates.repeatable !== false : merit.repeatable !== false,
+      });
+    } catch (err) {
+      console.error('[Logro] Update Firestore error:', err);
+      alert(`No se pudo actualizar el logro: ${err.message}`);
+    }
   };
 
   const handleAwardMerit = async (membershipId, meritId, evidence) => {
@@ -1965,7 +1996,9 @@ export default function App() {
                 teamTags={currentTeam ? { achievementTypes: currentTeam.achievementTypes, domains: currentTeam.domains } : null}
                 onSaveTeamMeritTags={handleSaveTeamMeritTags}
                 onCreateMerit={handleCreateMerit}
+                onUpdateMerit={handleUpdateMerit}
                 onDeleteMerit={handleDeleteMerit}
+                canEditMerit={canEditMerit}
                 onAwardMerit={handleAwardMerit}
                 onRevokeMerit={handleRevokeMerit}
                 onEditMeritEvent={handleEditMeritEvent}
