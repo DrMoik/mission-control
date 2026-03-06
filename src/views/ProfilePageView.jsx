@@ -88,6 +88,7 @@ function AutoGrowInput({ value, onChange, placeholder, className, ...rest }) {
 
 export default function ProfilePageView({
   membership, categories, merits = [], meritEvents = [], canEditThis, onSave,
+  onReawardProfileComplete,
   weeklyStatuses = [], onSaveWeeklyStatus, suggestedTags = [],
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp, personalityTags: personalityTagsProp,
 }) {
@@ -103,6 +104,7 @@ export default function ProfilePageView({
   const [editingWeekly, setEditingWeekly] = useState(false);
   const [weeklyDraft,   setWeeklyDraft]   = useState({ advanced: '', failedAt: '', learned: '' });
   const [savingWeekly,  setSavingWeekly]  = useState(false);
+  const [reawarding,    setReawarding]   = useState(false);
 
   if (!membership) return null;
 
@@ -155,7 +157,7 @@ export default function ProfilePageView({
 
   const handleSave = async () => {
     try {
-      await onSave(membership.id, {
+      const result = await onSave(membership.id, {
         ...draft,
       bio:              fillL(draft.bio),
       hobbies:          fillL(draft.hobbies),
@@ -172,6 +174,8 @@ export default function ProfilePageView({
       quoteThatMovesMe:          (draft.quoteThatMovesMe || []).filter(Boolean),
       });
       setEditing(false);
+      if (result?.meritAwarded) alert(t('profile_saved_merit_awarded'));
+      else if (result && 'meritAwarded' in result) alert(t('profile_saved_merit_missing'));
     } catch (err) {
       console.error('Profile save failed:', err);
       const msg = (err?.message || '').toLowerCase();
@@ -633,6 +637,30 @@ export default function ProfilePageView({
                 </div>
               ) : (
                 <p className="text-xs text-slate-500 italic py-2">{t('profile_logros_empty')}</p>
+              )}
+              {onReawardProfileComplete && (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setReawarding(true);
+                      try {
+                        await onReawardProfileComplete(membership.id);
+                        alert((t('admin_system_profile') || 'Perfil completo') + ' re-asignado.');
+                      } catch (err) {
+                        console.error('Reaward profile complete failed:', err);
+                        alert(err?.message || t('save_failed'));
+                      } finally {
+                        setReawarding(false);
+                      }
+                    }}
+                    disabled={reawarding}
+                    title={t('reaward_profile_complete_hint')}
+                    className="text-[11px] px-2 py-1.5 bg-amber-900/50 hover:bg-amber-800/60 text-amber-200 border border-amber-700/50 rounded disabled:opacity-50"
+                  >
+                    {reawarding ? '…' : t('reaward_profile_complete')}
+                  </button>
+                </div>
               )}
             </div>
 

@@ -601,12 +601,12 @@ export default function App() {
   };
 
   const handleUpdateMemberProfile = async (membershipId, updates) => {
-    if (!currentTeam) return;
+    if (!currentTeam) throw new Error('No hay equipo activo.');
     const m = teamMemberships.find((mm) => mm.id === membershipId);
-    if (!m) return;
+    if (!m) throw new Error('Miembro no encontrado.');
     const isOwnProfile = authUser && (m.userId === authUser.uid || currentMembership?.id === membershipId);
     const canEditThis = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || isOwnProfile;
-    if (!canEditThis) return;
+    if (!canEditThis) throw new Error('No tienes permiso para editar este perfil.');
     // Compress data URLs to stay under Firestore 1MB doc limit (same limit for all members)
     const maxBytes = 120000;
     const photoURL = await compressDataUrlIfNeeded(updates.photoURL ?? m.photoURL ?? null, maxBytes);
@@ -693,20 +693,17 @@ export default function App() {
       hasBirthdate &&
       hasCulture;
 
-    // Perfil completo: award once per user globally. Lock in profileCompleteLocks/{userId}.
+    // Perfil completo: award once per membership. If merit was deleted, re-award (per-membership doc is source of truth).
     if (isProfileComplete && currentTeam && authUser) {
-      const lockRef = doc(db, 'profileCompleteLocks', authUser.uid);
       const meritEventsRef = collection(db, 'meritEvents');
       const midsToAward = idsToUpdate.filter((mid) => teamMemberships.some((mm) => mm.id === mid));
       if (midsToAward.length === 0) return;
       await runTransaction(db, async (tx) => {
-        const lockSnap = await tx.get(lockRef);
-        if (lockSnap.exists()) return; // already awarded once globally
         for (const mid of midsToAward) {
           const awardId = `auto_profile_complete_50_${currentTeam.id}_${mid}`;
           const awardRef = doc(meritEventsRef, awardId);
           const awardSnap = await tx.get(awardRef);
-          if (awardSnap.exists()) continue; // belt-and-suspenders: per-membership lock
+          if (awardSnap.exists()) continue; // already awarded for this membership
           tx.set(awardRef, {
             teamId:            currentTeam.id,
             membershipId:      mid,
@@ -722,10 +719,94 @@ export default function App() {
             createdAt:         serverTimestamp(),
           });
         }
-        tx.set(lockRef, { createdAt: serverTimestamp(), teamId: currentTeam.id });
       });
     }
     // Firestore listener will update teamMemberships; profileMember derives from it
+    return { meritAwarded: !!isProfileComplete };
+  };
+
+  /** Admin-only: re-award "Perfil completo" merit if the member's profile meets all requirements. Use when merit was accidentally revoked. */
+  const handleReawardProfileComplete = async (membershipId) => {
+    if (!canEdit || !currentTeam || !authUser) throw new Error('No tienes permiso.');
+    const m = teamMemberships.find((mm) => mm.id === membershipId);
+    if (!m) throw new Error('Miembro no encontrado.');
+    const payload = {
+      displayName:   m.displayName   || '',
+      email:         m.email         || '',
+      bio:           m.bio           ?? '',
+      hobbies:       m.hobbies       ?? '',
+      career:        m.career        || '',
+      semester:      m.semester      || '',
+      university:    m.university    || '',
+      currentObjective: m.currentObjective ?? '',
+      currentChallenge: m.currentChallenge ?? '',
+      lookingForHelpIn:        m.lookingForHelpIn        ?? [],
+      iCanHelpWith:            m.iCanHelpWith            ?? [],
+      skillsToLearnThisSemester: m.skillsToLearnThisSemester ?? [],
+      skillsICanTeach:         m.skillsICanTeach         ?? [],
+      whatIListenTo:      Array.isArray(m.whatIListenTo) ? m.whatIListenTo : (m.songOnRepeatTitle ? [{ title: m.songOnRepeatTitle, url: m.songOnRepeatUrl || '' }] : []),
+      bookThatMarkedMe:   m.bookThatMarkedMe   ?? [],
+      ideaThatMotivatesMe: m.ideaThatMotivatesMe ?? [],
+      quoteThatMovesMe:   m.quoteThatMovesMe   ?? [],
+      funFact:            m.funFact            ?? '',
+      personalityTag:     m.personalityTag     || '',
+      birthdate:          m.birthdate          || '',
+    };
+    const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
+    const isNonEmptyBilingual = (v) => {
+      const es = ensureString(getL(v, 'es')).trim();
+      const en = ensureString(getL(v, 'en')).trim();
+      return es.length > 0 || en.length > 0;
+    };
+    const hasNonEmptyTagList = (arr) =>
+      Array.isArray(arr) && arr.some((t) => ensureString(t).trim().length > 0);
+    const hasCulture = (() => {
+      const hasListen = Array.isArray(payload.whatIListenTo) && payload.whatIListenTo.some((it) => {
+        if (typeof it === 'string') return it.trim().length > 0;
+        return (it?.title || '').trim().length > 0;
+      });
+      const hasBook = Array.isArray(payload.bookThatMarkedMe) && payload.bookThatMarkedMe.some((t) => ensureString(t).trim().length > 0);
+      const hasIdea = Array.isArray(payload.ideaThatMotivatesMe) && payload.ideaThatMotivatesMe.some((t) => ensureString(t).trim().length > 0);
+      const hasQuote = Array.isArray(payload.quoteThatMovesMe) && payload.quoteThatMovesMe.some((t) => ensureString(t).trim().length > 0);
+      const hasLegacySong = isNonEmptyString(m.songOnRepeatTitle);
+      return hasListen || hasBook || hasIdea || hasQuote || hasLegacySong;
+    })();
+    const hasBirthdate = isNonEmptyString(payload.birthdate) && payload.birthdate.trim().length >= 5;
+    const isProfileComplete =
+      isNonEmptyString(payload.displayName) &&
+      isNonEmptyString(payload.email) &&
+      isNonEmptyBilingual(payload.bio) &&
+      isNonEmptyBilingual(payload.hobbies) &&
+      isNonEmptyString(payload.career) &&
+      isNonEmptyString(payload.semester) &&
+      isNonEmptyString(payload.university) &&
+      isNonEmptyBilingual(payload.currentObjective) &&
+      isNonEmptyBilingual(payload.currentChallenge) &&
+      hasNonEmptyTagList(payload.lookingForHelpIn) &&
+      hasNonEmptyTagList(payload.iCanHelpWith) &&
+      hasNonEmptyTagList(payload.skillsToLearnThisSemester) &&
+      hasNonEmptyTagList(payload.skillsICanTeach) &&
+      isNonEmptyBilingual(payload.funFact) &&
+      isNonEmptyString(payload.personalityTag) &&
+      hasBirthdate &&
+      hasCulture;
+    if (!isProfileComplete) throw new Error('El perfil no cumple todos los requisitos para el logro Perfil completo. Revisa que todos los campos obligatorios estén llenos (incl. cultura: libro, idea, cita o música).');
+    const awardId = `auto_profile_complete_50_${currentTeam.id}_${membershipId}`;
+    const awardRef = doc(db, 'meritEvents', awardId);
+    await setDoc(awardRef, {
+      teamId:            currentTeam.id,
+      membershipId,
+      meritId:           null,
+      meritName:         SYSTEM_MERIT_NAMES.profileComplete,
+      meritLogo:         '✅',
+      points:            systemMeritPoints.profileComplete,
+      type:              'award',
+      evidence:          'profile_complete_50',
+      autoAward:         true,
+      awardedByUserId:   authUser.uid,
+      awardedByName:     userProfile?.displayName || authUser.email || '—',
+      createdAt:         serverTimestamp(),
+    }, { merge: true });
   };
 
   // ── Weekly status ───────────────────────────────────────────────────────────
@@ -735,9 +816,10 @@ export default function App() {
     if (!currentTeam || !authUser) throw new Error('No hay equipo o sesión activa.');
     const m = teamMemberships.find((mm) => mm.id === membershipId);
     if (!m) throw new Error('Miembro no encontrado.');
-    // Any member can post their own weekly status; admins can post for anyone
+    // Any member can post their own weekly status; admins and leaders (for their area) can post for others
     const isOwnStatus = currentMembership?.id === membershipId || m?.userId === authUser?.uid;
-    const canPost = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || isOwnStatus;
+    const isLeaderPostingForArea = memberRole === 'leader' && currentMembership?.categoryId && m?.categoryId === currentMembership.categoryId;
+    const canPost = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || isOwnStatus || isLeaderPostingForArea;
     if (!canPost) throw new Error('No tienes permiso para publicar.');
     const weekOf = normalizeWeekOfToMonday(weekOfParam) || weekOfParam || getMondayOfWeekLocal();
     const docId = `${membershipId}_${weekOf}`;
@@ -2165,6 +2247,7 @@ export default function App() {
                   meritEvents={teamMeritEvents.filter((e) => e.membershipId === currentMembership.id)}
                   canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || (authUser && (currentMembership.userId === authUser.uid || view === 'myprofile'))}
                   onSave={handleUpdateMemberProfile}
+                  onReawardProfileComplete={canEdit ? handleReawardProfileComplete : null}
                   weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
                   onSaveWeeklyStatus={handleSaveWeeklyStatus}
                   suggestedTags={collabTagSuggestions}
@@ -2191,8 +2274,9 @@ export default function App() {
                 categories={teamCategories}
                 merits={teamMerits}
                 meritEvents={teamMeritEvents.filter((e) => e.membershipId === profileMember.id)}
-                canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || (authUser && profileMember.userId === authUser.uid)}
+                canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || (authUser && profileMember.userId === authUser.uid) || (memberRole === 'leader' && currentMembership?.categoryId && profileMember?.categoryId === currentMembership.categoryId)}
                 onSave={handleUpdateMemberProfile}
+                onReawardProfileComplete={canEdit ? handleReawardProfileComplete : null}
                 weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
                 onSaveWeeklyStatus={handleSaveWeeklyStatus}
                 suggestedTags={collabTagSuggestions}
