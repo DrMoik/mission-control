@@ -979,6 +979,36 @@ export default function App() {
     await deleteDoc(doc(db, 'merits', meritId));
   };
 
+  /** Recover a deleted merit from its award events. Recreates the merit doc with the same ID. */
+  const handleRecoverMerit = async (meritId, sampleEvent) => {
+    if (!currentTeam || !canCreateMerit) return;
+    if (!sampleEvent?.meritId || !sampleEvent?.meritName) {
+      alert(t('merit_recover_no_data') || 'No hay datos suficientes para recuperar este logro.');
+      return;
+    }
+    try {
+      await setDoc(doc(db, 'merits', meritId), {
+        teamId:         currentTeam.id,
+        name:           sampleEvent.meritName,
+        points:         Number(sampleEvent.points) || 100,
+        categoryId:     null,
+        logo:           sampleEvent.meritLogo || '🏆',
+        shortDescription: '',
+        longDescription:  '',
+        assignableBy:   'leader',
+        tags:           [],
+        achievementTypes: [],
+        domains:        [],
+        tier:           null,
+        repeatable:     true,
+        createdAt:      serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('[Logro] Recover error:', err);
+      alert(t('merit_recover_failed') || `No se pudo recuperar: ${err.message}`);
+    }
+  };
+
   const canEditMerit = React.useCallback((merit) => {
     if (canEdit) return true;
     if (memberRole === 'leader' && currentMembership?.categoryId && merit?.categoryId === currentMembership.categoryId) return true;
@@ -1993,11 +2023,10 @@ export default function App() {
                 achievementTypes={meritAchievementTypes}
                 domains={meritDomains}
                 meritTiers={meritTiers}
-                teamTags={currentTeam ? { achievementTypes: currentTeam.achievementTypes, domains: currentTeam.domains } : null}
-                onSaveTeamMeritTags={handleSaveTeamMeritTags}
                 onCreateMerit={handleCreateMerit}
                 onUpdateMerit={handleUpdateMerit}
                 onDeleteMerit={handleDeleteMerit}
+                onRecoverMerit={handleRecoverMerit}
                 canEditMerit={canEditMerit}
                 onAwardMerit={handleAwardMerit}
                 onRevokeMerit={handleRevokeMerit}

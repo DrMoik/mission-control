@@ -17,7 +17,7 @@ import { BilingualField } from '../components/ui/index.js';
  *   merits, categories, memberships, meritEvents,
  *   canEdit, canCreateMerit, canAward, canEditMerit, currentMembership, memberRole, isPlatformAdmin,
  *   achievementTypes, domains,
- *   onCreateMerit, onUpdateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile
+ *   onCreateMerit, onUpdateMerit, onDeleteMerit, onRecoverMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile
  * }} props
  */
 export default function MeritsView({
@@ -25,8 +25,7 @@ export default function MeritsView({
   canEdit, canCreateMerit, canAward, canEditMerit, currentMembership, memberRole, isPlatformAdmin,
   achievementTypes: achievementTypesProp, domains: domainsProp,
   meritTiers: meritTiersProp,
-  teamTags, onSaveTeamMeritTags,
-  onCreateMerit, onUpdateMerit, onDeleteMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
+  onCreateMerit, onUpdateMerit, onDeleteMerit, onRecoverMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
   const achievementTypes = achievementTypesProp ?? MERIT_ACHIEVEMENT_TYPES;
   const domains = domainsProp ?? MERIT_DOMAINS;
@@ -71,32 +70,6 @@ export default function MeritsView({
     });
   }, [editingMerit]);
 
-  // Inline edit of team types/domains (inside "Define a new merit")
-  const [teamTagsTypesStr,   setTeamTagsTypesStr]   = useState(() => achievementTypes.join(', '));
-  const [teamTagsDomainsStr, setTeamTagsDomainsStr] = useState(() => domains.join(', '));
-  const [teamTagsSaving,     setTeamTagsSaving]     = useState(false);
-  useEffect(() => {
-    setTeamTagsTypesStr(achievementTypes.join(', '));
-    setTeamTagsDomainsStr(domains.join(', '));
-  }, [achievementTypes, domains]);
-  const parseList = (s) => (s || '').split(/[,\n]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
-  const handleSaveTeamTags = async () => {
-    if (!onSaveTeamMeritTags) return;
-    const typesArr = parseList(teamTagsTypesStr);
-    const domainsArr = parseList(teamTagsDomainsStr);
-    if (typesArr.length === 0 || domainsArr.length === 0) {
-      alert(t('platform_config_min_one') || 'Cada lista debe tener al menos un valor.');
-      return;
-    }
-    setTeamTagsSaving(true);
-    await onSaveTeamMeritTags(typesArr, domainsArr);
-    setTeamTagsSaving(false);
-  };
-  const resetTeamTagsToDefaults = () => {
-    setTeamTagsTypesStr(MERIT_ACHIEVEMENT_TYPES.join(', '));
-    setTeamTagsDomainsStr(MERIT_DOMAINS.join(', '));
-  };
-
   const [showIconPicker,  setShowIconPicker]  = useState(false);
   const [cropSrc,         setCropSrc]         = useState(null);
   const [cropTarget,     setCropTarget]      = useState('create'); // 'create' | 'edit'
@@ -119,6 +92,16 @@ export default function MeritsView({
   const [awardFilterOpenNivel, setAwardFilterOpenNivel] = useState(false);
   const [editingEventId,  setEditingEventId]  = useState(null);
   const [editEventDraft,  setEditEventDraft]  = useState({ points: '', evidence: '' });
+
+  // Orphaned merits: award events whose meritId no longer exists (merit was deleted)
+  const orphanedMerits = useMemo(() => {
+    if (!onRecoverMerit || !canCreateMerit) return [];
+    const seen = new Set();
+    return meritEvents
+      .filter((evt) => evt.type === 'award' && evt.meritId && !merits?.find((m) => m.id === evt.meritId))
+      .filter((evt) => { if (seen.has(evt.meritId)) return false; seen.add(evt.meritId); return true; })
+      .map((evt) => ({ meritId: evt.meritId, sampleEvent: evt }));
+  }, [meritEvents, merits, onRecoverMerit, canCreateMerit]);
 
   const activeMembers = memberships.filter((m) => m.status === 'active');
   // Leaders can only award members of their own area; teamAdmin/facultyAdvisor/platformAdmin see all.
@@ -241,6 +224,30 @@ export default function MeritsView({
     <div className="space-y-5">
       <h2 className="text-base font-semibold">{t('merits_title')}</h2>
 
+      {/* ── Recover deleted merits (prominent at top) ── */}
+      {orphanedMerits.length > 0 && (
+        <div className="bg-amber-950/30 border border-amber-800/50 rounded-lg p-4">
+          <p className="text-xs text-amber-400 font-medium mb-2">{t('merit_recover_title') || 'Logros eliminados con premios existentes'}</p>
+          <p className="text-[11px] text-slate-400 mb-3">{t('merit_recover_hint') || 'Estos logros fueron eliminados pero aún tienen premios asignados. Puedes recuperarlos para que vuelvan a aparecer en las definiciones.'}</p>
+          <div className="flex flex-wrap gap-2">
+            {orphanedMerits.map(({ meritId, sampleEvent }) => (
+              <div key={meritId} className="flex items-center gap-2 px-3 py-2 bg-slate-800/60 rounded-lg border border-slate-600">
+                <span className="text-lg">{sampleEvent.meritLogo || '🏆'}</span>
+                <span className="text-sm text-slate-200">{sampleEvent.meritName}</span>
+                <span className="text-xs text-emerald-400 font-mono">+{sampleEvent.points} pts</span>
+                <button
+                  type="button"
+                  onClick={() => onRecoverMerit(meritId, sampleEvent)}
+                  className="text-[11px] px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-black font-semibold rounded"
+                >
+                  {t('merit_recover_btn') || 'Recuperar'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Crop modal — rendered outside the form row so it cannot block click events */}
       {cropSrc && (
         <ImageCropModal
@@ -261,45 +268,6 @@ export default function MeritsView({
       {canCreateMerit && (
         <div className="bg-slate-800 rounded-lg p-4 space-y-3">
           <div className="text-xs text-slate-400">{t('define_merit')}</div>
-
-          {/* Edit team types/domains (admin only) — inside this section */}
-          {(canEdit || isPlatformAdmin) && onSaveTeamMeritTags && (
-            <div className="border-t border-slate-700 pt-3 space-y-2">
-              <p className="text-[11px] text-slate-500 font-medium">{t('team_config_tags') || 'Tipos y categorías disponibles para este equipo'}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[11px] text-slate-500 block mb-0.5">{t('merit_attr_types')}</label>
-                  <textarea
-                    value={teamTagsTypesStr}
-                    onChange={(e) => setTeamTagsTypesStr(e.target.value)}
-                    rows={2}
-                    placeholder="technical, leadership, ..."
-                    className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[11px] text-slate-500 block mb-0.5">{t('merit_attr_domains')}</label>
-                  <textarea
-                    value={teamTagsDomainsStr}
-                    onChange={(e) => setTeamTagsDomainsStr(e.target.value)}
-                    rows={2}
-                    placeholder="software, hardware, ..."
-                    className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs font-mono"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={handleSaveTeamTags} disabled={teamTagsSaving}
-                  className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded hover:bg-emerald-400 disabled:opacity-50">
-                  {teamTagsSaving ? '…' : t('save')}
-                </button>
-                <button type="button" onClick={resetTeamTagsToDefaults}
-                  className="px-3 py-1.5 bg-slate-600 text-slate-300 text-xs rounded hover:bg-slate-500">
-                  {t('platform_config_reset') || 'Reset'}
-                </button>
-              </div>
-            </div>
-          )}
 
           <div className="flex flex-wrap gap-2 items-end">
             {/* Logo picker */}
@@ -1081,7 +1049,7 @@ export default function MeritsView({
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1">
-                          {(() => { const merit = merits?.find((mm) => mm.id === evt.meritId); return merit?.logo ? <span className="text-base">{merit.logo}</span> : null; })()}
+                          <span className="text-base">{merits?.find((mm) => mm.id === evt.meritId)?.logo ?? evt.meritLogo ?? '🏆'}</span>
                           {evt.meritName || '?'}
                         </div>
                       </td>
