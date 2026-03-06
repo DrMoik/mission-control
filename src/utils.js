@@ -159,8 +159,8 @@ export const ensureString = (val, lang = 'es') => {
 // Profile photos are the main thing every user can publish; keep limits low so
 // membership docs (photo + cover + text) stay under 1MB.
 
-/** Max bytes per image to stay under Firestore doc limit. Lower for members who can only edit photo. */
-const MAX_IMAGE_BYTES = 50000;
+/** Max bytes per image to stay under Firestore 1MB doc limit. Same for all members. */
+const MAX_IMAGE_BYTES = 120000;
 
 /**
  * Compresses a data URL if it exceeds maxBytes. Returns original if not a data URL
@@ -192,14 +192,14 @@ export async function compressDataUrlIfNeeded(dataUrl, maxBytes = MAX_IMAGE_BYTE
         }
         return canvas.toDataURL('image/jpeg', 0.05);
       };
-      for (const maxDim of [400, 320, 256, 128, 96, 64]) {
+      for (const maxDim of [400, 320, 256, 128, 96, 64, 48, 32]) {
         const result = tryOutput(maxDim, 0.75);
         if (result.length <= limit) {
           resolve(result);
           return;
         }
       }
-      resolve(tryOutput(64, 0.2));
+      resolve(tryOutput(32, 0.1));
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;

@@ -187,6 +187,11 @@ export default function ImageCropModal({
   //   srcW = vpW / actualScale
   // Then we draw that source region into the output canvas at cropWidth×cropHeight.
   const handleApply = () => {
+    // When image failed to load but we have a URL, use it as-is
+    if (status === 'error' && src) {
+      onApply(src);
+      return;
+    }
     const img = imgRef.current;
     if (!img) { onApply(src); return; }
 
@@ -295,12 +300,14 @@ export default function ImageCropModal({
 
         <div className="flex gap-2 mt-4">
           <button
+            type="button"
             onClick={onCancel}
             className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors"
           >
             {t('cancel')}
           </button>
           <button
+            type="button"
             onClick={() => onApply('')}
             className="py-2 px-3 bg-slate-600 hover:bg-slate-500 text-slate-300 text-sm rounded-lg transition-colors"
             title={t('remove_image')}
@@ -308,9 +315,10 @@ export default function ImageCropModal({
             {t('remove_image')}
           </button>
           <button
+            type="button"
             onClick={handleApply}
-            disabled={status !== 'ready'}
-            className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-black font-semibold text-sm rounded-lg transition-colors"
+            disabled={status !== 'ready' && !(status === 'error' && src && (src.startsWith('http://') || src.startsWith('https://')))}
+            className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-semibold text-sm rounded-lg transition-colors"
           >
             {t('apply_btn')}
           </button>

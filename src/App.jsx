@@ -607,9 +607,10 @@ export default function App() {
     const isOwnProfile = authUser && (m.userId === authUser.uid || currentMembership?.id === membershipId);
     const canEditThis = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || isOwnProfile;
     if (!canEditThis) return;
-    // Compress data URLs to stay under Firestore 1MB doc limit
-    const photoURL = await compressDataUrlIfNeeded(updates.photoURL ?? m.photoURL ?? null);
-    const coverPhotoURL = await compressDataUrlIfNeeded(updates.coverPhotoURL ?? m.coverPhotoURL ?? '');
+    // Compress data URLs to stay under Firestore 1MB doc limit (same limit for all members)
+    const maxBytes = 120000;
+    const photoURL = await compressDataUrlIfNeeded(updates.photoURL ?? m.photoURL ?? null, maxBytes);
+    const coverPhotoURL = await compressDataUrlIfNeeded(updates.coverPhotoURL ?? m.coverPhotoURL ?? '', maxBytes);
     const payload = {
       displayName:   updates.displayName   || m.displayName,
       photoURL:      photoURL ?? m.photoURL ?? null,
