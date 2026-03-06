@@ -186,7 +186,7 @@ export const SYSTEM_MERIT_NAMES = {
 export const SYSTEM_MERIT_DESCRIPTIONS = {
   [SYSTEM_MERIT_NAMES.weeklyUpdate]: {
     shortDescription: { en: 'Weekly progress update.', es: 'Actualización semanal de avances.' },
-    longDescription:  { en: 'Awarded automatically when you post your weekly status (what you advanced, what you failed at, what you learned). Post every week to earn points. Go to "Esta semana" in your profile to submit.', es: 'Se otorga automáticamente al publicar tu estatus semanal (qué avanzaste, en qué fallaste, qué aprendiste). Publica cada semana para ganar puntos. Ve a "Esta semana" en tu perfil para enviar.' },
+    longDescription:  { en: 'Awarded automatically when you post your weekly status with all three fields filled: what you advanced, what you failed at, what you learned. Post every week to earn points. Go to "Esta semana" in your profile to submit.', es: 'Se otorga automáticamente al publicar tu estatus semanal con los tres campos completos: qué avanzaste, en qué fallaste, qué aprendiste. Publica cada semana para ganar puntos. Ve a "Esta semana" en tu perfil para enviar.' },
   },
   [SYSTEM_MERIT_NAMES.profileComplete]: {
     shortDescription: { en: 'Complete community profile.', es: 'Perfil comunitario completo.' },

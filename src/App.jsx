@@ -170,6 +170,7 @@ export default function App() {
     teamFundingAccounts,
     teamFundingEntries,
     teamTasks,
+    userMembershipsReady,
   } = useFirebaseSubscriptions({ authUser, selectedTeamId });
 
   // ── UI state ───────────────────────────────────────────────────────────────
@@ -612,6 +613,7 @@ export default function App() {
     const photoURL = await compressDataUrlIfNeeded(updates.photoURL ?? m.photoURL ?? null, maxBytes);
     const coverPhotoURL = await compressDataUrlIfNeeded(updates.coverPhotoURL ?? m.coverPhotoURL ?? '', maxBytes);
     const payload = {
+      ...(isOwnProfile && { userId: authUser.uid }), // Ensure userId is set on own profile (fixes legacy docs)
       displayName:   updates.displayName   || m.displayName,
       photoURL:      photoURL ?? m.photoURL ?? null,
       coverPhotoURL: coverPhotoURL || '',
@@ -691,34 +693,39 @@ export default function App() {
       hasCulture;
 
     // Perfil completo: award once per membership. If merit was deleted, re-award (per-membership doc is source of truth).
+    // Merit award runs after profile save; if it fails (e.g. rules), profile save still succeeds.
     let meritNewlyAwarded = false;
     if (isProfileComplete && currentTeam && authUser) {
       const meritEventsRef = collection(db, 'meritEvents');
       const midsToAward = idsToUpdate.filter((mid) => teamMemberships.some((mm) => mm.id === mid));
       if (midsToAward.length > 0) {
-        await runTransaction(db, async (tx) => {
-          for (const mid of midsToAward) {
-            const awardId = `auto_profile_complete_50_${currentTeam.id}_${mid}`;
-            const awardRef = doc(meritEventsRef, awardId);
-            const awardSnap = await tx.get(awardRef);
-            if (awardSnap.exists()) continue; // already awarded for this membership
-            meritNewlyAwarded = true;
-            tx.set(awardRef, {
-              teamId:            currentTeam.id,
-              membershipId:      mid,
-              meritId:           null,
-              meritName:         SYSTEM_MERIT_NAMES.profileComplete,
-              meritLogo:         '✅',
-              points:            systemMeritPoints.profileComplete,
-              type:              'award',
-              evidence:          'profile_complete_50',
-              autoAward:         true,
-              awardedByUserId:   authUser.uid,
-              awardedByName:     userProfile?.displayName || authUser.email || '—',
-              createdAt:         serverTimestamp(),
-            });
-          }
-        });
+        try {
+          await runTransaction(db, async (tx) => {
+            for (const mid of midsToAward) {
+              const awardId = `auto_profile_complete_50_${currentTeam.id}_${mid}`;
+              const awardRef = doc(meritEventsRef, awardId);
+              const awardSnap = await tx.get(awardRef);
+              if (awardSnap.exists()) continue; // already awarded for this membership
+              meritNewlyAwarded = true;
+              tx.set(awardRef, {
+                teamId:            currentTeam.id,
+                membershipId:      mid,
+                meritId:           null,
+                meritName:         SYSTEM_MERIT_NAMES.profileComplete,
+                meritLogo:         '✅',
+                points:            systemMeritPoints.profileComplete,
+                type:              'award',
+                evidence:          'profile_complete_50',
+                autoAward:         true,
+                awardedByUserId:   authUser.uid,
+                awardedByName:     userProfile?.displayName || authUser.email || '—',
+                createdAt:         serverTimestamp(),
+              });
+            }
+          });
+        } catch (meritErr) {
+          console.warn('Perfil completo merit award failed (profile saved):', meritErr);
+        }
       }
     }
     // Firestore listener will update teamMemberships; profileMember derives from it
@@ -742,6 +749,8 @@ export default function App() {
     const statusRef = doc(db, 'weeklyStatuses', docId);
     const meritEventsRef = collection(db, 'meritEvents');
     const doAward = isWeekEligibleForPoints(weekOf);
+    const hasContent = (s) => typeof s === 'string' && s.trim().length > 0;
+    const allThreeFilled = hasContent(advanced) && hasContent(failedAt) && hasContent(learned);
 
     const didAwardThisWeek = await runTransaction(db, async (tx) => {
       const statusSnap = await tx.get(statusRef);
@@ -759,8 +768,8 @@ export default function App() {
         updatedAt:    serverTimestamp(),
       }, { merge: true });
 
-      // Only one system award per week: grant 25 pts only on first save for this week (not on edits)
-      if (!existed && doAward) {
+      // Only one system award per week: grant 25 pts only on first save when all three fields are filled
+      if (!existed && doAward && allThreeFilled) {
         const eventRef = doc(meritEventsRef);
         tx.set(eventRef, {
           teamId:       currentTeam.id,
@@ -1616,6 +1625,14 @@ export default function App() {
 
   // ── Authenticated, no team selected — team picker ──────────────────────────
   if (!selectedTeamId) {
+    // Wait for user memberships to load so teams appear immediately (avoids refresh after Google login)
+    if (authUser && !userMembershipsReady) {
+      return (
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+          <div className="text-slate-400 text-sm">{t('loading')}</div>
+        </div>
+      );
+    }
     const joinedIds      = new Set(userMemberships.map((m) => m.teamId));
     const otherTeams     = allTeams.filter((t) => !joinedIds.has(t.id));
     const activeMyTeams  = myTeams.filter((t) => { const m = userMemberships.find((m) => m.teamId === t.id); return m?.status === 'active' || m?.status === 'suspended'; });

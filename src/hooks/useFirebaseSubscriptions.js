@@ -44,6 +44,7 @@ import { SYSTEM_MERIT_NAMES } from '../constants.js';
  *   teamFundingAccounts: object[],
  *   teamFundingEntries: object[],
  *   teamTasks: object[],
+ *   userMembershipsReady: boolean,
  * }}
  */
 export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
@@ -69,6 +70,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
   const [teamFundingAccounts, setTeamFundingAccounts] = useState([]);
   const [teamFundingEntries, setTeamFundingEntries] = useState([]);
   const [teamTasks, setTeamTasks] = useState([]);
+  const [userMembershipsReady, setUserMembershipsReady] = useState(false);
 
   // All teams (public — needed for the unauthenticated team browser)
   useEffect(() => {
@@ -94,11 +96,14 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
   useEffect(() => {
     if (!authUser) {
       setUserMemberships([]);
+      setUserMembershipsReady(false);
       return;
     }
+    setUserMembershipsReady(false);
     const q = query(collection(db, 'memberships'), where('userId', '==', authUser.uid));
     return onSnapshot(q, (snap) => {
       setUserMemberships(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setUserMembershipsReady(true);
     });
   }, [authUser]);
 
@@ -249,5 +254,6 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
     teamFundingAccounts,
     teamFundingEntries,
     teamTasks,
+    userMembershipsReady,
   };
 }

@@ -188,9 +188,12 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid
       );
 
-      // Members can update ONLY their own profile. Ownership: userId in doc must match auth uid.
+      // Members can update ONLY their own profile. Ownership: userId in doc, or membership ID format uid_teamId (handles legacy docs).
       // Team admins can update any membership; area leaders can update strikes/status only for members in their area.
-      allow update: if (request.auth != null && resource.data.userId == request.auth.uid)
+      allow update: if (request.auth != null && (
+          resource.data.userId == request.auth.uid ||
+          membershipId == request.auth.uid + '_' + resource.data.teamId
+        ))
         || isTeamAdmin(resource.data.teamId)
         || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null))
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']));
@@ -239,12 +242,15 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════
 
     match /meritEvents/{eventId} {
-      allow read: if isActiveMember(resource.data.teamId);
+      // Allow read when doc doesn't exist (tx.get in profile-save) or when user is active member
+      allow read: if resource == null || isActiveMember(resource.data.teamId);
       allow create: if isLeaderOrAbove(request.resource.data.teamId) ||
         (request.resource.data.autoAward == true &&
          request.resource.data.membershipId != null &&
+         request.resource.data.teamId != null &&
          exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
-         get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid);
+         (get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid ||
+          request.resource.data.membershipId == request.auth.uid + '_' + request.resource.data.teamId));
       allow update: if isPlatformAdmin() ||
         (isActiveMember(resource.data.teamId) &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']) &&
@@ -430,7 +436,10 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════
 
     match /weeklyStatuses/{statusId} {
-      allow read: if canPostOwnWeeklyStatus(resource.data.teamId) ||
+      // Allow read when doc doesn't exist (tx.get in weekly-save) or when user has access
+      allow read: if resource == null ||
+        canPostOwnWeeklyStatus(resource.data.teamId) ||
+        (request.auth != null && resource.data.userId == request.auth.uid) ||
         (request.auth != null && resource.data.membershipId != null &&
          exists(/databases/$(database)/documents/memberships/$(resource.data.membershipId)) &&
          get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.userId == request.auth.uid);
