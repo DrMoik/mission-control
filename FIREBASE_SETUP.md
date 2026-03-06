@@ -47,11 +47,12 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════
 
     // Platform Admin: stored in users/{uid}.platformRole
-    // Uses regex so accidental leading/trailing spaces are forgiven
+    // Uses exists() first — get() on non-existent doc can cause rule failure for all users
     function isPlatformAdmin() {
       return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid))
-          .data.platformRole.matches('\\s*platformAdmin\\s*');
+          .data.get('platformRole', '').matches('\\s*platformAdmin\\s*');
     }
 
     // Membership documents use predictable IDs: uid_teamId
@@ -187,14 +188,14 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid
       );
 
+      // Members can update their own profile first (most common case — check before isTeamAdmin to avoid get() failures).
       // Team admins can update any membership; area leaders can update strikes/status only for members in their area.
-      // Members can update only their own profile (not role, status, teamId, userId, or strikes).
-      allow update: if isTeamAdmin(resource.data.teamId)
-        || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null))
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']))
-        || (request.auth != null
+      allow update: if (request.auth != null
             && resource.data.userId == request.auth.uid
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'teamId', 'userId', 'strikes']));
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'teamId', 'userId', 'strikes']))
+        || isTeamAdmin(resource.data.teamId)
+        || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']));
 
       allow delete: if isPlatformAdmin() ||
         isTeamAdmin(resource.data.teamId) ||
