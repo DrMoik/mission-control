@@ -1,0 +1,312 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ═══════════════════════════════════════════════════════════
+    //  HELPER FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
+
+    // Platform Admin: stored in users/{uid}.platformRole
+    function isPlatformAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid))
+          .data.get('platformRole', '').matches('\\s*platformAdmin\\s*');
+    }
+
+    function membershipPath(teamId) {
+      return /databases/$(database)/documents/memberships/$(request.auth.uid + '_' + teamId);
+    }
+
+    function membershipExists(teamId) {
+      return exists(membershipPath(teamId));
+    }
+
+    function membershipDoc(teamId) {
+      return get(membershipPath(teamId));
+    }
+
+    function isActiveMember(teamId) {
+      return request.auth != null && (
+        isPlatformAdmin() || (
+          membershipExists(teamId) &&
+          membershipDoc(teamId).data.status == 'active'
+        )
+      );
+    }
+
+    function myRole(teamId) {
+      return membershipDoc(teamId).data.role;
+    }
+
+    function isTeamAdmin(teamId) {
+      return isPlatformAdmin() || (
+        isActiveMember(teamId) &&
+        myRole(teamId) in ['teamAdmin', 'facultyAdvisor']
+      );
+    }
+
+    function isLeaderOrAbove(teamId) {
+      return isPlatformAdmin() || (
+        isActiveMember(teamId) &&
+        myRole(teamId) in ['teamAdmin', 'facultyAdvisor', 'leader']
+      );
+    }
+
+    function isRookieOrAbove(teamId) {
+      return isPlatformAdmin() || (
+        isActiveMember(teamId) &&
+        myRole(teamId) in ['teamAdmin', 'leader', 'senior', 'junior', 'rookie']
+      );
+    }
+
+    function canPostOwnWeeklyStatus(teamId) {
+      return request.auth != null && (
+        isPlatformAdmin() || (
+          membershipExists(teamId) &&
+          membershipDoc(teamId).data.status in ['active', 'pending']
+        )
+      );
+    }
+
+    function isAreaLeaderCanStrikeTarget(teamId, targetCategoryId) {
+      return request.auth != null
+        && membershipExists(teamId)
+        && membershipDoc(teamId).data.status == 'active'
+        && membershipDoc(teamId).data.role == 'leader'
+        && membershipDoc(teamId).data.get('categoryId', '') != ''
+        && targetCategoryId == membershipDoc(teamId).data.categoryId;
+    }
+
+    function isLeaderCanEditMerit(teamId, meritCategoryId) {
+      return isLeaderOrAbove(teamId)
+        && membershipDoc(teamId).data.role == 'leader'
+        && meritCategoryId != null
+        && meritCategoryId == membershipDoc(teamId).data.get('categoryId', null);
+    }
+
+    match /users/{userId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == userId || isPlatformAdmin());
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if (
+          request.auth != null &&
+          request.auth.uid == userId &&
+          !('platformRole' in request.resource.data.diff(resource.data).affectedKeys())
+        ) || isPlatformAdmin();
+      allow delete: if isPlatformAdmin();
+    }
+
+    match /teams/{teamId} {
+      allow read: if request.auth != null;
+      allow create: if isPlatformAdmin();
+      allow update: if isTeamAdmin(teamId);
+      allow delete: if isPlatformAdmin();
+    }
+
+    match /memberships/{membershipId} {
+      allow read: if request.auth != null && (
+        isPlatformAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        isActiveMember(resource.data.teamId)
+      );
+
+      allow create: if request.auth != null && (
+        isPlatformAdmin() ||
+        request.resource.data.userId == request.auth.uid
+      );
+
+      allow update: if (request.auth != null && resource.data.userId == request.auth.uid)
+        || isTeamAdmin(resource.data.teamId)
+        || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']));
+
+      allow delete: if isPlatformAdmin() ||
+        isTeamAdmin(resource.data.teamId) ||
+        (request.auth != null && resource.data.userId == request.auth.uid);
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isTeamAdmin(request.resource.data.teamId);
+      allow update: if isTeamAdmin(resource.data.teamId);
+      allow delete: if isTeamAdmin(resource.data.teamId);
+    }
+
+    match /merits/{meritId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isTeamAdmin(request.resource.data.teamId) ||
+        (isLeaderOrAbove(request.resource.data.teamId) &&
+         request.resource.data.categoryId != null &&
+         request.resource.data.categoryId == membershipDoc(request.resource.data.teamId).data.categoryId);
+      allow update: if isTeamAdmin(resource.data.teamId) ||
+        isLeaderCanEditMerit(resource.data.teamId, resource.data.get('categoryId', null));
+      allow delete: if isTeamAdmin(resource.data.teamId) ||
+        isLeaderCanEditMerit(resource.data.teamId, resource.data.get('categoryId', null));
+    }
+
+    match /meritEvents/{eventId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId) ||
+        (request.resource.data.autoAward == true &&
+         request.resource.data.membershipId != null &&
+         exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
+         get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid);
+      allow update: if isPlatformAdmin() ||
+        (isActiveMember(resource.data.teamId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']) &&
+         resource.data.points == 5 &&
+         request.resource.data.points == 25);
+      allow delete: if isPlatformAdmin() || isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /migrations/{migrationId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /profileCompleteLocks/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /modules/{moduleId} {
+      allow read: if isRookieOrAbove(resource.data.teamId);
+      allow create: if isTeamAdmin(request.resource.data.teamId);
+      allow update: if isTeamAdmin(resource.data.teamId);
+      allow delete: if isTeamAdmin(resource.data.teamId);
+    }
+
+    match /moduleAttempts/{attemptId} {
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        isTeamAdmin(resource.data.teamId)
+      );
+      allow create: if request.auth != null &&
+        isRookieOrAbove(request.resource.data.teamId) &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isActiveMember(resource.data.teamId) && (
+        get(/databases/$(database)/documents/memberships/$(resource.data.assigneeMembershipId)).data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)).data.userId == request.auth.uid ||
+        isLeaderOrAbove(resource.data.teamId)
+      );
+      allow delete: if isActiveMember(resource.data.teamId) && (
+        get(/databases/$(database)/documents/memberships/$(resource.data.assigneeMembershipId)).data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)).data.userId == request.auth.uid ||
+        isTeamAdmin(resource.data.teamId)
+      );
+    }
+
+    match /teamEvents/{eventId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamSwots/{swotId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamEisenhowers/{entryId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamPughs/{entryId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamBoards/{boardId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isTeamAdmin(resource.data.teamId);
+    }
+
+    match /posts/{postId} {
+      allow read: if isRookieOrAbove(resource.data.teamId);
+      allow create: if isRookieOrAbove(request.resource.data.teamId) &&
+        request.resource.data.authorId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isTeamAdmin(resource.data.teamId) ||
+        (request.auth != null && resource.data.authorId == request.auth.uid);
+    }
+
+    match /comments/{commentId} {
+      allow read: if isRookieOrAbove(resource.data.teamId);
+      allow create: if isRookieOrAbove(request.resource.data.teamId) &&
+        request.resource.data.authorId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isTeamAdmin(resource.data.teamId) ||
+        (request.auth != null && resource.data.authorId == request.auth.uid);
+    }
+
+    match /teamMeetings/{meetingId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isTeamAdmin(resource.data.teamId);
+    }
+
+    match /teamGoals/{goalId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isTeamAdmin(resource.data.teamId);
+    }
+
+    match /weeklyStatuses/{statusId} {
+      allow read: if canPostOwnWeeklyStatus(resource.data.teamId) ||
+        (request.auth != null && resource.data.membershipId != null &&
+         exists(/databases/$(database)/documents/memberships/$(resource.data.membershipId)) &&
+         get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.userId == request.auth.uid);
+      allow create: if request.auth != null && (
+        isPlatformAdmin() ||
+        isTeamAdmin(request.resource.data.teamId) ||
+        isLeaderOrAbove(request.resource.data.teamId) ||
+        (exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
+         get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid &&
+         get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.teamId == request.resource.data.teamId &&
+         get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.status in ['active', 'pending'])
+      );
+      allow update: if request.auth != null && (
+        isPlatformAdmin() ||
+        isTeamAdmin(resource.data.teamId) ||
+        isLeaderOrAbove(resource.data.teamId) ||
+        (exists(/databases/$(database)/documents/memberships/$(resource.data.membershipId)) &&
+         get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.userId == request.auth.uid &&
+         get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.teamId == resource.data.teamId &&
+         get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.status in ['active', 'pending'])
+      );
+      allow delete: if isTeamAdmin(resource.data.teamId);
+    }
+
+    match /teamFundingAccounts/{accountId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamFundingEntries/{entryId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if false;
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+  }
+}

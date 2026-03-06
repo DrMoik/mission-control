@@ -644,12 +644,9 @@ export default function App() {
       personalityTag:     updates.personalityTag     ?? m.personalityTag     ?? '',
       birthdate:          updates.birthdate          ?? m.birthdate          ?? '',
     };
-    // When user edits their own profile, sync to all their memberships (shared profile across teams)
-    const isOwnMembership = authUser && m.userId === authUser.uid;
-    const idsToUpdate = isOwnMembership
-      ? userMemberships.filter((um) => um.userId === authUser.uid).map((um) => um.id)
-      : [membershipId];
-    await Promise.all(idsToUpdate.map((id) => updateDoc(doc(db, 'memberships', id), payload)));
+    // Update only the membership being edited (simple: one doc, one rule check)
+    const idsToUpdate = [membershipId];
+    await updateDoc(doc(db, 'memberships', membershipId), payload);
 
     // Auto-award 50 pts for "Perfil completo" ONLY when all profile fields are filled.
     // Also require at least one culture entry. Award is locked/idempotent via deterministic event doc ID.
