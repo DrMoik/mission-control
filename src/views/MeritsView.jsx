@@ -44,6 +44,10 @@ export default function MeritsView({
     if (leaderCategoryId) setMeritForm((f) => ({ ...f, categoryId: leaderCategoryId }));
   }, [leaderCategoryId]);
 
+  const [detailMerit,     setDetailMerit]     = useState(null);  // merit shown in popup
+  const [editingMerit,    setEditingMerit]    = useState(null); // merit being edited
+  const [editForm,        setEditForm]        = useState(null);  // draft for edit (synced from editingMerit)
+
   // Sync edit form when editingMerit changes
   useEffect(() => {
     if (!editingMerit) {
@@ -93,9 +97,6 @@ export default function MeritsView({
     setTeamTagsDomainsStr(MERIT_DOMAINS.join(', '));
   };
 
-  const [detailMerit,     setDetailMerit]     = useState(null);  // merit shown in popup
-  const [editingMerit,    setEditingMerit]    = useState(null); // merit being edited
-  const [editForm,        setEditForm]        = useState(null);  // draft for edit (synced from editingMerit)
   const [showIconPicker,  setShowIconPicker]  = useState(false);
   const [cropSrc,         setCropSrc]         = useState(null);
   const [awardForm,       setAwardForm]       = useState({ membershipId: '', meritId: '', evidence: '' });
