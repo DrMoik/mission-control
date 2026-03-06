@@ -74,6 +74,7 @@ export default function MeritsView({
   const [cropSrc,         setCropSrc]         = useState(null);
   const [cropTarget,     setCropTarget]      = useState('create'); // 'create' | 'edit'
   const [awardForm,       setAwardForm]       = useState({ membershipId: '', meritId: '', evidence: '' });
+  const [memberSearch,       setMemberSearch]       = useState('');
   const [meritSearch,        setMeritSearch]        = useState('');
   const [meritScopeFilter,   setMeritScopeFilter]   = useState(''); // '' = all, 'global' = global only, categoryId = that category
   const [meritTypeFilters,   setMeritTypeFilters]   = useState([]); // multi-select
@@ -116,6 +117,16 @@ export default function MeritsView({
     }
     return list;
   }, [activeMembers, memberRole, isPlatformAdmin, currentMembership?.id, currentMembership?.categoryId]);
+
+  const filteredMembersForAward = useMemo(() => {
+    const q = (memberSearch || '').toLowerCase().trim();
+    if (!q) return membersForAward;
+    return membersForAward.filter((m) => {
+      const name = (ensureString(m.displayName) || '').toLowerCase();
+      const role = (t('role_' + m.role) || m.role || '').toLowerCase();
+      return name.includes(q) || role.includes(q);
+    });
+  }, [membersForAward, memberSearch]);
 
   // Assignable merits: teamAdmin/facultyAdvisor see all; leaders see global + their category only
   const assignableMerits = useMemo(() => {
@@ -218,6 +229,7 @@ export default function MeritsView({
     if (!awardForm.membershipId || !awardForm.meritId) return;
     onAwardMerit(awardForm.membershipId, awardForm.meritId, awardForm.evidence);
     setAwardForm({ membershipId: '', meritId: '', evidence: '' });
+    setMemberSearch('');
   };
 
   return (
@@ -865,20 +877,40 @@ export default function MeritsView({
             <p className="text-xs text-amber-400/90 mb-3">{t('no_assignable_logros')}</p>
           )}
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-2 items-end">
-              <div className="flex-1 min-w-[130px]">
-                <label className="text-[11px] text-slate-500 block mb-1">{t('member')}</label>
-                <select
-                  value={awardForm.membershipId}
-                  onChange={(e) => setAwardForm((f) => ({ ...f, membershipId: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
-                >
-                  <option value="">{t('select_member')}</option>
-                  {membersForAward.map((m) => (
-                    <option key={m.id} value={m.id}>{ensureString(m.displayName)} ({t('role_' + m.role) || m.role})</option>
-                  ))}
-                </select>
+            {/* Member selector with search */}
+            <div>
+              <label className="text-[11px] text-slate-500 block mb-1">{t('member')}</label>
+              <input
+                type="search"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                placeholder={t('member_search_placeholder')}
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs mb-2"
+              />
+              <div className="max-h-28 overflow-y-auto border border-slate-600 rounded bg-slate-900/60 mb-3">
+                {filteredMembersForAward.length === 0 ? (
+                  <p className="px-3 py-3 text-xs text-slate-500">{t('no_members_filter')}</p>
+                ) : (
+                  <div className="divide-y divide-slate-700/50">
+                    {filteredMembersForAward.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setAwardForm((f) => ({ ...f, membershipId: m.id }));
+                          setMemberSearch('');
+                        }}
+                        className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-700/50 transition-colors ${awardForm.membershipId === m.id ? 'bg-emerald-900/40 border-l-2 border-emerald-500' : ''}`}
+                      >
+                        <span className="text-sm font-medium truncate">{ensureString(m.displayName)}</span>
+                        <span className="text-[10px] text-slate-500 shrink-0">({t('role_' + m.role) || m.role})</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
+            </div>
+            <div className="flex flex-wrap gap-2 items-end">
               <div className="flex-1 min-w-[140px]">
                 <label className="text-[11px] text-slate-500 block mb-1">{t('evidence_optional')}</label>
                 <input

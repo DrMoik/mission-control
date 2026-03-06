@@ -230,6 +230,7 @@ export const STRINGS = {
     member:                'Miembro',
     merit:                 'Logro',
     select_member:         'Seleccionar miembro…',
+    member_search_placeholder: 'Buscar miembro…',
     select_merit:          'Seleccionar logro…',
     merit_search_placeholder: 'Buscar por nombre, descripción, etiquetas…',
     merit_scope_all:       'Todos los ámbitos',
