@@ -16,6 +16,15 @@ function isValidSongUrl(url) {
   return /spotify\.com|youtube\.com|youtu\.be|soundcloud\.com/.test(url);
 }
 
+function readAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('Failed to read file'));
+    r.readAsDataURL(file);
+  });
+}
+
 function SectionHeading({ label }) {
   return (
     <div className="flex items-center gap-2 mt-6 mb-2">
@@ -87,6 +96,8 @@ export default function ProfilePageView({
   const [editing,    setEditing]    = useState(false);
   const [draft,      setDraft]      = useState({});
   const [cropTarget, setCropTarget] = useState(null);
+  const photoFileRef = useRef(null);
+  const coverFileRef = useRef(null);
   const [editingWeekly, setEditingWeekly] = useState(false);
   const [weeklyDraft,   setWeeklyDraft]   = useState({ advanced: '', failedAt: '', learned: '' });
   const [savingWeekly,  setSavingWeekly]  = useState(false);
@@ -253,6 +264,15 @@ export default function ProfilePageView({
                 )}
                 <input value={draft.photoURL} onChange={(e) => set('photoURL', e.target.value)}
                   placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                <input type="file" accept="image/*" className="hidden" ref={photoFileRef}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) { readAsDataUrl(f).then((url) => { set('photoURL', url); setCropTarget('photoURL'); }); e.target.value = ''; }
+                  }} />
+                <button type="button" onClick={() => photoFileRef.current?.click()}
+                  className="shrink-0 px-2 py-1.5 bg-slate-600 hover:bg-slate-500 text-slate-200 text-[11px] font-medium rounded">
+                  {t('image_select_file')}
+                </button>
                 <button type="button" disabled={!draft.photoURL} onClick={() => setCropTarget('photoURL')}
                   className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded">
                   {t('reframe_profile')}
@@ -273,6 +293,15 @@ export default function ProfilePageView({
                 )}
                 <input value={draft.coverPhotoURL} onChange={(e) => set('coverPhotoURL', e.target.value)}
                   placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                <input type="file" accept="image/*" className="hidden" ref={coverFileRef}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) { readAsDataUrl(f).then((url) => { set('coverPhotoURL', url); setCropTarget('coverPhotoURL'); }); e.target.value = ''; }
+                  }} />
+                <button type="button" onClick={() => coverFileRef.current?.click()}
+                  className="shrink-0 px-2 py-1.5 bg-slate-600 hover:bg-slate-500 text-slate-200 text-[11px] font-medium rounded">
+                  {t('image_select_file')}
+                </button>
                 <button type="button" disabled={!draft.coverPhotoURL} onClick={() => setCropTarget('coverPhotoURL')}
                   className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded">
                   {t('reframe_cover')}

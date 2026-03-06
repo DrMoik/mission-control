@@ -210,7 +210,6 @@ export default function ImageCropModal({
       out.width  = cropWidth;
       out.height = cropHeight;
       out.getContext('2d').drawImage(img, srcX, srcY, srcW, srcH, 0, 0, cropWidth, cropHeight);
-      // JPEG with quality 0.9 — compact enough for Firestore, good visual quality
       const dataUrl = out.toDataURL('image/jpeg', 0.9);
       onApply(dataUrl);
     } catch {
@@ -283,7 +282,6 @@ export default function ImageCropModal({
             )}
           </div>
         )}
-
         {/* Zoom slider */}
         <div className="mt-3">
           <div className="flex justify-between text-[10px] text-slate-500 mb-1">

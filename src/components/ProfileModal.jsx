@@ -12,7 +12,7 @@
 // All bilingual fields (bio, hobbies) handled by BilingualField.
 // Tag fields handled by TagInput.
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from './ui/index.js';
@@ -35,6 +35,15 @@ function SectionHeading({ label }) {
       <div className="flex-1 h-px bg-slate-700" />
     </div>
   );
+}
+
+function readAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('Failed to read file'));
+    r.readAsDataURL(file);
+  });
 }
 
 // ── Helper: tag chip list (read-only) ──────────────────────────────────────────
@@ -64,6 +73,8 @@ export default function ProfileModal({
   const [editing,    setEditing]    = useState(false);
   const [draft,      setDraft]      = useState({});
   const [cropTarget, setCropTarget] = useState(null);
+  const photoFileRef = useRef(null);
+  const coverFileRef = useRef(null);
 
   // Weekly status edit state
   const [editingWeekly, setEditingWeekly] = useState(false);
@@ -240,14 +251,23 @@ export default function ProfileModal({
               {/* Profile photo URL + reframe */}
               <div>
                 <label className="text-[11px] text-slate-500 block mb-0.5">{t('profile_photo_url')}</label>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-wrap">
                   {draft.photoURL ? (
                     <img src={draft.photoURL} className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-600" alt="" />
                   ) : (
                     <div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>
                   )}
                   <input value={draft.photoURL} onChange={(e) => set('photoURL', e.target.value)}
-                    placeholder="https://…" className="flex-1 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                    placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                  <input type="file" accept="image/*" className="hidden" ref={photoFileRef}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) { readAsDataUrl(f).then((url) => { set('photoURL', url); setCropTarget('photoURL'); }); e.target.value = ''; }
+                    }} />
+                  <button type="button" onClick={() => photoFileRef.current?.click()}
+                    className="shrink-0 px-2 py-1.5 bg-slate-600 hover:bg-slate-500 text-slate-200 text-[11px] font-medium rounded transition-colors">
+                    {t('image_select_file')}
+                  </button>
                   <button type="button" disabled={!draft.photoURL} onClick={() => setCropTarget('photoURL')}
                     className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded transition-colors">
                     {t('reframe_profile')}
@@ -261,14 +281,23 @@ export default function ProfileModal({
               {/* Cover photo URL + reframe */}
               <div>
                 <label className="text-[11px] text-slate-500 block mb-0.5">{t('cover_photo_url')}</label>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-wrap">
                   {draft.coverPhotoURL ? (
                     <img src={draft.coverPhotoURL} className="w-14 h-9 rounded object-cover shrink-0 border border-slate-600" alt="" />
                   ) : (
                     <div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>
                   )}
                   <input value={draft.coverPhotoURL} onChange={(e) => set('coverPhotoURL', e.target.value)}
-                    placeholder="https://…" className="flex-1 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                    placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                  <input type="file" accept="image/*" className="hidden" ref={coverFileRef}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) { readAsDataUrl(f).then((url) => { set('coverPhotoURL', url); setCropTarget('coverPhotoURL'); }); e.target.value = ''; }
+                    }} />
+                  <button type="button" onClick={() => coverFileRef.current?.click()}
+                    className="shrink-0 px-2 py-1.5 bg-slate-600 hover:bg-slate-500 text-slate-200 text-[11px] font-medium rounded transition-colors">
+                    {t('image_select_file')}
+                  </button>
                   <button type="button" disabled={!draft.coverPhotoURL} onClick={() => setCropTarget('coverPhotoURL')}
                     className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded transition-colors">
                     {t('reframe_cover')}
