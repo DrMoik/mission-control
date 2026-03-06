@@ -102,7 +102,8 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
   const [editing, setEditing] = useState(false);
   const [draft,   setDraft]   = useState(null);
   const [showPointsDetail, setShowPointsDetail] = useState(false);
-  const [statsGroupFilter, setStatsGroupFilter] = useState(null); // null = all, categoryId = filter by area
+  const [statsViewMode, setStatsViewMode] = useState('global'); // 'global' | 'area' | 'status'
+  const [statsSubFilter, setStatsSubFilter] = useState(''); // categoryId when area, role when status
 
   const ov = team?.overview || {};
 
@@ -188,12 +189,16 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
     }));
   }, [teamMemberships, pointsByMember]);
 
-  // Filtered members for stats (by selected group)
+  // Filtered members for stats (global, by area, or by status/role)
   const filteredMembers = useMemo(() => {
     const active = teamMemberships.filter((m) => m.status === 'active');
-    if (!statsGroupFilter) return active;
-    return active.filter((m) => m.categoryId === statsGroupFilter);
-  }, [teamMemberships, statsGroupFilter]);
+    if (statsViewMode === 'global') return active;
+    if (statsViewMode === 'area' && statsSubFilter)
+      return active.filter((m) => m.categoryId === statsSubFilter);
+    if (statsViewMode === 'status' && statsSubFilter)
+      return active.filter((m) => m.role === statsSubFilter);
+    return []; // area/status mode but no sub-filter selected
+  }, [teamMemberships, statsViewMode, statsSubFilter]);
 
   // Standard deviation and distribution for the filtered group
   // Uses Freedman-Diaconis rule for dynamic bin width; falls back to Sturges when IQR=0
@@ -321,7 +326,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">{ensureString(team?.name, lang)}</h2>
+          <h2 className="text-2xl font-bold text-slate-100">{ensureString(team?.name, lang)}</h2>
           {tagline && <p className="text-slate-300 italic mt-1 text-lg">"{tagline}"</p>}
         </div>
         {canEdit && (
@@ -386,79 +391,85 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
       {showPointsDetail && createPortal(
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4"
-          onClick={() => { setShowPointsDetail(false); setStatsGroupFilter(null); }}
+          onClick={() => { setShowPointsDetail(false); setStatsViewMode('global'); setStatsSubFilter(''); }}
         >
           <div
-            className="bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden"
+            className="bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden text-slate-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-5 border-b border-slate-700">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <h3 className="font-bold text-lg">{t('avg_points_per_member')}</h3>
-                <select
-                  value={statsGroupFilter ?? ''}
-                  onChange={(e) => setStatsGroupFilter(e.target.value || null)}
-                  className="text-xs bg-slate-800 border border-slate-600 rounded px-2 py-1 text-slate-200"
-                >
-                  <option value="">{t('stats_filter_all')}</option>
-                  {avgByArea.map(({ categoryId, count }) => {
-                    const cat = teamCategories.find((c) => c.id === categoryId);
-                    return (
-                      <option key={categoryId} value={categoryId}>
-                        {ensureString(cat?.name, lang)} ({count})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-              <p className="text-2xl font-bold text-emerald-400">{avgFiltered} pts</p>
-              <div className="flex gap-4 mt-2 text-sm text-slate-400">
-                <span>{t('std_deviation')}: <span className="font-mono text-slate-300">{stdDev}</span></span>
-                {statsGroupFilter && (
-                  <span className="text-slate-500">({filteredMembers.length})</span>
-                )}
-              </div>
-            </div>
-            <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
-              <div>
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t('points_distribution')}</h4>
-                <PointsHistogram distribution={distribution} />
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t('avg_points_by_area')}</h4>
-                <div className="space-y-2">
-                  {avgByArea.length === 0 ? (
-                    <p className="text-sm text-slate-500">{t('no_categories')}</p>
-                  ) : (
-                    avgByArea.map(({ categoryId, avg, count }) => {
-                      const cat = teamCategories.find((c) => c.id === categoryId);
-                      const name = ensureString(cat?.name, lang);
-                      return (
-                        <div key={categoryId} className="flex justify-between items-center py-1.5 border-b border-slate-800 last:border-0">
-                          <span className="text-sm text-slate-200">{name}</span>
-                          <span className="text-sm font-mono text-emerald-400">{avg} pts <span className="text-slate-500 font-normal">({count})</span></span>
-                        </div>
-                      );
-                    })
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <h3 className="font-bold text-lg text-slate-100">{t('avg_points_per_member')}</h3>
+                <div className="flex gap-2 flex-wrap">
+                  <select
+                    value={statsViewMode}
+                    onChange={(e) => {
+                      setStatsViewMode(e.target.value);
+                      setStatsSubFilter('');
+                    }}
+                    className="text-xs bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-slate-200"
+                  >
+                    <option value="global">{t('stats_view_global')}</option>
+                    <option value="area">{t('stats_view_area')}</option>
+                    <option value="status">{t('stats_view_status')}</option>
+                  </select>
+                  {statsViewMode === 'area' && (
+                    <select
+                      value={statsSubFilter}
+                      onChange={(e) => setStatsSubFilter(e.target.value)}
+                      className="text-xs bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-slate-200"
+                    >
+                      <option value="">{t('stats_select_area')}</option>
+                      {avgByArea.map(({ categoryId, count }) => {
+                        const cat = teamCategories.find((c) => c.id === categoryId);
+                        return (
+                          <option key={categoryId} value={categoryId}>
+                            {ensureString(cat?.name, lang)} ({count})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  )}
+                  {statsViewMode === 'status' && (
+                    <select
+                      value={statsSubFilter}
+                      onChange={(e) => setStatsSubFilter(e.target.value)}
+                      className="text-xs bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-slate-200"
+                    >
+                      <option value="">{t('stats_select_status')}</option>
+                      {avgByLevel.map(({ role, count }) => (
+                        <option key={role} value={role}>
+                          {ROLE_LABELS[role] || role} ({count})
+                        </option>
+                      ))}
+                    </select>
                   )}
                 </div>
               </div>
-              <div>
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t('avg_points_by_level')}</h4>
-                <div className="space-y-2">
-                  {avgByLevel.map(({ role, avg, count }) => (
-                    <div key={role} className="flex justify-between items-center py-1.5 border-b border-slate-800 last:border-0">
-                      <span className="text-sm text-slate-200">{ROLE_LABELS[role] || role}</span>
-                      <span className="text-sm font-mono text-emerald-400">{avg} pts <span className="text-slate-500 font-normal">({count})</span></span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {filteredMembers.length > 0 ? (
+                <>
+                  <p className="text-2xl font-bold text-emerald-400">{avgFiltered} pts</p>
+                  <div className="flex gap-4 mt-2 text-sm text-slate-400">
+                    <span>{t('std_deviation')}: <span className="font-mono text-slate-300">{stdDev}</span></span>
+                    <span className="text-slate-500">({filteredMembers.length})</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-slate-500 py-2">
+                  {statsViewMode === 'global' ? t('stats_no_members') : (statsViewMode === 'area' ? t('stats_select_area') : t('stats_select_status'))}
+                </p>
+              )}
             </div>
+            {filteredMembers.length > 0 && (
+              <div className="p-5">
+                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t('points_distribution')}</h4>
+                <PointsHistogram distribution={distribution} />
+              </div>
+            )}
             <div className="p-5 border-t border-slate-700">
               <button
                 type="button"
-                onClick={() => { setShowPointsDetail(false); setStatsGroupFilter(null); }}
+                onClick={() => { setShowPointsDetail(false); setStatsViewMode('global'); setStatsSubFilter(''); }}
                 className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors"
               >
                 {t('merit_detail_close')}
