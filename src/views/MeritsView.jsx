@@ -99,6 +99,7 @@ export default function MeritsView({
 
   const [showIconPicker,  setShowIconPicker]  = useState(false);
   const [cropSrc,         setCropSrc]         = useState(null);
+  const [cropTarget,     setCropTarget]      = useState('create'); // 'create' | 'edit'
   const [awardForm,       setAwardForm]       = useState({ membershipId: '', meritId: '', evidence: '' });
   const [meritSearch,        setMeritSearch]        = useState('');
   const [meritScopeFilter,   setMeritScopeFilter]   = useState(''); // '' = all, 'global' = global only, categoryId = that category
@@ -244,7 +245,14 @@ export default function MeritsView({
       {cropSrc && (
         <ImageCropModal
           src={cropSrc}
-          onApply={(dataUrl) => { setMeritForm((f) => ({ ...f, logo: dataUrl })); setCropSrc(null); }}
+          onApply={(dataUrl) => {
+            if (cropTarget === 'edit') {
+              setEditForm((f) => f ? { ...f, logo: dataUrl } : null);
+            } else {
+              setMeritForm((f) => ({ ...f, logo: dataUrl }));
+            }
+            setCropSrc(null);
+          }}
           onCancel={() => setCropSrc(null)}
         />
       )}
@@ -339,7 +347,7 @@ export default function MeritsView({
                     />
                     <button type="button"
                       disabled={!(meritForm.logo?.startsWith('http') || meritForm.logo?.startsWith('data:'))}
-                      onClick={() => { setCropSrc(meritForm.logo); setShowIconPicker(false); }}
+                      onClick={() => { setCropTarget('create'); setCropSrc(meritForm.logo); setShowIconPicker(false); }}
                       title="Reframe Image"
                       className="w-8 h-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-white font-semibold rounded transition-colors shrink-0">
                       ⟳
@@ -542,6 +550,188 @@ export default function MeritsView({
         </div>
       )}
 
+      {/* ── Edit merit modal ── */}
+      {editingMerit && editForm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 overflow-y-auto"
+          onClick={() => setEditingMerit(null)}
+        >
+          <div
+            className="bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b border-slate-700">
+              <h2 className="font-bold text-lg">{t('edit')} — {editingMerit.name}</h2>
+            </div>
+            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="flex flex-wrap gap-3 items-end">
+                <div className="shrink-0 min-w-[140px]">
+                  <label className="text-[11px] text-slate-500 block mb-1">{t('logo')}</label>
+                  <div className="flex gap-1 items-center">
+                    <div className="w-10 h-10 bg-slate-800 border border-slate-600 rounded flex items-center justify-center overflow-hidden shrink-0">
+                      {editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:') ? (
+                        <img src={editForm.logo} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        <span className="text-xl">{editForm.logo || '🏆'}</span>
+                      )}
+                    </div>
+                    <input
+                      placeholder={t('paste_image_url')}
+                      value={editForm.logo?.startsWith('http') ? editForm.logo : ''}
+                      className="flex-1 min-w-0 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
+                      onChange={(e) => setEditForm((f) => ({ ...f, logo: e.target.value || '🏆' }))}
+                    />
+                    <button type="button"
+                      disabled={!(editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:'))}
+                      onClick={() => { setCropTarget('edit'); setCropSrc(editForm.logo); }}
+                      title="Reframe"
+                      className="w-8 h-8 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm rounded shrink-0">⟳</button>
+                  </div>
+                </div>
+                <div className="flex-1 min-w-[120px]">
+                  <label className="text-[11px] text-slate-500 block mb-1">{t('name')}</label>
+                  <input
+                    value={editForm.name}
+                    onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                    className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
+                  />
+                </div>
+                <div className="w-20">
+                  <label className="text-[11px] text-slate-500 block mb-1">{t('points')}</label>
+                  <input type="number" min="1"
+                    value={editForm.points}
+                    onChange={(e) => setEditForm((f) => ({ ...f, points: e.target.value }))}
+                    className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
+                  />
+                </div>
+                <div className="flex-1 min-w-[120px]">
+                  <label className="text-[11px] text-slate-500 block mb-1">{t('category')}</label>
+                  <select
+                    value={editForm.categoryId || ''}
+                    onChange={(e) => setEditForm((f) => ({ ...f, categoryId: e.target.value || null }))}
+                    className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
+                  >
+                    <option value="">{t('global_category')}</option>
+                    {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
+                  </select>
+                </div>
+                <div className="flex-1 min-w-[100px]">
+                  <label className="text-[11px] text-slate-500 block mb-1">{t('assignable_by')}</label>
+                  <select
+                    value={editForm.assignableBy || 'leader'}
+                    onChange={(e) => setEditForm((f) => ({ ...f, assignableBy: e.target.value }))}
+                    className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
+                  >
+                    {ASSIGNABLE_BY_OPTIONS.map((r) => (
+                      <option key={r} value={r}>{t('assignable_by_' + r)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit-repeatable"
+                    checked={editForm.repeatable !== false}
+                    onChange={(e) => setEditForm((f) => ({ ...f, repeatable: e.target.checked }))}
+                    className="rounded border-slate-600 bg-slate-800 text-emerald-500"
+                  />
+                  <label htmlFor="edit-repeatable" className="text-[11px] text-slate-400">{t('merit_repeatable')}</label>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[11px] text-slate-500 block">{t('merit_attr_types')}</label>
+                <div className="flex flex-wrap gap-1">
+                  {achievementTypes.map((type) => {
+                    const sel = (editForm.achievementTypes || []).includes(type);
+                    return (
+                      <button key={type} type="button"
+                        onClick={() => setEditForm((f) => ({
+                          ...f, achievementTypes: sel ? (f.achievementTypes || []).filter((t) => t !== type) : [...(f.achievementTypes || []), type],
+                        }))}
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{type}</button>
+                    );
+                  })}
+                </div>
+                <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_domains')}</label>
+                <div className="flex flex-wrap gap-1">
+                  {domains.map((d) => {
+                    const sel = (editForm.domains || []).includes(d);
+                    return (
+                      <button key={d} type="button"
+                        onClick={() => setEditForm((f) => ({
+                          ...f, domains: sel ? (f.domains || []).filter((x) => x !== d) : [...(f.domains || []), d],
+                        }))}
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{d}</button>
+                    );
+                  })}
+                </div>
+                <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_tier')}</label>
+                <div className="flex flex-wrap gap-1">
+                  <button type="button"
+                    onClick={() => setEditForm((f) => ({ ...f, tier: '' }))}
+                    className={`text-[10px] px-2 py-0.5 rounded ${!editForm.tier ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>—</button>
+                  {meritTiers.map((tier) => {
+                    const sel = editForm.tier === tier;
+                    return (
+                      <button key={tier} type="button"
+                        onClick={() => setEditForm((f) => ({ ...f, tier: sel ? '' : tier }))}
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{t('merit_tier_' + tier)}</button>
+                    );
+                  })}
+                </div>
+              </div>
+              <BilingualField
+                label={t('short_description')}
+                value={editForm.shortDescription}
+                onChange={(v) => setEditForm((f) => ({ ...f, shortDescription: v }))}
+                maxLength={100}
+                placeholder={{ en: t('short_desc_placeholder'), es: t('short_desc_placeholder') }}
+              />
+              <BilingualField
+                label={t('long_description')}
+                value={editForm.longDescription}
+                onChange={(v) => setEditForm((f) => ({ ...f, longDescription: v }))}
+                multiline
+                rows={2}
+                placeholder={{ en: t('long_desc_placeholder'), es: t('long_desc_placeholder') }}
+              />
+            </div>
+            <div className="p-5 border-t border-slate-700 flex gap-2 justify-end">
+              <button
+                onClick={() => setEditingMerit(null)}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                onClick={() => {
+                  if (!editForm.name?.trim()) { alert(t('name') + ' required.'); return; }
+                  if (!editForm.points || Number(editForm.points) <= 0) { alert(t('points') + ' must be > 0.'); return; }
+                  onUpdateMerit(editingMerit.id, {
+                    name: editForm.name.trim(),
+                    points: Number(editForm.points),
+                    categoryId: editForm.categoryId || null,
+                    logo: editForm.logo || '🏆',
+                    assignableBy: editForm.assignableBy || 'leader',
+                    tags: editForm.tags || [],
+                    achievementTypes: editForm.achievementTypes || [],
+                    domains: editForm.domains || [],
+                    tier: editForm.tier || null,
+                    repeatable: editForm.repeatable !== false,
+                    shortDescription: fillL(editForm.shortDescription),
+                    longDescription: fillL(editForm.longDescription),
+                  });
+                  setEditingMerit(null);
+                }}
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold rounded-lg"
+              >
+                {t('save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Merit definitions grid ── */}
       <div className="bg-slate-800 rounded-lg p-4">
         <div className="space-y-2 mb-3">
@@ -639,8 +829,14 @@ export default function MeritsView({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {filteredGridMerits.map((m) => (
-              <button key={m.id} onClick={() => setDetailMerit(m)}
-                className="flex items-center gap-3 p-3 bg-slate-700/40 hover:bg-slate-700/70 rounded-lg transition-colors text-left w-full group">
+              <div
+                key={m.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setDetailMerit(m)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailMerit(m); } }}
+                className="flex items-center gap-3 p-3 bg-slate-700/40 hover:bg-slate-700/70 rounded-lg transition-colors text-left w-full group cursor-pointer"
+              >
                 <div className="shrink-0 w-12 h-12 flex items-center justify-center bg-slate-700 rounded-xl overflow-hidden border border-slate-600">
                   {m.logo && (m.logo.startsWith('http') || m.logo.startsWith('data:')) ? (
                     <img src={m.logo} className="w-full h-full object-cover" alt={m.name} />
@@ -664,6 +860,7 @@ export default function MeritsView({
                   <div className="flex gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     {onUpdateMerit && (canEditMerit ? canEditMerit(m) : canEdit) && (
                       <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); setDetailMerit(null); setEditingMerit(m); }}
                         className="text-[11px] text-emerald-400 hover:text-emerald-300 underline"
                       >
@@ -672,7 +869,13 @@ export default function MeritsView({
                     )}
                     {(canEditMerit ? canEditMerit(m) : canEdit) && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); onDeleteMerit(m.id); }}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(t('merit_delete_confirm') || '¿Eliminar este logro? Esta acción no se puede deshacer.')) {
+                            onDeleteMerit(m.id);
+                          }
+                        }}
                         className="text-[11px] text-red-400 hover:text-red-300 underline"
                       >
                         {t('delete')}
@@ -680,7 +883,7 @@ export default function MeritsView({
                     )}
                   </div>
                 )}
-              </button>
+              </div>
             ))}
           </div>
         )}

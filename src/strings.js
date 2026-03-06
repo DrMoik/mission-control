@@ -291,6 +291,7 @@ export const STRINGS = {
     note_ph:               'Nota / razón',
     revoke:                'Revocar',
     revoke_confirm:        '¿Eliminar permanentemente este registro de logro? Esta acción no se puede deshacer.',
+    merit_delete_confirm:  '¿Eliminar este logro? Esta acción no se puede deshacer.',
     delete_matrix_confirm: '¿Eliminar esta matriz? Esta acción no se puede deshacer.',
     assignable_by:          'Solo puede otorgar',
     assignable_by_leader:   'Líder',
