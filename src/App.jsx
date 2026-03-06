@@ -1954,6 +1954,7 @@ export default function App() {
                 teamMemberships={teamMemberships}
                 teamMeritEvents={teamMeritEvents}
                 teamModules={teamModules}
+                teamCategories={teamCategories}
                 canEdit={canEdit}
                 onSave={handleSaveOverview}
               />
