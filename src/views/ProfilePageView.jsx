@@ -88,7 +88,6 @@ function AutoGrowInput({ value, onChange, placeholder, className, ...rest }) {
 
 export default function ProfilePageView({
   membership, categories, merits = [], meritEvents = [], canEditThis, onSave,
-  onReawardProfileComplete,
   weeklyStatuses = [], onSaveWeeklyStatus, suggestedTags = [],
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp, personalityTags: personalityTagsProp,
 }) {
@@ -200,12 +199,16 @@ export default function ProfilePageView({
     }
     setSavingWeekly(true);
     try {
-      await onSaveWeeklyStatus({
+      const result = await onSaveWeeklyStatus({
         membershipId: membership.id,
         weekOf,
         ...weeklyDraft,
       });
       setEditingWeekly(false);
+      if (result?.weeklyMeritAwarded) {
+        const pts = result.weeklyMeritPoints ?? 25;
+        alert(t('weekly_merit_awarded').replace('{pts}', pts));
+      }
     } catch (err) {
       console.error('Weekly status save failed:', err);
       alert(t('save_weekly_failed') || `Error: ${err?.message || ''}`);
@@ -582,6 +585,48 @@ export default function ProfilePageView({
               </div>
             )}
 
+            {((membership.whatIListenTo?.length) || (membership.bookThatMarkedMe?.length) || (membership.ideaThatMotivatesMe?.length) || (membership.quoteThatMovesMe?.length)) ? (
+              <div className="min-w-0 space-y-3">
+                <SectionHeading label={t('section_culture')} />
+                <div className="space-y-2">
+                  {membership.whatIListenTo?.length > 0 && (
+                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_what_i_listen')}</p>
+                      <ul className="text-sm text-slate-200 space-y-0.5">
+                        {membership.whatIListenTo.map((s, i) => {
+                          const title = typeof s === 'string' ? s : ensureString(s?.title ?? s?.text, lang);
+                          const url = typeof s === 'object' && s ? (s.url || '') : '';
+                          return (
+                            <li key={i}>
+                              {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:text-emerald-200 underline">{title || t('song_on_repeat')}</a> : (title || '—')}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                  {membership.bookThatMarkedMe?.length > 0 && (
+                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_book_that_marked')}</p>
+                      <ul className="text-sm text-slate-200 space-y-0.5">{membership.bookThatMarkedMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
+                    </div>
+                  )}
+                  {membership.ideaThatMotivatesMe?.length > 0 && (
+                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_idea_that_motivates')}</p>
+                      <ul className="text-sm text-slate-200 space-y-0.5">{membership.ideaThatMotivatesMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
+                    </div>
+                  )}
+                  {membership.quoteThatMovesMe?.length > 0 && (
+                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_quote_that_moves')}</p>
+                      <ul className="text-sm text-slate-200 space-y-0.5 italic">{membership.quoteThatMovesMe.map((s, i) => <li key={i}>&quot;{ensureString(s, lang)}&quot;</li>)}</ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
             <div className="min-w-0 xl:col-span-2">
               <SectionHeading label={t('profile_logros_obtained')} />
               {meritEvents.filter((e) => e.type === 'award').length > 0 ? (
@@ -638,73 +683,7 @@ export default function ProfilePageView({
               ) : (
                 <p className="text-xs text-slate-500 italic py-2">{t('profile_logros_empty')}</p>
               )}
-              {onReawardProfileComplete && (
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setReawarding(true);
-                      try {
-                        await onReawardProfileComplete(membership.id);
-                        alert((t('admin_system_profile') || 'Perfil completo') + ' re-asignado.');
-                      } catch (err) {
-                        console.error('Reaward profile complete failed:', err);
-                        alert(err?.message || t('save_failed'));
-                      } finally {
-                        setReawarding(false);
-                      }
-                    }}
-                    disabled={reawarding}
-                    title={t('reaward_profile_complete_hint')}
-                    className="text-[11px] px-2 py-1.5 bg-amber-900/50 hover:bg-amber-800/60 text-amber-200 border border-amber-700/50 rounded disabled:opacity-50"
-                  >
-                    {reawarding ? '…' : t('reaward_profile_complete')}
-                  </button>
-                </div>
-              )}
             </div>
-
-            {((membership.whatIListenTo?.length) || (membership.bookThatMarkedMe?.length) || (membership.ideaThatMotivatesMe?.length) || (membership.quoteThatMovesMe?.length)) ? (
-              <div className="min-w-0 space-y-3">
-                <SectionHeading label={t('section_culture')} />
-                <div className="space-y-2">
-                  {membership.whatIListenTo?.length > 0 && (
-                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
-                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_what_i_listen')}</p>
-                      <ul className="text-sm text-slate-200 space-y-0.5">
-                        {membership.whatIListenTo.map((s, i) => {
-                          const title = typeof s === 'string' ? s : ensureString(s?.title ?? s?.text, lang);
-                          const url = typeof s === 'object' && s ? (s.url || '') : '';
-                          return (
-                            <li key={i}>
-                              {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:text-emerald-200 underline">{title || t('song_on_repeat')}</a> : (title || '—')}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
-                  {membership.bookThatMarkedMe?.length > 0 && (
-                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
-                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_book_that_marked')}</p>
-                      <ul className="text-sm text-slate-200 space-y-0.5">{membership.bookThatMarkedMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
-                    </div>
-                  )}
-                  {membership.ideaThatMotivatesMe?.length > 0 && (
-                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
-                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_idea_that_motivates')}</p>
-                      <ul className="text-sm text-slate-200 space-y-0.5">{membership.ideaThatMotivatesMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
-                    </div>
-                  )}
-                  {membership.quoteThatMovesMe?.length > 0 && (
-                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
-                      <p className="text-[10px] text-slate-500 mb-1">{t('culture_quote_that_moves')}</p>
-                      <ul className="text-sm text-slate-200 space-y-0.5 italic">{membership.quoteThatMovesMe.map((s, i) => <li key={i}>&quot;{ensureString(s, lang)}&quot;</li>)}</ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : null}
 
             {!getL(membership.bio, lang) && !getL(membership.hobbies, lang) && !getL(membership.funFact, lang) && !getL(membership.currentObjective, lang) && !getL(membership.currentChallenge, lang) && !membership.lookingForHelpIn?.length && !membership.iCanHelpWith?.length && !(membership.whatIListenTo?.length) && !(membership.bookThatMarkedMe?.length) && !(membership.ideaThatMotivatesMe?.length) && !(membership.quoteThatMovesMe?.length) && !thisWeek && (
               <p className="text-xs text-slate-600 italic text-center py-4 col-span-full">{t('no_profile_info')}</p>
