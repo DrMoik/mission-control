@@ -234,8 +234,9 @@ service cloud.firestore {
 
     // ═══════════════════════════════════════════════════════════
     //  MERIT EVENTS
-    //  Immutable ledger — create only, never edit or delete.
-    //  Leaders can award merits in their team; admins can award any.
+    //  Create: leaders+ award manually; users create auto-awards (Perfil completo, Actualización semanal) for themselves.
+    //  Update: platform admin only (e.g. migration 5→25 pts).
+    //  Delete (revoke): platform admin, team admin, faculty advisor, or leader — for mistaken awards.
     // ═══════════════════════════════════════════════════════════
 
     match /meritEvents/{eventId} {
@@ -248,7 +249,7 @@ service cloud.firestore {
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']) &&
          resource.data.points == 5 &&
          request.resource.data.points == 25);
-      allow delete: if isPlatformAdmin();
+      allow delete: if isPlatformAdmin() || isLeaderOrAbove(resource.data.teamId);
     }
 
     // Migration locks (weekly merit 5→25 pts). Any active member can read/write.
@@ -256,7 +257,7 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Perfil completo lock (one award per user globally). User writes their own lock.
+    // Legacy: profileCompleteLocks no longer used. Perfil completo uses deterministic doc ID auto_profile_complete_50_{teamId}_{membershipId}.
     match /profileCompleteLocks/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
@@ -432,6 +433,7 @@ service cloud.firestore {
       allow create: if request.auth != null && (
         isPlatformAdmin() ||
         isTeamAdmin(request.resource.data.teamId) ||
+        isLeaderOrAbove(request.resource.data.teamId) ||
         (exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
          get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid &&
          get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.teamId == request.resource.data.teamId &&
@@ -440,6 +442,7 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         isPlatformAdmin() ||
         isTeamAdmin(resource.data.teamId) ||
+        isLeaderOrAbove(resource.data.teamId) ||
         (exists(/databases/$(database)/documents/memberships/$(resource.data.membershipId)) &&
          get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.userId == request.auth.uid &&
          get(/databases/$(database)/documents/memberships/$(resource.data.membershipId)).data.teamId == resource.data.teamId &&
@@ -536,7 +539,7 @@ Your app will be live at `https://quantum-robotics-48d7e.web.app`
 | `memberships` | `teamId`, `userId`, `displayName`, `role`, `status`, `strikes`, `categoryId` | Active team members |
 | `categories` | `teamId`, `name`, `description` | Active team members |
 | `merits` | `teamId`, `name`, `points`, `categoryId`, `achievementTypes[]`, `domains[]`, `tier`, `tags[]` | Active team members |
-| `meritEvents` | `teamId`, `membershipId`, `meritId`, `points`, `type`, `evidence` | Active team members |
+| `meritEvents` | `teamId`, `membershipId`, `meritId`, `meritName`, `points`, `type`, `evidence`, `autoAward`, `awardedByUserId` | Active team members |
 | `modules` | `teamId`, `title`, `description`, `topics[]` (each: `id`, `title`, `content`, `videoUrl`), `order` | Rookie+ members |
 | `moduleAttempts` | `teamId`, `moduleId`, `userId`, `membershipId`, `status` (`requested_review` / `approved`), `requestedAt` | Own doc + team admins |
 | `tasks` | `teamId`, `assigneeMembershipIds[]`, `assignedByMembershipId`, `assignedByName`, `title`, `description`, `dueDate?`, `status` (`pending`/`pending_review`/`completed`), `grade?`, `createdAt`, `completedAt?`, `requestedReviewAt?` | Active team members |
@@ -551,7 +554,19 @@ Your app will be live at `https://quantum-robotics-48d7e.web.app`
 | `teamGoals` | `teamId`, `objective`, `owner`, `dueDate`, `keyResults[]`, `status`, `categoryId` | Active team members |
 | `weeklyStatuses` | `teamId`, `membershipId`, `weekOf`, `advanced`, `failedAt`, `learned` | Active team members |
 | `migrations` | `doneAt`, `updated` (lock for weekly 5→25 pts migration) | Any signed-in user |
-| `profileCompleteLocks` | `createdAt`, `teamId` (one Perfil completo award per user) | Own doc only |
+| `profileCompleteLocks` | Legacy — unused. Perfil completo uses deterministic doc ID `auto_profile_complete_50_{teamId}_{membershipId}`. | Own doc only |
+
+### System auto-awards (meritEvents)
+
+Three merits are awarded automatically by the app (configurable points in Admin):
+
+| Merit | Doc ID / evidence | When awarded |
+|-------|-------------------|--------------|
+| **Actualización semanal** | Auto-generated doc ID; `evidence` = `weekOf` (YYYY-MM-DD) | First weekly status save of the week (current or previous week only) |
+| **Perfil completo** | `auto_profile_complete_50_{teamId}_{membershipId}` | When user saves profile with all required fields filled (bio, hobbies, objective, challenge, collaboration tags, culture, personality, birthdate) |
+| **50 actualizaciones** | `evidence` = `milestone_50` | When user reaches 50 weekly status posts |
+
+If a merit event is revoked (deleted), Perfil completo is re-awarded automatically on the next profile save when complete.
 
 ### Catalogación global / por área (herramientas PM)
 
