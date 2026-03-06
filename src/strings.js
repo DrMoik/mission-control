@@ -134,6 +134,8 @@ export const STRINGS = {
     total_points_earned:     'Puntos Totales Obtenidos',
     avg_points_per_member:  'Puntos Promedio por Miembro',
     avg_points_by_area:     'Puntos promedio por área',
+    stats_filter_group:    'Analizar por grupo',
+    stats_filter_all:      'Todo el equipo',
     avg_points_by_level:    'Puntos promedio por nivel',
     std_deviation:          'Desv. estándar',
     points_distribution:    'Distribución de puntos',

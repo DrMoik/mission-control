@@ -13,10 +13,96 @@ import { BilingualField }      from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString } from '../utils.js';
 import { ROLE_LABELS } from '../constants.js';
 
+// ── SVG histogram (vertical bars, dynamic bins, matches slate/emerald aesthetic)
+function PointsHistogram({ distribution }) {
+  const maxCount = Math.max(...distribution.map((d) => d.count), 1);
+  const w = 320;
+  const h = 160;
+  const pad = { top: 8, right: 8, bottom: 28, left: 28 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+  const n = distribution.length;
+  const barGap = 2;
+  const barW = n > 0 ? (chartW - barGap * (n - 1)) / n : 0;
+
+  return (
+    <div className="w-full max-w-full overflow-x-auto">
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+        {/* Grid lines */}
+        {[0.25, 0.5, 0.75, 1].map((frac) => (
+          <line
+            key={frac}
+            x1={pad.left}
+            y1={pad.top + chartH * (1 - frac)}
+            x2={pad.left + chartW}
+            y2={pad.top + chartH * (1 - frac)}
+            stroke="rgb(51 65 85 / 0.4)"
+            strokeWidth="0.5"
+            strokeDasharray="2 2"
+          />
+        ))}
+        {/* Bars */}
+        {distribution.map(({ label, count }, i) => {
+          const barH = maxCount > 0 ? (count / maxCount) * chartH : 0;
+          const x = pad.left + i * (barW + barGap);
+          const y = pad.top + chartH - barH;
+          return (
+            <g key={i}>
+              <rect
+                x={x}
+                y={y}
+                width={barW}
+                height={Math.max(barH, count > 0 ? 2 : 0)}
+                rx={2}
+                ry={2}
+                fill="rgb(16 185 129 / 0.6)"
+                className="transition-all"
+              />
+            </g>
+          );
+        })}
+        {/* X-axis labels */}
+        {distribution.map(({ label }, i) => {
+          const x = pad.left + i * (barW + barGap) + barW / 2;
+          return (
+            <text
+              key={i}
+              x={x}
+              y={h - 6}
+              textAnchor="middle"
+              fill="rgb(148 163 184)"
+              style={{ fontSize: 10 }}
+            >
+              {label}
+            </text>
+          );
+        })}
+        {/* Y-axis labels */}
+        {[0, 0.5, 1].map((frac) => {
+          const val = Math.round(maxCount * frac);
+          return (
+            <text
+              key={frac}
+              x={pad.left - 6}
+              y={pad.top + chartH * (1 - frac) + 3}
+              textAnchor="end"
+              fill="rgb(100 116 139)"
+              style={{ fontSize: 10, fontFamily: 'ui-monospace, monospace' }}
+            >
+              {val}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamModules, teamCategories = [], canEdit, onSave }) {
   const [editing, setEditing] = useState(false);
   const [draft,   setDraft]   = useState(null);
   const [showPointsDetail, setShowPointsDetail] = useState(false);
+  const [statsGroupFilter, setStatsGroupFilter] = useState(null); // null = all, categoryId = filter by area
 
   const ov = team?.overview || {};
 
@@ -63,7 +149,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
     return map;
   }, [teamMeritEvents]);
 
-  // Avg points by area (categoryId)
+  // Avg points by area (categoryId). Excludes unassigned (no category).
   const avgByArea = useMemo(() => {
     const active = teamMemberships.filter((m) => m.status === 'active');
     const byCat = {};
@@ -73,11 +159,13 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
       byCat[catId].sum += pointsByMember[m.id] || 0;
       byCat[catId].count += 1;
     });
-    return Object.entries(byCat).map(([catId, { sum, count }]) => ({
-      categoryId: catId === '_global' ? null : catId,
-      avg: count > 0 ? Math.round(sum / count) : 0,
-      count,
-    }));
+    return Object.entries(byCat)
+      .filter(([catId]) => catId !== '_global') // exclude unassigned
+      .map(([catId, { sum, count }]) => ({
+        categoryId: catId,
+        avg: count > 0 ? Math.round(sum / count) : 0,
+        count,
+      }));
   }, [teamMemberships, pointsByMember]);
 
   // Avg points by level (rookie, junior, senior, leader — NO faculty)
@@ -100,10 +188,17 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
     }));
   }, [teamMemberships, pointsByMember]);
 
-  // Standard deviation and distribution (points per active member)
-  const { stdDev, distribution } = useMemo(() => {
+  // Filtered members for stats (by selected group)
+  const filteredMembers = useMemo(() => {
     const active = teamMemberships.filter((m) => m.status === 'active');
-    const values = active.map((m) => pointsByMember[m.id] || 0);
+    if (!statsGroupFilter) return active;
+    return active.filter((m) => m.categoryId === statsGroupFilter);
+  }, [teamMemberships, statsGroupFilter]);
+
+  // Standard deviation and distribution for the filtered group
+  // Uses Freedman-Diaconis rule for dynamic bin width; falls back to Sturges when IQR=0
+  const { stdDev, distribution, avgFiltered } = useMemo(() => {
+    const values = filteredMembers.map((m) => pointsByMember[m.id] || 0).filter((v) => v >= 0);
     const n = values.length;
     const mean = n > 0 ? values.reduce((s, v) => s + v, 0) / n : 0;
     const variance = n > 1
@@ -111,22 +206,48 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
       : 0;
     const stdDev = Math.sqrt(variance);
 
-    // Distribution buckets: 0, 1-50, 51-100, 101-200, 201-500, 501+
-    const buckets = [
-      { label: '0', min: 0, max: 0 },
-      { label: '1–50', min: 1, max: 50 },
-      { label: '51–100', min: 51, max: 100 },
-      { label: '101–200', min: 101, max: 200 },
-      { label: '201–500', min: 201, max: 500 },
-      { label: '501+', min: 501, max: Infinity },
-    ];
-    const dist = buckets.map((b) => ({
-      ...b,
-      count: values.filter((v) => v >= b.min && v <= b.max).length,
-    }));
+    // Dynamic binning: Freedman-Diaconis or Sturges
+    const sorted = [...values].sort((a, b) => a - b);
+    const dataMin = sorted[0] ?? 0;
+    const dataMax = sorted[n - 1] ?? 0;
+    const dataRange = dataMax - dataMin;
 
-    return { stdDev: Math.round(stdDev * 10) / 10, distribution: dist };
-  }, [teamMemberships, pointsByMember]);
+    let numBins = 6;
+    if (n >= 4) {
+      const q1Idx = Math.floor(n * 0.25);
+      const q3Idx = Math.floor(n * 0.75);
+      const iqr = (sorted[q3Idx] ?? dataMax) - (sorted[q1Idx] ?? dataMin);
+      const fdWidth = iqr > 0 ? 2 * iqr * Math.pow(n, -1 / 3) : 0;
+      if (fdWidth > 0 && dataRange > 0) {
+        numBins = Math.max(4, Math.min(15, Math.ceil(dataRange / fdWidth)));
+      } else {
+        numBins = Math.max(4, Math.min(12, Math.ceil(Math.log2(n) + 1)));
+      }
+    }
+
+    const binWidth = dataRange > 0 ? dataRange / numBins : 1;
+
+    const dist = [];
+    for (let i = 0; i < numBins; i++) {
+      const min = dataMin + i * binWidth;
+      const max = dataMin + (i + 1) * binWidth;
+      const count = values.filter((v) => {
+        if (binWidth <= 0) return i === 0;
+        const idx = Math.min(numBins - 1, Math.max(0, Math.floor((v - dataMin) / binWidth)));
+        return idx === i;
+      }).length;
+      const label = numBins === 1 || dataRange === 0
+        ? String(Math.round(dataMin))
+        : `${Math.round(min)}–${Math.round(max)}`;
+      dist.push({ min, max, label, count });
+    }
+
+    return {
+      stdDev: Math.round(stdDev * 10) / 10,
+      distribution: dist,
+      avgFiltered: n > 0 ? Math.round(mean) : 0,
+    };
+  }, [filteredMembers, pointsByMember]);
 
   // ── Edit form ──────────────────────────────────────────────────────────────
   if (editing && draft) {
@@ -265,40 +386,43 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
       {showPointsDetail && createPortal(
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4"
-          onClick={() => setShowPointsDetail(false)}
+          onClick={() => { setShowPointsDetail(false); setStatsGroupFilter(null); }}
         >
           <div
             className="bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-5 border-b border-slate-700">
-              <h3 className="font-bold text-lg">{t('avg_points_per_member')}</h3>
-              <p className="text-2xl font-bold text-emerald-400 mt-1">{avgPointsPerMember} pts</p>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h3 className="font-bold text-lg">{t('avg_points_per_member')}</h3>
+                <select
+                  value={statsGroupFilter ?? ''}
+                  onChange={(e) => setStatsGroupFilter(e.target.value || null)}
+                  className="text-xs bg-slate-800 border border-slate-600 rounded px-2 py-1 text-slate-200"
+                >
+                  <option value="">{t('stats_filter_all')}</option>
+                  {avgByArea.map(({ categoryId, count }) => {
+                    const cat = teamCategories.find((c) => c.id === categoryId);
+                    return (
+                      <option key={categoryId} value={categoryId}>
+                        {ensureString(cat?.name, lang)} ({count})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              <p className="text-2xl font-bold text-emerald-400">{avgFiltered} pts</p>
               <div className="flex gap-4 mt-2 text-sm text-slate-400">
                 <span>{t('std_deviation')}: <span className="font-mono text-slate-300">{stdDev}</span></span>
+                {statsGroupFilter && (
+                  <span className="text-slate-500">({filteredMembers.length})</span>
+                )}
               </div>
             </div>
             <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
               <div>
                 <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t('points_distribution')}</h4>
-                <div className="space-y-1.5 mb-4">
-                  {distribution.map(({ label, count }) => {
-                    const maxCount = Math.max(...distribution.map((d) => d.count), 1);
-                    const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
-                    return (
-                      <div key={label} className="flex items-center gap-2">
-                        <span className="text-xs text-slate-400 w-14 shrink-0">{label} pts</span>
-                        <div className="flex-1 h-5 bg-slate-800 rounded overflow-hidden">
-                          <div
-                            className="h-full bg-emerald-600/60 rounded transition-all"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-mono text-slate-300 w-6 text-right">{count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                <PointsHistogram distribution={distribution} />
               </div>
               <div>
                 <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t('avg_points_by_area')}</h4>
@@ -307,10 +431,10 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                     <p className="text-sm text-slate-500">{t('no_categories')}</p>
                   ) : (
                     avgByArea.map(({ categoryId, avg, count }) => {
-                      const cat = categoryId ? teamCategories.find((c) => c.id === categoryId) : null;
-                      const name = categoryId ? ensureString(cat?.name, lang) : (t('unassigned') || 'Sin área');
+                      const cat = teamCategories.find((c) => c.id === categoryId);
+                      const name = ensureString(cat?.name, lang);
                       return (
-                        <div key={categoryId || '_'} className="flex justify-between items-center py-1.5 border-b border-slate-800 last:border-0">
+                        <div key={categoryId} className="flex justify-between items-center py-1.5 border-b border-slate-800 last:border-0">
                           <span className="text-sm text-slate-200">{name}</span>
                           <span className="text-sm font-mono text-emerald-400">{avg} pts <span className="text-slate-500 font-normal">({count})</span></span>
                         </div>
@@ -334,7 +458,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
             <div className="p-5 border-t border-slate-700">
               <button
                 type="button"
-                onClick={() => setShowPointsDetail(false)}
+                onClick={() => { setShowPointsDetail(false); setStatsGroupFilter(null); }}
                 className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors"
               >
                 {t('merit_detail_close')}
