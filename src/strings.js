@@ -282,6 +282,7 @@ export const STRINGS = {
     short_desc_placeholder:'Resumen corto (máx. 100 caracteres)…',
     long_desc_placeholder: 'Describe en detalle cómo ganar este mérito…',
     merit_detail_close:    'Cerrar',
+    merit_click_to_view:   'Clic para ver descripción',
     how_to_obtain:         'Cómo Obtenerlo',
     no_long_desc:          'Sin descripción detallada.',
     no_events_yet:         'Aún no hay logros otorgados.',

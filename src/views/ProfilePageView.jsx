@@ -5,8 +5,9 @@
 //
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { t, lang } from '../strings.js';
-import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT } from '../constants.js';
+import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT, SYSTEM_MERIT_DESCRIPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay, isBlockedImageHost } from '../utils.js';
@@ -86,7 +87,7 @@ function AutoGrowInput({ value, onChange, placeholder, className, ...rest }) {
 }
 
 export default function ProfilePageView({
-  membership, categories, meritEvents = [], canEditThis, onSave,
+  membership, categories, merits = [], meritEvents = [], canEditThis, onSave,
   weeklyStatuses = [], onSaveWeeklyStatus, suggestedTags = [],
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp, personalityTags: personalityTagsProp,
 }) {
@@ -96,6 +97,7 @@ export default function ProfilePageView({
   const [editing,    setEditing]    = useState(false);
   const [draft,      setDraft]      = useState({});
   const [cropTarget, setCropTarget] = useState(null);
+  const [detailMerit, setDetailMerit] = useState(null); // merit shown in popup when clicking a logro
   const photoFileRef = useRef(null);
   const coverFileRef = useRef(null);
   const [editingWeekly, setEditingWeekly] = useState(false);
@@ -103,6 +105,13 @@ export default function ProfilePageView({
   const [savingWeekly,  setSavingWeekly]  = useState(false);
 
   if (!membership) return null;
+
+  useEffect(() => {
+    if (!detailMerit) return;
+    const onKey = (e) => { if (e.key === 'Escape') setDetailMerit(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [detailMerit]);
 
   const cat     = categories.find((c) => c.id === membership.categoryId);
   const weekOf  = getMondayOfWeekLocal(); // Monday–Sunday week, local time (weeks start Monday)
@@ -584,23 +593,42 @@ export default function ProfilePageView({
                     });
                     return Object.values(groups)
                       .sort((a, b) => (b.evt.createdAt?.seconds || 0) - (a.evt.createdAt?.seconds || 0))
-                      .map(({ evt, count, autoAward }) => (
-                        <div
-                          key={evt.id}
-                          className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 rounded-lg px-3 py-2"
-                        >
-                          <span className="text-xl shrink-0">{evt.meritLogo || '🏆'}</span>
-                          <div>
-                            <p className="text-sm font-medium text-slate-200">
-                              {evt.meritName || t('merit')}{count > 1 && <span className="text-slate-400 ml-1">×{count}</span>}
-                            </p>
-                            <p className="text-xs text-amber-400/90">
-                              +{(evt.points || 0) * count} pts
-                              {autoAward && <span className="text-slate-500 ml-1">· {t('merit_awarded_by_system')}</span>}
-                            </p>
-                          </div>
-                        </div>
-                      ));
+                      .map(({ evt, count, autoAward }) => {
+                        const merit = evt.meritId ? merits?.find((m) => m.id === evt.meritId) : null;
+                        const meritName = (evt.meritName || '').trim();
+                        const sysDesc = meritName && (SYSTEM_MERIT_DESCRIPTIONS[meritName] || SYSTEM_MERIT_DESCRIPTIONS[evt.meritName]);
+                        const displayMerit = merit || (meritName ? {
+                          name: meritName,
+                          logo: evt.meritLogo || '🏆',
+                          points: evt.points || 0,
+                          categoryId: null,
+                          shortDescription: sysDesc?.shortDescription,
+                          longDescription: sysDesc?.longDescription,
+                        } : null);
+                        return (
+                          <button
+                            key={`${evt.meritId || ''}-${evt.meritName || ''}-${evt.id}`}
+                            type="button"
+                            onClick={() => displayMerit && setDetailMerit(displayMerit)}
+                            title={t('merit_click_to_view') || 'Clic para ver descripción'}
+                            className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 rounded-lg px-3 py-2 text-left w-full sm:w-auto hover:bg-amber-950/50 hover:border-amber-500/60 transition-colors cursor-pointer group"
+                          >
+                            <span className="text-xl shrink-0">{evt.meritLogo || '🏆'}</span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-slate-200 group-hover:text-amber-200 transition-colors">
+                                {evt.meritName || t('merit')}{count > 1 && <span className="text-slate-400 ml-1">×{count}</span>}
+                              </p>
+                              <p className="text-xs text-amber-400/90">
+                                +{(evt.points || 0) * count} pts
+                                {autoAward && <span className="text-slate-500 ml-1">· {t('merit_awarded_by_system')}</span>}
+                              </p>
+                              <p className="text-[10px] text-slate-500 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {t('merit_click_to_view')}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      });
                   })()}
                 </div>
               ) : (
@@ -665,6 +693,59 @@ export default function ProfilePageView({
       {cropTarget === 'coverPhotoURL' && (
         <ImageCropModal src={draft.coverPhotoURL} label="Reframe Cover Photo" cropWidth={1280} cropHeight={427}
           onApply={(url) => { set('coverPhotoURL', url); setCropTarget(null); }} onCancel={() => setCropTarget(null)} />
+      )}
+
+      {/* Merit detail popup (when clicking a logro) — portaled to body for proper overlay */}
+      {detailMerit && createPortal(
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4"
+          onClick={() => setDetailMerit(null)}
+        >
+          <div
+            className="bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-5 flex items-center gap-4">
+              <div className="w-16 h-16 flex items-center justify-center bg-slate-700 rounded-xl overflow-hidden border border-slate-600 shrink-0">
+                {detailMerit.logo && (detailMerit.logo.startsWith('http') || detailMerit.logo.startsWith('data:')) ? (
+                  <img src={detailMerit.logo} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  <span className="text-4xl">{detailMerit.logo || '🏆'}</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-bold text-lg leading-tight">{detailMerit.name}</h2>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className="font-mono text-emerald-400 font-bold text-sm">{detailMerit.points} {t('pts_label')}</span>
+                  {detailMerit.categoryId && categories?.find((c) => c.id === detailMerit.categoryId) && (
+                    <span className="text-xs text-slate-400">
+                      · {ensureString(categories.find((c) => c.id === detailMerit.categoryId)?.name)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              {getL(detailMerit.shortDescription, lang) && (
+                <p className="text-sm text-slate-300 italic">{getL(detailMerit.shortDescription, lang)}</p>
+              )}
+              <div>
+                <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">{t('how_to_obtain')}</div>
+                <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+                  {getL(detailMerit.longDescription, lang) || getL(detailMerit.shortDescription, lang) || t('no_long_desc')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailMerit(null)}
+                className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors"
+              >
+                {t('merit_detail_close')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

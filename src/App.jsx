@@ -2160,6 +2160,7 @@ export default function App() {
                 <ProfilePageView
                   membership={currentMembership}
                   categories={teamCategories}
+                  merits={teamMerits}
                   meritEvents={teamMeritEvents.filter((e) => e.membershipId === currentMembership.id)}
                   canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || (authUser && (currentMembership.userId === authUser.uid || view === 'myprofile'))}
                   onSave={handleUpdateMemberProfile}
@@ -2187,6 +2188,7 @@ export default function App() {
               <ProfilePageView
                 membership={profileMember}
                 categories={teamCategories}
+                merits={teamMerits}
                 meritEvents={teamMeritEvents.filter((e) => e.membershipId === profileMember.id)}
                 canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || (authUser && profileMember.userId === authUser.uid)}
                 onSave={handleUpdateMemberProfile}

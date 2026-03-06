@@ -181,3 +181,23 @@ export const SYSTEM_MERIT_NAMES = {
   profileComplete: 'Perfil completo',
   milestone50:     '50 actualizaciones',
 };
+
+/** Descriptions for system merits (shown when clicking on profile logros). */
+export const SYSTEM_MERIT_DESCRIPTIONS = {
+  [SYSTEM_MERIT_NAMES.weeklyUpdate]: {
+    shortDescription: { en: 'Weekly progress update.', es: 'Actualización semanal de avances.' },
+    longDescription:  { en: 'Awarded automatically when you post your weekly status (what you advanced, what you failed at, what you learned). Post every week to earn points. Go to "Esta semana" in your profile to submit.', es: 'Se otorga automáticamente al publicar tu estatus semanal (qué avanzaste, en qué fallaste, qué aprendiste). Publica cada semana para ganar puntos. Ve a "Esta semana" en tu perfil para enviar.' },
+  },
+  [SYSTEM_MERIT_NAMES.profileComplete]: {
+    shortDescription: { en: 'Complete community profile.', es: 'Perfil comunitario completo.' },
+    longDescription:  { en: 'Awarded automatically when you fill in all required profile fields: bio, hobbies, current objective, current challenge, collaboration tags, and at least one culture item (song, book, idea, or quote). Edit your profile to complete it.', es: 'Se otorga automáticamente al completar todos los campos del perfil: bio, pasatiempos, objetivo actual, reto actual, etiquetas de colaboración y al menos un ítem de cultura (canción, libro, idea o cita). Edita tu perfil para completarlo.' },
+  },
+  [SYSTEM_MERIT_NAMES.milestone50]: {
+    shortDescription: { en: '50 weekly updates milestone.', es: 'Hito de 50 actualizaciones semanales.' },
+    longDescription:  { en: 'Awarded automatically when you reach 50 weekly status posts. Keep posting consistently every week to earn this milestone bonus.', es: 'Se otorga automáticamente al alcanzar 50 publicaciones de estatus semanal. Sigue publicando de forma constante cada semana para ganar este bono de hito.' },
+  },
+  'Tarea revisada': {
+    shortDescription: { en: 'Task reviewed and graded.', es: 'Tarea revisada y calificada.' },
+    longDescription:  { en: 'Awarded when a leader or admin reviews and grades a task you completed. The points depend on the grade (ok, good, excellent, perfect).', es: 'Se otorga cuando un líder o admin revisa y califica una tarea que completaste. Los puntos dependen de la calificación (ok, bien, excelente, perfecto).' },
+  },
+};
