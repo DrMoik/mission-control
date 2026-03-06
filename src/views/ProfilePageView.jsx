@@ -175,7 +175,7 @@ export default function ProfilePageView({
       });
       setEditing(false);
       if (result?.meritAwarded) alert(t('profile_saved_merit_awarded'));
-      else if (result && 'meritAwarded' in result) alert(t('profile_saved_merit_missing'));
+      else if (result?.profileComplete === false) alert(t('profile_saved_merit_missing'));
     } catch (err) {
       console.error('Profile save failed:', err);
       const msg = (err?.message || '').toLowerCase();

@@ -694,35 +694,38 @@ export default function App() {
       hasCulture;
 
     // Perfil completo: award once per membership. If merit was deleted, re-award (per-membership doc is source of truth).
+    let meritNewlyAwarded = false;
     if (isProfileComplete && currentTeam && authUser) {
       const meritEventsRef = collection(db, 'meritEvents');
       const midsToAward = idsToUpdate.filter((mid) => teamMemberships.some((mm) => mm.id === mid));
-      if (midsToAward.length === 0) return;
-      await runTransaction(db, async (tx) => {
-        for (const mid of midsToAward) {
-          const awardId = `auto_profile_complete_50_${currentTeam.id}_${mid}`;
-          const awardRef = doc(meritEventsRef, awardId);
-          const awardSnap = await tx.get(awardRef);
-          if (awardSnap.exists()) continue; // already awarded for this membership
-          tx.set(awardRef, {
-            teamId:            currentTeam.id,
-            membershipId:      mid,
-            meritId:           null,
-            meritName:         SYSTEM_MERIT_NAMES.profileComplete,
-            meritLogo:         '✅',
-            points:            systemMeritPoints.profileComplete,
-            type:              'award',
-            evidence:          'profile_complete_50',
-            autoAward:         true,
-            awardedByUserId:   authUser.uid,
-            awardedByName:     userProfile?.displayName || authUser.email || '—',
-            createdAt:         serverTimestamp(),
-          });
-        }
-      });
+      if (midsToAward.length > 0) {
+        await runTransaction(db, async (tx) => {
+          for (const mid of midsToAward) {
+            const awardId = `auto_profile_complete_50_${currentTeam.id}_${mid}`;
+            const awardRef = doc(meritEventsRef, awardId);
+            const awardSnap = await tx.get(awardRef);
+            if (awardSnap.exists()) continue; // already awarded for this membership
+            meritNewlyAwarded = true;
+            tx.set(awardRef, {
+              teamId:            currentTeam.id,
+              membershipId:      mid,
+              meritId:           null,
+              meritName:         SYSTEM_MERIT_NAMES.profileComplete,
+              meritLogo:         '✅',
+              points:            systemMeritPoints.profileComplete,
+              type:              'award',
+              evidence:          'profile_complete_50',
+              autoAward:         true,
+              awardedByUserId:   authUser.uid,
+              awardedByName:     userProfile?.displayName || authUser.email || '—',
+              createdAt:         serverTimestamp(),
+            });
+          }
+        });
+      }
     }
     // Firestore listener will update teamMemberships; profileMember derives from it
-    return { meritAwarded: !!isProfileComplete };
+    return { meritAwarded: meritNewlyAwarded, profileComplete: !!isProfileComplete };
   };
 
   /** Admin-only: re-award "Perfil completo" merit if the member's profile meets all requirements. Use when merit was accidentally revoked. */
