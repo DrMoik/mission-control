@@ -116,14 +116,29 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid
       );
 
-      // Own profile: userId in doc, or membership ID format uid_teamId (handles legacy docs missing userId)
+      // Profile fields: only platform admin and the member can edit (displayName, bio, etc.)
+      // Team admins: only status, role, categoryId, strikes (approve join, assign role/area, strikes)
+      // Area leaders: only strikes, status for members in their area
       allow update: if (request.auth != null && (
           resource.data.userId == request.auth.uid ||
           membershipId == request.auth.uid + '_' + resource.data.teamId
         ))
-        || isTeamAdmin(resource.data.teamId)
+        || isPlatformAdmin()
+        || (isTeamAdmin(resource.data.teamId) && (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role']) ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['categoryId']) ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes']) ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']) ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'strikeHistory']) ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status', 'strikeHistory'])
+          ))
         || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null))
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']));
+            && (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']) ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'strikeHistory']) ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status', 'strikeHistory'])
+            ));
 
       allow delete: if isPlatformAdmin() ||
         isTeamAdmin(resource.data.teamId) ||
@@ -156,9 +171,10 @@ service cloud.firestore {
         (request.resource.data.autoAward == true &&
          request.resource.data.membershipId != null &&
          request.resource.data.teamId != null &&
-         exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
-         (get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.userId == request.auth.uid ||
-          request.resource.data.membershipId == request.auth.uid + '_' + request.resource.data.teamId));
+         request.resource.data.get('awardedByUserId', '') == request.auth.uid &&
+         (request.resource.data.membershipId == request.auth.uid + '_' + request.resource.data.teamId ||
+          (exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
+           get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.get('userId', '') == request.auth.uid)));
       allow update: if isPlatformAdmin() ||
         (isActiveMember(resource.data.teamId) &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']) &&

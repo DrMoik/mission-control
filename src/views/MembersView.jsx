@@ -9,7 +9,30 @@ import React, { useState, useMemo } from 'react';
 import { t } from '../strings.js';
 import { ROLE_ORDER, CAREER_OPTIONS } from '../constants.js';
 import { RoleBadge, StrikePips, MemberAvatar } from '../components/ui/index.js';
-import { ensureString } from '../utils.js';
+import AddStrikeModal from '../components/AddStrikeModal.jsx';
+import { ensureString, tsToDate } from '../utils.js';
+
+/** StrikePips + optional evidence tooltip when strikeHistory exists */
+function StrikePipsWithEvidence({ member }) {
+  const history = member?.strikeHistory || [];
+  const count = member?.strikes || 0;
+  const summary = history.length > 0
+    ? history.map((h, i) => {
+        const parts = [];
+        if (h.evidence?.text) parts.push(h.evidence.text.slice(0, 80) + (h.evidence.text.length > 80 ? '…' : ''));
+        if (h.evidence?.link) parts.push(h.evidence.link);
+        if (h.evidence?.imageUrl) parts.push('(imagen)');
+        const date = h.createdAt?.toDate ? h.createdAt.toDate() : (h.createdAt ? tsToDate(h.createdAt) : null);
+        const dateStr = date ? date.toLocaleDateString() : '';
+        return `Falta ${i + 1}: ${parts.join(' ') || '—'} ${dateStr}`.trim();
+      }).join('\n')
+    : '';
+  return (
+    <span title={summary || undefined} className={summary ? 'cursor-help' : ''}>
+      <StrikePips count={count} />
+    </span>
+  );
+}
 
 /**
  * @param {{
@@ -22,7 +45,7 @@ import { ensureString } from '../utils.js';
  *   canStrike:            boolean  (can add/remove strikes — admins or area leaders)
  *   canStrikeMember:      function(member) → boolean  (can strike this specific member, e.g. same area for leaders)
  *   canRemoveStrikeMember: function(member) → boolean  (can remove strike — leaders cannot remove their own)
- *   onAddStrike:          function(membershipId) → Promise
+ *   onAddStrike:          function(membershipId, evidence) → Promise
  *   onRemoveStrike:       function(membershipId) → Promise
  *   onViewProfile:        function(membership)
  *   onCreateGhostMember:  function(data) → Promise
@@ -43,6 +66,7 @@ export default function MembersView({
   const [catFilter,     setCatFilter]     = useState('');
   const [skillFilter,   setSkillFilter]   = useState('');   // collaboration skill search
   const [showGhostForm, setShowGhostForm] = useState(false);
+  const [addStrikeMember, setAddStrikeMember] = useState(null); // { id, displayName }
   const [ghostForm,     setGhostForm]     = useState({
     displayName: '', role: 'facultyAdvisor', categoryId: '', university: '', career: '', bio: '',
   });
@@ -316,10 +340,10 @@ export default function MembersView({
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <StrikePips count={m.strikes || 0} />
+                      <StrikePipsWithEvidence member={m} />
                       {(canStrikeMember ? canStrikeMember(m) : canEdit) && (
                         <div className="flex gap-1">
-                          <button onClick={() => onAddStrike(m.id)}
+                          <button onClick={() => setAddStrikeMember({ id: m.id, displayName: ensureString(m.displayName) })}
                             className="text-[10px] text-red-400 border border-red-800 rounded px-1 hover:bg-red-900/30">
                             +
                           </button>
@@ -364,7 +388,7 @@ export default function MembersView({
                 {suspended.map((m) => (
                   <tr key={m.id} className="border-b border-slate-700 opacity-60">
                     <td className="px-3 py-2">{ensureString(m.displayName)}</td>
-                    <td className="px-3 py-2"><StrikePips count={m.strikes || 0} /></td>
+                    <td className="px-3 py-2"><StrikePipsWithEvidence member={m} /></td>
                     <td className="px-3 py-2">
                       {(canRemoveStrikeMember ? canRemoveStrikeMember(m) : (canStrikeMember ? canStrikeMember(m) : canEdit)) && (
                         <button onClick={() => onRemoveStrike(m.id)} className="text-[11px] text-emerald-400 underline">
@@ -378,6 +402,14 @@ export default function MembersView({
             </table>
           </div>
         </div>
+      )}
+
+      {addStrikeMember && (
+        <AddStrikeModal
+          memberName={addStrikeMember.displayName}
+          onConfirm={(evidence) => onAddStrike(addStrikeMember.id, evidence)}
+          onCancel={() => setAddStrikeMember(null)}
+        />
       )}
     </div>
   );

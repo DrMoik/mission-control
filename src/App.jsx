@@ -576,14 +576,32 @@ export default function App() {
   const canRemoveStrikeMember = (member) =>
     canStrikeMember(member) && !(memberRole === 'leader' && !isPlatformAdmin && currentMembership?.id === member?.id);
 
-  const handleAddStrike = async (membershipId) => {
+  const handleAddStrike = async (membershipId, evidence = {}) => {
     if (!canStrike) return;
     const m = teamMemberships.find((mm) => mm.id === membershipId);
     if (!m) return;
     if (!canStrikeMember(m)) return;
+    const hasEvidence = (evidence.text || '').trim() || (evidence.link || '').trim() || (evidence.imageUrl || '');
+    if (!hasEvidence) throw new Error('Se requiere al menos una evidencia (texto, enlace o imagen).');
     const newStrikes = (m.strikes || 0) + 1;
+    const strikeHistory = Array.isArray(m.strikeHistory) ? [...m.strikeHistory] : [];
+    let imageUrl = evidence.imageUrl;
+    if (imageUrl && imageUrl.startsWith('data:')) {
+      imageUrl = await compressDataUrlIfNeeded(imageUrl, 30000); // ~30KB low-res for evidence
+    }
+    strikeHistory.push({
+      evidence: {
+        ...(evidence.text?.trim() && { text: evidence.text.trim() }),
+        ...(evidence.link?.trim() && { link: evidence.link.trim() }),
+        ...(imageUrl && { imageUrl }),
+      },
+      createdAt: serverTimestamp(),
+      addedByUserId: authUser?.uid ?? '',
+      addedByName: authUser?.displayName ?? '',
+    });
     await updateDoc(doc(db, 'memberships', membershipId), {
       strikes: newStrikes,
+      strikeHistory,
       ...(newStrikes >= 3 ? { status: 'suspended' } : {}),
     });
   };
@@ -595,8 +613,12 @@ export default function App() {
     if (!canStrikeMember(m)) return;
     // Leaders cannot remove their own strikes
     if (memberRole === 'leader' && !isPlatformAdmin && currentMembership?.id === membershipId) return;
+    const newStrikes = Math.max(0, (m.strikes || 0) - 1);
+    const strikeHistory = Array.isArray(m.strikeHistory) ? [...m.strikeHistory] : [];
+    if (strikeHistory.length > 0) strikeHistory.pop();
     await updateDoc(doc(db, 'memberships', membershipId), {
-      strikes: Math.max(0, (m.strikes || 0) - 1),
+      strikes: newStrikes,
+      strikeHistory,
       status: 'active',
     });
   };
@@ -606,7 +628,7 @@ export default function App() {
     const m = teamMemberships.find((mm) => mm.id === membershipId);
     if (!m) throw new Error('Miembro no encontrado.');
     const isOwnProfile = authUser && (m.userId === authUser.uid || currentMembership?.id === membershipId);
-    const canEditThis = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || isOwnProfile;
+    const canEditThis = isPlatformAdmin || isOwnProfile; // Only platform admin and the member can edit profile
     if (!canEditThis) throw new Error('No tienes permiso para editar este perfil.');
     // Compress data URLs to stay under Firestore 1MB doc limit (same limit for all members)
     const maxBytes = 120000;
@@ -2179,7 +2201,7 @@ export default function App() {
                   categories={teamCategories}
                   merits={teamMerits}
                   meritEvents={teamMeritEvents.filter((e) => e.membershipId === currentMembership.id)}
-                  canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || (authUser && (currentMembership.userId === authUser.uid || view === 'myprofile'))}
+                  canEditThis={isPlatformAdmin || (authUser && currentMembership.userId === authUser.uid)}
                   onSave={handleUpdateMemberProfile}
                   weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
                   onSaveWeeklyStatus={handleSaveWeeklyStatus}
@@ -2207,7 +2229,7 @@ export default function App() {
                 categories={teamCategories}
                 merits={teamMerits}
                 meritEvents={teamMeritEvents.filter((e) => e.membershipId === profileMember.id)}
-                canEditThis={isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || (authUser && profileMember.userId === authUser.uid) || (memberRole === 'leader' && currentMembership?.categoryId && profileMember?.categoryId === currentMembership.categoryId)}
+                canEditThis={isPlatformAdmin || (authUser && profileMember.userId === authUser.uid)}
                 onSave={handleUpdateMemberProfile}
                 weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
                 onSaveWeeklyStatus={handleSaveWeeklyStatus}
