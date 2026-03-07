@@ -156,9 +156,13 @@ export default function HRView({
       {tab === 'suggestions' && (
         <div className="space-y-4">
           {authUserId && (
-            <div className="flex gap-4 text-xs text-slate-400">
-              <span>{t('hr_my_suggestions_posted')}: <strong className="text-slate-200">{mySuggestionsCount}</strong></span>
-              <span>{t('hr_my_suggestions_implemented')}: <strong className="text-emerald-400">{myImplementedCount}</strong></span>
+            <div className="flex gap-4 p-3 bg-slate-800/60 rounded-lg border border-slate-700/60">
+              <span className="text-xs text-slate-400">
+                {t('hr_my_suggestions_posted')}: <strong className="text-slate-200">{mySuggestionsCount}</strong>
+              </span>
+              <span className="text-xs text-slate-400">
+                {t('hr_my_suggestions_implemented')}: <strong className="text-emerald-400">{myImplementedCount}</strong>
+              </span>
             </div>
           )}
 
@@ -194,7 +198,7 @@ export default function HRView({
           {canViewHr && suggestions.length > 0 && (
             <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
               <div className="px-4 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setSuggestionStatusFilter('pending')}
                     className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'pending' ? 'bg-amber-500 text-black' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
@@ -212,6 +216,12 @@ export default function HRView({
                     className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'dismissed' ? 'bg-slate-500 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
                   >
                     {t('hr_suggestions_dismissed')} ({suggestions.filter((s) => s.status === 'dismissed').length})
+                  </button>
+                  <button
+                    onClick={() => setSuggestionStatusFilter('all')}
+                    className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'all' ? 'bg-slate-500 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
+                  >
+                    {t('hr_suggestions_all')} ({suggestions.length})
                   </button>
                 </div>
               </div>

@@ -226,6 +226,7 @@ export const STRINGS = {
     hr_suggestions_pending:   'Pendientes',
     hr_suggestions_accepted:  'Aceptadas',
     hr_suggestions_dismissed: 'Descartadas',
+    hr_suggestions_all:       'Todas',
     hr_suggestions_consider:  'Considerar',
     hr_suggestions_dismiss:   'Descartar',
     hr_suggestions_reconsider:'Reconsiderar',

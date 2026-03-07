@@ -705,6 +705,7 @@ export default function App() {
       type:                 'award',
       evidence:             suggestion.id,
       autoAward:            false,
+      systemGiven:          true,
       awardedByUserId:      authUser?.uid || null,
       awardedByName:        userProfile?.displayName   || authUser?.email || '—',
       achievementTypes:     ['creatividad'],
