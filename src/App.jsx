@@ -190,6 +190,19 @@ export default function App() {
     userMembershipsReady,
   } = useFirebaseSubscriptions({ authUser, selectedTeamId });
 
+  // Restore last selected team from localStorage on refresh (only when user has access)
+  useEffect(() => {
+    if (!authUser || !userMembershipsReady || selectedTeamId) return;
+    try {
+      const saved = localStorage.getItem(SELECTED_TEAM_STORAGE_KEY);
+      if (!saved) return;
+      const hasAccess = userMemberships.some(
+        (m) => m.teamId === saved && (m.status === 'active' || m.status === 'suspended')
+      );
+      if (hasAccess) setSelectedTeamId(saved);
+    } catch (_) {}
+  }, [authUser, userMembershipsReady, selectedTeamId, userMemberships, setSelectedTeamId]);
+
   // ── UI state ───────────────────────────────────────────────────────────────
   const [navCollapsed,   setNavCollapsed]   = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
