@@ -18,7 +18,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from './firebase.js';
 import {
   collection, doc, setDoc, getDoc, updateDoc, deleteDoc,
-  addDoc, query, where, onSnapshot, serverTimestamp, runTransaction,
+  addDoc, query, where, onSnapshot, serverTimestamp, Timestamp, runTransaction,
   getDocs, writeBatch,
 } from 'firebase/firestore';
 import { useAuth } from './hooks/useAuth.js';
@@ -593,7 +593,7 @@ export default function App() {
         ...(evidence.text?.trim() && { text: evidence.text.trim() }),
         ...(evidence.link?.trim() && { link: evidence.link.trim() }),
       },
-      createdAt: serverTimestamp(),
+      createdAt: Timestamp.now(),
       addedByUserId: authUser?.uid ?? '',
       addedByName: authUser?.displayName ?? '',
     });
