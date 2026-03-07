@@ -438,6 +438,8 @@ export const STRINGS = {
     task_description_ph: 'Detalles (opcional)…',
     task_due:            'Fecha límite',
     task_my_pending:     'Mis tareas pendientes',
+    task_pending:        'Pendientes',
+    task_all_team:      'Todas las tareas del equipo',
     task_no_pending:     'No tienes tareas pendientes.',
     task_completed:      'Completadas',
     task_mark_done:      'Marcar hecha',

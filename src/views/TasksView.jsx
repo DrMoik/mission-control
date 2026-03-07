@@ -12,12 +12,14 @@ export default function TasksView({
   tasks,
   memberships = [],
   currentMembership,
+  canViewAllTasks = false,
   onRequestTaskReview,
   onGradeTask,
   onDeleteTask,
   tsToDate,
 }) {
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showAllTeamTasks, setShowAllTeamTasks] = useState(false);
 
   const getAssigneeIds = (task) =>
     task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
@@ -33,6 +35,11 @@ export default function TasksView({
     (task) =>
       task.assignedByMembershipId === currentMembership?.id && task.status === 'pending_review',
   );
+
+  const allTasks = tasks || [];
+  const allPending = allTasks.filter((t) => (t.status || 'pending') === 'pending');
+  const allPendingReview = allTasks.filter((t) => t.status === 'pending_review');
+  const allCompleted = allTasks.filter((t) => t.status === 'completed');
 
   const TaskCard = ({ task, isCompleted, showRequestReview, showGrade }) => {
     const assignerName = task.assignedByName || '—';
@@ -141,6 +148,53 @@ export default function TasksView({
               <TaskCard key={task.id} task={task} showRequestReview={false} showGrade />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* All team tasks (admins only) */}
+      {canViewAllTasks && allTasks.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowAllTeamTasks((s) => !s)}
+            className="text-sm font-medium text-slate-300 hover:text-slate-200"
+          >
+            <span className={`inline-block transition-transform ${showAllTeamTasks ? '' : '-rotate-90'}`}>▼</span> {t('task_all_team')} ({allTasks.length})
+          </button>
+          {showAllTeamTasks && (
+            <div className="space-y-4 mt-3">
+              {allPendingReview.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-amber-400/90 mb-2">{t('task_pending_your_review')} ({allPendingReview.length})</h4>
+                  <div className="space-y-2">
+                    {allPendingReview.map((task) => (
+                      <TaskCard key={task.id} task={task} showRequestReview={false} showGrade />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {allPending.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-400 mb-2">{t('task_pending')} ({allPending.length})</h4>
+                  <div className="space-y-2">
+                    {allPending.map((task) => (
+                      <TaskCard key={task.id} task={task} showRequestReview showGrade={false} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {allCompleted.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-500 mb-2">{t('task_completed')} ({allCompleted.length})</h4>
+                  <div className="space-y-2">
+                    {allCompleted.map((task) => (
+                      <TaskCard key={task.id} task={task} isCompleted showRequestReview={false} showGrade={false} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

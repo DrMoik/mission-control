@@ -44,8 +44,9 @@ export default function HRView({
   const [suggestionAnonymous, setSuggestionAnonymous] = useState(false);
   const [suggestionSaving, setSuggestionSaving] = useState(false);
   const [suggestionStatusFilter, setSuggestionStatusFilter] = useState('pending');
-  const [acceptModalSuggestion, setAcceptModalSuggestion] = useState(null);
+  const [viewModalSuggestion, setViewModalSuggestion] = useState(null);
   const [acceptSaving, setAcceptSaving] = useState(false);
+  const [showAcceptPoints, setShowAcceptPoints] = useState(false);
 
   const [complaintType, setComplaintType] = useState('team');
   const [complaintTargetCat, setComplaintTargetCat] = useState('');
@@ -196,80 +197,67 @@ export default function HRView({
           </div>
 
           {canViewHr && suggestions.length > 0 && (
-            <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
-              <div className="px-4 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSuggestionStatusFilter('pending')}
-                    className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'pending' ? 'bg-amber-500 text-black' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
-                  >
-                    {t('hr_suggestions_pending')} ({suggestions.filter((s) => (s.status || 'pending') === 'pending').length})
-                  </button>
-                  <button
-                    onClick={() => setSuggestionStatusFilter('accepted')}
-                    className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'accepted' ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
-                  >
-                    {t('hr_suggestions_accepted')} ({suggestions.filter((s) => s.status === 'accepted').length})
-                  </button>
-                  <button
-                    onClick={() => setSuggestionStatusFilter('dismissed')}
-                    className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'dismissed' ? 'bg-slate-500 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
-                  >
-                    {t('hr_suggestions_dismissed')} ({suggestions.filter((s) => s.status === 'dismissed').length})
-                  </button>
-                  <button
-                    onClick={() => setSuggestionStatusFilter('all')}
-                    className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'all' ? 'bg-slate-500 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
-                  >
-                    {t('hr_suggestions_all')} ({suggestions.length})
-                  </button>
-                </div>
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSuggestionStatusFilter('pending')}
+                  className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'pending' ? 'bg-amber-500 text-black' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
+                >
+                  {t('hr_suggestions_pending')} ({suggestions.filter((s) => (s.status || 'pending') === 'pending').length})
+                </button>
+                <button
+                  onClick={() => setSuggestionStatusFilter('accepted')}
+                  className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'accepted' ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
+                >
+                  {t('hr_suggestions_accepted')} ({suggestions.filter((s) => s.status === 'accepted').length})
+                </button>
+                <button
+                  onClick={() => setSuggestionStatusFilter('dismissed')}
+                  className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'dismissed' ? 'bg-slate-500 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
+                >
+                  {t('hr_suggestions_dismissed')} ({suggestions.filter((s) => s.status === 'dismissed').length})
+                </button>
+                <button
+                  onClick={() => setSuggestionStatusFilter('all')}
+                  className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'all' ? 'bg-slate-500 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
+                >
+                  {t('hr_suggestions_all')} ({suggestions.length})
+                </button>
               </div>
-              <div className="divide-y divide-slate-700 max-h-80 overflow-y-auto">
-                {filteredSuggestions.map((s) => (
-                  <div key={s.id} className="px-4 py-3 text-xs">
-                    <p className="text-slate-200 whitespace-pre-wrap">{ensureString(s.content)}</p>
-                    <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-slate-500">
-                        {s.isAnonymous ? t('hr_anonymous') : `${ensureString(s.authorName)} — `}
-                        {formatDate(s.createdAt)}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto">
+                {filteredSuggestions.map((s) => {
+                  const preview = (ensureString(s.content) || '').slice(0, 80);
+                  const status = s.status || 'pending';
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setViewModalSuggestion(s);
+                        setShowAcceptPoints(false);
+                      }}
+                      className="text-left p-4 rounded-xl border border-slate-600 bg-slate-800/80 hover:border-slate-500 hover:bg-slate-800 transition-colors"
+                    >
+                      <p className="text-slate-200 text-xs line-clamp-3">{preview}{preview.length >= 80 ? '…' : ''}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] text-slate-500">
+                          {s.isAnonymous ? t('hr_anonymous') : ensureString(s.authorName)}
+                        </span>
+                        <span className="text-[10px] text-slate-500">{formatDate(s.createdAt)}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                          status === 'pending' ? 'bg-amber-900/50 text-amber-300' :
+                          status === 'accepted' ? 'bg-emerald-900/50 text-emerald-300' :
+                          'bg-slate-700 text-slate-400'
+                        }`}>
+                          {status === 'pending' ? t('hr_suggestions_pending') : status === 'accepted' ? t('hr_suggestions_accepted') : t('hr_suggestions_dismissed')}
+                        </span>
                         {s.status === 'accepted' && s.meritPoints && (
-                          <span className="ml-2 text-emerald-400">+{s.meritPoints} pts</span>
+                          <span className="text-[10px] text-emerald-400">+{s.meritPoints} pts</span>
                         )}
-                      </p>
-                      {canViewHr && (
-                        <div className="flex gap-1">
-                          {s.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => setAcceptModalSuggestion(s)}
-                                disabled={!!s.isAnonymous}
-                                title={s.isAnonymous ? t('hr_suggestion_anonymous_no_merit') : t('hr_suggestions_consider')}
-                                className="px-2 py-1 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-black text-[11px] font-semibold rounded"
-                              >
-                                {t('hr_suggestions_consider')}
-                              </button>
-                              <button
-                                onClick={() => onDismissSuggestion?.(s.id)}
-                                className="px-2 py-1 bg-slate-600 hover:bg-slate-500 text-slate-200 text-[11px] font-semibold rounded"
-                              >
-                                {t('hr_suggestions_dismiss')}
-                              </button>
-                            </>
-                          )}
-                          {s.status === 'dismissed' && (
-                            <button
-                              onClick={() => onReconsiderSuggestion?.(s.id)}
-                              className="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-black text-[11px] font-semibold rounded"
-                            >
-                              {t('hr_suggestions_reconsider')}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -279,40 +267,119 @@ export default function HRView({
         </div>
       )}
 
-      {acceptModalSuggestion && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => !acceptSaving && setAcceptModalSuggestion(null)}>
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-600 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-sm font-semibold text-slate-200 mb-2">{t('hr_suggestions_accept_points')}</h3>
-            <p className="text-xs text-slate-400 mb-3 line-clamp-2">{ensureString(acceptModalSuggestion.content)}</p>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {suggestionMeritPoints.map((pts) => (
+      {viewModalSuggestion && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          onClick={() => !acceptSaving && (setViewModalSuggestion(null), setShowAcceptPoints(false))}
+        >
+          <div
+            className="bg-slate-800 rounded-xl p-5 border border-slate-600 max-w-lg w-full max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-semibold text-slate-200 mb-2">{t('hr_suggestions_list')}</h3>
+            <p className="text-sm text-slate-200 whitespace-pre-wrap mb-4">{ensureString(viewModalSuggestion.content)}</p>
+            <p className="text-xs text-slate-500 mb-4">
+              {viewModalSuggestion.isAnonymous ? t('hr_anonymous') : ensureString(viewModalSuggestion.authorName)}
+              {' · '}{formatDate(viewModalSuggestion.createdAt)}
+              {viewModalSuggestion.status === 'accepted' && viewModalSuggestion.meritPoints && (
+                <span className="ml-2 text-emerald-400">+{viewModalSuggestion.meritPoints} pts</span>
+              )}
+            </p>
+
+            {showAcceptPoints ? (
+              <div>
+                <p className="text-xs text-slate-400 mb-2">{t('hr_suggestions_accept_points')}</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {suggestionMeritPoints.map((pts) => (
+                    <button
+                      key={pts}
+                      onClick={async () => {
+                        setAcceptSaving(true);
+                        try {
+                          await onAcceptSuggestion?.(viewModalSuggestion.id, pts);
+                          setViewModalSuggestion(null);
+                          setShowAcceptPoints(false);
+                        } catch (err) {
+                          console.error(err);
+                          alert(err?.message || t('save_failed'));
+                        } finally {
+                          setAcceptSaving(false);
+                        }
+                      }}
+                      disabled={acceptSaving}
+                      className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black text-xs font-semibold rounded"
+                    >
+                      {pts} pts
+                    </button>
+                  ))}
+                </div>
                 <button
-                  key={pts}
-                  onClick={async () => {
-                    setAcceptSaving(true);
-                    try {
-                      await onAcceptSuggestion?.(acceptModalSuggestion.id, pts);
-                      setAcceptModalSuggestion(null);
-                    } catch (err) {
-                      console.error(err);
-                      alert(err?.message || t('save_failed'));
-                    } finally {
-                      setAcceptSaving(false);
-                    }
-                  }}
-                  disabled={acceptSaving}
-                  className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black text-xs font-semibold rounded"
+                  onClick={() => !acceptSaving && setShowAcceptPoints(false)}
+                  className="text-xs text-slate-400 hover:text-white underline"
                 >
-                  {pts} pts
+                  {t('cancel')}
                 </button>
-              ))}
-            </div>
-            <button
-              onClick={() => !acceptSaving && setAcceptModalSuggestion(null)}
-              className="text-xs text-slate-400 hover:text-white underline"
-            >
-              {t('cancel')}
-            </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {(viewModalSuggestion.status || 'pending') === 'pending' && (
+                  <>
+                    <button
+                      onClick={() => setShowAcceptPoints(true)}
+                      disabled={!!viewModalSuggestion.isAnonymous}
+                      title={viewModalSuggestion.isAnonymous ? t('hr_suggestion_anonymous_no_merit') : t('hr_suggestions_consider')}
+                      className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-black text-xs font-semibold rounded"
+                    >
+                      {t('hr_suggestions_consider')}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setAcceptSaving(true);
+                        try {
+                          await onDismissSuggestion?.(viewModalSuggestion.id);
+                          setViewModalSuggestion(null);
+                        } catch (err) {
+                          console.error(err);
+                          alert(err?.message || t('save_failed'));
+                        } finally {
+                          setAcceptSaving(false);
+                        }
+                      }}
+                      disabled={acceptSaving}
+                      className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-slate-200 text-xs font-semibold rounded"
+                    >
+                      {t('hr_suggestions_dismiss')}
+                    </button>
+                  </>
+                )}
+                {viewModalSuggestion.status === 'dismissed' && (
+                  <button
+                    onClick={async () => {
+                      setAcceptSaving(true);
+                      try {
+                        await onReconsiderSuggestion?.(viewModalSuggestion.id);
+                        setViewModalSuggestion(null);
+                      } catch (err) {
+                        console.error(err);
+                        alert(err?.message || t('save_failed'));
+                      } finally {
+                        setAcceptSaving(false);
+                      }
+                    }}
+                    disabled={acceptSaving}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-black text-xs font-semibold rounded"
+                  >
+                    {t('hr_suggestions_reconsider')}
+                  </button>
+                )}
+                <button
+                  onClick={() => !acceptSaving && (setViewModalSuggestion(null), setShowAcceptPoints(false))}
+                  className="px-3 py-1.5 text-slate-400 hover:text-white text-xs font-semibold"
+                >
+                  {t('close')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

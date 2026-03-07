@@ -2302,6 +2302,7 @@ export default function App() {
                 tasks={teamTasks}
                 memberships={teamMemberships}
                 currentMembership={currentMembership}
+                canViewAllTasks={canEdit}
                 onRequestTaskReview={handleRequestTaskReview}
                 onGradeTask={handleGradeTask}
                 onDeleteTask={handleDeleteTask}
