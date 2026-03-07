@@ -49,6 +49,10 @@ import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMond
 
 // ── Shared UI atoms ───────────────────────────────────────────────────────────
 import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
+import {
+  LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, Wrench,
+  GraduationCap, Wallet, CheckSquare, User, Settings, MessagesSquare,
+} from 'lucide-react';
 
 // ── Modals ────────────────────────────────────────────────────────────────────
 import JoinRequestModal            from './components/JoinRequestModal.jsx';
@@ -139,10 +143,20 @@ function InlineTeamRename({ team, isPlatformAdmin, onRename, onDelete, t }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+const SELECTED_TEAM_STORAGE_KEY = 'mission-control:selectedTeamId';
+
 export default function App() {
 
   // ── Team selection ─────────────────────────────────────────────────────────
-  const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [selectedTeamId, setSelectedTeamIdState] = useState(null);
+  const setSelectedTeamId = useCallback((teamId) => {
+    setSelectedTeamIdState(teamId);
+    if (teamId) {
+      try { localStorage.setItem(SELECTED_TEAM_STORAGE_KEY, teamId); } catch (_) {}
+    } else {
+      try { localStorage.removeItem(SELECTED_TEAM_STORAGE_KEY); } catch (_) {}
+    }
+  }, []);
   const [joinTarget, setJoinTarget] = useState(null);
 
   const onSignOut = useCallback(() => setSelectedTeamId(null), []);
@@ -1868,22 +1882,22 @@ export default function App() {
   // ── Main app shell (team selected) ─────────────────────────────────────────
 
   const navItems = [
-    { id: 'overview',    label: t('nav_overview'),    icon: '◎' },
+    { id: 'overview',    label: t('nav_overview'),    Icon: LayoutDashboard },
     ...(isAtLeastRookie ? [
-      { id: 'feed',        label: t('nav_feed'),        icon: '◷' },
-      { id: 'categories',  label: t('nav_categories'),  icon: '⊞' },
-      { id: 'members',     label: t('nav_members'),     icon: '◉' },
-      { id: 'merits',      label: t('nav_merits'),      icon: '★' },
-      { id: 'leaderboard', label: t('nav_leaderboard'), icon: '▲' },
-      { id: 'calendar',    label: t('nav_calendar'),    icon: '◐' },
-      { id: 'tools',       label: t('nav_tools'),       icon: '⊙' },
-      { id: 'academy',     label: t('nav_academy'),     icon: '◈' },
-      { id: 'funding',     label: t('nav_funding'),     icon: '¤' },
-      { id: 'tasks',       label: t('nav_tasks'),       icon: '☐' },
-      { id: 'hr',          label: t('nav_hr'),          icon: '👥' },
+      { id: 'feed',        label: t('nav_feed'),        Icon: Rss },
+      { id: 'categories',  label: t('nav_categories'),  Icon: Grid },
+      { id: 'members',     label: t('nav_members'),     Icon: Users },
+      { id: 'merits',      label: t('nav_merits'),      Icon: Trophy },
+      { id: 'leaderboard', label: t('nav_leaderboard'), Icon: Award },
+      { id: 'calendar',    label: t('nav_calendar'),    Icon: Calendar },
+      { id: 'tools',       label: t('nav_tools'),       Icon: Wrench },
+      { id: 'academy',     label: t('nav_academy'),     Icon: GraduationCap },
+      { id: 'funding',     label: t('nav_funding'),     Icon: Wallet },
+      { id: 'tasks',       label: t('nav_tasks'),       Icon: CheckSquare },
+      { id: 'hr',          label: t('nav_hr'),          Icon: MessagesSquare },
     ] : []),
-    ...(currentMembership ? [{ id: 'myprofile', label: t('nav_myprofile'), icon: '☺' }] : []),
-    ...(canEdit ? [{ id: 'admin', label: t('nav_admin'), icon: '⚙' }] : []),
+    ...(currentMembership ? [{ id: 'myprofile', label: t('nav_myprofile'), Icon: User }] : []),
+    ...(canEdit ? [{ id: 'admin', label: t('nav_admin'), Icon: Settings }] : []),
   ];
 
   return (
@@ -1899,15 +1913,18 @@ export default function App() {
                 <span className="font-bold text-sm">{currentTeam?.name}</span>
                 <button onClick={() => setMobileNavOpen(false)} className="text-slate-400 hover:text-white text-lg">✕</button>
               </div>
-              {navItems.map((tab) => (
-                <button key={tab.id} onClick={() => { goToView(tab.id); setMobileNavOpen(false); }}
-                  title={tab.id === 'hr' ? t('hr_page_title') : undefined}
-                  className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm transition-colors
-                    ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
-                  <span className="text-base shrink-0 w-5 text-center">{tab.icon}</span>
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+              {navItems.map((tab) => {
+                const Icon = tab.Icon;
+                return (
+                  <button key={tab.id} onClick={() => { goToView(tab.id); setMobileNavOpen(false); }}
+                    title={tab.id === 'hr' ? t('hr_page_title') : undefined}
+                    className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm transition-colors
+                      ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
+                    <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
               <div className="pt-3 border-t border-slate-800 space-y-2 mt-2">
                 <button onClick={() => { setSelectedTeamId(null); setPreviewRole(null); setMobileNavOpen(false); }}
                   className="w-full text-left text-xs text-slate-400 hover:text-white px-2 py-1.5">
@@ -2007,16 +2024,19 @@ export default function App() {
           {/* Desktop sidebar */}
           <nav className={`hidden md:block ${navCollapsed ? 'w-12' : 'w-44'} border-r border-slate-800/80 p-2 shrink-0 transition-all duration-200 bg-slate-950/60 flex flex-col min-w-0 overflow-hidden`}>
             <div className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-            {navItems.map((tab) => (
-              <button key={tab.id} onClick={() => goToView(tab.id)}
-                title={tab.id === 'hr' ? t('hr_page_title') : undefined}
-                className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors flex-shrink-0
-                  ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
-                  ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
-                <span className="text-base shrink-0 w-5 text-center">{tab.icon}</span>
-                {!navCollapsed && <span className="truncate">{tab.label}</span>}
-              </button>
-            ))}
+            {navItems.map((tab) => {
+              const Icon = tab.Icon;
+              return (
+                <button key={tab.id} onClick={() => goToView(tab.id)}
+                  title={tab.id === 'hr' ? t('hr_page_title') : undefined}
+                  className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors flex-shrink-0
+                    ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
+                    ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
+                  <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                  {!navCollapsed && <span className="truncate">{tab.label}</span>}
+                </button>
+              );
+            })}
             </div>
           </nav>
 
@@ -2296,15 +2316,18 @@ export default function App() {
 
         {/* ── Mobile bottom nav bar ── */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 flex items-center justify-around px-1 py-1 z-30">
-          {navItems.slice(0, 5).map((tab) => (
-            <button key={tab.id} onClick={() => goToView(tab.id)}
-              title={tab.id === 'hr' ? t('hr_page_title') : undefined}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded flex-1 transition-colors
-                ${view === tab.id ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}>
-              <span className="text-lg leading-none">{tab.icon}</span>
-              <span className="text-[9px] leading-none truncate">{tab.label}</span>
-            </button>
-          ))}
+          {navItems.slice(0, 5).map((tab) => {
+            const Icon = tab.Icon;
+            return (
+              <button key={tab.id} onClick={() => goToView(tab.id)}
+                title={tab.id === 'hr' ? t('hr_page_title') : undefined}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded flex-1 transition-colors
+                  ${view === tab.id ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}>
+                <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                <span className="text-[9px] leading-none truncate">{tab.label}</span>
+              </button>
+            );
+          })}
           <button onClick={() => setMobileNavOpen(true)}
             className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded flex-1 text-slate-500 hover:text-slate-300">
             <span className="text-lg leading-none">⋯</span>
