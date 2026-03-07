@@ -54,7 +54,7 @@ export const MERIT_TAG_SUGGESTIONS = [
 
 /** Achievement type — for filtering 500+ logros. Leaders award only in their category. Defaults in Spanish. */
 export const MERIT_ACHIEVEMENT_TYPES = [
-  'técnico', 'liderazgo', 'colaboración', 'innovación', 'hito',
+  'técnico', 'liderazgo', 'colaboración', 'innovación', 'creatividad', 'hito',
   'investigación', 'comunicación', 'documentación', 'presentación', 'otro',
 ];
 
@@ -177,9 +177,10 @@ export const SYSTEM_MERIT_POINTS_DEFAULT = {
 
 /** Merit names for system auto-awards. Used for retroactive updates. */
 export const SYSTEM_MERIT_NAMES = {
-  weeklyUpdate:    'Actualización semanal',
-  profileComplete: 'Perfil completo',
-  milestone50:     '50 actualizaciones',
+  weeklyUpdate:     'Actualización semanal',
+  profileComplete:  'Perfil completo',
+  milestone50:      '50 actualizaciones',
+  suggestionAccepted: 'Sugerencia implementada',
 };
 
 /** Descriptions for system merits (shown when clicking on profile logros). */
@@ -199,5 +200,9 @@ export const SYSTEM_MERIT_DESCRIPTIONS = {
   'Tarea revisada': {
     shortDescription: { en: 'Task reviewed and graded.', es: 'Tarea revisada y calificada.' },
     longDescription:  { en: 'Awarded when a leader or admin reviews and grades a task you completed. The points depend on the grade (ok, good, excellent, perfect).', es: 'Se otorga cuando un líder o admin revisa y califica una tarea que completaste. Los puntos dependen de la calificación (ok, bien, excelente, perfecto).' },
+  },
+  [SYSTEM_MERIT_NAMES.suggestionAccepted]: {
+    shortDescription: { en: 'Suggestion implemented.', es: 'Sugerencia implementada.' },
+    longDescription:  { en: 'Awarded when an admin accepts your suggestion. Points (50–200) are chosen by the admin based on impact.', es: 'Se otorga cuando un admin acepta tu sugerencia. Los puntos (50–200) los elige el admin según el impacto.' },
   },
 };

@@ -657,6 +657,7 @@ export default function App() {
       isAnonymous: !!isAnonymous,
       authorId: isAnonymous ? null : authUser.uid,
       authorName: isAnonymous ? null : (userProfile?.displayName ?? authUser.displayName ?? ''),
+      status: 'pending',
       createdAt: serverTimestamp(),
     });
   };
@@ -681,6 +682,65 @@ export default function App() {
       authorId: authUser.uid,
       authorName: userProfile?.displayName ?? authUser.displayName ?? '',
       createdAt: serverTimestamp(),
+    });
+  };
+
+  const SUGGESTION_MERIT_POINTS = [50, 100, 150, 200];
+
+  const handleAcceptHrSuggestion = async (suggestionId, points) => {
+    if (!currentTeam || !canEdit) return;
+    const suggestion = teamHrSuggestions.find((s) => s.id === suggestionId);
+    if (!suggestion || (suggestion.status || 'pending') !== 'pending') return;
+    if (!suggestion.authorId) throw new Error(t('hr_suggestion_anonymous_no_merit'));
+    if (!SUGGESTION_MERIT_POINTS.includes(points)) return;
+    const membership = teamMemberships.find((m) => m.userId === suggestion.authorId);
+    if (!membership) throw new Error(t('hr_suggestion_author_not_found'));
+    const eventRef = await addDoc(collection(db, 'meritEvents'), {
+      teamId:               currentTeam.id,
+      membershipId:         membership.id,
+      meritId:              null,
+      meritName:            SYSTEM_MERIT_NAMES.suggestionAccepted,
+      meritLogo:            '💡',
+      points:               points,
+      type:                 'award',
+      evidence:             suggestion.id,
+      autoAward:            false,
+      awardedByUserId:      authUser?.uid || null,
+      awardedByName:        userProfile?.displayName   || authUser?.email || '—',
+      achievementTypes:     ['creatividad'],
+      createdAt:            serverTimestamp(),
+    });
+    await updateDoc(doc(db, 'hrSuggestions', suggestionId), {
+      status:       'accepted',
+      reviewedAt:   serverTimestamp(),
+      reviewedByUserId: authUser?.uid,
+      reviewedByName:   userProfile?.displayName ?? authUser?.email ?? '—',
+      meritPoints:     points,
+      meritEventId:    eventRef.id,
+    });
+  };
+
+  const handleDismissHrSuggestion = async (suggestionId) => {
+    if (!currentTeam || !canEdit) return;
+    const suggestion = teamHrSuggestions.find((s) => s.id === suggestionId);
+    if (!suggestion || (suggestion.status || 'pending') !== 'pending') return;
+    await updateDoc(doc(db, 'hrSuggestions', suggestionId), {
+      status:       'dismissed',
+      reviewedAt:   serverTimestamp(),
+      reviewedByUserId: authUser?.uid,
+      reviewedByName:   userProfile?.displayName ?? authUser?.email ?? '—',
+    });
+  };
+
+  const handleReconsiderHrSuggestion = async (suggestionId) => {
+    if (!currentTeam || !canEdit) return;
+    const suggestion = teamHrSuggestions.find((s) => s.id === suggestionId);
+    if (!suggestion || (suggestion.status || 'pending') !== 'dismissed') return;
+    await updateDoc(doc(db, 'hrSuggestions', suggestionId), {
+      status:       'pending',
+      reviewedAt:   null,
+      reviewedByUserId: null,
+      reviewedByName:   null,
     });
   };
 
@@ -2256,8 +2316,13 @@ export default function App() {
                 memberships={teamMemberships}
                 canViewHr={canEdit}
                 isFaculty={isPlatformAdmin || memberRole === 'facultyAdvisor'}
+                authUserId={authUser?.uid}
                 onSubmitSuggestion={handleSubmitHrSuggestion}
                 onSubmitComplaint={handleSubmitHrComplaint}
+                onAcceptSuggestion={handleAcceptHrSuggestion}
+                onDismissSuggestion={handleDismissHrSuggestion}
+                onReconsiderSuggestion={handleReconsiderHrSuggestion}
+                suggestionMeritPoints={[50, 100, 150, 200]}
               />
             )}
 

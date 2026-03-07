@@ -226,17 +226,19 @@ service cloud.firestore {
 
     // ═══════════════════════════════════════════════════════════
     //  HR (Recursos Humanos) — Suggestions & Complaints
-    //  Suggestions: may be anonymous; only team admins can read.
+    //  Suggestions: may be anonymous; active members can read (for counters);
+    //    team admins can update (accept/dismiss/reconsider).
     //  Complaints: non-anonymous; author visible only to faculty in UI.
     //  Both require active membership to create.
     // ═══════════════════════════════════════════════════════════
 
     match /hrSuggestions/{suggestionId} {
-      allow read: if request.auth != null && isTeamAdmin(resource.data.teamId);
+      allow read: if request.auth != null && isActiveMember(resource.data.teamId);
       allow create: if request.auth != null &&
         membershipExists(request.resource.data.teamId) &&
         membershipDoc(request.resource.data.teamId).data.status == 'active';
-      allow update, delete: if false;
+      allow update: if isTeamAdmin(resource.data.teamId);
+      allow delete: if false;
     }
 
     match /hrComplaints/{complaintId} {

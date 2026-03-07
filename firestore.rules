@@ -153,11 +153,12 @@ service cloud.firestore {
     }
 
     match /hrSuggestions/{suggestionId} {
-      allow read: if request.auth != null && isTeamAdmin(resource.data.teamId);
+      allow read: if request.auth != null && isActiveMember(resource.data.teamId);
       allow create: if request.auth != null &&
         membershipExists(request.resource.data.teamId) &&
         membershipDoc(request.resource.data.teamId).data.status == 'active';
-      allow update, delete: if false;
+      allow update: if isTeamAdmin(resource.data.teamId);
+      allow delete: if false;
     }
 
     match /hrComplaints/{complaintId} {

@@ -12,10 +12,11 @@ import { RoleBadge, StrikePips, MemberAvatar } from '../components/ui/index.js';
 import AddStrikeModal from '../components/AddStrikeModal.jsx';
 import { ensureString, tsToDate } from '../utils.js';
 
-/** StrikePips + optional evidence tooltip when strikeHistory exists */
-function StrikePipsWithEvidence({ member }) {
+/** StrikePips + clickable for admins to show evidence modal */
+function StrikePipsWithEvidence({ member, canViewEvidence, onShowEvidence }) {
   const history = member?.strikeHistory || [];
   const count = member?.strikes || 0;
+  const hasEvidence = canViewEvidence && history.length > 0;
   const summary = history.length > 0
     ? history.map((h, i) => {
         const parts = [];
@@ -27,7 +28,12 @@ function StrikePipsWithEvidence({ member }) {
       }).join('\n')
     : '';
   return (
-    <span title={summary || undefined} className={summary ? 'cursor-help' : ''}>
+    <span
+      title={summary || undefined}
+      className={`${hasEvidence ? 'cursor-pointer hover:opacity-80' : summary ? 'cursor-help' : ''}`}
+      onClick={hasEvidence ? () => onShowEvidence?.(member) : undefined}
+      role={hasEvidence ? 'button' : undefined}
+    >
       <StrikePips count={count} />
     </span>
   );
@@ -68,6 +74,7 @@ export default function MembersView({
   const [skillFilter,   setSkillFilter]   = useState('');   // collaboration skill search
   const [showGhostForm, setShowGhostForm] = useState(false);
   const [addStrikeMember, setAddStrikeMember] = useState(null); // { id, displayName }
+  const [strikeEvidenceMember, setStrikeEvidenceMember] = useState(null); // member to show strike evidence
   const [ghostForm,     setGhostForm]     = useState({
     displayName: '', role: 'facultyAdvisor', categoryId: '', university: '', career: '', bio: '',
   });
@@ -342,7 +349,11 @@ export default function MembersView({
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <StrikePipsWithEvidence member={m} />
+                      <StrikePipsWithEvidence
+                        member={m}
+                        canViewEvidence={canEdit || canStrike}
+                        onShowEvidence={setStrikeEvidenceMember}
+                      />
                       {(canStrikeMember ? canStrikeMember(m) : canEdit) && (
                         <div className="flex gap-1">
                           <button onClick={() => setAddStrikeMember({ id: m.id, displayName: ensureString(m.displayName) })}
@@ -402,7 +413,13 @@ export default function MembersView({
                 {suspended.map((m) => (
                   <tr key={m.id} className="border-b border-slate-700 opacity-60">
                     <td className="px-3 py-2">{ensureString(m.displayName)}</td>
-                    <td className="px-3 py-2"><StrikePipsWithEvidence member={m} /></td>
+                    <td className="px-3 py-2">
+                      <StrikePipsWithEvidence
+                        member={m}
+                        canViewEvidence={canEdit || canStrike}
+                        onShowEvidence={setStrikeEvidenceMember}
+                      />
+                    </td>
                     <td className="px-3 py-2">
                       {(canRemoveStrikeMember ? canRemoveStrikeMember(m) : (canStrikeMember ? canStrikeMember(m) : canEdit)) && (
                         <button onClick={() => onRemoveStrike(m.id)} className="text-[11px] text-emerald-400 underline">
@@ -424,6 +441,57 @@ export default function MembersView({
           onConfirm={(evidence) => onAddStrike(addStrikeMember.id, evidence)}
           onCancel={() => setAddStrikeMember(null)}
         />
+      )}
+
+      {strikeEvidenceMember && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          onClick={() => setStrikeEvidenceMember(null)}
+        >
+          <div
+            className="bg-slate-800 rounded-xl border border-slate-600 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-200">
+                {t('strike_evidence_title')} — {ensureString(strikeEvidenceMember.displayName)}
+              </h3>
+              <button onClick={() => setStrikeEvidenceMember(null)} className="text-slate-400 hover:text-white text-lg leading-none">
+                ×
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto space-y-4">
+              {(strikeEvidenceMember.strikeHistory || []).map((h, i) => {
+                const date = h.createdAt?.toDate ? h.createdAt.toDate() : (h.createdAt ? tsToDate(h.createdAt) : null);
+                const dateStr = date ? date.toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—';
+                return (
+                  <div key={i} className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                    <div className="text-[11px] text-slate-500 mb-3">
+                      {t('strike_evidence_strike')} {i + 1} · {dateStr}
+                      {h.addedByName && ` · ${t('strike_evidence_added_by')}: ${h.addedByName}`}
+                    </div>
+                    {h.evidence?.text && (
+                      <p className="text-xs text-slate-200 whitespace-pre-wrap mb-2">{h.evidence.text}</p>
+                    )}
+                    {h.evidence?.link && (
+                      <a
+                        href={h.evidence.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-emerald-400 hover:text-emerald-300 underline break-all"
+                      >
+                        {h.evidence.link}
+                      </a>
+                    )}
+                    {!h.evidence?.text && !h.evidence?.link && (
+                      <p className="text-xs text-slate-500 italic">—</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
