@@ -21,7 +21,6 @@ function StrikePipsWithEvidence({ member }) {
         const parts = [];
         if (h.evidence?.text) parts.push(h.evidence.text.slice(0, 80) + (h.evidence.text.length > 80 ? '…' : ''));
         if (h.evidence?.link) parts.push(h.evidence.link);
-        if (h.evidence?.imageUrl) parts.push('(imagen)');
         const date = h.createdAt?.toDate ? h.createdAt.toDate() : (h.createdAt ? tsToDate(h.createdAt) : null);
         const dateStr = date ? date.toLocaleDateString() : '';
         return `Falta ${i + 1}: ${parts.join(' ') || '—'} ${dateStr}`.trim();
@@ -51,10 +50,12 @@ function StrikePipsWithEvidence({ member }) {
  *   onCreateGhostMember:  function(data) → Promise
  *   onApproveMember:      function(membershipId) → Promise
  *   onRejectMember:       function(membershipId) → Promise
+ *   complaintsAgainstMember: object[]  (person-type complaints, for complaint count)
  * }} props
  */
 export default function MembersView({
-  categories, memberships, canEdit, canStrike, canStrikeMember, canRemoveStrikeMember,
+  categories, memberships, complaintsAgainstMember = [],
+  canEdit, canStrike, canStrikeMember, canRemoveStrikeMember,
   isPlatformAdmin, careerOptions: careerOptionsProp,
   onUpdateRole, onAssignCategory, onAddStrike, onRemoveStrike,
   onViewProfile, onCreateGhostMember, onApproveMember, onRejectMember,
@@ -301,6 +302,7 @@ export default function MembersView({
                 <th className="px-3 py-2">{t('th_role')}</th>
                 <th className="px-3 py-2">{t('th_category')}</th>
                 <th className="px-3 py-2">{t('th_strikes')}</th>
+                {canEdit && <th className="px-3 py-2">{t('hr_complaints_count')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -357,11 +359,23 @@ export default function MembersView({
                       )}
                     </div>
                   </td>
+                  {canEdit && (
+                    <td className="px-3 py-2">
+                      {(() => {
+                        const count = complaintsAgainstMember.filter((c) => c.targetMembershipId === m.id).length;
+                        return count > 0 ? (
+                          <span className="text-amber-400 font-medium" title={t('hr_complaints_count')}>{count}</span>
+                        ) : (
+                          <span className="text-slate-600">0</span>
+                        );
+                      })()}
+                    </td>
+                  )}
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-3 py-6 text-slate-500 text-center">{t('no_members_filter')}</td>
+                  <td colSpan={canEdit ? 5 : 4} className="px-3 py-6 text-slate-500 text-center">{t('no_members_filter')}</td>
                 </tr>
               )}
             </tbody>

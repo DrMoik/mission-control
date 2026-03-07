@@ -225,6 +225,29 @@ service cloud.firestore {
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  HR (Recursos Humanos) — Suggestions & Complaints
+    //  Suggestions: may be anonymous; only team admins can read.
+    //  Complaints: non-anonymous; author visible only to faculty in UI.
+    //  Both require active membership to create.
+    // ═══════════════════════════════════════════════════════════
+
+    match /hrSuggestions/{suggestionId} {
+      allow read: if request.auth != null && isTeamAdmin(resource.data.teamId);
+      allow create: if request.auth != null &&
+        membershipExists(request.resource.data.teamId) &&
+        membershipDoc(request.resource.data.teamId).data.status == 'active';
+      allow update, delete: if false;
+    }
+
+    match /hrComplaints/{complaintId} {
+      allow read: if request.auth != null && isTeamAdmin(resource.data.teamId);
+      allow create: if request.auth != null &&
+        membershipExists(request.resource.data.teamId) &&
+        membershipDoc(request.resource.data.teamId).data.status == 'active';
+      allow update, delete: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  MERITS
     //  Visible to any active team member.
     //  Admins can create/edit/delete any. Leaders can create/edit/delete only for their area.

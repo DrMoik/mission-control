@@ -70,6 +70,8 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
   const [teamFundingAccounts, setTeamFundingAccounts] = useState([]);
   const [teamFundingEntries, setTeamFundingEntries] = useState([]);
   const [teamTasks, setTeamTasks] = useState([]);
+  const [teamHrSuggestions, setTeamHrSuggestions] = useState([]);
+  const [teamHrComplaints, setTeamHrComplaints] = useState([]);
   const [userMembershipsReady, setUserMembershipsReady] = useState(false);
 
   // All teams (public — needed for the unauthenticated team browser)
@@ -186,6 +188,16 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
       setTeamTasks,
       (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)),
     );
+    sub(
+      query(collection(db, 'hrSuggestions'), where('teamId', '==', selectedTeamId)),
+      setTeamHrSuggestions,
+      (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)),
+    );
+    sub(
+      query(collection(db, 'hrComplaints'), where('teamId', '==', selectedTeamId)),
+      setTeamHrComplaints,
+      (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)),
+    );
 
     // Module attempts are filtered per user to respect Firestore rules
     if (authUser) {
@@ -254,6 +266,8 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
     teamFundingAccounts,
     teamFundingEntries,
     teamTasks,
+    teamHrSuggestions,
+    teamHrComplaints,
     userMembershipsReady,
   };
 }

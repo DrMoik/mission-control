@@ -1,26 +1,22 @@
 // ─── AddStrikeModal ───────────────────────────────────────────────────────────
-// Modal to add a strike with evidence: text, link, and/or image (cropped to low res).
+// Modal to add a strike with evidence: text and/or link.
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { t } from '../strings.js';
-import ImageCropModal from './ImageCropModal.jsx';
 
 /**
  * @param {{
  *   memberName: string,
- *   onConfirm: (evidence: { text?: string, link?: string, imageUrl?: string }) => Promise<void>,
+ *   onConfirm: (evidence: { text?: string, link?: string }) => Promise<void>,
  *   onCancel: () => void,
  * }} props
  */
 export default function AddStrikeModal({ memberName, onConfirm, onCancel }) {
   const [text, setText] = useState('');
   const [link, setLink] = useState('');
-  const [imageDataUrl, setImageDataUrl] = useState('');
-  const [cropSrc, setCropSrc] = useState(null);
   const [saving, setSaving] = useState(false);
-  const fileInputRef = useRef(null);
 
-  const hasEvidence = (text || '').trim().length > 0 || (link || '').trim().length > 0 || imageDataUrl.length > 0;
+  const hasEvidence = (text || '').trim().length > 0 || (link || '').trim().length > 0;
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
@@ -36,7 +32,6 @@ export default function AddStrikeModal({ memberName, onConfirm, onCancel }) {
       await onConfirm({
         text: (text || '').trim() || undefined,
         link: (link || '').trim() || undefined,
-        imageUrl: imageDataUrl || undefined,
       });
       onCancel();
     } catch (err) {
@@ -45,15 +40,6 @@ export default function AddStrikeModal({ memberName, onConfirm, onCancel }) {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target?.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = () => setCropSrc(reader.result);
-    reader.readAsDataURL(file);
-    e.target.value = '';
   };
 
   return (
@@ -90,37 +76,6 @@ export default function AddStrikeModal({ memberName, onConfirm, onCancel }) {
               className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
             />
           </div>
-          <div>
-            <label className="text-[11px] text-slate-500 block mb-1">{t('strike_evidence_image')}</label>
-            <div className="flex gap-2 items-center">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] px-2 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded"
-              >
-                {imageDataUrl ? t('strike_evidence_image_change') : t('strike_evidence_image_add')}
-              </button>
-              {imageDataUrl && (
-                <div className="relative">
-                  <img src={imageDataUrl} alt="" className="h-12 w-12 object-cover rounded border border-slate-600" />
-                  <button
-                    type="button"
-                    onClick={() => setImageDataUrl('')}
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-[10px] leading-none"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
           <div className="flex gap-2 justify-end pt-2">
             <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-slate-400 hover:text-white">
               {t('cancel')}
@@ -135,20 +90,6 @@ export default function AddStrikeModal({ memberName, onConfirm, onCancel }) {
           </div>
         </form>
       </div>
-
-      {cropSrc && (
-        <ImageCropModal
-          src={cropSrc}
-          cropWidth={320}
-          cropHeight={240}
-          label={t('strike_evidence_crop')}
-          onApply={(url) => {
-            setImageDataUrl(url);
-            setCropSrc(null);
-          }}
-          onCancel={() => setCropSrc(null)}
-        />
-      )}
     </div>
   );
 }

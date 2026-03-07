@@ -152,6 +152,22 @@ service cloud.firestore {
       allow delete: if isTeamAdmin(resource.data.teamId);
     }
 
+    match /hrSuggestions/{suggestionId} {
+      allow read: if request.auth != null && isTeamAdmin(resource.data.teamId);
+      allow create: if request.auth != null &&
+        membershipExists(request.resource.data.teamId) &&
+        membershipDoc(request.resource.data.teamId).data.status == 'active';
+      allow update, delete: if false;
+    }
+
+    match /hrComplaints/{complaintId} {
+      allow read: if request.auth != null && isTeamAdmin(resource.data.teamId);
+      allow create: if request.auth != null &&
+        membershipExists(request.resource.data.teamId) &&
+        membershipDoc(request.resource.data.teamId).data.status == 'active';
+      allow update, delete: if false;
+    }
+
     match /merits/{meritId} {
       allow read: if isActiveMember(resource.data.teamId);
       allow create: if isTeamAdmin(request.resource.data.teamId) ||

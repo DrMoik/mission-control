@@ -67,6 +67,7 @@ import TasksView                   from './views/TasksView.jsx';
 const ProfilePageView = lazy(() => import('./views/ProfilePageView.jsx'));
 const MembersView     = lazy(() => import('./views/MembersView.jsx'));
 const MeritsView      = lazy(() => import('./views/MeritsView.jsx'));
+const HRView          = lazy(() => import('./views/HRView.jsx'));
 const AdminView       = lazy(() => import('./views/AdminView.jsx'));
 
 // Standard hamburger menu icon (three horizontal bars)
@@ -170,6 +171,8 @@ export default function App() {
     teamFundingAccounts,
     teamFundingEntries,
     teamTasks,
+    teamHrSuggestions,
+    teamHrComplaints,
     userMembershipsReady,
   } = useFirebaseSubscriptions({ authUser, selectedTeamId });
 
@@ -192,7 +195,7 @@ export default function App() {
     ? teamMemberships.find((m) => m.id === profileMemberId) || null
     : null;
 
-  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'tasks', 'myprofile', 'profile', 'admin']);
+  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'tasks', 'hr', 'myprofile', 'profile', 'admin']);
   const isViewValid = validViews.has(view);
 
   // Redirect invalid paths to /overview (only when team is selected, to avoid running in team picker)
@@ -581,19 +584,14 @@ export default function App() {
     const m = teamMemberships.find((mm) => mm.id === membershipId);
     if (!m) return;
     if (!canStrikeMember(m)) return;
-    const hasEvidence = (evidence.text || '').trim() || (evidence.link || '').trim() || (evidence.imageUrl || '');
-    if (!hasEvidence) throw new Error('Se requiere al menos una evidencia (texto, enlace o imagen).');
+    const hasEvidence = (evidence.text || '').trim() || (evidence.link || '').trim();
+    if (!hasEvidence) throw new Error('Se requiere al menos una evidencia (texto o enlace).');
     const newStrikes = (m.strikes || 0) + 1;
     const strikeHistory = Array.isArray(m.strikeHistory) ? [...m.strikeHistory] : [];
-    let imageUrl = evidence.imageUrl;
-    if (imageUrl && imageUrl.startsWith('data:')) {
-      imageUrl = await compressDataUrlIfNeeded(imageUrl, 30000); // ~30KB low-res for evidence
-    }
     strikeHistory.push({
       evidence: {
         ...(evidence.text?.trim() && { text: evidence.text.trim() }),
         ...(evidence.link?.trim() && { link: evidence.link.trim() }),
-        ...(imageUrl && { imageUrl }),
       },
       createdAt: serverTimestamp(),
       addedByUserId: authUser?.uid ?? '',
@@ -620,6 +618,42 @@ export default function App() {
       strikes: newStrikes,
       strikeHistory,
       status: 'active',
+    });
+  };
+
+  const handleSubmitHrSuggestion = async (content, isAnonymous) => {
+    if (!currentTeam || !authUser) throw new Error('Debes iniciar sesión.');
+    if (!currentMembership || currentMembership.status !== 'active') throw new Error('Solo miembros activos pueden enviar sugerencias.');
+    await addDoc(collection(db, 'hrSuggestions'), {
+      teamId: currentTeam.id,
+      content: (content || '').trim(),
+      isAnonymous: !!isAnonymous,
+      authorId: isAnonymous ? null : authUser.uid,
+      authorName: isAnonymous ? null : (userProfile?.displayName ?? authUser.displayName ?? ''),
+      createdAt: serverTimestamp(),
+    });
+  };
+
+  const handleSubmitHrComplaint = async (data) => {
+    if (!currentTeam || !authUser) throw new Error('Debes iniciar sesión.');
+    if (!currentMembership || currentMembership.status !== 'active') throw new Error('Solo miembros activos pueden enviar quejas.');
+    const hasEvidence =
+      (data.evidence?.text || '').trim() ||
+      (data.evidence?.link || '').trim();
+    if (!hasEvidence) throw new Error('Se requiere evidencia (texto o enlace).');
+    await addDoc(collection(db, 'hrComplaints'), {
+      teamId: currentTeam.id,
+      type: data.type || 'team',
+      targetCategoryId: data.targetCategoryId || null,
+      targetMembershipId: data.targetMembershipId || null,
+      content: (data.content || '').trim(),
+      evidence: {
+        text: (data.evidence?.text || '').trim() || null,
+        link: (data.evidence?.link || '').trim() || null,
+      },
+      authorId: authUser.uid,
+      authorName: userProfile?.displayName ?? authUser.displayName ?? '',
+      createdAt: serverTimestamp(),
     });
   };
 
@@ -1846,6 +1880,7 @@ export default function App() {
       { id: 'academy',     label: t('nav_academy'),     icon: '◈' },
       { id: 'funding',     label: t('nav_funding'),     icon: '¤' },
       { id: 'tasks',       label: t('nav_tasks'),       icon: '☐' },
+      { id: 'hr',          label: t('nav_hr'),          icon: '👥' },
     ] : []),
     ...(currentMembership ? [{ id: 'myprofile', label: t('nav_myprofile'), icon: '☺' }] : []),
     ...(canEdit ? [{ id: 'admin', label: t('nav_admin'), icon: '⚙' }] : []),
@@ -1866,6 +1901,7 @@ export default function App() {
               </div>
               {navItems.map((tab) => (
                 <button key={tab.id} onClick={() => { goToView(tab.id); setMobileNavOpen(false); }}
+                  title={tab.id === 'hr' ? t('hr_page_title') : undefined}
                   className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm transition-colors
                     ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
                   <span className="text-base shrink-0 w-5 text-center">{tab.icon}</span>
@@ -1973,6 +2009,7 @@ export default function App() {
             <div className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             {navItems.map((tab) => (
               <button key={tab.id} onClick={() => goToView(tab.id)}
+                title={tab.id === 'hr' ? t('hr_page_title') : undefined}
                 className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors flex-shrink-0
                   ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
                   ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
@@ -2029,6 +2066,7 @@ export default function App() {
               <MembersView
                 categories={teamCategories}
                 memberships={teamMemberships}
+                complaintsAgainstMember={teamHrComplaints.filter((c) => c.type === 'person' && c.targetMembershipId)}
                 canEdit={canEdit}
                 canStrike={canStrike}
                 canStrikeMember={canStrikeMember}
@@ -2177,6 +2215,19 @@ export default function App() {
               />
             )}
 
+            {view === 'hr' && isAtLeastRookie && (
+              <HRView
+                suggestions={teamHrSuggestions}
+                complaints={teamHrComplaints}
+                categories={teamCategories}
+                memberships={teamMemberships}
+                canViewHr={canEdit}
+                isFaculty={isPlatformAdmin || memberRole === 'facultyAdvisor'}
+                onSubmitSuggestion={handleSubmitHrSuggestion}
+                onSubmitComplaint={handleSubmitHrComplaint}
+              />
+            )}
+
             {/* My Profile — full page */}
             {view === 'admin' && canEdit && (
               <AdminView
@@ -2247,6 +2298,7 @@ export default function App() {
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 flex items-center justify-around px-1 py-1 z-30">
           {navItems.slice(0, 5).map((tab) => (
             <button key={tab.id} onClick={() => goToView(tab.id)}
+              title={tab.id === 'hr' ? t('hr_page_title') : undefined}
               className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded flex-1 transition-colors
                 ${view === tab.id ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}>
               <span className="text-lg leading-none">{tab.icon}</span>
