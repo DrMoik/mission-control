@@ -518,6 +518,16 @@ service cloud.firestore {
       allow delete: if isLeaderOrAbove(resource.data.teamId);
     }
 
+    // ═══════════════════════════════════════════════════════════
+    //  AUDIT LOG — team admins write and read for transparency
+    // ═══════════════════════════════════════════════════════════
+
+    match /auditLog/{logId} {
+      allow read: if isTeamAdmin(resource.data.teamId);
+      allow create: if isTeamAdmin(request.resource.data.teamId);
+      allow update, delete: if false;
+    }
+
   }
 }
 ```

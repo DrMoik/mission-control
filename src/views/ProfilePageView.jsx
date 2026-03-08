@@ -10,7 +10,7 @@ import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT, SYSTEM_MERIT_DESCRIPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
-import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay, isBlockedImageHost } from '../utils.js';
+import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay, isBlockedImageHost, computeProfileCompletion, tsToDate } from '../utils.js';
 
 function isValidSongUrl(url) {
   if (!url) return true;
@@ -122,6 +122,8 @@ export default function ProfilePageView({
     .filter((e) => e.type === 'award')
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
 
+  const profileCompletion = computeProfileCompletion(membership);
+
   const startEdit = () => {
     const normTags = (arr) => (arr || []).map((t) => (typeof t === 'string' ? t : ensureString(t, lang)));
     setDraft({
@@ -219,6 +221,28 @@ export default function ProfilePageView({
 
   const set = (key, val) => setDraft((d) => ({ ...d, [key]: val }));
 
+  const handleExportRecord = () => {
+    const awards = meritEvents.filter((e) => e.type === 'award');
+    const headers = ['Fecha', 'Logro', 'Puntos', 'Evidencia'];
+    const rows = awards.map((e) => {
+      const d = tsToDate(e.createdAt);
+      return [
+        d.toLocaleDateString('es-MX'),
+        e.meritName || '—',
+        e.points ?? '',
+        (e.evidence || '').toString().slice(0, 80),
+      ];
+    });
+    const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `registro-${ensureString(membership.displayName, lang).replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="w-full max-w-full min-h-[60vh]">
       {/* Cover + avatar — z-10 so they render above the content section */}
@@ -247,6 +271,22 @@ export default function ProfilePageView({
       </div>
 
       <div className="relative z-0 pt-28 px-4 sm:px-6 lg:px-8 pb-8 bg-slate-800/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-slate-700/50 w-full">
+
+        {/* Profile completion indicator */}
+        {canEditThis && profileCompletion.percentage < 100 && (
+          <div className="mb-4 p-3 bg-slate-900/60 rounded-lg border border-slate-600/50">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-xs text-slate-400">{t('profile_completion')}</span>
+              <span className="text-sm font-semibold text-slate-300">{profileCompletion.percentage}% {t('profile_complete_pct')}</span>
+            </div>
+            <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${profileCompletion.percentage >= 100 ? 'bg-emerald-500' : 'bg-amber-500/80'}`}
+                style={{ width: `${profileCompletion.percentage}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {editing ? (
           <div className="space-y-4">
@@ -448,9 +488,14 @@ export default function ProfilePageView({
                   </div>
                 )}
               </div>
-              {canEditThis && (
-                <button onClick={startEdit} className="text-xs text-amber-400 underline shrink-0">{t('edit_profile')}</button>
-              )}
+              <div className="flex gap-2 shrink-0">
+                {canEditThis && (
+                  <button onClick={startEdit} className="text-xs text-amber-400 underline">{t('edit_profile')}</button>
+                )}
+                <button onClick={handleExportRecord} className="text-xs text-slate-400 hover:text-slate-200 underline">
+                  {t('export_my_record')}
+                </button>
+              </div>
             </div>
 
             {/* Two-column layout: Acerca de mí | Esta semana, then rest */}

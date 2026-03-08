@@ -338,6 +338,25 @@ export default function App() {
     return { allTime: enrich(totalsAll), season: enrich(totalsSeason) };
   }, [teamMeritEvents, teamMemberships, teamCategories, selectedTeamId]);
 
+  // ── Audit log (transparency for admin actions) ──────────────────────────────
+  const logAudit = useCallback(async (action, targetType, targetId, details = {}) => {
+    if (!currentTeam || !canEdit || !authUser) return;
+    try {
+      await addDoc(collection(db, 'auditLog'), {
+        teamId: currentTeam.id,
+        userId: authUser.uid,
+        userName: userProfile?.displayName || authUser.email || '—',
+        action,
+        targetType,
+        targetId: targetId || null,
+        details,
+        createdAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.warn('Audit log failed:', e);
+    }
+  }, [currentTeam, canEdit, authUser, userProfile]);
+
   // ────────────────────────────────────────────────────────────────────────────
   // HANDLERS — all Firestore writes live here, passed down as props
   // ────────────────────────────────────────────────────────────────────────────
@@ -719,6 +738,7 @@ export default function App() {
       meritPoints:     points,
       meritEventId:    eventRef.id,
     });
+    await logAudit('accept_suggestion', 'hrSuggestion', suggestionId, { points, membershipId: membership.id });
   };
 
   const handleDismissHrSuggestion = async (suggestionId) => {
@@ -731,6 +751,7 @@ export default function App() {
       reviewedByUserId: authUser?.uid,
       reviewedByName:   userProfile?.displayName ?? authUser?.email ?? '—',
     });
+    await logAudit('dismiss_suggestion', 'hrSuggestion', suggestionId, {});
   };
 
   const handleReconsiderHrSuggestion = async (suggestionId) => {
@@ -1253,6 +1274,7 @@ export default function App() {
     const evt = teamMeritEvents.find((e) => e.id === eventId);
     if (!evt || evt.type !== 'award') return;
     await deleteDoc(doc(db, 'meritEvents', eventId));
+    await logAudit('revoke_merit', 'meritEvent', eventId, { meritName: evt.meritName, membershipId: evt.membershipId });
   };
 
   const handleEditMeritEvent = async (eventId, { points, evidence }) => {
@@ -1381,6 +1403,7 @@ export default function App() {
         createdAt:            serverTimestamp(),
       });
     }
+    if (canEdit) await logAudit('grade_task', 'task', taskId, { grade, membershipId: task.assigneeMembershipId || task.assigneeMembershipIds?.[0] });
   };
 
   const handleCompleteTask = async (taskId) => {
@@ -2124,8 +2147,14 @@ export default function App() {
                 teamMeritEvents={teamMeritEvents}
                 teamModules={teamModules}
                 teamCategories={teamCategories}
+                teamTasks={teamTasks}
+                teamWeeklyStatuses={teamWeeklyStatuses}
+                currentMembership={currentMembership}
                 canEdit={canEdit}
                 onSave={handleSaveOverview}
+                onNavigateTasks={() => navigate('/tasks')}
+                onNavigateProfile={() => navigate('/profile')}
+                tsToDate={tsToDate}
               />
             )}
 
@@ -2210,6 +2239,9 @@ export default function App() {
               <LeaderboardView
                 leaderboard={leaderboard}
                 memberships={teamMemberships}
+                weeklyStatuses={teamWeeklyStatuses}
+                tasks={teamTasks}
+                categories={teamCategories}
                 onViewProfile={handleViewProfile}
               />
             )}

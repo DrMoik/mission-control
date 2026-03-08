@@ -79,7 +79,7 @@ export default function FeedView({
       </div>
 
       {posts.length === 0 && (
-        <div className="text-center text-xs text-slate-500 py-10">{t('no_posts_first')}</div>
+        <div className="text-center text-xs text-slate-500 py-10">{t('feed_no_posts_guidance')}</div>
       )}
 
       {/* Post list */}

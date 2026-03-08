@@ -247,3 +247,51 @@ export function toEmbedUrl(url) {
   // Unknown URL — return as-is
   return url;
 }
+
+// ── Profile completion (for responsibility dashboard) ──────────────────────────
+
+const isNonEmptyStr = (v) => typeof v === 'string' && v.trim().length > 0;
+const isNonEmptyBilingual = (v) => {
+  if (!v) return false;
+  const es = (typeof v === 'string' ? v : (v.es || '')).trim();
+  const en = (typeof v === 'string' ? v : (v.en || '')).trim();
+  return es.length > 0 || en.length > 0;
+};
+const hasTagList = (arr) => Array.isArray(arr) && arr.some((t) => ensureString(t).trim().length > 0);
+const hasCulture = (m) => {
+  const hasListen = Array.isArray(m.whatIListenTo) && m.whatIListenTo.some((it) =>
+    (typeof it === 'string' ? it : it?.title || '').trim().length > 0);
+  const hasBook = hasTagList(m.bookThatMarkedMe);
+  const hasIdea = hasTagList(m.ideaThatMotivatesMe);
+  const hasQuote = hasTagList(m.quoteThatMovesMe);
+  return hasListen || hasBook || hasIdea || hasQuote || isNonEmptyStr(m.songOnRepeatTitle);
+};
+
+/** Returns { percentage, completed, total, missing } for profile completion indicator. */
+export function computeProfileCompletion(membership) {
+  if (!membership) return { percentage: 0, completed: 0, total: 17, missing: [] };
+  const m = membership;
+  const checks = [
+    ['displayName', isNonEmptyStr(m.displayName), 'displayName'],
+    ['email', isNonEmptyStr(m.email), 'email'],
+    ['bio', isNonEmptyBilingual(m.bio), 'bio'],
+    ['hobbies', isNonEmptyBilingual(m.hobbies, getL), 'hobbies'],
+    ['career', isNonEmptyStr(m.career), 'career'],
+    ['semester', isNonEmptyStr(m.semester), 'semester'],
+    ['university', isNonEmptyStr(m.university), 'university'],
+    ['currentObjective', isNonEmptyBilingual(m.currentObjective), 'currentObjective'],
+    ['currentChallenge', isNonEmptyBilingual(m.currentChallenge), 'currentChallenge'],
+    ['lookingForHelpIn', hasTagList(m.lookingForHelpIn), 'lookingForHelpIn'],
+    ['iCanHelpWith', hasTagList(m.iCanHelpWith), 'iCanHelpWith'],
+    ['skillsToLearnThisSemester', hasTagList(m.skillsToLearnThisSemester), 'skillsToLearnThisSemester'],
+    ['skillsICanTeach', hasTagList(m.skillsICanTeach), 'skillsICanTeach'],
+    ['funFact', isNonEmptyBilingual(m.funFact), 'funFact'],
+    ['personalityTag', isNonEmptyStr(m.personalityTag), 'personalityTag'],
+    ['birthdate', isNonEmptyStr(m.birthdate) && m.birthdate.trim().length >= 5, 'birthdate'],
+    ['culture', hasCulture(m), 'culture'],
+  ];
+  const completed = checks.filter(([, ok]) => ok).length;
+  const missing = checks.filter(([, ok]) => !ok).map(([,, key]) => key);
+  const total = checks.length;
+  return { percentage: total > 0 ? Math.round((completed / total) * 100) : 0, completed, total, missing };
+}
