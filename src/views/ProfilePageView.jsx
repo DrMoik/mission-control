@@ -12,7 +12,7 @@ import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongFi
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
 import { useContributionPath } from '../hooks/useContributionPath.js';
-import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay, isBlockedImageHost, computeProfileCompletion, tsToDate, formatMissingFieldsList } from '../utils.js';
+import { getL, toL, fillL, ensureString, getSundayOfWeekLocal, normalizeWeekOfToSunday, formatBirthdateDisplay, isBlockedImageHost, computeProfileCompletion, tsToDate, formatMissingFieldsList } from '../utils.js';
 
 function isValidSongUrl(url) {
   if (!url) return true;
@@ -142,9 +142,9 @@ export default function ProfilePageView({
   }, [detailMerit]);
 
   const cat     = categories.find((c) => c.id === membership.categoryId);
-  const weekOf  = getMondayOfWeekLocal(); // Monday–Sunday week, local time (weeks start Monday)
-  // Match by week: normalize stored weekOf to Monday so any day (e.g. 2026-03-03) matches current week Monday (2026-03-02)
-  const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToMonday(s.weekOf) === weekOf);
+  const weekOf  = getSundayOfWeekLocal(); // Sunday–Saturday week, local time (weeks start Sunday)
+  // Match by week: normalize stored weekOf to Sunday so any day matches current week Sunday
+  const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToSunday(s.weekOf) === weekOf);
   const totalPoints = meritEvents
     .filter((e) => e.type === 'award')
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);

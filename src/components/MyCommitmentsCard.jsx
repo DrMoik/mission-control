@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { t } from '../strings.js';
-import { computeProfileCompletion, getMondayOfWeekLocal, normalizeWeekOfToMonday } from '../utils.js';
+import { computeProfileCompletion, getSundayOfWeekLocal, normalizeWeekOfToSunday } from '../utils.js';
 
 function getAssigneeIds(task) {
   return task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
@@ -34,20 +34,20 @@ export default function MyCommitmentsCard({
     return Math.ceil((now - due) / (24 * 60 * 60 * 1000));
   };
 
-  const weekOf = getMondayOfWeekLocal();
+  const weekOf = getSundayOfWeekLocal();
   const weekSet = new Set(
     weeklyStatuses
-      .map((s) => s.weekOf && normalizeWeekOfToMonday(s.weekOf))
+      .map((s) => s.weekOf && normalizeWeekOfToSunday(s.weekOf))
       .filter(Boolean)
   );
   const thisWeekPosted = weekSet.has(weekOf);
   let streak = 0;
-  let checkMonday = weekOf;
-  while (weekSet.has(checkMonday)) {
+  let checkSunday = weekOf;
+  while (weekSet.has(checkSunday)) {
     streak++;
-    const d = new Date(checkMonday + 'T12:00:00');
+    const d = new Date(checkSunday + 'T12:00:00');
     d.setDate(d.getDate() - 7);
-    checkMonday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    checkSunday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   const profileCompletion = computeProfileCompletion(currentMembership);

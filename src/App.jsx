@@ -34,17 +34,17 @@ import {
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES,
 } from './constants.js';
-import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMondayOfWeekLocal, normalizeWeekOfToMonday, getProfileMissingFieldsLabels } from './utils.js';
+import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels } from './utils.js';
 
-/** Returns true if weekOf (YYYY-MM-DD) falls in current or previous week (Monday–Sunday). */
+/** Returns true if weekOf (YYYY-MM-DD) falls in current or previous week (Sunday–Saturday). */
 function isWeekEligibleForPoints(weekOf) {
-  const monday = normalizeWeekOfToMonday(weekOf);
-  if (!monday) return false;
-  const thisMonday = getMondayOfWeekLocal();
+  const sunday = normalizeWeekOfToSunday(weekOf);
+  if (!sunday) return false;
+  const thisSunday = getSundayOfWeekLocal();
   const d = new Date();
   d.setDate(d.getDate() - 7);
-  const lastMonday = getMondayOfWeekLocal(d);
-  return monday === thisMonday || monday === lastMonday;
+  const lastSunday = getSundayOfWeekLocal(d);
+  return sunday === thisSunday || sunday === lastSunday;
 }
 
 // ── Shared UI atoms (direct imports to avoid barrel evaluation-order issues) ───
@@ -1148,7 +1148,7 @@ export default function App() {
     const isLeaderPostingForArea = memberRole === 'leader' && currentMembership?.categoryId && m?.categoryId === currentMembership.categoryId;
     const canPost = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || isOwnStatus || isLeaderPostingForArea;
     if (!canPost) throw new Error('No tienes permiso para publicar.');
-    const weekOf = normalizeWeekOfToMonday(weekOfParam) || weekOfParam || getMondayOfWeekLocal();
+    const weekOf = normalizeWeekOfToSunday(weekOfParam) || weekOfParam || getSundayOfWeekLocal();
     const docId = `${membershipId}_${weekOf}`;
     const statusRef = doc(db, 'weeklyStatuses', docId);
     const meritEventsRef = collection(db, 'meritEvents');

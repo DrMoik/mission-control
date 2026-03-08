@@ -27,8 +27,9 @@ export const tsToDate = (ts) => {
   return new Date(ts);
 };
 
-// ── Week (Monday–Sunday) helpers ──────────────────────────────────────────
+// ── Week (Sunday–Saturday) helpers ────────────────────────────────────────
 // All in local time so week boundaries don't shift with timezone.
+// Weeks begin on Sunday (first day).
 
 /**
  * Parse a calendar/event date (Firestore Timestamp or YYYY-MM-DD string) to a local Date.
@@ -92,20 +93,20 @@ export function dateToLocalYYYYMMDD(d) {
   return `${y}-${m}-${day}`;
 }
 
-/** Returns the Monday of the week for the given date (or today) as YYYY-MM-DD in local time. Week = Monday–Sunday. */
-export function getMondayOfWeekLocal(date = new Date()) {
+/** Returns the Sunday of the week for the given date (or today) as YYYY-MM-DD in local time. Week = Sunday–Saturday. */
+export function getSundayOfWeekLocal(date = new Date()) {
   const d = new Date(date.getTime());
-  const day = d.getDay() || 7; // Sun=0 → 7 so Monday=1
-  d.setDate(d.getDate() - (day - 1));
+  const day = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  d.setDate(d.getDate() - day);
   return dateToLocalYYYYMMDD(d);
 }
 
 /**
- * Normalize a stored weekOf (YYYY-MM-DD, any day of week) to the Monday of that week in local time.
- * Use this when matching weekly statuses so entries saved as e.g. "2026-03-03" (Tuesday) match the
- * current week Monday "2026-03-02". Parses with local date parts to avoid UTC/Timezone quirks.
+ * Normalize a stored weekOf (YYYY-MM-DD, any day of week) to the Sunday of that week in local time.
+ * Use this when matching weekly statuses so entries saved as e.g. "2026-03-05" (Wednesday) match the
+ * current week Sunday "2026-03-02". Parses with local date parts to avoid UTC/Timezone quirks.
  */
-export function normalizeWeekOfToMonday(weekOfStr) {
+export function normalizeWeekOfToSunday(weekOfStr) {
   if (!weekOfStr || typeof weekOfStr !== 'string') return '';
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(weekOfStr.trim());
   if (!match) return '';
@@ -114,7 +115,17 @@ export function normalizeWeekOfToMonday(weekOfStr) {
   const dateNum = parseInt(day, 10);
   if (month < 0 || month > 11 || dateNum < 1 || dateNum > 31) return '';
   const d = new Date(Number(y), month, dateNum);
-  return getMondayOfWeekLocal(d);
+  return getSundayOfWeekLocal(d);
+}
+
+/** @deprecated Use getSundayOfWeekLocal. Alias for backward compatibility. */
+export function getMondayOfWeekLocal(date = new Date()) {
+  return getSundayOfWeekLocal(date);
+}
+
+/** @deprecated Use normalizeWeekOfToSunday. Alias for backward compatibility. */
+export function normalizeWeekOfToMonday(weekOfStr) {
+  return normalizeWeekOfToSunday(weekOfStr);
 }
 
 // ── Bilingual field helpers ────────────────────────────────────────────────────
