@@ -96,6 +96,10 @@ export default function AdminView({
   onSaveMeritTiers,
   onSaveMeritFamilies,
   onSaveKnowledgeAreas,
+  skillProposals = [],
+  memberships = [],
+  onApproveSkillProposal,
+  onRejectSkillProposal,
   onSaveSystemMeritPoints,
   onSaveTaskGradePoints,
   t: tProp,
@@ -346,6 +350,42 @@ export default function AdminView({
               {saving === 'knowledgeAreas' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
+
+          {skillProposals.filter((p) => (p.status || 'pending') === 'pending').length > 0 && (
+            <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
+              <h4 className="text-sm font-semibold text-amber-400">{tFn('admin_skill_proposals') || 'Propuestas de habilidades'}</h4>
+              <p className="text-[10px] text-slate-500">{tFn('admin_skill_proposals_hint') || 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas a Áreas de conocimiento.'}</p>
+              <div className="space-y-2">
+                {skillProposals.filter((p) => (p.status || 'pending') === 'pending').map((p) => {
+                  const proposer = memberships.find((m) => m.id === p.proposedByMembershipId);
+                  return (
+                    <div key={p.id} className="flex items-center justify-between gap-2 py-2 px-3 bg-slate-900/60 rounded border border-slate-600">
+                      <div>
+                        <span className="text-sm text-slate-200 font-medium">{p.proposedLabel}</span>
+                        {proposer && <span className="text-[10px] text-slate-500 ml-2">— {proposer.displayName || '?'}</span>}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => onApproveSkillProposal?.(p.id)}
+                          className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-2 py-1 rounded"
+                        >
+                          {tFn('approve') || 'Aprobar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onRejectSkillProposal?.(p.id)}
+                          className="text-xs bg-slate-600 hover:bg-slate-500 text-slate-200 px-2 py-1 rounded"
+                        >
+                          {tFn('reject') || 'Rechazar'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
             <div className="flex items-center gap-2">

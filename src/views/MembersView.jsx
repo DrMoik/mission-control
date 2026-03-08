@@ -63,6 +63,7 @@ export default function MembersView({
   categories, memberships, complaintsAgainstMember = [],
   canEdit, canStrike, canStrikeMember, canRemoveStrikeMember,
   isPlatformAdmin, careerOptions: careerOptionsProp,
+  knowledgeAreas = [],
   onUpdateRole, onAssignCategory, onAddStrike, onRemoveStrike,
   onViewProfile, onCreateGhostMember, onApproveMember, onRejectMember,
 }) {
@@ -83,18 +84,22 @@ export default function MembersView({
   const active    = memberships.filter((m) => m.status === 'active');
   const suspended = memberships.filter((m) => m.status === 'suspended');
 
-  // Collect all unique skill tags across active members for the autocomplete list
+  // Collect all unique skill tags: canonical (from areas) + legacy free-text
   const allSkillTags = useMemo(() => {
     const set = new Set();
     const add = (t) => { const s = ensureString(t); if (s) set.add(s); };
     active.forEach((m) => {
-      (m.lookingForHelpIn        || []).forEach(add);
-      (m.iCanHelpWith            || []).forEach(add);
+      (m.helpNeedsAreas || []).forEach((id) => { const a = knowledgeAreas.find((x) => x.id === id); if (a?.name) set.add(a.name); });
+      (m.helpOfferAreas || []).forEach((id) => { const a = knowledgeAreas.find((x) => x.id === id); if (a?.name) set.add(a.name); });
+      (m.learnAreas || []).forEach((id) => { const a = knowledgeAreas.find((x) => x.id === id); if (a?.name) set.add(a.name); });
+      (m.teachAreas || []).forEach((id) => { const a = knowledgeAreas.find((x) => x.id === id); if (a?.name) set.add(a.name); });
+      (m.lookingForHelpIn || []).forEach(add);
+      (m.iCanHelpWith || []).forEach(add);
       (m.skillsToLearnThisSemester || []).forEach(add);
-      (m.skillsICanTeach         || []).forEach(add);
+      (m.skillsICanTeach || []).forEach(add);
     });
     return [...set].sort();
-  }, [active]);
+  }, [active, knowledgeAreas]);
 
   // Apply search + filter to active members
   const filtered = active.filter((m) => {
@@ -103,12 +108,19 @@ export default function MembersView({
     if (catFilter  && m.categoryId !== catFilter)                                   return false;
     if (skillFilter) {
       const sk = skillFilter.toLowerCase().trim();
-      const allTags = [
-        ...(m.lookingForHelpIn           || []),
-        ...(m.iCanHelpWith               || []),
-        ...(m.skillsToLearnThisSemester  || []),
-        ...(m.skillsICanTeach            || []),
+      const areaNames = [
+        ...(m.helpNeedsAreas || []),
+        ...(m.helpOfferAreas || []),
+        ...(m.learnAreas || []),
+        ...(m.teachAreas || []),
+      ].map((id) => knowledgeAreas.find((x) => x.id === id)?.name).filter(Boolean);
+      const legacyTags = [
+        ...(m.lookingForHelpIn || []),
+        ...(m.iCanHelpWith || []),
+        ...(m.skillsToLearnThisSemester || []),
+        ...(m.skillsICanTeach || []),
       ].map((t) => ensureString(t));
+      const allTags = [...areaNames, ...legacyTags];
       if (!allTags.some((tag) => tag.toLowerCase().includes(sk))) return false;
     }
     return true;
@@ -119,8 +131,12 @@ export default function MembersView({
   const isMatch = (m) => {
     if (!skillFilter) return false;
     const sk = skillFilter.toLowerCase().trim();
-    return (m.iCanHelpWith || []).some((tag) => ensureString(tag).toLowerCase().includes(sk)) ||
-           (m.skillsICanTeach || []).some((tag) => ensureString(tag).toLowerCase().includes(sk));
+    const areaNames = [...(m.helpOfferAreas || []), ...(m.teachAreas || [])]
+      .map((id) => knowledgeAreas.find((x) => x.id === id)?.name)
+      .filter(Boolean);
+    const legacyHelp = (m.iCanHelpWith || []).concat(m.skillsICanTeach || []);
+    return areaNames.some((n) => n.toLowerCase().includes(sk)) ||
+           legacyHelp.some((tag) => ensureString(tag).toLowerCase().includes(sk));
   };
 
   const handleCreateGhost = async (e) => {

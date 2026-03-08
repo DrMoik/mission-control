@@ -8,7 +8,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT, SYSTEM_MERIT_DESCRIPTIONS } from '../constants.js';
-import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from '../components/ui/index.js';
+import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
 import { useContributionPath } from '../hooks/useContributionPath.js';
@@ -92,7 +92,7 @@ export default function ProfilePageView({
   membership, categories, merits = [], meritEvents = [], canEditThis, onSave,
   weeklyStatuses = [], onSaveWeeklyStatus, suggestedTags = [],
   tasks = [], modules = [], moduleAttempts = [], meritFamilies = [], knowledgeAreas = [],
-  allMeritEvents = [], onNavigate,
+  allMeritEvents = [], onNavigate, onProposeSkill,
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp, personalityTags: personalityTagsProp,
 }) {
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
@@ -165,6 +165,10 @@ export default function ProfilePageView({
       university:    membership.university || '',
       currentObjective: toL(membership.currentObjective),
       currentChallenge: toL(membership.currentChallenge),
+      helpNeedsAreas:            membership.helpNeedsAreas ?? [],
+      helpOfferAreas:            membership.helpOfferAreas ?? [],
+      learnAreas:                membership.learnAreas ?? [],
+      teachAreas:                membership.teachAreas ?? [],
       lookingForHelpIn:          normTags(membership.lookingForHelpIn),
       iCanHelpWith:              normTags(membership.iCanHelpWith),
       skillsToLearnThisSemester: normTags(membership.skillsToLearnThisSemester),
@@ -192,6 +196,10 @@ export default function ProfilePageView({
       currentObjective: fillL(draft.currentObjective),
       currentChallenge: fillL(draft.currentChallenge),
       funFact:          fillL(draft.funFact),
+      helpNeedsAreas:            draft.helpNeedsAreas ?? [],
+      helpOfferAreas:            draft.helpOfferAreas ?? [],
+      learnAreas:                draft.learnAreas ?? [],
+      teachAreas:                draft.teachAreas ?? [],
       lookingForHelpIn:          (draft.lookingForHelpIn || []).map((t) => ensureString(t)),
       iCanHelpWith:              (draft.iCanHelpWith || []).map((t) => ensureString(t)),
       skillsToLearnThisSemester: (draft.skillsToLearnThisSemester || []).map((t) => ensureString(t)),
@@ -433,10 +441,63 @@ export default function ProfilePageView({
 
             <div className="border-t border-slate-700 pt-3 space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_collaboration')}</p>
-              <TagInput label={t('looking_for_help_in')} value={draft.lookingForHelpIn} onChange={(v) => set('lookingForHelpIn', v)} placeholder={t('collab_tags_ph')} suggestions={suggestedTags} />
-              <TagInput label={t('i_can_help_with')} value={draft.iCanHelpWith} onChange={(v) => set('iCanHelpWith', v)} placeholder={t('collab_tags_ph')} suggestions={suggestedTags} />
-              <TagInput label={t('skills_to_learn')} value={draft.skillsToLearnThisSemester} onChange={(v) => set('skillsToLearnThisSemester', v)} placeholder={t('collab_tags_ph')} suggestions={suggestedTags} />
-              <TagInput label={t('skills_i_can_teach')} value={draft.skillsICanTeach} onChange={(v) => set('skillsICanTeach', v)} placeholder={t('collab_tags_ph')} suggestions={suggestedTags} />
+              <p className="text-[10px] text-slate-500">{t('collab_skill_hint')}</p>
+              <SkillPicker label={t('looking_for_help_in')} value={draft.helpNeedsAreas ?? []} onChange={(v) => set('helpNeedsAreas', v)} knowledgeAreas={knowledgeAreas} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
+              {(draft.lookingForHelpIn || []).length > 0 && (
+                <div>
+                  <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {(draft.lookingForHelpIn || []).map((tag, i) => (
+                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-amber-900/20 text-amber-300/80 border-amber-700/30">
+                        {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
+                        <button type="button" onClick={() => set('lookingForHelpIn', (draft.lookingForHelpIn || []).filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400 leading-none transition-colors">×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <SkillPicker label={t('i_can_help_with')} value={draft.helpOfferAreas ?? []} onChange={(v) => set('helpOfferAreas', v)} knowledgeAreas={knowledgeAreas} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
+              {(draft.iCanHelpWith || []).length > 0 && (
+                <div>
+                  <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {(draft.iCanHelpWith || []).map((tag, i) => (
+                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-emerald-900/20 text-emerald-300/80 border-emerald-700/30">
+                        {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
+                        <button type="button" onClick={() => set('iCanHelpWith', (draft.iCanHelpWith || []).filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400 leading-none transition-colors">×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <SkillPicker label={t('skills_to_learn')} value={draft.learnAreas ?? []} onChange={(v) => set('learnAreas', v)} knowledgeAreas={knowledgeAreas} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
+              {(draft.skillsToLearnThisSemester || []).length > 0 && (
+                <div>
+                  <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {(draft.skillsToLearnThisSemester || []).map((tag, i) => (
+                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-blue-900/20 text-blue-300/80 border-blue-700/30">
+                        {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
+                        <button type="button" onClick={() => set('skillsToLearnThisSemester', (draft.skillsToLearnThisSemester || []).filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400 leading-none transition-colors">×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <SkillPicker label={t('skills_i_can_teach')} value={draft.teachAreas ?? []} onChange={(v) => set('teachAreas', v)} knowledgeAreas={knowledgeAreas} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
+              {(draft.skillsICanTeach || []).length > 0 && (
+                <div>
+                  <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {(draft.skillsICanTeach || []).map((tag, i) => (
+                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-purple-900/20 text-purple-300/80 border-purple-700/30">
+                        {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
+                        <button type="button" onClick={() => set('skillsICanTeach', (draft.skillsICanTeach || []).filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400 leading-none transition-colors">×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="border-t border-slate-700 pt-3 space-y-3">
@@ -624,33 +685,74 @@ export default function ProfilePageView({
               </div>
             )}
 
-            {(membership.lookingForHelpIn?.length || membership.iCanHelpWith?.length ||
-              membership.skillsToLearnThisSemester?.length || membership.skillsICanTeach?.length) && (
+            {((membership.helpNeedsAreas?.length || membership.helpOfferAreas?.length || membership.learnAreas?.length || membership.teachAreas?.length) ||
+              (membership.lookingForHelpIn?.length || membership.iCanHelpWith?.length ||
+               membership.skillsToLearnThisSemester?.length || membership.skillsICanTeach?.length)) && (
               <div className="min-w-0">
                 <SectionHeading label={t('section_collaboration')} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                  {membership.lookingForHelpIn?.length > 0 && (
+                  {((membership.helpNeedsAreas?.length) || (membership.lookingForHelpIn?.length)) > 0 && (
                     <div>
-                      <p className="text-[10px] text-slate-500 font-semibold">{t('looking_label')}</p>
-                      <TagList tags={membership.lookingForHelpIn} colorClass="bg-amber-900/40 text-amber-200 border-amber-700/50" lang={lang} />
+                      <p className="text-[10px] text-slate-500 font-semibold">{t('looking_for_help_in')}</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {(membership.helpNeedsAreas || []).map((id) => {
+                          const a = knowledgeAreas.find((x) => x.id === id);
+                          return a ? <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-amber-900/40 text-amber-200 border-amber-700/50">{a.name}</span> : null;
+                        })}
+                        {(membership.lookingForHelpIn || []).map((tag, i) => (
+                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-amber-900/20 text-amber-300/80 border-amber-700/30">
+                            {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  {membership.iCanHelpWith?.length > 0 && (
+                  {((membership.helpOfferAreas?.length) || (membership.iCanHelpWith?.length)) > 0 && (
                     <div>
-                      <p className="text-[10px] text-slate-500 font-semibold">{t('offering_label')}</p>
-                      <TagList tags={membership.iCanHelpWith} colorClass="bg-emerald-900/40 text-emerald-200 border-emerald-700/50" lang={lang} />
+                      <p className="text-[10px] text-slate-500 font-semibold">{t('i_can_help_with')}</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {(membership.helpOfferAreas || []).map((id) => {
+                          const a = knowledgeAreas.find((x) => x.id === id);
+                          return a ? <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/40 text-emerald-200 border-emerald-700/50">{a.name}</span> : null;
+                        })}
+                        {(membership.iCanHelpWith || []).map((tag, i) => (
+                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/20 text-emerald-300/80 border-emerald-700/30">
+                            {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  {membership.skillsToLearnThisSemester?.length > 0 && (
+                  {((membership.learnAreas?.length) || (membership.skillsToLearnThisSemester?.length)) > 0 && (
                     <div>
                       <p className="text-[10px] text-slate-500 font-semibold">{t('skills_to_learn')}</p>
-                      <TagList tags={membership.skillsToLearnThisSemester} colorClass="bg-blue-900/40 text-blue-200 border-blue-700/50" lang={lang} />
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {(membership.learnAreas || []).map((id) => {
+                          const a = knowledgeAreas.find((x) => x.id === id);
+                          return a ? <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-blue-900/40 text-blue-200 border-blue-700/50">{a.name}</span> : null;
+                        })}
+                        {(membership.skillsToLearnThisSemester || []).map((tag, i) => (
+                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-blue-900/20 text-blue-300/80 border-blue-700/30">
+                            {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  {membership.skillsICanTeach?.length > 0 && (
+                  {((membership.teachAreas?.length) || (membership.skillsICanTeach?.length)) > 0 && (
                     <div>
                       <p className="text-[10px] text-slate-500 font-semibold">{t('skills_i_can_teach')}</p>
-                      <TagList tags={membership.skillsICanTeach} colorClass="bg-purple-900/40 text-purple-200 border-purple-700/50" lang={lang} />
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {(membership.teachAreas || []).map((id) => {
+                          const a = knowledgeAreas.find((x) => x.id === id);
+                          return a ? <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/40 text-purple-200 border-purple-700/50">{a.name}</span> : null;
+                        })}
+                        {(membership.skillsICanTeach || []).map((tag, i) => (
+                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/20 text-purple-300/80 border-purple-700/30">
+                            {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

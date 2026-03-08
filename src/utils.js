@@ -281,10 +281,10 @@ export function computeProfileCompletion(membership) {
     ['university', isNonEmptyStr(m.university), 'university'],
     ['currentObjective', isNonEmptyBilingual(m.currentObjective), 'currentObjective'],
     ['currentChallenge', isNonEmptyBilingual(m.currentChallenge), 'currentChallenge'],
-    ['lookingForHelpIn', hasTagList(m.lookingForHelpIn), 'lookingForHelpIn'],
-    ['iCanHelpWith', hasTagList(m.iCanHelpWith), 'iCanHelpWith'],
-    ['skillsToLearnThisSemester', hasTagList(m.skillsToLearnThisSemester), 'skillsToLearnThisSemester'],
-    ['skillsICanTeach', hasTagList(m.skillsICanTeach), 'skillsICanTeach'],
+    ['collab', ((Array.isArray(m.helpNeedsAreas) && m.helpNeedsAreas.length > 0) || hasTagList(m.lookingForHelpIn)) &&
+      ((Array.isArray(m.helpOfferAreas) && m.helpOfferAreas.length > 0) || hasTagList(m.iCanHelpWith)) &&
+      ((Array.isArray(m.learnAreas) && m.learnAreas.length > 0) || hasTagList(m.skillsToLearnThisSemester)) &&
+      ((Array.isArray(m.teachAreas) && m.teachAreas.length > 0) || hasTagList(m.skillsICanTeach)), 'collab'],
     ['funFact', isNonEmptyBilingual(m.funFact), 'funFact'],
     ['personalityTag', isNonEmptyStr(m.personalityTag), 'personalityTag'],
     ['birthdate', isNonEmptyStr(m.birthdate) && m.birthdate.trim().length >= 5, 'birthdate'],

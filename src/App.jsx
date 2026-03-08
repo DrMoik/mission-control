@@ -251,6 +251,7 @@ export default function App() {
     teamTasks,
     teamHrSuggestions,
     teamHrComplaints,
+    teamSkillProposals,
     userMembershipsReady,
   } = useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile });
 
@@ -714,6 +715,10 @@ export default function App() {
       email:         otherMembership.email         ?? '',
       currentObjective: otherMembership.currentObjective ?? '',
       currentChallenge: otherMembership.currentChallenge ?? '',
+      helpNeedsAreas:    otherMembership.helpNeedsAreas ?? [],
+      helpOfferAreas:    otherMembership.helpOfferAreas ?? [],
+      learnAreas:        otherMembership.learnAreas ?? [],
+      teachAreas:        otherMembership.teachAreas ?? [],
       lookingForHelpIn:  otherMembership.lookingForHelpIn ?? [],
       iCanHelpWith:      otherMembership.iCanHelpWith ?? [],
       skillsToLearnThisSemester: otherMembership.skillsToLearnThisSemester ?? [],
@@ -915,6 +920,57 @@ export default function App() {
     });
   };
 
+  const handleProposeSkill = async (proposedLabel) => {
+    if (!currentTeam || !currentMembership) return;
+    const label = (proposedLabel || '').trim();
+    if (!label) return;
+    await addDoc(collection(db, 'skillProposals'), {
+      teamId: currentTeam.id,
+      proposedLabel: label,
+      proposedByMembershipId: currentMembership.id,
+      createdAt: serverTimestamp(),
+      status: 'pending',
+    });
+  };
+
+  const handleApproveSkillProposal = async (proposalId) => {
+    if (!currentTeam || !canEdit) return;
+    const prop = teamSkillProposals.find((p) => p.id === proposalId);
+    if (!prop || (prop.status || 'pending') !== 'pending') return;
+    const newAreaName = (prop.proposedLabel || '').trim();
+    if (!newAreaName) return;
+    const newAreaId = newAreaName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '') || 'skill';
+    const knowledgeAreas = (currentTeam.knowledgeAreas?.length ? currentTeam.knowledgeAreas : []);
+    const existingIds = new Set(knowledgeAreas.map((a) => a.id));
+    let finalId = newAreaId;
+    let suffix = 0;
+    while (existingIds.has(finalId)) { suffix++; finalId = `${newAreaId}_${suffix}`; }
+    const updated = [...knowledgeAreas, { id: finalId, name: newAreaName }];
+    await updateDoc(doc(db, 'teams', currentTeam.id), { knowledgeAreas: updated });
+    await updateDoc(doc(db, 'skillProposals', proposalId), {
+      status: 'approved',
+      approvedAt: serverTimestamp(),
+      approvedByUserId: authUser?.uid,
+      approvedByName: userProfile?.displayName ?? authUser?.email ?? '—',
+      newAreaId: finalId,
+      newAreaName,
+    });
+    await logAudit('approve_skill_proposal', 'skillProposal', proposalId, { newAreaId: finalId, newAreaName });
+  };
+
+  const handleRejectSkillProposal = async (proposalId) => {
+    if (!currentTeam || !canEdit) return;
+    const prop = teamSkillProposals.find((p) => p.id === proposalId);
+    if (!prop || (prop.status || 'pending') !== 'pending') return;
+    await updateDoc(doc(db, 'skillProposals', proposalId), {
+      status: 'rejected',
+      reviewedAt: serverTimestamp(),
+      reviewedByUserId: authUser?.uid,
+      reviewedByName: userProfile?.displayName ?? authUser?.email ?? '—',
+    });
+    await logAudit('reject_skill_proposal', 'skillProposal', proposalId, {});
+  };
+
   const handleUpdateMemberProfile = async (membershipId, updates) => {
     if (!currentTeam) throw new Error('No hay equipo activo.');
     const m = teamMemberships.find((mm) => mm.id === membershipId);
@@ -943,6 +999,10 @@ export default function App() {
       currentObjective: updates.currentObjective ?? m.currentObjective ?? '',
       currentChallenge: updates.currentChallenge ?? m.currentChallenge ?? '',
       // ── Community profile — Collaboration ────────────────────────────────
+      helpNeedsAreas:         Array.isArray(updates.helpNeedsAreas)         ? updates.helpNeedsAreas.filter(Boolean)         : (m.helpNeedsAreas ?? []),
+      helpOfferAreas:         Array.isArray(updates.helpOfferAreas)         ? updates.helpOfferAreas.filter(Boolean)         : (m.helpOfferAreas ?? []),
+      learnAreas:             Array.isArray(updates.learnAreas)             ? updates.learnAreas.filter(Boolean)             : (m.learnAreas ?? []),
+      teachAreas:             Array.isArray(updates.teachAreas)             ? updates.teachAreas.filter(Boolean)             : (m.teachAreas ?? []),
       lookingForHelpIn:        updates.lookingForHelpIn        ?? m.lookingForHelpIn        ?? [],
       iCanHelpWith:            updates.iCanHelpWith            ?? m.iCanHelpWith            ?? [],
       skillsToLearnThisSemester: updates.skillsToLearnThisSemester ?? m.skillsToLearnThisSemester ?? [],
@@ -974,6 +1034,7 @@ export default function App() {
     };
     const hasNonEmptyTagList = (arr) =>
       Array.isArray(arr) && arr.some((t) => ensureString(t).trim().length > 0);
+    const hasAreas = (arr) => Array.isArray(arr) && arr.length > 0;
     const hasCulture = (() => {
       const hasListen = Array.isArray(payload.whatIListenTo) && payload.whatIListenTo.some((it) => {
         if (typeof it === 'string') return it.trim().length > 0;
@@ -997,10 +1058,10 @@ export default function App() {
       isNonEmptyString(payload.university) &&
       isNonEmptyBilingual(payload.currentObjective) &&
       isNonEmptyBilingual(payload.currentChallenge) &&
-      hasNonEmptyTagList(payload.lookingForHelpIn) &&
-      hasNonEmptyTagList(payload.iCanHelpWith) &&
-      hasNonEmptyTagList(payload.skillsToLearnThisSemester) &&
-      hasNonEmptyTagList(payload.skillsICanTeach) &&
+      (hasAreas(payload.helpNeedsAreas) || hasNonEmptyTagList(payload.lookingForHelpIn)) &&
+      (hasAreas(payload.helpOfferAreas) || hasNonEmptyTagList(payload.iCanHelpWith)) &&
+      (hasAreas(payload.learnAreas) || hasNonEmptyTagList(payload.skillsToLearnThisSemester)) &&
+      (hasAreas(payload.teachAreas) || hasNonEmptyTagList(payload.skillsICanTeach)) &&
       isNonEmptyBilingual(payload.funFact) &&
       isNonEmptyString(payload.personalityTag) &&
       hasBirthdate &&
@@ -1854,7 +1915,7 @@ export default function App() {
   const navItems = visibleDomains.flatMap((d) => d.items);
 
   return (
-      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
+      <div className="h-screen overflow-hidden bg-slate-900 text-slate-100 flex flex-col">
 
 
         {/* ── Mobile nav overlay (accordion domains) ── */}
@@ -2015,7 +2076,7 @@ export default function App() {
         )}
 
         {/* ── App body: sidebar + main ── */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
 
           {/* Desktop sidebar (domain groups) */}
           <nav className={`hidden md:block ${navCollapsed ? 'w-12' : 'w-48'} border-r border-slate-800/80 p-2 shrink-0 transition-all duration-200 bg-slate-950/60 flex flex-col min-w-0 overflow-hidden`}>
@@ -2138,6 +2199,7 @@ export default function App() {
                 canRemoveStrikeMember={canRemoveStrikeMember}
                 isPlatformAdmin={isPlatformAdmin}
                 careerOptions={careerOptions}
+                knowledgeAreas={knowledgeAreas}
                 onUpdateRole={handleUpdateMemberRole}
                 onAssignCategory={handleAssignCategory}
                 onAddStrike={handleAddStrike}
@@ -2351,6 +2413,10 @@ export default function App() {
                 onSaveMeritTiers={handleSaveTeamMeritTiers}
                 onSaveMeritFamilies={handleSaveTeamMeritFamilies}
                 onSaveKnowledgeAreas={handleSaveTeamKnowledgeAreas}
+                skillProposals={teamSkillProposals}
+                memberships={teamMemberships}
+                onApproveSkillProposal={handleApproveSkillProposal}
+                onRejectSkillProposal={handleRejectSkillProposal}
                 onSaveSystemMeritPoints={handleSaveSystemMeritPoints}
                 onSaveTaskGradePoints={handleSaveTaskGradePoints}
               />
@@ -2373,7 +2439,7 @@ export default function App() {
                   onSave={handleUpdateMemberProfile}
                   weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
                   onSaveWeeklyStatus={handleSaveWeeklyStatus}
-                  suggestedTags={collabTagSuggestions}
+                  onProposeSkill={handleProposeSkill}
                   careerOptions={careerOptions}
                   semesterOptions={semesterOptions}
                   personalityTags={personalityTags}
@@ -2408,7 +2474,7 @@ export default function App() {
                 onSave={handleUpdateMemberProfile}
                 weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
                 onSaveWeeklyStatus={handleSaveWeeklyStatus}
-                suggestedTags={collabTagSuggestions}
+                onProposeSkill={handleProposeSkill}
                 careerOptions={careerOptions}
                 semesterOptions={semesterOptions}
                 personalityTags={personalityTags}

@@ -71,6 +71,10 @@ export const STRINGS = {
     admin_merit_families_hint: 'Una por línea: id: nombre o id: nombre — descripción. Para inferencia de trayectorias.',
     admin_knowledge_areas: 'Áreas de conocimiento',
     admin_knowledge_areas_hint: 'Una por línea: id: nombre. Para el mapa de conocimientos.',
+    admin_skill_proposals: 'Propuestas de habilidades',
+    admin_skill_proposals_hint: 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas a Áreas de conocimiento.',
+    approve: 'Aprobar',
+    reject: 'Rechazar',
     admin_retroactive: 'Retroactivo',
 
     // ── Funding ────────────────────────────────────────────────────────────────
@@ -831,7 +835,10 @@ export const STRINGS = {
     i_can_help_with:           'Puedo ayudar con',
     skills_to_learn:           'Habilidades a aprender este semestre',
     skills_i_can_teach:        'Habilidades que puedo enseñar',
-    collab_tags_ph:            'Agrega una habilidad o tema…',
+    collab_tags_ph:            'Busca o escribe para proponer…',
+    collab_skill_hint:         'Busca una habilidad existente. Si no existe, puedes proponer una nueva.',
+    skill_propose_new:         'Proponer nueva habilidad',
+    skill_not_standardized:    'no estandarizado',
     tag_input_hint:            'Enter o coma para agregar · Backspace para quitar',
     tag_input_hint_suggestions:'Enter o coma para agregar · Escribe para ver sugerencias',
     no_collab_set:             'Sin información de colaboración aún.',

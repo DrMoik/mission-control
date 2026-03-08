@@ -74,6 +74,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
   const [teamTasks, setTeamTasks] = useState([]);
   const [teamHrSuggestions, setTeamHrSuggestions] = useState([]);
   const [teamHrComplaints, setTeamHrComplaints] = useState([]);
+  const [teamSkillProposals, setTeamSkillProposals] = useState([]);
   const [userMembershipsReady, setUserMembershipsReady] = useState(false);
 
   // All teams (public — needed for the unauthenticated team browser)
@@ -205,6 +206,11 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       setTeamHrComplaints,
       (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)),
     );
+    sub(
+      query(collection(db, 'skillProposals'), where('teamId', '==', selectedTeamId)),
+      setTeamSkillProposals,
+      (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)),
+    );
 
     // Module attempts: team admins see all (for approval); others see only their own
     if (authUser) {
@@ -285,6 +291,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
     teamTasks,
     teamHrSuggestions,
     teamHrComplaints,
+    teamSkillProposals,
     userMembershipsReady,
   };
 }

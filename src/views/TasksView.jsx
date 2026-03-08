@@ -27,6 +27,7 @@ export default function TasksView({
   const [showAllTeamTasks, setShowAllTeamTasks] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [taskSearch, setTaskSearch] = useState('');
+  const [editingKnowledgeAreasTaskId, setEditingKnowledgeAreasTaskId] = useState(null);
 
   const getAssigneeIds = (task) =>
     task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
@@ -133,27 +134,64 @@ export default function TasksView({
             {isBlocked && task.blockedReason && (
               <p className="text-xs text-amber-200/90 mt-1">{ensureString(task.blockedReason, lang)}</p>
             )}
-            {knowledgeAreas.length > 0 && (isAssigner || canViewAllTasks) && onUpdateTask && (
+            {knowledgeAreas.length > 0 && (
               <div className="mt-2 flex flex-wrap items-center gap-1">
                 <span className="text-[10px] text-slate-500">{t('merit_attr_knowledge_areas') || 'Áreas'}:</span>
-                {knowledgeAreas.map((a) => {
-                  const sel = (task.knowledgeAreaIds || []).includes(a.id);
-                  return (
+                {editingKnowledgeAreasTaskId === task.id && (isAssigner || canViewAllTasks) && onUpdateTask ? (
+                  <>
+                    {knowledgeAreas.map((a) => {
+                      const sel = (task.knowledgeAreaIds || []).includes(a.id);
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => {
+                            const next = sel
+                              ? (task.knowledgeAreaIds || []).filter((x) => x !== a.id)
+                              : [...(task.knowledgeAreaIds || []), a.id];
+                            onUpdateTask(task.id, { knowledgeAreaIds: next });
+                          }}
+                          className={`text-[10px] px-1.5 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-400 border border-slate-600'}`}
+                        >
+                          {a.name}
+                        </button>
+                      );
+                    })}
                     <button
-                      key={a.id}
                       type="button"
-                      onClick={() => {
-                        const next = sel
-                          ? (task.knowledgeAreaIds || []).filter((x) => x !== a.id)
-                          : [...(task.knowledgeAreaIds || []), a.id];
-                        onUpdateTask(task.id, { knowledgeAreaIds: next });
-                      }}
-                      className={`text-[10px] px-1.5 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-400 border border-slate-600'}`}
+                      onClick={() => setEditingKnowledgeAreasTaskId(null)}
+                      className="text-[10px] text-slate-400 hover:text-slate-200 underline"
                     >
-                      {a.name}
+                      {t('close')}
                     </button>
-                  );
-                })}
+                  </>
+                ) : (
+                  <>
+                    {(task.knowledgeAreaIds || [])
+                      .map((id) => knowledgeAreas.find((a) => a.id === id))
+                      .filter(Boolean)
+                      .map((a) => (
+                        <span
+                          key={a.id}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/80 text-slate-400 border border-slate-600"
+                        >
+                          {a.name}
+                        </span>
+                      ))}
+                    {(task.knowledgeAreaIds || []).length === 0 && (
+                      <span className="text-[10px] text-slate-500 italic">—</span>
+                    )}
+                    {(isAssigner || canViewAllTasks) && onUpdateTask && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingKnowledgeAreasTaskId(task.id)}
+                        className="text-[10px] text-slate-500 hover:text-slate-300 underline"
+                      >
+                        {t('edit') || 'Editar'}
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             )}
             {isPendingReview && isAssignee && (

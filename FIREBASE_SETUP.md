@@ -603,15 +603,17 @@ Your app will be live at `https://quantum-robotics-48d7e.web.app`
 | Collection | Key fields | Who can read |
 |---|---|---|
 | `users` | `uid`, `displayName`, `email`, `photoURL`, `platformRole` | Own doc only |
-| `teams` | `name`, `overview`, `swot` | Any signed-in user |
+| `teams` | `name`, `overview`, `swot`, `meritFamilies[]` (`id`, `name`, `description?`), `knowledgeAreas[]` (`id`, `name`) | Any signed-in user |
 | `memberships` | `teamId`, `userId`, `displayName`, `role`, `status`, `strikes`, `categoryId` | Active team members |
 | `categories` | `teamId`, `name`, `description` | Active team members |
-| `merits` | `teamId`, `name`, `points`, `categoryId`, `achievementTypes[]`, `domains[]`, `tier`, `tags[]` | Active team members |
+| `merits` | `teamId`, `name`, `points`, `categoryId`, `achievementTypes[]`, `domains[]`, `tier`, `tags[]`, `familyIds[]`, `knowledgeAreaIds[]` | Active team members |
 | `meritEvents` | `teamId`, `membershipId`, `meritId`, `meritName`, `points`, `type`, `evidence`, `autoAward`, `awardedByUserId` | Active team members |
-| `modules` | `teamId`, `title`, `description`, `topics[]` (each: `id`, `title`, `content`, `videoUrl`), `order` | Rookie+ members |
+| `modules` | `teamId`, `title`, `description`, `topics[]` (each: `id`, `title`, `content`, `videoUrl`), `order`, `knowledgeAreaIds[]` | Rookie+ members |
 | `moduleAttempts` | `teamId`, `moduleId`, `userId`, `membershipId`, `status` (`requested_review` / `approved`), `requestedAt` | Own doc + team admins |
-| `tasks` | `teamId`, `assigneeMembershipIds[]`, `assignedByMembershipId`, `assignedByName`, `title`, `description`, `dueDate?`, `status` (`pending`/`pending_review`/`completed`), `grade?`, `createdAt`, `completedAt?`, `requestedReviewAt?` | Active team members |
+| `tasks` | `teamId`, `assigneeMembershipIds[]`, `assignedByMembershipId`, `assignedByName`, `title`, `description`, `dueDate?`, `status` (`pending`/`pending_review`/`completed`), `grade?`, `blocked?`, `blockedReason?`, `blockedAt?`, `knowledgeAreaIds[]`, `createdAt`, `completedAt?`, `requestedReviewAt?` | Active team members |
 | `teamEvents` | `teamId`, `title`, `date`, `description`, `createdBy`, `categoryId` | Active team members |
+| `teamSessions` | `teamId`, `categoryId`, `title`, `sessionClass`, `sessionType`, `scheduledAt`, `durationMinutes`, `description`, `notes`, `artifactUrls[]`, `meritId`, `meritPoints`, `createdBy`, `createdAt`, `lastEditedBy`, `lastEditedAt` | Active team members |
+| `teamSessions/{id}/attendance/{membershipId}` | `membershipId`, `attended`, `recordedAt`, `recordedBy` | Leaders+ write; active read |
 | `teamSwots` | `teamId`, `name`, `strengths`, `weaknesses`, `opportunities`, `threats`, `categoryId` | Active team members |
 | `teamEisenhowers` | `teamId`, `name`, `quadrants`, `categoryId` | Active team members |
 | `teamPughs` | `teamId`, `name`, `criteria`, `options`, `scores`, `categoryId` | Active team members |

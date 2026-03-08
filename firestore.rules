@@ -169,6 +169,16 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /skillProposals/{proposalId} {
+      allow read: if request.auth != null && isActiveMember(resource.data.teamId);
+      allow create: if request.auth != null &&
+        membershipExists(request.resource.data.teamId) &&
+        membershipDoc(request.resource.data.teamId).data.status == 'active' &&
+        request.resource.data.proposedByMembershipId == request.auth.uid + '_' + request.resource.data.teamId;
+      allow update: if isTeamAdmin(resource.data.teamId);
+      allow delete: if false;
+    }
+
     match /merits/{meritId} {
       allow read: if isActiveMember(resource.data.teamId);
       allow create: if isTeamAdmin(request.resource.data.teamId) ||
