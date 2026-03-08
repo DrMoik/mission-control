@@ -63,7 +63,7 @@ export default function MembersView({
   categories, memberships, complaintsAgainstMember = [],
   canEdit, canStrike, canStrikeMember, canRemoveStrikeMember,
   isPlatformAdmin, careerOptions: careerOptionsProp,
-  knowledgeAreas = [],
+  knowledgeAreas = [], skillDictionary = [],
   onUpdateRole, onAssignCategory, onAddStrike, onRemoveStrike,
   onViewProfile, onCreateGhostMember, onApproveMember, onRejectMember,
 }) {
@@ -84,22 +84,24 @@ export default function MembersView({
   const active    = memberships.filter((m) => m.status === 'active');
   const suspended = memberships.filter((m) => m.status === 'suspended');
 
-  // Collect all unique skill tags: canonical (from areas) + legacy free-text
+  const getSkillLabel = (id) => skillDictionary.find((x) => x.id === id)?.label || knowledgeAreas.find((x) => x.id === id)?.name;
+
+  // Collect all unique skill tags: canonical (from skillDictionary) + legacy free-text
   const allSkillTags = useMemo(() => {
     const set = new Set();
     const add = (t) => { const s = ensureString(t); if (s) set.add(s); };
     active.forEach((m) => {
-      (m.helpNeedsAreas || []).forEach((id) => { const a = knowledgeAreas.find((x) => x.id === id); if (a?.name) set.add(a.name); });
-      (m.helpOfferAreas || []).forEach((id) => { const a = knowledgeAreas.find((x) => x.id === id); if (a?.name) set.add(a.name); });
-      (m.learnAreas || []).forEach((id) => { const a = knowledgeAreas.find((x) => x.id === id); if (a?.name) set.add(a.name); });
-      (m.teachAreas || []).forEach((id) => { const a = knowledgeAreas.find((x) => x.id === id); if (a?.name) set.add(a.name); });
+      (m.helpNeedsAreas || []).forEach((id) => { const lbl = getSkillLabel(id); if (lbl) set.add(lbl); });
+      (m.helpOfferAreas || []).forEach((id) => { const lbl = getSkillLabel(id); if (lbl) set.add(lbl); });
+      (m.learnAreas || []).forEach((id) => { const lbl = getSkillLabel(id); if (lbl) set.add(lbl); });
+      (m.teachAreas || []).forEach((id) => { const lbl = getSkillLabel(id); if (lbl) set.add(lbl); });
       (m.lookingForHelpIn || []).forEach(add);
       (m.iCanHelpWith || []).forEach(add);
       (m.skillsToLearnThisSemester || []).forEach(add);
       (m.skillsICanTeach || []).forEach(add);
     });
     return [...set].sort();
-  }, [active, knowledgeAreas]);
+  }, [active, knowledgeAreas, skillDictionary]);
 
   // Apply search + filter to active members
   const filtered = active.filter((m) => {
@@ -132,7 +134,7 @@ export default function MembersView({
     if (!skillFilter) return false;
     const sk = skillFilter.toLowerCase().trim();
     const areaNames = [...(m.helpOfferAreas || []), ...(m.teachAreas || [])]
-      .map((id) => knowledgeAreas.find((x) => x.id === id)?.name)
+      .map((id) => getSkillLabel(id))
       .filter(Boolean);
     const legacyHelp = (m.iCanHelpWith || []).concat(m.skillsICanTeach || []);
     return areaNames.some((n) => n.toLowerCase().includes(sk)) ||

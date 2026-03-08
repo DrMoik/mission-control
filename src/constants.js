@@ -192,17 +192,30 @@ export const MERIT_FAMILIES_DEFAULT = [
   { id: 'community', name: 'Comunidad', description: '' },
 ];
 
-/** Default knowledge areas. Teams can override in Admin. Ensures Knowledge Map has sensible starters. */
-export const KNOWLEDGE_AREAS_DEFAULT = [
-  { id: 'ros', name: 'ROS' },
-  { id: 'control', name: 'Teoría de control' },
-  { id: 'python', name: 'Python' },
-  { id: 'cad', name: 'CAD / Diseño mecánico' },
-  { id: 'electronics', name: 'Electrónica' },
-  { id: 'vision', name: 'Visión por computadora' },
-  { id: 'documentation', name: 'Documentación técnica' },
-  { id: 'project_management', name: 'Gestión de proyectos' },
+/** Skill types for the collaboration skill dictionary. Technical only for Knowledge Map/tasks/modules. */
+export const SKILL_TYPES = ['technical', 'learning', 'support', 'collaboration'];
+
+/** Default skill dictionary. Teams can override in Admin. technical → Knowledge Map, tasks, modules. */
+export const SKILL_DICTIONARY_DEFAULT = [
+  { id: 'ros', label: 'ROS', type: 'technical' },
+  { id: 'control', label: 'Teoría de control', type: 'technical' },
+  { id: 'python', label: 'Python', type: 'technical' },
+  { id: 'cad', label: 'CAD / Diseño mecánico', type: 'technical' },
+  { id: 'electronics', label: 'Electrónica', type: 'technical' },
+  { id: 'vision', label: 'Visión por computadora', type: 'technical' },
+  { id: 'documentation', label: 'Documentación técnica', type: 'technical' },
+  { id: 'project_management', label: 'Gestión de proyectos', type: 'technical' },
+  { id: 'linear_algebra', label: 'Álgebra lineal', type: 'learning' },
+  { id: 'dynamics', label: 'Dinámica', type: 'learning' },
+  { id: 'stress_management', label: 'Manejo del estrés', type: 'support' },
+  { id: 'anxiety', label: 'Ansiedad', type: 'support' },
+  { id: 'mentoring', label: 'Mentoría', type: 'collaboration' },
+  { id: 'time_management', label: 'Gestión del tiempo', type: 'support' },
 ];
+
+/** @deprecated Use skillDictionary (technical) instead. Kept for migration. */
+export const KNOWLEDGE_AREAS_DEFAULT = SKILL_DICTIONARY_DEFAULT.filter((s) => s.type === 'technical')
+  .map((s) => ({ id: s.id, name: s.label }));
 
 /** Task review grades (assigner rates completed work). Points configurable in Admin. */
 export const TASK_GRADES = ['ok', 'good', 'excellent', 'perfect'];

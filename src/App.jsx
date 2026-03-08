@@ -30,7 +30,7 @@ import { t, lang, STRINGS }         from './strings.js';
 import {
   EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_DOMAINS,
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, PERSONALITY_TAGS_DEFAULT, MERIT_TIERS,
-  MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT,
+  MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT, SKILL_DICTIONARY_DEFAULT, SKILL_TYPES,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES,
 } from './constants.js';
@@ -362,7 +362,21 @@ export default function App() {
   }), [currentTeam?.pointsPerWeeklyUpdate, currentTeam?.pointsPerProfileComplete, currentTeam?.pointsPerMilestone50]);
   const meritTiers           = (currentTeam?.meritTiers?.length ? currentTeam.meritTiers : MERIT_TIERS);
   const meritFamilies        = (currentTeam?.meritFamilies?.length ? currentTeam.meritFamilies : MERIT_FAMILIES_DEFAULT);
-  const knowledgeAreas       = (currentTeam?.knowledgeAreas?.length ? currentTeam.knowledgeAreas : KNOWLEDGE_AREAS_DEFAULT);
+  // skillDictionary: all types for collaboration. knowledgeAreas: technical only for KM, tasks, modules.
+  const skillDictionary = useMemo(() => {
+    const teamDict = currentTeam?.skillDictionary;
+    if (teamDict?.length) return teamDict;
+    const legacy = currentTeam?.knowledgeAreas;
+    if (legacy?.length) {
+      return legacy.map((a) => ({ id: a.id, label: a.name, type: 'technical' }))
+        .concat(SKILL_DICTIONARY_DEFAULT.filter((s) => s.type !== 'technical'));
+    }
+    return SKILL_DICTIONARY_DEFAULT;
+  }, [currentTeam?.skillDictionary, currentTeam?.knowledgeAreas]);
+  const knowledgeAreas = useMemo(
+    () => skillDictionary.filter((s) => s.type === 'technical').map((s) => ({ id: s.id, name: s.label })),
+    [skillDictionary],
+  );
 
   const myTeams = useMemo(() => {
     const ids = new Set(userMemberships.map((m) => m.teamId));
@@ -613,6 +627,19 @@ export default function App() {
     await updateDoc(doc(db, 'teams', currentTeam.id), {
       knowledgeAreas: Array.isArray(arr) ? arr.filter((x) => x && x.id && x.name) : [],
     });
+  };
+  const handleSaveSkillDictionary = async (arr) => {
+    if (!currentTeam || !canEdit) return;
+    const skills = Array.isArray(arr)
+      ? arr.filter((x) => x && x.id && x.label && x.type).map((s) => ({
+          id: s.id,
+          label: s.label,
+          type: SKILL_TYPES.includes(s.type) ? s.type : 'technical',
+          description: s.description || '',
+          status: s.status || 'active',
+        }))
+      : [];
+    await updateDoc(doc(db, 'teams', currentTeam.id), { skillDictionary: skills });
   };
   const handleSaveTaskGradePoints = async ({ individual, team }) => {
     if (!currentTeam || !canEdit) return;
@@ -920,13 +947,15 @@ export default function App() {
     });
   };
 
-  const handleProposeSkill = async (proposedLabel) => {
+  const handleProposeSkill = async (labelOrObj, proposedType = 'technical') => {
     if (!currentTeam || !currentMembership) return;
-    const label = (proposedLabel || '').trim();
+    const label = typeof labelOrObj === 'string' ? (labelOrObj || '').trim() : (labelOrObj?.label || '').trim();
+    const type = typeof labelOrObj === 'object' ? (labelOrObj.type || 'technical') : proposedType;
     if (!label) return;
     await addDoc(collection(db, 'skillProposals'), {
       teamId: currentTeam.id,
-      proposedLabel: label,
+      label,
+      proposedType: SKILL_TYPES.includes(type) ? type : 'technical',
       proposedByMembershipId: currentMembership.id,
       createdAt: serverTimestamp(),
       status: 'pending',
@@ -937,25 +966,28 @@ export default function App() {
     if (!currentTeam || !canEdit) return;
     const prop = teamSkillProposals.find((p) => p.id === proposalId);
     if (!prop || (prop.status || 'pending') !== 'pending') return;
-    const newAreaName = (prop.proposedLabel || '').trim();
-    if (!newAreaName) return;
-    const newAreaId = newAreaName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '') || 'skill';
-    const knowledgeAreas = (currentTeam.knowledgeAreas?.length ? currentTeam.knowledgeAreas : []);
-    const existingIds = new Set(knowledgeAreas.map((a) => a.id));
+    const newLabel = (prop.label || prop.proposedLabel || '').trim();
+    if (!newLabel) return;
+    const newType = prop.proposedType || 'technical';
+    const newAreaId = newLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '') || 'skill';
+    const dict = (currentTeam.skillDictionary?.length ? currentTeam.skillDictionary : skillDictionary);
+    const existingIds = new Set(dict.map((s) => s.id));
     let finalId = newAreaId;
     let suffix = 0;
     while (existingIds.has(finalId)) { suffix++; finalId = `${newAreaId}_${suffix}`; }
-    const updated = [...knowledgeAreas, { id: finalId, name: newAreaName }];
-    await updateDoc(doc(db, 'teams', currentTeam.id), { knowledgeAreas: updated });
+    const newSkill = { id: finalId, label: newLabel, type: newType };
+    const updatedDict = [...dict, newSkill];
+    await updateDoc(doc(db, 'teams', currentTeam.id), { skillDictionary: updatedDict });
     await updateDoc(doc(db, 'skillProposals', proposalId), {
       status: 'approved',
       approvedAt: serverTimestamp(),
       approvedByUserId: authUser?.uid,
       approvedByName: userProfile?.displayName ?? authUser?.email ?? '—',
-      newAreaId: finalId,
-      newAreaName,
+      newSkillId: finalId,
+      newSkillLabel: newLabel,
+      newSkillType: newType,
     });
-    await logAudit('approve_skill_proposal', 'skillProposal', proposalId, { newAreaId: finalId, newAreaName });
+    await logAudit('approve_skill_proposal', 'skillProposal', proposalId, { newSkillId: finalId, newSkillLabel: newLabel });
   };
 
   const handleRejectSkillProposal = async (proposalId) => {
@@ -2200,6 +2232,7 @@ export default function App() {
                 isPlatformAdmin={isPlatformAdmin}
                 careerOptions={careerOptions}
                 knowledgeAreas={knowledgeAreas}
+                skillDictionary={skillDictionary}
                 onUpdateRole={handleUpdateMemberRole}
                 onAssignCategory={handleAssignCategory}
                 onAddStrike={handleAddStrike}
@@ -2413,6 +2446,7 @@ export default function App() {
                 onSaveMeritTiers={handleSaveTeamMeritTiers}
                 onSaveMeritFamilies={handleSaveTeamMeritFamilies}
                 onSaveKnowledgeAreas={handleSaveTeamKnowledgeAreas}
+                onSaveSkillDictionary={handleSaveSkillDictionary}
                 skillProposals={teamSkillProposals}
                 memberships={teamMemberships}
                 onApproveSkillProposal={handleApproveSkillProposal}
@@ -2434,6 +2468,7 @@ export default function App() {
                   moduleAttempts={teamModuleAttempts}
                   meritFamilies={meritFamilies}
                   knowledgeAreas={knowledgeAreas}
+                  skillDictionary={skillDictionary}
                   allMeritEvents={teamMeritEvents}
                   canEditThis={isPlatformAdmin || (authUser && currentMembership.userId === authUser.uid)}
                   onSave={handleUpdateMemberProfile}
@@ -2469,6 +2504,7 @@ export default function App() {
                 moduleAttempts={teamModuleAttempts}
                 meritFamilies={meritFamilies}
                 knowledgeAreas={knowledgeAreas}
+                skillDictionary={skillDictionary}
                 allMeritEvents={teamMeritEvents}
                 canEditThis={isPlatformAdmin || (authUser && profileMember.userId === authUser.uid)}
                 onSave={handleUpdateMemberProfile}

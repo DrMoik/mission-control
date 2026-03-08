@@ -90,7 +90,7 @@ export default function ProfileModal({
   membership, categories, canEditThis, onClose, onSave,
   weeklyStatuses = [], onSaveWeeklyStatus,
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp,
-  knowledgeAreas = [], onProposeSkill,
+  knowledgeAreas = [], skillDictionary = [], onProposeSkill,
 }) {
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
   const semesterOptions = semesterOptionsProp ?? SEMESTER_OPTIONS;
@@ -401,21 +401,21 @@ export default function ProfileModal({
                     <LegacyTagList tags={draft.lookingForHelpIn} colorClass="bg-amber-900/20 text-amber-300/80 border-amber-700/30" onRemove={(i) => set('lookingForHelpIn', draft.lookingForHelpIn.filter((_, idx) => idx !== i))} lang={lang} />
                   </div>
                 )}
-                <SkillPicker label={t('i_can_help_with')} value={draft.helpOfferAreas ?? []} onChange={(v) => set('helpOfferAreas', v)} knowledgeAreas={knowledgeAreas} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
+                <SkillPicker label={t('i_can_help_with')} value={draft.helpOfferAreas ?? []} onChange={(v) => set('helpOfferAreas', v)} skills={skillDictionary} allowedTypes={['technical','learning','support','collaboration']} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
                 {draft.iCanHelpWith?.length > 0 && (
                   <div>
                     <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
                     <LegacyTagList tags={draft.iCanHelpWith} colorClass="bg-emerald-900/20 text-emerald-300/80 border-emerald-700/30" onRemove={(i) => set('iCanHelpWith', draft.iCanHelpWith.filter((_, idx) => idx !== i))} lang={lang} />
                   </div>
                 )}
-                <SkillPicker label={t('skills_to_learn')} value={draft.learnAreas ?? []} onChange={(v) => set('learnAreas', v)} knowledgeAreas={knowledgeAreas} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
+                <SkillPicker label={t('skills_to_learn')} value={draft.learnAreas ?? []} onChange={(v) => set('learnAreas', v)} skills={skillDictionary} allowedTypes={['technical','learning']} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
                 {draft.skillsToLearnThisSemester?.length > 0 && (
                   <div>
                     <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
                     <LegacyTagList tags={draft.skillsToLearnThisSemester} colorClass="bg-blue-900/20 text-blue-300/80 border-blue-700/30" onRemove={(i) => set('skillsToLearnThisSemester', draft.skillsToLearnThisSemester.filter((_, idx) => idx !== i))} lang={lang} />
                   </div>
                 )}
-                <SkillPicker label={t('skills_i_can_teach')} value={draft.teachAreas ?? []} onChange={(v) => set('teachAreas', v)} knowledgeAreas={knowledgeAreas} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
+                <SkillPicker label={t('skills_i_can_teach')} value={draft.teachAreas ?? []} onChange={(v) => set('teachAreas', v)} skills={skillDictionary} allowedTypes={['technical','learning','support','collaboration']} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
                 {draft.skillsICanTeach?.length > 0 && (
                   <div>
                     <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
@@ -550,8 +550,9 @@ export default function ProfileModal({
                         <p className="text-[10px] text-slate-500 font-semibold">{t('looking_for_help_in')}</p>
                         <div className="flex flex-wrap gap-2 mt-1">
                           {(membership.helpNeedsAreas || []).map((id) => {
-                            const a = knowledgeAreas.find((x) => x.id === id);
-                            return a ? <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-amber-900/40 text-amber-200 border-amber-700/50">{a.name}</span> : null;
+                            const s = skillDictionary.find((x) => x.id === id);
+                            const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                            return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-amber-900/40 text-amber-200 border-amber-700/50">{label}</span>;
                           })}
                           {(membership.lookingForHelpIn || []).map((tag, i) => (
                             <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-amber-900/20 text-amber-300/80 border-amber-700/30">
@@ -566,8 +567,9 @@ export default function ProfileModal({
                         <p className="text-[10px] text-slate-500 font-semibold">{t('i_can_help_with')}</p>
                         <div className="flex flex-wrap gap-2 mt-1">
                           {(membership.helpOfferAreas || []).map((id) => {
-                            const a = knowledgeAreas.find((x) => x.id === id);
-                            return a ? <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/40 text-emerald-200 border-emerald-700/50">{a.name}</span> : null;
+                            const s = skillDictionary.find((x) => x.id === id);
+                            const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                            return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/40 text-emerald-200 border-emerald-700/50">{label}</span>;
                           })}
                           {(membership.iCanHelpWith || []).map((tag, i) => (
                             <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/20 text-emerald-300/80 border-emerald-700/30">
@@ -582,8 +584,9 @@ export default function ProfileModal({
                         <p className="text-[10px] text-slate-500 font-semibold">{t('skills_to_learn')}</p>
                         <div className="flex flex-wrap gap-2 mt-1">
                           {(membership.learnAreas || []).map((id) => {
-                            const a = knowledgeAreas.find((x) => x.id === id);
-                            return a ? <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-blue-900/40 text-blue-200 border-blue-700/50">{a.name}</span> : null;
+                            const s = skillDictionary.find((x) => x.id === id);
+                            const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                            return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-blue-900/40 text-blue-200 border-blue-700/50">{label}</span>;
                           })}
                           {(membership.skillsToLearnThisSemester || []).map((tag, i) => (
                             <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-blue-900/20 text-blue-300/80 border-blue-700/30">
@@ -598,8 +601,9 @@ export default function ProfileModal({
                         <p className="text-[10px] text-slate-500 font-semibold">{t('skills_i_can_teach')}</p>
                         <div className="flex flex-wrap gap-2 mt-1">
                           {(membership.teachAreas || []).map((id) => {
-                            const a = knowledgeAreas.find((x) => x.id === id);
-                            return a ? <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/40 text-purple-200 border-purple-700/50">{a.name}</span> : null;
+                            const s = skillDictionary.find((x) => x.id === id);
+                            const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                            return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/40 text-purple-200 border-purple-700/50">{label}</span>;
                           })}
                           {(membership.skillsICanTeach || []).map((tag, i) => (
                             <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/20 text-purple-300/80 border-purple-700/30">

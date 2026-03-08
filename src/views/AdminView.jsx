@@ -9,7 +9,7 @@ import { t } from '../strings.js';
 import {
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT,
   COLLAB_TAG_SUGGESTIONS, MERIT_DOMAINS, MERIT_TIERS,
-  MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT,
+  MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT, SKILL_DICTIONARY_DEFAULT, SKILL_TYPES,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, ADMIN_PLACEHOLDERS,
 } from '../constants.js';
@@ -86,6 +86,26 @@ function serializeKnowledgeAreas(arr) {
   return arr.map((x) => `${x.id}: ${x.name}`).join('\n');
 }
 
+/** Parse "id: label: type" lines into { id, label, type }[]. */
+function parseSkillDictionary(s) {
+  return (s || '').split('\n').map((line) => {
+    const t = line.trim();
+    if (!t) return null;
+    const parts = t.split(':').map((p) => p.trim());
+    const id = (parts[0] || '').replace(/\s+/g, '_');
+    const label = parts[1] || id;
+    const type = SKILL_TYPES.includes(parts[2]) ? parts[2] : 'technical';
+    if (!id || !label) return null;
+    return { id, label, type };
+  }).filter(Boolean);
+}
+
+/** Serialize skill dictionary to "id: label: type" lines. */
+function serializeSkillDictionary(arr) {
+  if (!Array.isArray(arr)) return '';
+  return arr.map((s) => `${s.id}: ${s.label}: ${s.type || 'technical'}`).join('\n');
+}
+
 export default function AdminView({
   team,
   onSaveCareers,
@@ -124,6 +144,7 @@ export default function AdminView({
   const meritTiers = team.meritTiers?.length ? team.meritTiers : MERIT_TIERS;
   const meritFamilies = team.meritFamilies?.length ? team.meritFamilies : MERIT_FAMILIES_DEFAULT;
   const knowledgeAreas = team.knowledgeAreas?.length ? team.knowledgeAreas : KNOWLEDGE_AREAS_DEFAULT;
+  const skillDictionary = team.skillDictionary?.length ? team.skillDictionary : SKILL_DICTIONARY_DEFAULT;
   const systemPoints = {
     weeklyUpdate:    team?.pointsPerWeeklyUpdate ?? SYSTEM_MERIT_POINTS_DEFAULT.weeklyUpdate,
     profileComplete: team?.pointsPerProfileComplete ?? SYSTEM_MERIT_POINTS_DEFAULT.profileComplete,
@@ -351,6 +372,31 @@ export default function AdminView({
             </button>
           </section>
 
+          {onSaveSkillDictionary && (
+            <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
+              <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_skill_dictionary') || 'Diccionario de habilidades'}</h4>
+              <p className="text-[10px] text-slate-500">{tFn('admin_skill_dictionary_hint') || 'Una por línea: id: etiqueta: tipo. Tipos: technical, learning, support, collaboration. Para perfil de colaboración.'}</p>
+              <textarea
+                key="skillDictionary"
+                defaultValue={serializeSkillDictionary(skillDictionary)}
+                id="admin-skill-dictionary"
+                rows={8}
+                placeholder="ros: ROS: technical\nstress_management: Manejo del estrés: support"
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+              />
+              <button
+                onClick={() => {
+                  const el = document.getElementById('admin-skill-dictionary');
+                  save('skillDictionary', onSaveSkillDictionary, parseSkillDictionary(el?.value || ''));
+                }}
+                disabled={saving === 'skillDictionary'}
+                className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              >
+                {saving === 'skillDictionary' ? tFn('saving') || 'Guardando…' : tFn('save')}
+              </button>
+            </section>
+          )}
+
           {skillProposals.filter((p) => (p.status || 'pending') === 'pending').length > 0 && (
             <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
               <h4 className="text-sm font-semibold text-amber-400">{tFn('admin_skill_proposals') || 'Propuestas de habilidades'}</h4>
@@ -361,7 +407,8 @@ export default function AdminView({
                   return (
                     <div key={p.id} className="flex items-center justify-between gap-2 py-2 px-3 bg-slate-900/60 rounded border border-slate-600">
                       <div>
-                        <span className="text-sm text-slate-200 font-medium">{p.proposedLabel}</span>
+                        <span className="text-sm text-slate-200 font-medium">{p.label || p.proposedLabel}</span>
+                        {p.proposedType && <span className="text-[10px] text-slate-500 ml-1">({p.proposedType})</span>}
                         {proposer && <span className="text-[10px] text-slate-500 ml-2">— {proposer.displayName || '?'}</span>}
                       </div>
                       <div className="flex gap-1 shrink-0">
