@@ -2149,6 +2149,9 @@ export default function App() {
                 team={currentTeam}
                 teamTasks={teamTasks}
                 teamWeeklyStatuses={teamWeeklyStatuses}
+                teamMeritEvents={teamMeritEvents}
+                teamPosts={teamPosts}
+                teamMemberships={teamMemberships}
                 currentMembership={currentMembership}
                 tsToDate={tsToDate}
                 onNavigateTasks={() => navigate('/tasks')}
