@@ -26,21 +26,6 @@ import { useFirebaseSubscriptions } from './hooks/useFirebaseSubscriptions.js';
 import { useTaskHandlers } from './hooks/useTaskHandlers.js';
 import { useMeritHandlers } from './hooks/useMeritHandlers.js';
 import { useSessionHandlers } from './hooks/useSessionHandlers.js';
-
-// System merit points: use team config or defaults (see handleSaveSystemMeritPoints)
-
-/** Returns true if weekOf (YYYY-MM-DD, any day) falls in current or previous week (Monday–Sunday). */
-function isWeekEligibleForPoints(weekOf) {
-  const monday = normalizeWeekOfToMonday(weekOf);
-  if (!monday) return false;
-  const thisMonday = getMondayOfWeekLocal();
-  const d = new Date();
-  d.setDate(d.getDate() - 7);
-  const lastMonday = getMondayOfWeekLocal(d);
-  return monday === thisMonday || monday === lastMonday;
-}
-
-// ── Internal modules ──────────────────────────────────────────────────────────
 import { t, lang, STRINGS }         from './strings.js';
 import {
   EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS,
@@ -50,6 +35,17 @@ import {
   SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES,
 } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMondayOfWeekLocal, normalizeWeekOfToMonday } from './utils.js';
+
+/** Returns true if weekOf (YYYY-MM-DD) falls in current or previous week (Monday–Sunday). */
+function isWeekEligibleForPoints(weekOf) {
+  const monday = normalizeWeekOfToMonday(weekOf);
+  if (!monday) return false;
+  const thisMonday = getMondayOfWeekLocal();
+  const d = new Date();
+  d.setDate(d.getDate() - 7);
+  const lastMonday = getMondayOfWeekLocal(d);
+  return monday === thisMonday || monday === lastMonday;
+}
 
 // ── Shared UI atoms (direct imports to avoid barrel evaluation-order issues) ───
 import RoleBadge  from './components/ui/RoleBadge.jsx';

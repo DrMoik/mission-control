@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: process.env.VITE_BASE || '/mission-control/',  // GitHub Pages default; use VITE_BASE=/ for Firebase
   build: {
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks: (id) => {
