@@ -34,7 +34,7 @@ import {
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES,
 } from './constants.js';
-import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMondayOfWeekLocal, normalizeWeekOfToMonday } from './utils.js';
+import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMondayOfWeekLocal, normalizeWeekOfToMonday, getProfileMissingFieldsLabels } from './utils.js';
 
 /** Returns true if weekOf (YYYY-MM-DD) falls in current or previous week (Monday–Sunday). */
 function isWeekEligibleForPoints(weekOf) {
@@ -362,17 +362,12 @@ export default function App() {
   }), [currentTeam?.pointsPerWeeklyUpdate, currentTeam?.pointsPerProfileComplete, currentTeam?.pointsPerMilestone50]);
   const meritTiers           = (currentTeam?.meritTiers?.length ? currentTeam.meritTiers : MERIT_TIERS);
   const meritFamilies        = (currentTeam?.meritFamilies?.length ? currentTeam.meritFamilies : MERIT_FAMILIES_DEFAULT);
-  // skillDictionary: all types for collaboration. knowledgeAreas: technical only for KM, tasks, modules.
+  // skillDictionary: collaboration uses this only (never knowledgeAreas). knowledgeAreas: technical only for KM, tasks, modules.
   const skillDictionary = useMemo(() => {
     const teamDict = currentTeam?.skillDictionary;
     if (teamDict?.length) return teamDict;
-    const legacy = currentTeam?.knowledgeAreas;
-    if (legacy?.length) {
-      return legacy.map((a) => ({ id: a.id, label: a.name, type: 'technical' }))
-        .concat(SKILL_DICTIONARY_DEFAULT.filter((s) => s.type !== 'technical'));
-    }
     return SKILL_DICTIONARY_DEFAULT;
-  }, [currentTeam?.skillDictionary, currentTeam?.knowledgeAreas]);
+  }, [currentTeam?.skillDictionary]);
   const knowledgeAreas = useMemo(
     () => skillDictionary.filter((s) => s.type === 'technical').map((s) => ({ id: s.id, name: s.label })),
     [skillDictionary],
@@ -1136,7 +1131,8 @@ export default function App() {
       }
     }
     // Firestore listener will update teamMemberships; profileMember derives from it
-    return { meritAwarded: meritNewlyAwarded, profileComplete: !!isProfileComplete };
+    const missingFields = isProfileComplete ? [] : getProfileMissingFieldsLabels(payload);
+    return { meritAwarded: meritNewlyAwarded, profileComplete: !!isProfileComplete, missingFields };
   };
 
   // ── Weekly status ───────────────────────────────────────────────────────────

@@ -321,6 +321,7 @@ export default function AdminView({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <section className="bg-slate-800 rounded-xl p-4 space-y-3">
             <h4 className="text-sm font-semibold text-emerald-400">{tFn('merit_attr_domains') || 'Áreas / dominios'}</h4>
+            <p className="text-[10px] text-slate-500">{tFn('admin_domains_hint') || 'Una por línea. Formato id: etiqueta (ej. physical: Componente físico) o texto plano.'}</p>
             <textarea
               key="domains"
               defaultValue={(domains || []).join(', ')}

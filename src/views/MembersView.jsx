@@ -84,7 +84,7 @@ export default function MembersView({
   const active    = memberships.filter((m) => m.status === 'active');
   const suspended = memberships.filter((m) => m.status === 'suspended');
 
-  const getSkillLabel = (id) => skillDictionary.find((x) => x.id === id)?.label || knowledgeAreas.find((x) => x.id === id)?.name;
+  const getSkillLabel = (id) => id.startsWith('proposed:') ? id.slice(9) : (skillDictionary.find((x) => x.id === id)?.label || knowledgeAreas.find((x) => x.id === id)?.name);
 
   // Collect all unique skill tags: canonical (from skillDictionary) + legacy free-text
   const allSkillTags = useMemo(() => {
@@ -115,7 +115,7 @@ export default function MembersView({
         ...(m.helpOfferAreas || []),
         ...(m.learnAreas || []),
         ...(m.teachAreas || []),
-      ].map((id) => knowledgeAreas.find((x) => x.id === id)?.name).filter(Boolean);
+      ].map((id) => getSkillLabel(id)).filter(Boolean);
       const legacyTags = [
         ...(m.lookingForHelpIn || []),
         ...(m.iCanHelpWith || []),

@@ -394,7 +394,7 @@ export default function ProfileModal({
               <div className="border-t border-slate-700 pt-3 space-y-3">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_collaboration')}</p>
                 <p className="text-[10px] text-slate-500">{t('collab_skill_hint')}</p>
-                <SkillPicker label={t('looking_for_help_in')} value={draft.helpNeedsAreas ?? []} onChange={(v) => set('helpNeedsAreas', v)} knowledgeAreas={knowledgeAreas} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
+                <SkillPicker label={t('looking_for_help_in')} value={draft.helpNeedsAreas ?? []} onChange={(v) => set('helpNeedsAreas', v)} skills={skillDictionary} allowedTypes={['technical','learning','support','collaboration']} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
                 {draft.lookingForHelpIn?.length > 0 && (
                   <div>
                     <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
@@ -551,7 +551,7 @@ export default function ProfileModal({
                         <div className="flex flex-wrap gap-2 mt-1">
                           {(membership.helpNeedsAreas || []).map((id) => {
                             const s = skillDictionary.find((x) => x.id === id);
-                            const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                            const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
                             return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-amber-900/40 text-amber-200 border-amber-700/50">{label}</span>;
                           })}
                           {(membership.lookingForHelpIn || []).map((tag, i) => (
@@ -568,7 +568,7 @@ export default function ProfileModal({
                         <div className="flex flex-wrap gap-2 mt-1">
                           {(membership.helpOfferAreas || []).map((id) => {
                             const s = skillDictionary.find((x) => x.id === id);
-                            const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                            const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
                             return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/40 text-emerald-200 border-emerald-700/50">{label}</span>;
                           })}
                           {(membership.iCanHelpWith || []).map((tag, i) => (
@@ -585,7 +585,7 @@ export default function ProfileModal({
                         <div className="flex flex-wrap gap-2 mt-1">
                           {(membership.learnAreas || []).map((id) => {
                             const s = skillDictionary.find((x) => x.id === id);
-                            const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                            const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
                             return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-blue-900/40 text-blue-200 border-blue-700/50">{label}</span>;
                           })}
                           {(membership.skillsToLearnThisSemester || []).map((tag, i) => (
@@ -602,7 +602,7 @@ export default function ProfileModal({
                         <div className="flex flex-wrap gap-2 mt-1">
                           {(membership.teachAreas || []).map((id) => {
                             const s = skillDictionary.find((x) => x.id === id);
-                            const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                            const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
                             return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/40 text-purple-200 border-purple-700/50">{label}</span>;
                           })}
                           {(membership.skillsICanTeach || []).map((tag, i) => (

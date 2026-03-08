@@ -73,6 +73,17 @@ export function formatBirthdateDisplay(birthdate) {
   return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' });
 }
 
+/**
+ * Extract human-readable label from a domain string.
+ * Supports "id: label" format (e.g. "physical: Componente físico" → "Componente físico").
+ * Plain strings are returned as-is.
+ */
+export function domainToLabel(s) {
+  if (!s || typeof s !== 'string') return '';
+  const idx = s.indexOf(': ');
+  return idx >= 0 ? s.slice(idx + 2).trim() : s;
+}
+
 /** Format a Date as YYYY-MM-DD in local time (no UTC shift). */
 export function dateToLocalYYYYMMDD(d) {
   const y = d.getFullYear();
@@ -294,4 +305,90 @@ export function computeProfileCompletion(membership) {
   const missing = checks.filter(([, ok]) => !ok).map(([,, key]) => key);
   const total = checks.length;
   return { percentage: total > 0 ? Math.round((completed / total) * 100) : 0, completed, total, missing };
+}
+
+/** Spanish labels for profile completion fields (used in missing-fields message). */
+const PROFILE_FIELD_LABELS = {
+  displayName: 'nombre',
+  email: 'correo electrónico',
+  bio: 'bio',
+  hobbies: 'pasatiempos',
+  career: 'carrera',
+  semester: 'semestre',
+  university: 'universidad',
+  currentObjective: 'objetivo',
+  currentChallenge: 'reto',
+  collab: 'etiquetas de colaboración (4)',
+  funFact: 'dato curioso',
+  personalityTag: 'etiqueta de personalidad',
+  birthdate: 'fecha de nacimiento',
+  culture: 'cultura (libro/idea/cita/música)',
+};
+
+/**
+ * Returns an array of Spanish labels for profile fields that are missing/invalid.
+ * Mirrors the validation logic used for the "Perfil completo" merit in App.jsx.
+ * @param {Object} payload - Profile payload (merged updates + membership)
+ * @returns {string[]} Spanish labels for missing fields
+ */
+export function getProfileMissingFieldsLabels(payload) {
+  if (!payload) return [];
+  const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
+  const isNonEmptyBilingual = (v) => {
+    const es = ensureString(getL(v, 'es')).trim();
+    const en = ensureString(getL(v, 'en')).trim();
+    return es.length > 0 || en.length > 0;
+  };
+  const hasNonEmptyTagList = (arr) =>
+    Array.isArray(arr) && arr.some((t) => ensureString(t).trim().length > 0);
+  const hasAreas = (arr) => Array.isArray(arr) && arr.length > 0;
+  const hasCulture = (() => {
+    const hasListen = Array.isArray(payload.whatIListenTo) && payload.whatIListenTo.some((it) => {
+      if (typeof it === 'string') return it.trim().length > 0;
+      return (it?.title || '').trim().length > 0;
+    });
+    const hasBook = Array.isArray(payload.bookThatMarkedMe) && payload.bookThatMarkedMe.some((t) => ensureString(t).trim().length > 0);
+    const hasIdea = Array.isArray(payload.ideaThatMotivatesMe) && payload.ideaThatMotivatesMe.some((t) => ensureString(t).trim().length > 0);
+    const hasQuote = Array.isArray(payload.quoteThatMovesMe) && payload.quoteThatMovesMe.some((t) => ensureString(t).trim().length > 0);
+    const hasLegacySong = isNonEmptyString(payload.songOnRepeatTitle);
+    return hasListen || hasBook || hasIdea || hasQuote || hasLegacySong;
+  })();
+
+  const hasBirthdate = isNonEmptyString(payload.birthdate) && payload.birthdate.trim().length >= 5;
+  const hasCollab =
+    (hasAreas(payload.helpNeedsAreas) || hasNonEmptyTagList(payload.lookingForHelpIn)) &&
+    (hasAreas(payload.helpOfferAreas) || hasNonEmptyTagList(payload.iCanHelpWith)) &&
+    (hasAreas(payload.learnAreas) || hasNonEmptyTagList(payload.skillsToLearnThisSemester)) &&
+    (hasAreas(payload.teachAreas) || hasNonEmptyTagList(payload.skillsICanTeach));
+
+  const checks = [
+    ['displayName', isNonEmptyString(payload.displayName)],
+    ['email', isNonEmptyString(payload.email)],
+    ['bio', isNonEmptyBilingual(payload.bio)],
+    ['hobbies', isNonEmptyBilingual(payload.hobbies)],
+    ['career', isNonEmptyString(payload.career)],
+    ['semester', isNonEmptyString(payload.semester)],
+    ['university', isNonEmptyString(payload.university)],
+    ['currentObjective', isNonEmptyBilingual(payload.currentObjective)],
+    ['currentChallenge', isNonEmptyBilingual(payload.currentChallenge)],
+    ['collab', hasCollab],
+    ['funFact', isNonEmptyBilingual(payload.funFact)],
+    ['personalityTag', isNonEmptyString(payload.personalityTag)],
+    ['birthdate', hasBirthdate],
+    ['culture', hasCulture],
+  ];
+  return checks.filter(([, ok]) => !ok).map(([key]) => PROFILE_FIELD_LABELS[key] || key);
+}
+
+/**
+ * Joins an array of Spanish labels with ", " and " y " before the last item.
+ * @example formatMissingFieldsList(['bio', 'objetivo']) → "bio y objetivo"
+ * @example formatMissingFieldsList(['bio', 'objetivo', 'fecha de nacimiento']) → "bio, objetivo y fecha de nacimiento"
+ */
+export function formatMissingFieldsList(labels) {
+  if (!Array.isArray(labels) || labels.length === 0) return '';
+  if (labels.length === 1) return labels[0];
+  const last = labels[labels.length - 1];
+  const rest = labels.slice(0, -1);
+  return `${rest.join(', ')} y ${last}`;
 }

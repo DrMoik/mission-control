@@ -8,7 +8,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { t, lang } from '../strings.js';
 import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS, MERIT_DOMAINS, MERIT_TIERS } from '../constants.js';
-import { tsToDate, getL, fillL, ensureString } from '../utils.js';
+import { tsToDate, getL, fillL, ensureString, domainToLabel } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { BilingualField } from '../components/ui/index.js';
 
@@ -425,7 +425,7 @@ export default function MeritsView({
                       ...f, domains: sel ? (f.domains || []).filter((x) => x !== d) : [...(f.domains || []), d],
                     }))}
                     className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
-                    {d}
+                    {domainToLabel(d)}
                   </button>
                 );
               })}
@@ -656,7 +656,7 @@ export default function MeritsView({
                         onClick={() => setEditForm((f) => ({
                           ...f, domains: sel ? (f.domains || []).filter((x) => x !== d) : [...(f.domains || []), d],
                         }))}
-                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{d}</button>
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{domainToLabel(d)}</button>
                     );
                   })}
                 </div>
@@ -823,7 +823,7 @@ export default function MeritsView({
                         return (
                           <button key={d} type="button"
                             onClick={() => setGridDomainFilters(sel ? gridDomainFilters.filter((x) => x !== d) : [...gridDomainFilters, d])}
-                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{d}</button>
+                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{domainToLabel(d)}</button>
                         );
                       })}
                     </div>
@@ -1036,7 +1036,7 @@ export default function MeritsView({
                           return (
                             <button key={d} type="button"
                               onClick={() => setMeritDomainFilters(sel ? meritDomainFilters.filter((x) => x !== d) : [...meritDomainFilters, d])}
-                              className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{d}</button>
+                              className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{domainToLabel(d)}</button>
                           );
                         })}
                       </div>

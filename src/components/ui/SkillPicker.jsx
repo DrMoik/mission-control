@@ -14,7 +14,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { t } from '../../strings.js';
 
-const MAX_SUGGESTIONS = 10;
+const MAX_SUGGESTIONS = 15;
 
 export default function SkillPicker({
   label,
@@ -30,24 +30,25 @@ export default function SkillPicker({
   const [isFocused, setIsFocused] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const [proposeType, setProposeType] = useState('technical');
+  const [typeFilter, setTypeFilter] = useState(''); // '' = all allowed types
   const containerRef = useRef(null);
 
   const selectedIds = new Set(Array.isArray(value) ? value : []);
   const allowed = new Set(allowedTypes || []);
 
   const filteredSkills = React.useMemo(() => {
-    const available = skills.filter(
+    let available = skills.filter(
       (s) => s && s.id && s.label && allowed.has(s.type) && !selectedIds.has(s.id),
     );
+    if (typeFilter) available = available.filter((s) => s.type === typeFilter);
     const q = (input || '').trim().toLowerCase();
-    const matches = q
-      ? available.filter(
-          (s) =>
-            (s.label || '').toLowerCase().includes(q) || (s.id || '').toLowerCase().includes(q),
-        )
-      : available;
+    if (!q) return []; // Do not render full list by default; only show matches when user types
+    const matches = available.filter(
+      (s) =>
+        (s.label || '').toLowerCase().includes(q) || (s.id || '').toLowerCase().includes(q),
+    );
     return matches.slice(0, MAX_SUGGESTIONS);
-  }, [skills, input, value, allowedTypes]);
+  }, [skills, input, value, allowedTypes, typeFilter]);
 
   const canPropose = (input || '').trim().length > 0 && filteredSkills.length === 0 && onProposeSkill;
 
@@ -61,8 +62,12 @@ export default function SkillPicker({
 
   const addFromProposal = () => {
     const labelText = input.trim();
-    if (!labelText || !onProposeSkill) return;
-    onProposeSkill(labelText, proposeType);
+    if (!labelText) return;
+    const proposedId = `proposed:${labelText}`;
+    if (!selectedIds.has(proposedId)) {
+      onChange([...value, proposedId]);
+    }
+    if (onProposeSkill) onProposeSkill(labelText, proposeType);
     setInput('');
     setShowDropdown(false);
   };
@@ -118,9 +123,28 @@ export default function SkillPicker({
 
   const getSkillLabel = (id) => skills.find((s) => s.id === id)?.label || id;
 
+  const typeFilterOptions = [
+    { value: '', label: t('skill_filter_all') || 'Todas' },
+    ...(allowed.has('technical') ? [{ value: 'technical', label: t('skill_type_technical') || 'Técnico' }] : []),
+    ...(allowed.has('support') ? [{ value: 'support', label: t('skill_type_support') || 'Apoyo' }] : []),
+    ...(allowed.has('learning') ? [{ value: 'learning', label: t('skill_type_learning') || 'Aprendizaje' }] : []),
+    ...(allowed.has('collaboration') ? [{ value: 'collaboration', label: t('skill_type_collaboration') || 'Colaboración' }] : []),
+  ];
+
   return (
     <div className="space-y-1 relative" ref={containerRef}>
       {label && <span className="text-xs text-slate-400">{label}</span>}
+      {typeFilterOptions.length > 2 && (
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="text-[10px] bg-slate-800 border border-slate-600 rounded px-2 py-1 text-slate-300 mb-1"
+        >
+          {typeFilterOptions.map((opt) => (
+            <option key={opt.value || '_all'} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      )}
       <div className="min-h-[38px] flex flex-wrap gap-1.5 items-center px-2 py-1.5 bg-slate-900 border border-slate-600 rounded focus-within:border-emerald-600 transition-colors">
         {value.map((id) => (
           <span
@@ -160,12 +184,12 @@ export default function SkillPicker({
                 e.preventDefault();
                 addById(s.id);
               }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors flex justify-between items-center ${
+              className={`w-full text-left px-3 py-2 text-sm transition-colors flex justify-between items-center gap-2 ${
                 i === highlightIndex ? 'bg-emerald-900/50 text-emerald-200' : 'text-slate-300 hover:bg-slate-700'
               }`}
             >
-              <span>{s.label}</span>
-              <span className="text-[10px] text-slate-500">{s.type}</span>
+              <span className="truncate">{s.label}</span>
+              <span className="text-[10px] text-slate-500 shrink-0 text-right">{s.type}</span>
             </button>
           ))}
           {canPropose && (

@@ -12,7 +12,7 @@ import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongFi
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
 import { useContributionPath } from '../hooks/useContributionPath.js';
-import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay, isBlockedImageHost, computeProfileCompletion, tsToDate } from '../utils.js';
+import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay, isBlockedImageHost, computeProfileCompletion, tsToDate, formatMissingFieldsList } from '../utils.js';
 
 function isValidSongUrl(url) {
   if (!url) return true;
@@ -211,7 +211,13 @@ export default function ProfilePageView({
       });
       setEditing(false);
       if (result?.meritAwarded) alert(t('profile_saved_merit_awarded'));
-      else if (result?.profileComplete === false) alert(t('profile_saved_merit_missing'));
+      else if (result?.profileComplete === false) {
+        const missing = result?.missingFields ?? [];
+        if (missing.length > 0) {
+          const list = formatMissingFieldsList(missing);
+          alert(`Perfil guardado. Para el logro Perfil completo aún faltan: ${list}.`);
+        }
+      }
     } catch (err) {
       console.error('Profile save failed:', err);
       const msg = (err?.message || '').toLowerCase();
@@ -697,7 +703,7 @@ export default function ProfilePageView({
                       <div className="flex flex-wrap gap-2 mt-1">
                         {(membership.helpNeedsAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
-                          const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                          const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
                           return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-amber-900/40 text-amber-200 border-amber-700/50">{label}</span>;
                         })}
                         {(membership.lookingForHelpIn || []).map((tag, i) => (
@@ -714,7 +720,7 @@ export default function ProfilePageView({
                       <div className="flex flex-wrap gap-2 mt-1">
                         {(membership.helpOfferAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
-                          const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                          const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
                           return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/40 text-emerald-200 border-emerald-700/50">{label}</span>;
                         })}
                         {(membership.iCanHelpWith || []).map((tag, i) => (
@@ -731,7 +737,7 @@ export default function ProfilePageView({
                       <div className="flex flex-wrap gap-2 mt-1">
                         {(membership.learnAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
-                          const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                          const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
                           return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-blue-900/40 text-blue-200 border-blue-700/50">{label}</span>;
                         })}
                         {(membership.skillsToLearnThisSemester || []).map((tag, i) => (
@@ -748,7 +754,7 @@ export default function ProfilePageView({
                       <div className="flex flex-wrap gap-2 mt-1">
                         {(membership.teachAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
-                          const label = s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id;
+                          const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
                           return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/40 text-purple-200 border-purple-700/50">{label}</span>;
                         })}
                         {(membership.skillsICanTeach || []).map((tag, i) => (
