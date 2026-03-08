@@ -62,18 +62,17 @@ import {
 import JoinRequestModal            from './components/JoinRequestModal.jsx';
 import Breadcrumbs                 from './components/Breadcrumbs.jsx';
 
-// ── Full-page views (lazy to avoid "Cannot access X before initialization" in bundle) ──
-import OverviewView                from './views/OverviewView.jsx';
-import InicioView                  from './views/InicioView.jsx';
-import CategoriesView              from './views/CategoriesView.jsx';
-import LeaderboardView             from './views/LeaderboardView.jsx';
-import CalendarView                from './views/CalendarView.jsx';
-import ToolsView                   from './views/ToolsView.jsx';
-import AcademyView                 from './views/AcademyView.jsx';
-import FeedView                    from './views/FeedView.jsx';
-import FundingView                 from './views/FundingView.jsx';
-import TasksView                   from './views/TasksView.jsx';
-
+// ── Full-page views (all lazy to avoid "Cannot access X before initialization" in bundle) ──
+const OverviewView     = lazy(() => import('./views/OverviewView.jsx'));
+const InicioView       = lazy(() => import('./views/InicioView.jsx'));
+const CategoriesView  = lazy(() => import('./views/CategoriesView.jsx'));
+const LeaderboardView = lazy(() => import('./views/LeaderboardView.jsx'));
+const CalendarView    = lazy(() => import('./views/CalendarView.jsx'));
+const ToolsView       = lazy(() => import('./views/ToolsView.jsx'));
+const AcademyView     = lazy(() => import('./views/AcademyView.jsx'));
+const FeedView        = lazy(() => import('./views/FeedView.jsx'));
+const FundingView     = lazy(() => import('./views/FundingView.jsx'));
+const TasksView       = lazy(() => import('./views/TasksView.jsx'));
 const ProfilePageView = lazy(() => import('./views/ProfilePageView.jsx'));
 const SessionsView    = lazy(() => import('./views/SessionsView.jsx'));
 const KnowledgeMapView = lazy(() => import('./views/KnowledgeMapView.jsx'));
