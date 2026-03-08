@@ -73,10 +73,10 @@ import AcademyView                 from './views/AcademyView.jsx';
 import FeedView                    from './views/FeedView.jsx';
 import FundingView                 from './views/FundingView.jsx';
 import TasksView                   from './views/TasksView.jsx';
-import SessionsView                from './views/SessionsView.jsx';
-import KnowledgeMapView            from './views/KnowledgeMapView.jsx';
 
 const ProfilePageView = lazy(() => import('./views/ProfilePageView.jsx'));
+const SessionsView    = lazy(() => import('./views/SessionsView.jsx'));
+const KnowledgeMapView = lazy(() => import('./views/KnowledgeMapView.jsx'));
 const MembersView     = lazy(() => import('./views/MembersView.jsx'));
 const MeritsView      = lazy(() => import('./views/MeritsView.jsx'));
 const HRView          = lazy(() => import('./views/HRView.jsx'));
