@@ -116,6 +116,7 @@ export default function AdminView({
   onSaveMeritTiers,
   onSaveMeritFamilies,
   onSaveKnowledgeAreas,
+  onSaveSkillDictionary,
   skillProposals = [],
   memberships = [],
   onApproveSkillProposal,
