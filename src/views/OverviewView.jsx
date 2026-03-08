@@ -10,7 +10,6 @@ import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { t, lang } from '../strings.js';
 import { BilingualField }      from '../components/ui/index.js';
-import MyCommitmentsCard       from '../components/MyCommitmentsCard.jsx';
 import { getL, toL, fillL, ensureString } from '../utils.js';
 import { ROLE_LABELS } from '../constants.js';
 
@@ -99,7 +98,7 @@ function PointsHistogram({ distribution }) {
   );
 }
 
-export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamModules, teamCategories = [], teamTasks = [], teamWeeklyStatuses = [], currentMembership, canEdit, onSave, onNavigateTasks, onNavigateProfile, tsToDate }) {
+export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamModules, teamCategories = [], canEdit, onSave }) {
   const [editing, setEditing] = useState(false);
   const [draft,   setDraft]   = useState(null);
   const [showPointsDetail, setShowPointsDetail] = useState(false);
@@ -337,22 +336,6 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
           </button>
         )}
       </div>
-
-      {/* My commitments (responsibility dashboard) */}
-      {currentMembership && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <MyCommitmentsCard
-              tasks={teamTasks}
-              weeklyStatuses={teamWeeklyStatuses}
-              currentMembership={currentMembership}
-              tsToDate={tsToDate}
-              onNavigateTasks={onNavigateTasks}
-              onNavigateProfile={onNavigateProfile}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Live stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

@@ -50,15 +50,17 @@ import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMond
 // ── Shared UI atoms ───────────────────────────────────────────────────────────
 import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
 import {
-  LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, Wrench,
+  Home, LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, Wrench,
   GraduationCap, Wallet, CheckSquare, User, Settings, MessagesSquare,
 } from 'lucide-react';
 
 // ── Modals ────────────────────────────────────────────────────────────────────
 import JoinRequestModal            from './components/JoinRequestModal.jsx';
+import Breadcrumbs                 from './components/Breadcrumbs.jsx';
 
 // ── Full-page views (lazy to avoid "Cannot access X before initialization" in bundle) ──
 import OverviewView                from './views/OverviewView.jsx';
+import InicioView                  from './views/InicioView.jsx';
 import CategoriesView              from './views/CategoriesView.jsx';
 import LeaderboardView             from './views/LeaderboardView.jsx';
 import CalendarView                from './views/CalendarView.jsx';
@@ -213,21 +215,21 @@ export default function App() {
   // Routing — derive view and profileMember from URL when team is selected
   const navigate = useNavigate();
   const location = useLocation();
-  const pathname = (location.pathname || '/').replace(/^\/+|\/+$/g, '') || 'overview';
+  const pathname = (location.pathname || '/').replace(/^\/+|\/+$/g, '') || 'inicio';
   const pathParts = pathname.split('/').filter(Boolean);
-  const routeView = pathParts[0] || 'overview';  // first segment: overview, feed, profile, etc.
+  const routeView = pathParts[0] || 'inicio';  // first segment: inicio, overview, feed, profile, etc.
   const profileMemberId = routeView === 'profile' && pathParts[1] ? pathParts[1] : null;
   const view = routeView === 'profile' && !profileMemberId ? 'myprofile' : (routeView === 'profile' ? 'profile' : routeView);
   const profileMember = profileMemberId
     ? teamMemberships.find((m) => m.id === profileMemberId) || null
     : null;
 
-  const validViews = new Set(['overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'tasks', 'hr', 'myprofile', 'profile', 'admin']);
+  const validViews = new Set(['inicio', 'overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'tasks', 'hr', 'myprofile', 'profile', 'admin']);
   const isViewValid = validViews.has(view);
 
-  // Redirect invalid paths to /overview (only when team is selected, to avoid running in team picker)
+  // Redirect invalid paths to /inicio (only when team is selected, to avoid running in team picker)
   useEffect(() => {
-    if (selectedTeamId && !isViewValid) navigate('/overview', { replace: true });
+    if (selectedTeamId && !isViewValid) navigate('/inicio', { replace: true });
   }, [selectedTeamId, isViewValid, navigate]);
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -262,9 +264,9 @@ export default function App() {
     [allTeams, selectedTeamId],
   );
 
-  // Admin tab is only for team admins; redirect others to overview (must be after canEdit is defined)
+  // Admin tab is only for team admins; redirect others to inicio (must be after canEdit is defined)
   useEffect(() => {
-    if (selectedTeamId && view === 'admin' && !canEdit) navigate('/overview', { replace: true });
+    if (selectedTeamId && view === 'admin' && !canEdit) navigate('/inicio', { replace: true });
   }, [selectedTeamId, view, canEdit, navigate]);
 
   // Merit tags: team overrides, then platform config, then constants
@@ -408,7 +410,7 @@ export default function App() {
         createdAt: serverTimestamp(),
       });
       setSelectedTeamId(teamRef.id);
-      navigate('/overview');
+      navigate('/inicio');
     } catch (err) {
       alert(
         `Could not create team.\n\nFirebase said: ${err.message}\n\n` +
@@ -548,7 +550,7 @@ export default function App() {
     if (!authUser || !userProfile) return;
     const existing = userMemberships.find((m) => m.teamId === teamId);
     if (existing) {
-      if (existing.status === 'active') { setSelectedTeamId(teamId); navigate('/overview'); }
+      if (existing.status === 'active') { setSelectedTeamId(teamId); navigate('/inicio'); }
       return;
     }
     // Copy profile from another membership if user has one (shared profile across teams)
@@ -1891,7 +1893,7 @@ export default function App() {
                     const mem = userMemberships.find((m) => m.teamId === team.id);
                     return (
                       <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-1 border border-slate-700/40 shadow-sm hover:border-emerald-500/30 transition-colors">
-                        <button onClick={() => { setSelectedTeamId(team.id); navigate('/overview'); }}
+                        <button onClick={() => { setSelectedTeamId(team.id); navigate('/inicio'); }}
                           className="w-full text-left hover:text-emerald-300 transition-colors active:scale-95">
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="font-bold text-sm">{team.name}</h3>
@@ -1979,6 +1981,7 @@ export default function App() {
   // ── Main app shell (team selected) ─────────────────────────────────────────
 
   const navItems = [
+    { id: 'inicio',      label: t('nav_inicio'),      Icon: Home },
     { id: 'overview',    label: t('nav_overview'),    Icon: LayoutDashboard },
     ...(isAtLeastRookie ? [
       { id: 'feed',        label: t('nav_feed'),        Icon: Rss },
@@ -2139,7 +2142,22 @@ export default function App() {
 
           {/* Main content area */}
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-900/50">
+            <Breadcrumbs view={view} profileMember={profileMember} onNavigate={goToView} lang={lang} />
             <Suspense fallback={<div className="py-12 text-center text-slate-400 text-sm">{t('loading')}</div>}>
+            {view === 'inicio' && (
+              <InicioView
+                team={currentTeam}
+                teamTasks={teamTasks}
+                teamWeeklyStatuses={teamWeeklyStatuses}
+                currentMembership={currentMembership}
+                tsToDate={tsToDate}
+                onNavigateTasks={() => navigate('/tasks')}
+                onNavigateProfile={() => navigate('/profile')}
+                onNavigateOverview={() => navigate('/overview')}
+                onNavigateFeed={() => navigate('/feed')}
+              />
+            )}
+
             {view === 'overview' && (
               <OverviewView
                 team={currentTeam}
@@ -2147,14 +2165,8 @@ export default function App() {
                 teamMeritEvents={teamMeritEvents}
                 teamModules={teamModules}
                 teamCategories={teamCategories}
-                teamTasks={teamTasks}
-                teamWeeklyStatuses={teamWeeklyStatuses}
-                currentMembership={currentMembership}
                 canEdit={canEdit}
                 onSave={handleSaveOverview}
-                onNavigateTasks={() => navigate('/tasks')}
-                onNavigateProfile={() => navigate('/profile')}
-                tsToDate={tsToDate}
               />
             )}
 

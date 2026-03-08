@@ -16,6 +16,7 @@ export const STRINGS = {
     more_btn:          'Más',
 
     // ── Navigation ────────────────────────────────────────────────────────────
+    nav_inicio:      'Inicio',
     nav_overview:    'Resumen',
     nav_feed:        'Feed',
     nav_categories:  'Áreas',
@@ -179,6 +180,11 @@ export const STRINGS = {
     export_tasks:          'Tareas',
     search_placeholder:   'Buscar tareas…',
     search_no_results:   'Ningún resultado.',
+    inicio_desc:         'Tu panel personal. Acceso rápido a cambios y compromisos.',
+    inicio_link_team_card:'Tarjeta del equipo',
+    inicio_link_activity:'Actividad reciente',
+    inicio_link_tasks:   'Tareas asignadas',
+    inicio_no_membership:'Tu membresía está pendiente de aprobación.',
     total_modules:      'Módulos Totales',
     kpi_label:          'Métrica',
     kpi_value:          'Valor',
