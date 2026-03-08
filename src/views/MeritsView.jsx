@@ -25,6 +25,7 @@ export default function MeritsView({
   canEdit, canCreateMerit, canAward, canEditMerit, currentMembership, memberRole, isPlatformAdmin,
   achievementTypes: achievementTypesProp, domains: domainsProp,
   meritTiers: meritTiersProp,
+  meritFamilies = [], knowledgeAreas = [],
   onCreateMerit, onUpdateMerit, onDeleteMerit, onRecoverMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
   const achievementTypes = achievementTypesProp ?? MERIT_ACHIEVEMENT_TYPES;
@@ -36,6 +37,7 @@ export default function MeritsView({
   const [meritForm, setMeritForm] = useState({
     name: '', points: 100, categoryId: leaderCategoryId || '', logo: '🏆', assignableBy: 'leader',
     tags: [], achievementTypes: [], domains: [], tier: '', repeatable: true,
+    familyIds: [], knowledgeAreaIds: [],
     shortDescription: { en: '', es: '' },
     longDescription:  { en: '', es: '' },
   });
@@ -65,6 +67,8 @@ export default function MeritsView({
       domains: m.domains || [],
       tier: m.tier || '',
       repeatable: m.repeatable !== false,
+      familyIds: m.familyIds || [],
+      knowledgeAreaIds: m.knowledgeAreaIds || [],
       shortDescription: typeof m.shortDescription === 'object' ? m.shortDescription : { en: getL(m.shortDescription, 'en') || '', es: getL(m.shortDescription, 'es') || '' },
       longDescription:  typeof m.longDescription === 'object' ? m.longDescription : { en: getL(m.longDescription, 'en') || '', es: getL(m.longDescription, 'es') || '' },
     });
@@ -215,10 +219,13 @@ export default function MeritsView({
       meritForm.domains || [],
       meritForm.tier || null,
       meritForm.repeatable !== false,
+      meritForm.familyIds || [],
+      meritForm.knowledgeAreaIds || [],
     );
     setMeritForm({
       name: '', points: 100, categoryId: leaderCategoryId || '', logo: '🏆', assignableBy: 'leader',
       tags: [], achievementTypes: [], domains: [], tier: '', repeatable: true,
+      familyIds: [], knowledgeAreaIds: [],
       shortDescription: { en: '', es: '' },
       longDescription:  { en: '', es: '' },
     });
@@ -458,6 +465,44 @@ export default function MeritsView({
                 );
               })}
             </div>
+            {meritFamilies.length > 0 && (
+              <>
+                <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_families') || 'Familias'}</label>
+                <div className="flex flex-wrap gap-1">
+                  {meritFamilies.map((f) => {
+                    const sel = (meritForm.familyIds || []).includes(f.id);
+                    return (
+                      <button key={f.id} type="button"
+                        onClick={() => setMeritForm((fm) => ({
+                          ...fm, familyIds: sel ? (fm.familyIds || []).filter((x) => x !== f.id) : [...(fm.familyIds || []), f.id],
+                        }))}
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                        {f.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            {knowledgeAreas.length > 0 && (
+              <>
+                <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_knowledge_areas') || 'Áreas de conocimiento'}</label>
+                <div className="flex flex-wrap gap-1">
+                  {knowledgeAreas.map((a) => {
+                    const sel = (meritForm.knowledgeAreaIds || []).includes(a.id);
+                    return (
+                      <button key={a.id} type="button"
+                        onClick={() => setMeritForm((fm) => ({
+                          ...fm, knowledgeAreaIds: sel ? (fm.knowledgeAreaIds || []).filter((x) => x !== a.id) : [...(fm.knowledgeAreaIds || []), a.id],
+                        }))}
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                        {a.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Bilingual description fields */}
@@ -659,6 +704,40 @@ export default function MeritsView({
                     );
                   })}
                 </div>
+                {meritFamilies.length > 0 && (
+                  <>
+                    <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_families') || 'Familias'}</label>
+                    <div className="flex flex-wrap gap-1">
+                      {meritFamilies.map((f) => {
+                        const sel = (editForm.familyIds || []).includes(f.id);
+                        return (
+                          <button key={f.id} type="button"
+                            onClick={() => setEditForm((fm) => ({
+                              ...fm, familyIds: sel ? (fm.familyIds || []).filter((x) => x !== f.id) : [...(fm.familyIds || []), f.id],
+                            }))}
+                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{f.name}</button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                {knowledgeAreas.length > 0 && (
+                  <>
+                    <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_knowledge_areas') || 'Áreas de conocimiento'}</label>
+                    <div className="flex flex-wrap gap-1">
+                      {knowledgeAreas.map((a) => {
+                        const sel = (editForm.knowledgeAreaIds || []).includes(a.id);
+                        return (
+                          <button key={a.id} type="button"
+                            onClick={() => setEditForm((fm) => ({
+                              ...fm, knowledgeAreaIds: sel ? (fm.knowledgeAreaIds || []).filter((x) => x !== a.id) : [...(fm.knowledgeAreaIds || []), a.id],
+                            }))}
+                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{a.name}</button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
               <BilingualField
                 label={t('short_description')}
@@ -698,6 +777,8 @@ export default function MeritsView({
                     domains: editForm.domains || [],
                     tier: editForm.tier || null,
                     repeatable: editForm.repeatable !== false,
+                    familyIds: editForm.familyIds || [],
+                    knowledgeAreaIds: editForm.knowledgeAreaIds || [],
                     shortDescription: fillL(editForm.shortDescription),
                     longDescription: fillL(editForm.longDescription),
                   });

@@ -20,7 +20,7 @@ import { tsToDate } from '../utils.js';
 import { SYSTEM_MERIT_NAMES } from '../constants.js';
 
 /**
- * @param {{ authUser: object | null, selectedTeamId: string | null }} params
+ * @param {{ authUser: object | null, selectedTeamId: string | null, userProfile?: object | null }} params
  * @returns {{
  *   allTeams: object[],
  *   allTeamCategories: Record<string, object[]>,
@@ -32,6 +32,7 @@ import { SYSTEM_MERIT_NAMES } from '../constants.js';
  *   teamModules: object[],
  *   teamModuleAttempts: object[],
  *   teamEvents: object[],
+ *   teamSessions: object[],
  *   teamSwots: object[],
  *   teamEisenhowers: object[],
  *   teamPughs: object[],
@@ -47,7 +48,7 @@ import { SYSTEM_MERIT_NAMES } from '../constants.js';
  *   userMembershipsReady: boolean,
  * }}
  */
-export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
+export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile = null }) {
   const [allTeams, setAllTeams] = useState([]);
   const [allTeamCategories, setAllTeamCategories] = useState({});
   const [userMemberships, setUserMemberships] = useState([]);
@@ -58,6 +59,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
   const [teamModules, setTeamModules] = useState([]);
   const [teamModuleAttempts, setTeamModuleAttempts] = useState([]);
   const [teamEvents, setTeamEvents] = useState([]);
+  const [teamSessions, setTeamSessions] = useState([]);
   const [teamSwots, setTeamSwots] = useState([]);
   const [teamEisenhowers, setTeamEisenhowers] = useState([]);
   const [teamPughs, setTeamPughs] = useState([]);
@@ -145,6 +147,11 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
       (rows) => [...rows].sort((a, b) => tsToDate(a.date) - tsToDate(b.date)),
     );
     sub(
+      query(collection(db, 'teamSessions'), where('teamId', '==', selectedTeamId)),
+      setTeamSessions,
+      (rows) => [...rows].sort((a, b) => tsToDate(b.scheduledAt) - tsToDate(a.scheduledAt)),
+    );
+    sub(
       query(collection(db, 'teamSwots'), where('teamId', '==', selectedTeamId)),
       setTeamSwots,
       (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
@@ -199,22 +206,31 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
       (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)),
     );
 
-    // Module attempts are filtered per user to respect Firestore rules
+    // Module attempts: team admins see all (for approval); others see only their own
     if (authUser) {
-      unsubs.push(
-        onSnapshot(
-          query(
+      const isPlatformAdmin = userProfile?.platformRole?.trim() === 'platformAdmin';
+      const currentMem = userMemberships.find(
+        (m) => m.teamId === selectedTeamId && m.status === 'active',
+      );
+      const isTeamAdmin =
+        isPlatformAdmin ||
+        (currentMem && ['teamAdmin', 'facultyAdvisor'].includes(currentMem.role));
+      const q = isTeamAdmin
+        ? query(collection(db, 'moduleAttempts'), where('teamId', '==', selectedTeamId))
+        : query(
             collection(db, 'moduleAttempts'),
             where('teamId', '==', selectedTeamId),
             where('userId', '==', authUser.uid),
-          ),
-          (snap) => setTeamModuleAttempts(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+          );
+      unsubs.push(
+        onSnapshot(q, (snap) =>
+          setTeamModuleAttempts(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
         ),
       );
     }
 
     return () => unsubs.forEach((u) => u());
-  }, [selectedTeamId, authUser]);
+  }, [selectedTeamId, authUser, userProfile, userMemberships]);
 
   // Retroactive migration: update "Actualización semanal" merits from 5 → 25 pts (runs once per team)
   useEffect(() => {
@@ -254,6 +270,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId }) {
     teamModules,
     teamModuleAttempts,
     teamEvents,
+    teamSessions,
     teamSwots,
     teamEisenhowers,
     teamPughs,

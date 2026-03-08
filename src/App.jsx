@@ -23,6 +23,9 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from './hooks/useAuth.js';
 import { useFirebaseSubscriptions } from './hooks/useFirebaseSubscriptions.js';
+import { useTaskHandlers } from './hooks/useTaskHandlers.js';
+import { useMeritHandlers } from './hooks/useMeritHandlers.js';
+import { useSessionHandlers } from './hooks/useSessionHandlers.js';
 
 // System merit points: use team config or defaults (see handleSaveSystemMeritPoints)
 
@@ -42,6 +45,7 @@ import { t, lang, STRINGS }         from './strings.js';
 import {
   EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS,
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, PERSONALITY_TAGS_DEFAULT, MERIT_TIERS,
+  MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES,
 } from './constants.js';
@@ -50,8 +54,8 @@ import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMond
 // ── Shared UI atoms ───────────────────────────────────────────────────────────
 import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
 import {
-  Home, LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, Wrench,
-  GraduationCap, Wallet, CheckSquare, User, Settings, MessagesSquare,
+  Home, LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, CalendarDays, Wrench,
+  GraduationCap, Wallet, CheckSquare, User, Settings, MessagesSquare, Map, ChevronDown, ChevronRight,
 } from 'lucide-react';
 
 // ── Modals ────────────────────────────────────────────────────────────────────
@@ -69,12 +73,74 @@ import AcademyView                 from './views/AcademyView.jsx';
 import FeedView                    from './views/FeedView.jsx';
 import FundingView                 from './views/FundingView.jsx';
 import TasksView                   from './views/TasksView.jsx';
+import SessionsView                from './views/SessionsView.jsx';
+import KnowledgeMapView            from './views/KnowledgeMapView.jsx';
 
 const ProfilePageView = lazy(() => import('./views/ProfilePageView.jsx'));
 const MembersView     = lazy(() => import('./views/MembersView.jsx'));
 const MeritsView      = lazy(() => import('./views/MeritsView.jsx'));
 const HRView          = lazy(() => import('./views/HRView.jsx'));
 const AdminView       = lazy(() => import('./views/AdminView.jsx'));
+
+// ── Navigation domain structure (two levels only) ───────────────────────────────
+const NAV_DOMAINS = [
+  {
+    id: 'comunidad',
+    labelKey: 'nav_domain_comunidad',
+    Icon: Users,
+    items: [
+      { id: 'overview', labelKey: 'nav_overview', Icon: LayoutDashboard },
+      { id: 'feed', labelKey: 'nav_feed', Icon: Rss },
+      { id: 'categories', labelKey: 'nav_categories', Icon: Grid },
+      { id: 'members', labelKey: 'nav_members', Icon: Users },
+      { id: 'sessions', labelKey: 'nav_sessions', Icon: CalendarDays },
+      { id: 'hr', labelKey: 'nav_hr', Icon: MessagesSquare },
+    ],
+  },
+  {
+    id: 'trabajo',
+    labelKey: 'nav_domain_trabajo',
+    Icon: CheckSquare,
+    items: [
+      { id: 'tasks', labelKey: 'nav_tasks', Icon: CheckSquare },
+      { id: 'calendar', labelKey: 'nav_calendar', Icon: Calendar },
+      { id: 'tools', labelKey: 'nav_tools', Icon: Wrench },
+    ],
+  },
+  {
+    id: 'aprendizaje',
+    labelKey: 'nav_domain_aprendizaje',
+    Icon: GraduationCap,
+    items: [
+      { id: 'academy', labelKey: 'nav_academy', Icon: GraduationCap },
+      { id: 'mapa', labelKey: 'nav_knowledge_map', Icon: Map },
+    ],
+  },
+  {
+    id: 'reconocimiento',
+    labelKey: 'nav_domain_reconocimiento',
+    Icon: Trophy,
+    items: [
+      { id: 'merits', labelKey: 'nav_merits', Icon: Trophy },
+      { id: 'leaderboard', labelKey: 'nav_leaderboard', Icon: Award },
+    ],
+  },
+  {
+    id: 'admin_group',
+    labelKey: 'nav_domain_admin',
+    Icon: Settings,
+    items: [
+      { id: 'admin', labelKey: 'nav_admin', Icon: Settings },
+      { id: 'funding', labelKey: 'nav_funding', Icon: Wallet },
+    ],
+    adminOnly: true,
+  },
+];
+
+const VIEW_TO_DOMAIN = {};
+NAV_DOMAINS.forEach((d) => {
+  d.items.forEach((it) => { VIEW_TO_DOMAIN[it.id] = d.id; });
+});
 
 // Standard hamburger menu icon (three horizontal bars)
 function HamburgerIcon({ className = 'w-5 h-5' }) {
@@ -175,6 +241,7 @@ export default function App() {
     teamModules,
     teamModuleAttempts,
     teamEvents,
+    teamSessions,
     teamSwots,
     teamEisenhowers,
     teamPughs,
@@ -190,7 +257,7 @@ export default function App() {
     teamHrSuggestions,
     teamHrComplaints,
     userMembershipsReady,
-  } = useFirebaseSubscriptions({ authUser, selectedTeamId });
+  } = useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile });
 
   // Restore last selected team from localStorage on refresh (only when user has access)
   useEffect(() => {
@@ -208,6 +275,15 @@ export default function App() {
   // ── UI state ───────────────────────────────────────────────────────────────
   const [navCollapsed,   setNavCollapsed]   = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
+  const [expandedDomain, setExpandedDomain] = useState(null);
+
+  const currentDomain = VIEW_TO_DOMAIN[view] || null;
+  useEffect(() => {
+    if (mobileNavOpen && currentDomain) setExpandedDomain(currentDomain);
+  }, [mobileNavOpen, currentDomain]);
+  useEffect(() => {
+    if (currentDomain) setExpandedDomain((prev) => (prev === currentDomain ? prev : currentDomain));
+  }, [currentDomain]);
   const [previewRole,    setPreviewRole]    = useState(null);   // admin "preview as role" simulation
   const [renamingTeamId, setRenamingTeamId] = useState(null);  // team picker inline rename
   const [renameValue,    setRenameValue]    = useState('');
@@ -224,7 +300,7 @@ export default function App() {
     ? teamMemberships.find((m) => m.id === profileMemberId) || null
     : null;
 
-  const validViews = new Set(['inicio', 'overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'tasks', 'hr', 'myprofile', 'profile', 'admin']);
+  const validViews = new Set(['inicio', 'overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'tasks', 'sessions', 'mapa', 'hr', 'myprofile', 'profile', 'admin']);
   const isViewValid = validViews.has(view);
 
   // Redirect invalid paths to /inicio (only when team is selected, to avoid running in team picker)
@@ -290,6 +366,8 @@ export default function App() {
     milestone50:     currentTeam?.pointsPerMilestone50 ?? SYSTEM_MERIT_POINTS_DEFAULT.milestone50,
   }), [currentTeam?.pointsPerWeeklyUpdate, currentTeam?.pointsPerProfileComplete, currentTeam?.pointsPerMilestone50]);
   const meritTiers           = (currentTeam?.meritTiers?.length ? currentTeam.meritTiers : MERIT_TIERS);
+  const meritFamilies        = (currentTeam?.meritFamilies?.length ? currentTeam.meritFamilies : MERIT_FAMILIES_DEFAULT);
+  const knowledgeAreas       = (currentTeam?.knowledgeAreas?.length ? currentTeam.knowledgeAreas : KNOWLEDGE_AREAS_DEFAULT);
 
   const myTeams = useMemo(() => {
     const ids = new Set(userMemberships.map((m) => m.teamId));
@@ -358,6 +436,71 @@ export default function App() {
       console.warn('Audit log failed:', e);
     }
   }, [currentTeam, canEdit, authUser, userProfile]);
+
+  // Extracted handlers (hooks)
+  const {
+    canAssignTask,
+    handleCreateTask,
+    handleRequestTaskReview,
+    handleGradeTask,
+    handleCompleteTask,
+    handleDeleteTask,
+    handleSetBlocked,
+    handleUnblockTask,
+    handleUpdateTask,
+  } = useTaskHandlers({
+    currentTeam,
+    currentMembership,
+    authUser,
+    userProfile,
+    teamMemberships,
+    teamTasks,
+    canEdit,
+    memberRole,
+    logAudit,
+  });
+
+  const {
+    canEditMerit,
+    handleCreateMerit,
+    handleDeleteMerit,
+    handleRecoverMerit,
+    handleUpdateMerit,
+    handleAwardMerit,
+    handleRevokeMerit,
+    handleEditMeritEvent,
+  } = useMeritHandlers({
+    currentTeam,
+    currentMembership,
+    authUser,
+    userProfile,
+    teamMemberships,
+    teamMerits,
+    teamMeritEvents,
+    canEdit,
+    canCreateMerit,
+    canAward,
+    memberRole,
+    isPlatformAdmin,
+    logAudit,
+    t,
+  });
+
+  const {
+    handleCreateSession,
+    handleUpdateSession,
+    handleDeleteSession,
+    handleSaveAttendance,
+    fetchAttendance,
+    canManageSessions,
+  } = useSessionHandlers({
+    currentTeam,
+    currentMembership,
+    authUser,
+    userProfile,
+    canEdit,
+    canEditTools,
+  });
 
   // ────────────────────────────────────────────────────────────────────────────
   // HANDLERS — all Firestore writes live here, passed down as props
@@ -465,6 +608,18 @@ export default function App() {
   const handleSaveTeamMeritTiers = async (arr) => {
     if (!currentTeam || !canEdit) return;
     await updateDoc(doc(db, 'teams', currentTeam.id), { meritTiers: Array.isArray(arr) ? arr : [] });
+  };
+  const handleSaveTeamMeritFamilies = async (arr) => {
+    if (!currentTeam || !canEdit) return;
+    await updateDoc(doc(db, 'teams', currentTeam.id), {
+      meritFamilies: Array.isArray(arr) ? arr.filter((x) => x && x.id && x.name) : [],
+    });
+  };
+  const handleSaveTeamKnowledgeAreas = async (arr) => {
+    if (!currentTeam || !canEdit) return;
+    await updateDoc(doc(db, 'teams', currentTeam.id), {
+      knowledgeAreas: Array.isArray(arr) ? arr.filter((x) => x && x.id && x.name) : [],
+    });
   };
   const handleSaveTaskGradePoints = async ({ individual, team }) => {
     if (!currentTeam || !canEdit) return;
@@ -1113,182 +1268,6 @@ export default function App() {
     });
   };
 
-  // ── Merits ─────────────────────────────────────────────────────────────────
-
-  const handleCreateMerit = async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader', tags = [], achievementTypes = [], domains = [], tier = null, repeatable = true) => {
-    if (!currentTeam) { alert('No team selected.'); return; }
-    if (!canCreateMerit) { alert('No permission to create logros.'); return; }
-    // Leaders may only create logros for their own category (not global)
-    if (memberRole === 'leader' && !isPlatformAdmin) {
-      if (!categoryId || categoryId !== currentMembership?.categoryId) {
-        alert(t('leader_create_merit_category_only') || 'Como Líder, solo puedes crear logros para tu área asignada.');
-        return;
-      }
-    }
-    try {
-      await addDoc(collection(db, 'merits'), {
-        teamId: currentTeam.id,
-        name,
-        points:           Number(points),
-        categoryId:       categoryId       || null,
-        logo:             logo             || '🏆',
-        shortDescription: shortDescription || '',
-        longDescription:  longDescription  || '',
-        assignableBy:     assignableBy     || 'leader',
-        tags:             Array.isArray(tags) ? tags.filter(Boolean) : [],
-        achievementTypes: Array.isArray(achievementTypes) ? achievementTypes.filter(Boolean) : [],
-        domains:          Array.isArray(domains) ? domains.filter(Boolean) : [],
-        tier:             tier || null,
-        repeatable:       repeatable !== false,
-        createdAt: serverTimestamp(),
-      });
-    } catch (err) {
-      console.error('[Logro] Firestore error:', err);
-      alert(`No se pudo guardar el logro: ${err.message}\n\nVerifica las reglas de Firestore en FIREBASE_SETUP.md.`);
-    }
-  };
-
-  const handleDeleteMerit = async (meritId) => {
-    const merit = teamMerits.find((m) => m.id === meritId);
-    if (!merit || !canEditMerit(merit)) return;
-    await deleteDoc(doc(db, 'merits', meritId));
-  };
-
-  /** Recover a deleted merit from its award events. Recreates the merit doc with the same ID. */
-  const handleRecoverMerit = async (meritId, sampleEvent) => {
-    if (!currentTeam || !canCreateMerit) return;
-    if (!sampleEvent?.meritId || !sampleEvent?.meritName) {
-      alert(t('merit_recover_no_data') || 'No hay datos suficientes para recuperar este logro.');
-      return;
-    }
-    try {
-      await setDoc(doc(db, 'merits', meritId), {
-        teamId:         currentTeam.id,
-        name:           sampleEvent.meritName,
-        points:         Number(sampleEvent.points) || 100,
-        categoryId:     null,
-        logo:           sampleEvent.meritLogo || '🏆',
-        shortDescription: '',
-        longDescription:  '',
-        assignableBy:   'leader',
-        tags:           [],
-        achievementTypes: [],
-        domains:        [],
-        tier:           null,
-        repeatable:     true,
-        createdAt:      serverTimestamp(),
-      });
-    } catch (err) {
-      console.error('[Logro] Recover error:', err);
-      alert(t('merit_recover_failed') || `No se pudo recuperar: ${err.message}`);
-    }
-  };
-
-  const canEditMerit = React.useCallback((merit) => {
-    if (canEdit) return true;
-    if (memberRole === 'leader' && currentMembership?.categoryId && merit?.categoryId === currentMembership.categoryId) return true;
-    return false;
-  }, [canEdit, memberRole, currentMembership?.categoryId]);
-
-  const handleUpdateMerit = async (meritId, updates) => {
-    const merit = teamMerits.find((m) => m.id === meritId);
-    if (!merit || !canEditMerit(merit)) return;
-    try {
-      await updateDoc(doc(db, 'merits', meritId), {
-        name:             updates.name             ?? merit.name,
-        points:           Number(updates.points ?? merit.points),
-        categoryId:       updates.categoryId       ?? merit.categoryId ?? null,
-        logo:             updates.logo             ?? merit.logo ?? '🏆',
-        shortDescription: updates.shortDescription ?? merit.shortDescription ?? '',
-        longDescription:  updates.longDescription  ?? merit.longDescription ?? '',
-        assignableBy:     updates.assignableBy     ?? merit.assignableBy ?? 'leader',
-        tags:             Array.isArray(updates.tags) ? updates.tags.filter(Boolean) : (merit.tags || []),
-        achievementTypes: Array.isArray(updates.achievementTypes) ? updates.achievementTypes.filter(Boolean) : (merit.achievementTypes || []),
-        domains:          Array.isArray(updates.domains) ? updates.domains.filter(Boolean) : (merit.domains || []),
-        tier:             updates.tier ?? merit.tier ?? null,
-        repeatable:       updates.repeatable !== undefined ? updates.repeatable !== false : merit.repeatable !== false,
-      });
-    } catch (err) {
-      console.error('[Logro] Update Firestore error:', err);
-      alert(`No se pudo actualizar el logro: ${err.message}`);
-    }
-  };
-
-  const handleAwardMerit = async (membershipId, meritId, evidence) => {
-    if (!currentTeam || !canAward) return;
-    const merit = teamMerits.find((m) => m.id === meritId);
-    if (!merit) return;
-    const allowed = merit.assignableBy || 'leader';
-    const canAssign = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || memberRole === allowed;
-    if (!canAssign) {
-      alert(`Solo un ${allowed === 'leader' ? 'Líder' : allowed === 'teamAdmin' ? 'Team Admin' : 'Faculty Advisor'} puede otorgar este logro.`);
-      return;
-    }
-    // Leaders may only award merits within their own category
-    if (!canEdit && memberRole === 'leader' && !isPlatformAdmin) {
-      if (merit.categoryId && merit.categoryId !== currentMembership?.categoryId) {
-        alert('Como Líder, solo puedes otorgar logros dentro de tu categoría asignada.');
-        return;
-      }
-    }
-    // Leaders may only award to members of their own area
-    if (memberRole === 'leader' && !isPlatformAdmin) {
-      const targetMember = teamMemberships.find((mm) => mm.id === membershipId);
-      if (targetMember && currentMembership?.categoryId && targetMember.categoryId !== currentMembership.categoryId) {
-        alert(t('merit_leader_area_only') || 'Como Líder, solo puedes otorgar reconocimiento a miembros de tu área.');
-        return;
-      }
-    }
-    // Block self-assignment of merits except for platform admin (testing)
-    if (membershipId === currentMembership?.id && !isPlatformAdmin) {
-      alert(t('merit_self_award_error') || 'No puedes otorgarte logros a ti mismo.');
-      return;
-    }
-    // If merit is single-use (not repeatable), block duplicate award to same member
-    if (merit.repeatable === false) {
-      const alreadyAwarded = teamMeritEvents.some(
-        (e) => e.type === 'award' && e.meritId === meritId && e.membershipId === membershipId
-      );
-      if (alreadyAwarded) {
-        alert(t('merit_award_once_error') || 'Este logro solo se puede otorgar una vez por persona. Ya fue otorgado a este miembro.');
-        return;
-      }
-    }
-    await addDoc(collection(db, 'meritEvents'), {
-      teamId:               currentTeam.id,
-      membershipId,
-      meritId,
-      meritName:            merit.name,
-      meritLogo:            merit.logo || '🏆',
-      points:               merit.points,
-      type:                 'award',
-      evidence:             evidence || '',
-      createdByUserId:      authUser?.uid             || null,
-      createdByMembershipId: currentMembership?.id    || null,
-      awardedByUserId:      authUser?.uid             || null,
-      awardedByName:        userProfile?.displayName   || authUser?.email || '—',
-      createdAt:            serverTimestamp(),
-    });
-  };
-
-  const handleRevokeMerit = async (eventId) => {
-    if (!canEdit) return;
-    const evt = teamMeritEvents.find((e) => e.id === eventId);
-    if (!evt || evt.type !== 'award') return;
-    await deleteDoc(doc(db, 'meritEvents', eventId));
-    await logAudit('revoke_merit', 'meritEvent', eventId, { meritName: evt.meritName, membershipId: evt.membershipId });
-  };
-
-  const handleEditMeritEvent = async (eventId, { points, evidence }) => {
-    if (!isPlatformAdmin) return;
-    await updateDoc(doc(db, 'meritEvents', eventId), {
-      points:       Number(points),
-      evidence:     evidence || '',
-      editedByUserId: authUser?.uid,
-      editedAt:     serverTimestamp(),
-    });
-  };
-
   // ── Academy ────────────────────────────────────────────────────────────────
 
   const handleCreateModule = async (mod) => {
@@ -1322,116 +1301,14 @@ export default function App() {
     });
   };
 
-  // ── Tasks (assigned by area leader or admins) ─────────────────────────────
-  const canAssignTask = (assigneeMembershipId) => {
-    if (!currentTeam || !authUser) return false;
-    if (canEdit) return true;
-    if (memberRole !== 'leader' || !currentMembership?.categoryId) return false;
-    const assignee = teamMemberships.find((m) => m.id === assigneeMembershipId);
-    return assignee?.categoryId === currentMembership.categoryId;
-  };
-
-  const handleCreateTask = async ({ assigneeMembershipId, assigneeMembershipIds, title, description, dueDate }) => {
-    if (!currentTeam || !currentMembership) return;
-    const ids = Array.isArray(assigneeMembershipIds) && assigneeMembershipIds.length > 0
-      ? assigneeMembershipIds
-      : (assigneeMembershipId ? [assigneeMembershipId] : []);
-    if (ids.length === 0) return;
-    for (const id of ids) { if (!canAssignTask(id)) return; }
-    await addDoc(collection(db, 'tasks'), {
-      teamId:                 currentTeam.id,
-      assigneeMembershipIds:  ids,
-      assignedByMembershipId: currentMembership.id,
-      assignedByName:         currentMembership.displayName || userProfile?.displayName || authUser?.email || '—',
-      title:                  (title || '').trim(),
-      description:            (description || '').trim() || null,
-      dueDate:                dueDate || null,
-      status:                 'pending',
-      createdAt:              serverTimestamp(),
-    });
-  };
-
-  const handleRequestTaskReview = async (taskId) => {
-    if (!currentTeam || !authUser) return;
-    const task = teamTasks.find((t) => t.id === taskId);
-    if (!task) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
-    const isAssignee = assigneeIds.includes(currentMembership?.id);
-    if (!isAssignee || (task.status || 'pending') !== 'pending') return;
-    await updateDoc(doc(db, 'tasks', taskId), {
-      status:            'pending_review',
-      requestedReviewAt: serverTimestamp(),
-    });
-  };
-
-  const handleGradeTask = async (taskId, grade) => {
-    if (!currentTeam || !authUser || !currentMembership) return;
-    const task = teamTasks.find((t) => t.id === taskId);
-    if (!task || task.status !== 'pending_review') return;
-    if (task.assignedByMembershipId !== currentMembership.id) return;
-    if (!TASK_GRADES.includes(grade)) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
-    const ptsInd = currentTeam.taskGradePointsIndividual || TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT;
-    const ptsTeam = currentTeam.taskGradePointsTeam || TASK_GRADE_POINTS_TEAM_DEFAULT;
-    const pointsPerMember = assigneeIds.length > 1
-      ? (ptsTeam[grade] ?? 0)
-      : (ptsInd[grade] ?? 0);
-    await updateDoc(doc(db, 'tasks', taskId), {
-      status:               'completed',
-      grade,
-      completedAt:          serverTimestamp(),
-      gradedByMembershipId:  currentMembership.id,
-    });
-    const meritName = 'Tarea revisada';
-    const evidence = `${(task.title || '').trim()} (${grade})`;
-    const awardedByName = currentMembership.displayName || userProfile?.displayName || authUser?.email || '—';
-    const taskScope = assigneeIds.length > 1 ? 'team' : 'individual';
-    const meritEventsRef = collection(db, 'meritEvents');
-    for (const membershipId of assigneeIds) {
-      await addDoc(meritEventsRef, {
-        teamId:                currentTeam.id,
-        membershipId,
-        meritId:               null,
-        meritName,
-        meritLogo:             '✓',
-        points:                pointsPerMember,
-        type:                 'award',
-        evidence,
-        awardedByUserId:       authUser?.uid ?? null,
-        awardedByName,
-        taskId,
-        taskCompletionScope:   taskScope,
-        taskGrade:             grade,
-        createdAt:            serverTimestamp(),
-      });
-    }
-    if (canEdit) await logAudit('grade_task', 'task', taskId, { grade, membershipId: task.assigneeMembershipId || task.assigneeMembershipIds?.[0] });
-  };
-
-  const handleCompleteTask = async (taskId) => {
-    if (!currentTeam || !authUser) return;
-    const task = teamTasks.find((t) => t.id === taskId);
-    if (!task) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
-    const isAssignee = assigneeIds.includes(currentMembership?.id);
-    const isAdmin = canEdit;
-    if (!isAssignee && !isAdmin) return;
-    await updateDoc(doc(db, 'tasks', taskId), {
-      status:      'completed',
+  const handleApproveModuleAttempt = async (attemptId) => {
+    if (!currentTeam || !currentMembership || !canEdit) return;
+    await updateDoc(doc(db, 'moduleAttempts', attemptId), {
+      status:      'approved',
       completedAt: serverTimestamp(),
+      approvedBy:  currentMembership.id,
+      approvedAt:  serverTimestamp(),
     });
-  };
-
-  const handleDeleteTask = async (taskId) => {
-    if (!currentTeam) return;
-    const task = teamTasks.find((t) => t.id === taskId);
-    if (!task) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
-    const isAssignee = assigneeIds.includes(currentMembership?.id);
-    const isAdmin = canEdit;
-    const isAssigner = task.assignedByMembershipId === currentMembership?.id;
-    if (!isAssignee && !isAdmin && !isAssigner) return;
-    await deleteDoc(doc(db, 'tasks', taskId));
   };
 
   // ── Tools: shared permission helper ───────────────────────────────────────
@@ -1980,52 +1857,67 @@ export default function App() {
 
   // ── Main app shell (team selected) ─────────────────────────────────────────
 
-  const navItems = [
-    { id: 'inicio',      label: t('nav_inicio'),      Icon: Home },
-    ...(isAtLeastRookie ? [
-      { id: 'overview',    label: t('nav_overview'),    Icon: LayoutDashboard },
-      { id: 'feed',        label: t('nav_feed'),        Icon: Rss },
-      { id: 'categories',  label: t('nav_categories'),  Icon: Grid },
-      { id: 'members',     label: t('nav_members'),     Icon: Users },
-      { id: 'merits',      label: t('nav_merits'),      Icon: Trophy },
-      { id: 'leaderboard', label: t('nav_leaderboard'), Icon: Award },
-      { id: 'calendar',    label: t('nav_calendar'),    Icon: Calendar },
-      { id: 'tools',       label: t('nav_tools'),       Icon: Wrench },
-      { id: 'academy',     label: t('nav_academy'),     Icon: GraduationCap },
-      { id: 'funding',     label: t('nav_funding'),     Icon: Wallet },
-      { id: 'tasks',       label: t('nav_tasks'),       Icon: CheckSquare },
-      { id: 'hr',          label: t('nav_hr'),          Icon: MessagesSquare },
-    ] : []),
-    ...(currentMembership ? [{ id: 'myprofile', label: t('nav_myprofile'), Icon: User }] : []),
-    ...(canEdit ? [{ id: 'admin', label: t('nav_admin'), Icon: Settings }] : []),
-  ];
+  const visibleDomains = NAV_DOMAINS.filter((d) => !d.adminOnly || canEdit);
 
   return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
 
 
-        {/* ── Mobile nav overlay ── */}
+        {/* ── Mobile nav overlay (accordion domains) ── */}
         {mobileNavOpen && (
           <div className="fixed inset-0 z-40 flex md:hidden">
             <div className="absolute inset-0 bg-black/60" onClick={() => setMobileNavOpen(false)} />
-            <nav className="relative z-50 w-56 bg-slate-950 border-r border-slate-800 p-3 space-y-1 overflow-y-auto">
+            <nav className="relative z-50 w-64 bg-slate-950 border-r border-slate-800 p-3 overflow-y-auto">
               <div className="flex items-center justify-between mb-3">
                 <span className="font-bold text-sm">{currentTeam?.name}</span>
                 <button onClick={() => setMobileNavOpen(false)} className="text-slate-400 hover:text-white text-lg">✕</button>
               </div>
-              {navItems.map((tab) => {
-                const Icon = tab.Icon;
+              <button onClick={() => { goToView('inicio'); setMobileNavOpen(false); }}
+                className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm transition-colors
+                  ${view === 'inicio' ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
+                <Home className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                <span>{t('nav_inicio')}</span>
+              </button>
+              {isAtLeastRookie && visibleDomains.map((domain) => {
+                const isExpanded = expandedDomain === domain.id;
+                const isActiveDomain = currentDomain === domain.id;
                 return (
-                  <button key={tab.id} onClick={() => { goToView(tab.id); setMobileNavOpen(false); }}
-                    title={tab.id === 'hr' ? t('hr_page_title') : undefined}
-                    className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm transition-colors
-                      ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
-                    <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                    <span>{tab.label}</span>
-                  </button>
+                  <div key={domain.id} className="mt-1">
+                    <button
+                      onClick={() => setExpandedDomain(isExpanded ? null : domain.id)}
+                      className={`w-full text-left px-3 py-2.5 rounded flex items-center justify-between text-sm transition-colors
+                        ${isActiveDomain ? 'bg-slate-700 text-slate-100' : 'text-slate-300 hover:bg-slate-800'}`}>
+                      <div className="flex items-center gap-2">
+                        <domain.Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                        <span>{t(domain.labelKey)}</span>
+                      </div>
+                      {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </button>
+                    {isExpanded && (
+                      <div className="ml-4 mt-1 space-y-0.5">
+                        {domain.items.map((item) => (
+                          <button key={item.id} onClick={() => { goToView(item.id); setMobileNavOpen(false); }}
+                            title={item.id === 'hr' ? t('hr_page_title') : undefined}
+                            className={`w-full text-left px-3 py-2 rounded flex items-center gap-2 text-sm transition-colors
+                              ${view === item.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+                            <item.Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                            <span>{t(item.labelKey)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
-              <div className="pt-3 border-t border-slate-800 space-y-2 mt-2">
+              <div className="pt-3 border-t border-slate-800 space-y-2 mt-3">
+                {currentMembership && (
+                  <button onClick={() => { goToView('myprofile'); setMobileNavOpen(false); }}
+                    className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm
+                      ${view === 'myprofile' ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-400 hover:text-white'}`}>
+                    <User className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                    <span>{t('nav_myprofile')}</span>
+                  </button>
+                )}
                 <button onClick={() => { setSelectedTeamId(null); setPreviewRole(null); setMobileNavOpen(false); }}
                   className="w-full text-left text-xs text-slate-400 hover:text-white px-2 py-1.5">
                   ← {t('switch_team')}
@@ -2087,9 +1979,19 @@ export default function App() {
                 </select>
               )
             )}
+            {canEdit && (
+              <button onClick={() => goToView('admin')}
+                className="p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                title={t('nav_admin')}
+                aria-label={t('nav_admin')}>
+                <Settings className="w-5 h-5" strokeWidth={1.5} />
+              </button>
+            )}
             {/* Profile avatar button */}
-            <button onClick={() => currentMembership && handleViewProfile(currentMembership)}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity" title={t('view_profile')}>
+            <button onClick={() => currentMembership && goToView('myprofile')}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              title={t('nav_myprofile')}
+              aria-label={t('nav_myprofile')}>
               {(currentMembership?.photoURL || userProfile?.photoURL) ? (
                 <img src={currentMembership?.photoURL || userProfile?.photoURL}
                   className="w-8 h-8 rounded-full object-cover object-[center_top] border-2 border-slate-600 hover:border-emerald-500 transition-colors" alt="" />
@@ -2121,22 +2023,53 @@ export default function App() {
         {/* ── App body: sidebar + main ── */}
         <div className="flex flex-1 overflow-hidden">
 
-          {/* Desktop sidebar */}
-          <nav className={`hidden md:block ${navCollapsed ? 'w-12' : 'w-44'} border-r border-slate-800/80 p-2 shrink-0 transition-all duration-200 bg-slate-950/60 flex flex-col min-w-0 overflow-hidden`}>
-            <div className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-            {navItems.map((tab) => {
-              const Icon = tab.Icon;
-              return (
-                <button key={tab.id} onClick={() => goToView(tab.id)}
-                  title={tab.id === 'hr' ? t('hr_page_title') : undefined}
-                  className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors flex-shrink-0
-                    ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
-                    ${view === tab.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
-                  <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                  {!navCollapsed && <span className="truncate">{tab.label}</span>}
-                </button>
-              );
-            })}
+          {/* Desktop sidebar (domain groups) */}
+          <nav className={`hidden md:block ${navCollapsed ? 'w-12' : 'w-48'} border-r border-slate-800/80 p-2 shrink-0 transition-all duration-200 bg-slate-950/60 flex flex-col min-w-0 overflow-hidden`}>
+            <div className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+              <button onClick={() => goToView('inicio')}
+                className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors flex-shrink-0
+                  ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
+                  ${view === 'inicio' ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
+                <Home className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                {!navCollapsed && <span className="truncate">{t('nav_inicio')}</span>}
+              </button>
+              {isAtLeastRookie && visibleDomains.map((domain) => {
+                const isExpanded = expandedDomain === domain.id || navCollapsed;
+                const isActiveDomain = currentDomain === domain.id;
+                return (
+                  <div key={domain.id} className="flex-shrink-0">
+                    <button
+                      onClick={() => {
+                        if (navCollapsed) setNavCollapsed(false);
+                        setExpandedDomain(expandedDomain === domain.id ? null : domain.id);
+                      }}
+                      className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors
+                        ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
+                        ${isActiveDomain ? 'bg-slate-700 text-slate-100' : 'text-slate-300 hover:bg-slate-800'}`}>
+                      <domain.Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                      {!navCollapsed && (
+                        <>
+                          <span className="truncate flex-1">{t(domain.labelKey)}</span>
+                          {isExpanded ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
+                        </>
+                      )}
+                    </button>
+                    {!navCollapsed && isExpanded && (
+                      <div className="ml-2 mt-0.5 space-y-0.5">
+                        {domain.items.map((item) => (
+                          <button key={item.id} onClick={() => goToView(item.id)}
+                            title={item.id === 'hr' ? t('hr_page_title') : undefined}
+                            className={`w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-sm transition-colors
+                              ${view === item.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+                            <item.Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                            <span className="truncate">{t(item.labelKey)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </nav>
 
@@ -2239,6 +2172,8 @@ export default function App() {
                 achievementTypes={meritAchievementTypes}
                 domains={meritDomains}
                 meritTiers={meritTiers}
+                meritFamilies={meritFamilies}
+                knowledgeAreas={knowledgeAreas}
                 onCreateMerit={handleCreateMerit}
                 onUpdateMerit={handleUpdateMerit}
                 onDeleteMerit={handleDeleteMerit}
@@ -2324,11 +2259,14 @@ export default function App() {
               <AcademyView
                 modules={teamModules}
                 moduleAttempts={teamModuleAttempts}
+                teamMemberships={teamMemberships}
                 canEdit={canEdit}
+                knowledgeAreas={knowledgeAreas}
                 onCreateModule={handleCreateModule}
                 onUpdateModule={handleUpdateModule}
                 onDeleteModule={handleDeleteModule}
                 onRequestModuleReview={handleRequestModuleReview}
+                onApproveModuleAttempt={handleApproveModuleAttempt}
               />
             )}
 
@@ -2345,6 +2283,33 @@ export default function App() {
               />
             )}
 
+            {view === 'sessions' && isAtLeastRookie && (
+              <SessionsView
+                sessions={teamSessions}
+                memberships={teamMemberships}
+                categories={teamCategories}
+                canManageSessions={canManageSessions}
+                onCreateSession={handleCreateSession}
+                onUpdateSession={handleUpdateSession}
+                onDeleteSession={handleDeleteSession}
+                onSaveAttendance={handleSaveAttendance}
+                fetchAttendance={fetchAttendance}
+              />
+            )}
+
+            {view === 'mapa' && isAtLeastRookie && (
+              <KnowledgeMapView
+                memberships={teamMemberships}
+                meritEvents={teamMeritEvents}
+                tasks={teamTasks}
+                moduleAttempts={teamModuleAttempts}
+                merits={teamMerits}
+                modules={teamModules}
+                knowledgeAreas={knowledgeAreas}
+                onViewProfile={handleViewProfile}
+              />
+            )}
+
             {view === 'tasks' && isAtLeastRookie && (
               <TasksView
                 tasks={teamTasks}
@@ -2354,6 +2319,10 @@ export default function App() {
                 onRequestTaskReview={handleRequestTaskReview}
                 onGradeTask={handleGradeTask}
                 onDeleteTask={handleDeleteTask}
+                onSetBlocked={handleSetBlocked}
+                onUnblockTask={handleUnblockTask}
+                onUpdateTask={handleUpdateTask}
+                knowledgeAreas={knowledgeAreas}
                 tsToDate={tsToDate}
               />
             )}
@@ -2388,6 +2357,8 @@ export default function App() {
                 onSaveCollabSuggestions={handleSaveTeamCollabSuggestions}
                 onSaveMeritTags={handleSaveTeamMeritTags}
                 onSaveMeritTiers={handleSaveTeamMeritTiers}
+                onSaveMeritFamilies={handleSaveTeamMeritFamilies}
+                onSaveKnowledgeAreas={handleSaveTeamKnowledgeAreas}
                 onSaveSystemMeritPoints={handleSaveSystemMeritPoints}
                 onSaveTaskGradePoints={handleSaveTaskGradePoints}
               />
@@ -2400,6 +2371,12 @@ export default function App() {
                   categories={teamCategories}
                   merits={teamMerits}
                   meritEvents={teamMeritEvents.filter((e) => e.membershipId === currentMembership.id)}
+                  tasks={teamTasks}
+                  modules={teamModules}
+                  moduleAttempts={teamModuleAttempts}
+                  meritFamilies={meritFamilies}
+                  knowledgeAreas={knowledgeAreas}
+                  allMeritEvents={teamMeritEvents}
                   canEditThis={isPlatformAdmin || (authUser && currentMembership.userId === authUser.uid)}
                   onSave={handleUpdateMemberProfile}
                   weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
@@ -2408,6 +2385,7 @@ export default function App() {
                   careerOptions={careerOptions}
                   semesterOptions={semesterOptions}
                   personalityTags={personalityTags}
+                  onNavigate={goToView}
                 />
               ) : (
                 <div className="py-12 text-center text-slate-400 text-sm">
@@ -2428,6 +2406,12 @@ export default function App() {
                 categories={teamCategories}
                 merits={teamMerits}
                 meritEvents={teamMeritEvents.filter((e) => e.membershipId === profileMember.id)}
+                tasks={teamTasks}
+                modules={teamModules}
+                moduleAttempts={teamModuleAttempts}
+                meritFamilies={meritFamilies}
+                knowledgeAreas={knowledgeAreas}
+                allMeritEvents={teamMeritEvents}
                 canEditThis={isPlatformAdmin || (authUser && profileMember.userId === authUser.uid)}
                 onSave={handleUpdateMemberProfile}
                 weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
@@ -2436,6 +2420,7 @@ export default function App() {
                 careerOptions={careerOptions}
                 semesterOptions={semesterOptions}
                 personalityTags={personalityTags}
+                onNavigate={goToView}
               />
             )}
             </Suspense>

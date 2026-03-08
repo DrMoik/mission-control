@@ -9,6 +9,7 @@ import { t } from '../strings.js';
 import {
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT,
   COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS, MERIT_TIERS,
+  MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, ADMIN_PLACEHOLDERS,
 } from '../constants.js';
@@ -43,6 +44,48 @@ function serializePersonalityDict(dict) {
   return Object.entries(dict).map(([k, v]) => `${k}: ${v}`).join('\n');
 }
 
+/** Parse "id: name" or "id: name — description" lines into { id, name, description? }[]. */
+function parseFamiliesOrAreas(s, withDescription = false) {
+  return (s || '').split('\n').map((line) => {
+    const t = line.trim();
+    if (!t) return null;
+    const dashIdx = t.indexOf(' — ');
+    const colonIdx = t.indexOf(': ');
+    let id, name, description;
+    if (withDescription && dashIdx >= 0) {
+      const beforeDash = t.slice(0, dashIdx).trim();
+      description = t.slice(dashIdx + 3).trim();
+      if (colonIdx >= 0 && colonIdx < dashIdx) {
+        id = beforeDash.slice(0, colonIdx).trim().replace(/\s+/g, '_') || beforeDash;
+        name = beforeDash.slice(colonIdx + 2).trim();
+      } else {
+        id = beforeDash.replace(/\s+/g, '_');
+        name = beforeDash;
+      }
+    } else if (colonIdx >= 0) {
+      id = t.slice(0, colonIdx).trim().replace(/\s+/g, '_') || t;
+      name = t.slice(colonIdx + 2).trim();
+    } else {
+      id = t.replace(/\s+/g, '_');
+      name = t;
+    }
+    if (!id || !name) return null;
+    return withDescription ? { id, name, description: description || '' } : { id, name };
+  }).filter(Boolean);
+}
+
+/** Serialize families to "id: name — description" lines. */
+function serializeFamilies(arr) {
+  if (!Array.isArray(arr)) return '';
+  return arr.map((x) => (x.description ? `${x.id}: ${x.name} — ${x.description}` : `${x.id}: ${x.name}`)).join('\n');
+}
+
+/** Serialize knowledge areas to "id: name" lines. */
+function serializeKnowledgeAreas(arr) {
+  if (!Array.isArray(arr)) return '';
+  return arr.map((x) => `${x.id}: ${x.name}`).join('\n');
+}
+
 export default function AdminView({
   team,
   onSaveCareers,
@@ -51,6 +94,8 @@ export default function AdminView({
   onSaveCollabSuggestions,
   onSaveMeritTags,
   onSaveMeritTiers,
+  onSaveMeritFamilies,
+  onSaveKnowledgeAreas,
   onSaveSystemMeritPoints,
   onSaveTaskGradePoints,
   t: tProp,
@@ -74,6 +119,8 @@ export default function AdminView({
   const achievementTypes = team.achievementTypes?.length ? team.achievementTypes : MERIT_ACHIEVEMENT_TYPES;
   const domains = team.domains?.length ? team.domains : MERIT_DOMAINS;
   const meritTiers = team.meritTiers?.length ? team.meritTiers : MERIT_TIERS;
+  const meritFamilies = team.meritFamilies?.length ? team.meritFamilies : MERIT_FAMILIES_DEFAULT;
+  const knowledgeAreas = team.knowledgeAreas?.length ? team.knowledgeAreas : KNOWLEDGE_AREAS_DEFAULT;
   const systemPoints = {
     weeklyUpdate:    team?.pointsPerWeeklyUpdate ?? SYSTEM_MERIT_POINTS_DEFAULT.weeklyUpdate,
     profileComplete: team?.pointsPerProfileComplete ?? SYSTEM_MERIT_POINTS_DEFAULT.profileComplete,
@@ -276,6 +323,52 @@ export default function AdminView({
               className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
             >
               {saving === 'tiers' ? tFn('saving') || 'Guardando…' : tFn('save')}
+            </button>
+          </section>
+
+          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_merit_families') || 'Familias de mérito'}</h4>
+            <p className="text-[10px] text-slate-500">{tFn('admin_merit_families_hint') || 'Una por línea: id: nombre o id: nombre — descripción. Para inferencia de trayectorias.'}</p>
+            <textarea
+              key="families"
+              defaultValue={serializeFamilies(meritFamilies)}
+              id="admin-families"
+              rows={5}
+              placeholder="technical: Técnico — Agrupa logros técnicos"
+              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+            />
+            <button
+              onClick={() => {
+                const el = document.getElementById('admin-families');
+                save('families', onSaveMeritFamilies, parseFamiliesOrAreas(el?.value || '', true));
+              }}
+              disabled={saving === 'families'}
+              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+            >
+              {saving === 'families' ? tFn('saving') || 'Guardando…' : tFn('save')}
+            </button>
+          </section>
+
+          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_knowledge_areas') || 'Áreas de conocimiento'}</h4>
+            <p className="text-[10px] text-slate-500">{tFn('admin_knowledge_areas_hint') || 'Una por línea: id: nombre. Para el mapa de conocimientos.'}</p>
+            <textarea
+              key="knowledgeAreas"
+              defaultValue={serializeKnowledgeAreas(knowledgeAreas)}
+              id="admin-knowledge-areas"
+              rows={4}
+              placeholder="ros: ROS\ncontrol: Teoría de control"
+              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+            />
+            <button
+              onClick={() => {
+                const el = document.getElementById('admin-knowledge-areas');
+                save('knowledgeAreas', onSaveKnowledgeAreas, parseFamiliesOrAreas(el?.value || '', false));
+              }}
+              disabled={saving === 'knowledgeAreas'}
+              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+            >
+              {saving === 'knowledgeAreas' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
 

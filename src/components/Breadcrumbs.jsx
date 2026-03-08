@@ -1,5 +1,6 @@
 // ─── Breadcrumbs ──────────────────────────────────────────────────────────────
 // Shows navigation path for context and quick back-navigation.
+// Format: Inicio / Domain / Section (e.g. Inicio / Comunidad / Feed)
 
 import React from 'react';
 import { t } from '../strings.js';
@@ -18,10 +19,37 @@ const VIEW_LABELS = {
   academy:     'nav_academy',
   funding:     'nav_funding',
   tasks:       'nav_tasks',
+  sessions:    'nav_sessions',
+  mapa:        'nav_knowledge_map',
   hr:          'nav_hr',
   myprofile:   'nav_myprofile',
   profile:     'nav_members',
   admin:       'nav_admin',
+};
+
+const VIEW_TO_DOMAIN = {
+  overview: 'comunidad', feed: 'comunidad', categories: 'comunidad', members: 'comunidad',
+  sessions: 'comunidad', hr: 'comunidad',
+  tasks: 'trabajo', calendar: 'trabajo', tools: 'trabajo',
+  academy: 'aprendizaje', mapa: 'aprendizaje',
+  merits: 'reconocimiento', leaderboard: 'reconocimiento',
+  admin: 'admin_group', funding: 'admin_group',
+};
+
+const DOMAIN_LABELS = {
+  comunidad: 'nav_domain_comunidad',
+  trabajo: 'nav_domain_trabajo',
+  aprendizaje: 'nav_domain_aprendizaje',
+  reconocimiento: 'nav_domain_reconocimiento',
+  admin_group: 'nav_domain_admin',
+};
+
+const DOMAIN_FIRST_VIEW = {
+  comunidad: 'overview',
+  trabajo: 'tasks',
+  aprendizaje: 'academy',
+  reconocimiento: 'merits',
+  admin_group: 'admin',
 };
 
 /**
@@ -37,8 +65,6 @@ export default function Breadcrumbs({ view, profileMember = null, onNavigate, la
 
   if (view === 'inicio') {
     items.push({ id: 'inicio', label: t('nav_inicio'), isLast: true });
-  } else if (view === 'overview') {
-    items.push({ id: 'overview', label: t('nav_overview'), isLast: true });
   } else if (view === 'myprofile') {
     items.push({ id: 'inicio', label: t('nav_inicio'), isLast: false });
     items.push({ id: 'myprofile', label: t('nav_myprofile'), isLast: true });
@@ -47,9 +73,15 @@ export default function Breadcrumbs({ view, profileMember = null, onNavigate, la
     items.push({ id: 'members', label: t('nav_members'), isLast: false });
     items.push({ id: 'profile', label: ensureString(profileMember.displayName, lang), isLast: true });
   } else {
-    const key = VIEW_LABELS[view];
+    const domainId = VIEW_TO_DOMAIN[view];
+    const domainLabelKey = domainId ? DOMAIN_LABELS[domainId] : null;
+    const domainFirstView = domainId ? DOMAIN_FIRST_VIEW[domainId] : null;
+    const viewLabelKey = VIEW_LABELS[view];
     items.push({ id: 'inicio', label: t('nav_inicio'), isLast: false });
-    items.push({ id: view, label: key ? t(key) : view, isLast: true });
+    if (domainLabelKey && domainFirstView) {
+      items.push({ id: domainFirstView, label: t(domainLabelKey), isLast: false });
+    }
+    items.push({ id: view, label: viewLabelKey ? t(viewLabelKey) : view, isLast: true });
   }
 
   if (items.length <= 1) {

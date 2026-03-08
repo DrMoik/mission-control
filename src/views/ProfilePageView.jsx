@@ -10,6 +10,8 @@ import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT, SYSTEM_MERIT_DESCRIPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, TagInput, CultureListField, CultureSongField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
+import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
+import { useContributionPath } from '../hooks/useContributionPath.js';
 import { getL, toL, fillL, ensureString, getMondayOfWeekLocal, normalizeWeekOfToMonday, formatBirthdateDisplay, isBlockedImageHost, computeProfileCompletion, tsToDate } from '../utils.js';
 
 function isValidSongUrl(url) {
@@ -89,6 +91,8 @@ function AutoGrowInput({ value, onChange, placeholder, className, ...rest }) {
 export default function ProfilePageView({
   membership, categories, merits = [], meritEvents = [], canEditThis, onSave,
   weeklyStatuses = [], onSaveWeeklyStatus, suggestedTags = [],
+  tasks = [], modules = [], moduleAttempts = [], meritFamilies = [], knowledgeAreas = [],
+  allMeritEvents = [], onNavigate,
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp, personalityTags: personalityTagsProp,
 }) {
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
@@ -98,12 +102,35 @@ export default function ProfilePageView({
   const [draft,      setDraft]      = useState({});
   const [cropTarget, setCropTarget] = useState(null);
   const [detailMerit, setDetailMerit] = useState(null); // merit shown in popup when clicking a logro
+  const [contributionExpanded, setContributionExpanded] = useState({});
   const photoFileRef = useRef(null);
   const coverFileRef = useRef(null);
   const [editingWeekly, setEditingWeekly] = useState(false);
   const [weeklyDraft,   setWeeklyDraft]   = useState({ advanced: '', failedAt: '', learned: '' });
   const [savingWeekly,  setSavingWeekly]  = useState(false);
   const [reawarding,    setReawarding]   = useState(false);
+
+  const { getEvidenceForMember } = useKnowledgeMap({
+    teamMemberships: membership ? [membership] : [],
+    teamMeritEvents: allMeritEvents,
+    teamTasks: tasks,
+    teamModules: modules,
+    teamModuleAttempts: moduleAttempts,
+    teamMerits: merits,
+    knowledgeAreas: knowledgeAreas || [],
+    lang,
+  });
+
+  const { tendencies } = useContributionPath({
+    membershipId: membership?.id,
+    teamMerits: merits,
+    teamMeritEvents: allMeritEvents,
+    teamTasks: tasks,
+    teamModules: modules,
+    teamModuleAttempts: moduleAttempts,
+    meritFamilies: meritFamilies || [],
+    knowledgeEvidence: membership ? getEvidenceForMember(membership.id) : [],
+  });
 
   if (!membership) return null;
 
@@ -729,6 +756,93 @@ export default function ProfilePageView({
                 <p className="text-xs text-slate-500 italic py-2">{t('profile_logros_empty')}</p>
               )}
             </div>
+
+            {tendencies.length > 0 && (
+              <div className="min-w-0 xl:col-span-2">
+                <SectionHeading label={t('path_section_title')} />
+                <p className="text-xs text-slate-500 mb-3">{t('path_section_hint')}</p>
+                <div className="space-y-3">
+                  {tendencies.map((tend) => {
+                    const isExpanded = contributionExpanded[tend.id];
+                    const ev = tend.evidence;
+                    const meritEvts = (ev.meritEventIds || [])
+                      .map((id) => allMeritEvents.find((e) => e.id === id))
+                      .filter(Boolean);
+                    const meritObjs = meritEvts.map((e) => merits.find((m) => m.id === e.meritId) || { name: e.meritName, logo: e.meritLogo || '🏆', points: e.points || 0, id: e.meritId });
+                    const taskObjs = (ev.taskIds || []).map((id) => tasks.find((t) => t.id === id)).filter(Boolean);
+                    const moduleObjs = (ev.moduleIds || []).map((id) => modules.find((m) => m.id === id)).filter(Boolean);
+                    return (
+                      <div key={tend.id} className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/30">
+                        <div className="font-medium text-slate-200">{t(tend.labelKey)}</div>
+                        <p className="text-xs text-slate-400 mt-1">{tend.phrase}</p>
+                        <button
+                          type="button"
+                          onClick={() => setContributionExpanded((s) => ({ ...s, [tend.id]: !s[tend.id] }))}
+                          className="text-[11px] text-emerald-400 hover:text-emerald-300 mt-2 underline"
+                        >
+                          {isExpanded ? t('path_hide_evidence') : t('path_view_evidence')}
+                        </button>
+                        {isExpanded && (
+                          <div className="mt-2 pt-2 border-t border-slate-700/50 space-y-1.5 text-[11px]">
+                            {meritObjs.length > 0 && (
+                              <div>
+                                <span className="text-slate-500">{t('path_evidence_merits')}:</span>
+                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                  {meritObjs.map((m) => (
+                                    <button
+                                      key={m.id}
+                                      type="button"
+                                      onClick={() => setDetailMerit(m)}
+                                      className="px-2 py-0.5 rounded bg-amber-900/40 text-amber-200 border border-amber-700/50 hover:bg-amber-900/60"
+                                    >
+                                      {m.name || '—'}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {taskObjs.length > 0 && (
+                              <div>
+                                <span className="text-slate-500">{t('path_evidence_tasks')}:</span>
+                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                  {taskObjs.map((task) => (
+                                    <button
+                                      key={task.id}
+                                      type="button"
+                                      onClick={() => onNavigate?.('tasks')}
+                                      className="px-2 py-0.5 rounded bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600"
+                                    >
+                                      {ensureString(task.title, lang) || '—'}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {moduleObjs.length > 0 && (
+                              <div>
+                                <span className="text-slate-500">{t('path_evidence_modules')}:</span>
+                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                  {moduleObjs.map((m) => (
+                                    <button
+                                      key={m.id}
+                                      type="button"
+                                      onClick={() => onNavigate?.('academy')}
+                                      className="px-2 py-0.5 rounded bg-indigo-900/40 text-indigo-200 border border-indigo-700/50 hover:bg-indigo-900/60"
+                                    >
+                                      {ensureString(m.title, lang) || '—'}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {!getL(membership.bio, lang) && !getL(membership.hobbies, lang) && !getL(membership.funFact, lang) && !getL(membership.currentObjective, lang) && !getL(membership.currentChallenge, lang) && !membership.lookingForHelpIn?.length && !membership.iCanHelpWith?.length && !(membership.whatIListenTo?.length) && !(membership.bookThatMarkedMe?.length) && !(membership.ideaThatMotivatesMe?.length) && !(membership.quoteThatMovesMe?.length) && !thisWeek && (
               <p className="text-xs text-slate-600 italic text-center py-4 col-span-full">{t('no_profile_info')}</p>

@@ -14,11 +14,14 @@ const newTopicId = () => `t-${Date.now()}-${Math.random().toString(36).slice(2, 
 export default function AcademyView({
   modules,
   moduleAttempts,
+  teamMemberships = [],
+  knowledgeAreas = [],
   canEdit,
   onCreateModule,
   onUpdateModule,
   onDeleteModule,
   onRequestModuleReview,
+  onApproveModuleAttempt,
 }) {
   const [selectedId, setSelectedId] = useState(null);
   const [editingModule, setEditingModule] = useState(null);
@@ -78,6 +81,7 @@ export default function AcademyView({
       description: fillL(newMod.description),
       topics,
       order: modules.length,
+      knowledgeAreaIds: Array.isArray(newMod.knowledgeAreaIds) ? newMod.knowledgeAreaIds.filter(Boolean) : [],
     });
     setNewMod(emptyMod());
     setShowNewForm(false);
@@ -97,6 +101,7 @@ export default function AcademyView({
       title: fillL(rest.title),
       description: fillL(rest.description),
       topics,
+      knowledgeAreaIds: Array.isArray(rest.knowledgeAreaIds) ? rest.knowledgeAreaIds.filter(Boolean) : [],
     });
     setEditingModule(null);
   };
@@ -110,6 +115,7 @@ export default function AcademyView({
       title: toL(mod.title),
       description: toL(mod.description),
       topics,
+      knowledgeAreaIds: mod.knowledgeAreaIds || [],
     });
   };
 
@@ -136,6 +142,10 @@ export default function AcademyView({
       topics: m.topics.map((tp, i) => (i !== idx ? tp : { ...tp, [field]: value })),
     }));
 
+  const pendingAttempts = (moduleAttempts || []).filter(
+    (a) => a.status === 'requested_review',
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -149,6 +159,39 @@ export default function AcademyView({
           </button>
         )}
       </div>
+
+      {/* ── Pending reviews (admins only) ── */}
+      {canEdit && onApproveModuleAttempt && pendingAttempts.length > 0 && (
+        <div className="bg-amber-900/30 border border-amber-600/50 rounded-lg p-4">
+          <div className="text-xs font-semibold text-amber-200 mb-2">
+            {t('review_pending') || 'Revisiones pendientes'}
+          </div>
+          <ul className="space-y-2">
+            {pendingAttempts.map((a) => {
+              const mod = modules.find((m) => m.id === a.moduleId);
+              const member = teamMemberships.find((m) => m.id === a.membershipId);
+              const memberName = member?.displayName || member?.userId || a.membershipId || '—';
+              const modTitle = mod ? getL(mod.title, lang) : '—';
+              return (
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between gap-2 text-xs bg-slate-800/50 rounded px-3 py-2"
+                >
+                  <span className="text-slate-200 truncate">
+                    {memberName} → {modTitle}
+                  </span>
+                  <button
+                    onClick={() => onApproveModuleAttempt(a.id)}
+                    className="shrink-0 px-2 py-1 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded text-[11px]"
+                  >
+                    {t('approve') || 'Aprobar'}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* ── New module form ── */}
       {showNewForm && canEdit && (
@@ -165,6 +208,25 @@ export default function AcademyView({
             value={newMod.description}
             onChange={(v) => setNewMod((m) => ({ ...m, description: v }))}
           />
+          {knowledgeAreas.length > 0 && (
+            <div>
+              <label className="text-[11px] text-slate-500 block mb-1">{t('merit_attr_knowledge_areas') || 'Áreas de conocimiento'}</label>
+              <div className="flex flex-wrap gap-1">
+                {knowledgeAreas.map((a) => {
+                  const sel = (newMod.knowledgeAreaIds || []).includes(a.id);
+                  return (
+                    <button key={a.id} type="button"
+                      onClick={() => setNewMod((m) => ({
+                        ...m, knowledgeAreaIds: sel ? (m.knowledgeAreaIds || []).filter((x) => x !== a.id) : [...(m.knowledgeAreaIds || []), a.id],
+                      }))}
+                      className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                      {a.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div>
             <div className="text-xs text-slate-400 mb-2">{t('topic_label')}s</div>
             {(newMod.topics || []).map((tp, idx) => (
@@ -345,6 +407,25 @@ export default function AcademyView({
                 value={editingModule.description}
                 onChange={(v) => setEditingModule((m) => ({ ...m, description: v }))}
               />
+              {knowledgeAreas.length > 0 && (
+                <div>
+                  <label className="text-[11px] text-slate-500 block mb-1">{t('merit_attr_knowledge_areas') || 'Áreas de conocimiento'}</label>
+                  <div className="flex flex-wrap gap-1">
+                    {knowledgeAreas.map((a) => {
+                      const sel = (editingModule.knowledgeAreaIds || []).includes(a.id);
+                      return (
+                        <button key={a.id} type="button"
+                          onClick={() => setEditingModule((m) => ({
+                            ...m, knowledgeAreaIds: sel ? (m.knowledgeAreaIds || []).filter((x) => x !== a.id) : [...(m.knowledgeAreaIds || []), a.id],
+                          }))}
+                          className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                          {a.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div>
                 <div className="text-xs text-slate-400 mb-2">{t('topic_label')}s</div>
                 {(editingModule.topics || []).map((tp, idx) => (

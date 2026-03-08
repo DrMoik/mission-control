@@ -13,13 +13,19 @@ export default function TasksView({
   memberships = [],
   currentMembership,
   canViewAllTasks = false,
+  knowledgeAreas = [],
   onRequestTaskReview,
   onGradeTask,
   onDeleteTask,
+  onSetBlocked,
+  onUnblockTask,
+  onUpdateTask,
+  onRequestBlockReason,
   tsToDate,
 }) {
   const [showCompleted, setShowCompleted] = useState(false);
   const [showAllTeamTasks, setShowAllTeamTasks] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [taskSearch, setTaskSearch] = useState('');
 
   const getAssigneeIds = (task) =>
@@ -68,10 +74,12 @@ export default function TasksView({
     const isAssignee = assigneeIds.includes(currentMembership?.id);
     const isAssigner = task.assignedByMembershipId === currentMembership?.id;
     const canDelete = isAssignee || isAssigner;
-    const canRequestReview = showRequestReview && isAssignee && (task.status || 'pending') === 'pending';
+    const canRequestReview = showRequestReview && isAssignee && (task.status || 'pending') === 'pending' && !task.blocked;
     const isPendingReview = task.status === 'pending_review';
+    const isBlocked = Boolean(task.blocked);
     const statusLabel = task.status === 'completed' ? t('task_status_completed')
       : isPendingReview ? t('task_status_pending_review')
+      : isBlocked ? t('task_status_blocked')
       : (task.status || 'pending') === 'pending' ? t('task_status_assigned')
       : t('task_status_in_progress');
 
@@ -82,7 +90,9 @@ export default function TasksView({
             ? 'bg-slate-800/40 border-slate-700 text-slate-500'
             : isPendingReview
               ? 'bg-amber-950/20 border-amber-700/50'
-              : 'bg-slate-800/60 border-slate-600'
+              : isBlocked
+                ? 'bg-amber-950/15 border-amber-600/40'
+                : 'bg-slate-800/60 border-slate-600'
         }`}
       >
         <div className="flex items-start justify-between gap-2">
@@ -94,6 +104,7 @@ export default function TasksView({
               <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                 isCompleted ? 'bg-slate-700 text-slate-400' :
                 isPendingReview ? 'bg-amber-900/50 text-amber-300' :
+                isBlocked ? 'bg-red-900/50 text-red-300' :
                 'bg-slate-700/80 text-slate-400'
               }`}>
                 {statusLabel}
@@ -119,11 +130,59 @@ export default function TasksView({
                 </>
               )}
             </p>
+            {isBlocked && task.blockedReason && (
+              <p className="text-xs text-amber-200/90 mt-1">{ensureString(task.blockedReason, lang)}</p>
+            )}
+            {knowledgeAreas.length > 0 && (isAssigner || canViewAllTasks) && onUpdateTask && (
+              <div className="mt-2 flex flex-wrap items-center gap-1">
+                <span className="text-[10px] text-slate-500">{t('merit_attr_knowledge_areas') || 'Áreas'}:</span>
+                {knowledgeAreas.map((a) => {
+                  const sel = (task.knowledgeAreaIds || []).includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => {
+                        const next = sel
+                          ? (task.knowledgeAreaIds || []).filter((x) => x !== a.id)
+                          : [...(task.knowledgeAreaIds || []), a.id];
+                        onUpdateTask(task.id, { knowledgeAreaIds: next });
+                      }}
+                      className={`text-[10px] px-1.5 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-400 border border-slate-600'}`}
+                    >
+                      {a.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {isPendingReview && isAssignee && (
               <p className="text-xs text-amber-400/90 mt-1">{t('task_waiting_review')}</p>
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+            {isBlocked && isAssignee && onUnblockTask && (
+              <button
+                type="button"
+                onClick={() => onUnblockTask(task.id)}
+                className="text-xs bg-slate-600 hover:bg-emerald-600 text-slate-200 font-semibold px-3 py-1.5 rounded"
+              >
+                {t('task_unblock')}
+              </button>
+            )}
+            {!isBlocked && isAssignee && (task.status || 'pending') === 'pending' && onSetBlocked && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const getReason = onRequestBlockReason ?? (() => Promise.resolve(window.prompt(t('task_blocked_reason_ph') || 'Motivo del bloqueo (opcional)…') ?? null));
+                  const reason = await getReason(task.id);
+                  if (reason !== null) onSetBlocked(task.id, reason || '');
+                }}
+                className="text-xs text-amber-400 hover:bg-amber-900/30 px-2 py-1 rounded"
+              >
+                {t('task_mark_blocked')}
+              </button>
+            )}
             {canRequestReview && (
               <button
                 type="button"
@@ -258,6 +317,54 @@ export default function TasksView({
           </div>
         )}
       </div>
+
+      {/* Responsibility history — Tu historial de compromisos */}
+      {myTasks.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowHistory((s) => !s)}
+            className="text-sm text-slate-400 hover:text-slate-300"
+          >
+            <span className={`inline-block transition-transform ${showHistory ? '' : '-rotate-90'}`}>▼</span> {t('task_responsibility_history')} ({myTasks.length})
+          </button>
+          {showHistory && (
+            <div className="mt-2 space-y-2">
+              {[...myTasks]
+                .filter(matchesSearch)
+                .sort((a, b) => {
+                  const ta = a.createdAt?.toDate?.() || new Date(0);
+                  const tb = b.createdAt?.toDate?.() || new Date(0);
+                  return tb - ta;
+                })
+                .map((task) => {
+                  const status = task.status === 'completed' ? t('task_status_completed')
+                    : task.status === 'pending_review' ? t('task_status_pending_review')
+                    : task.blocked ? t('task_status_blocked')
+                    : t('task_status_assigned');
+                  const created = task.createdAt ? tsToDate(task.createdAt) : null;
+                  const completed = task.completedAt ? tsToDate(task.completedAt) : null;
+                  const reason = task.blocked && task.blockedReason ? ensureString(task.blockedReason, lang) : '';
+                  const meta = completed
+                    ? `${status} · ${created?.toLocaleDateString() || '—'} → ${completed.toLocaleDateString()}`
+                    : `${status}${created ? ` · ${created.toLocaleDateString()}` : ''}`;
+                  return (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between gap-2 px-3 py-1.5 bg-slate-800/50 rounded text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <span className="text-slate-200 truncate block">{ensureString(task.title, lang)}</span>
+                        <span className="text-slate-500 text-[11px]">{meta}</span>
+                        {reason && <span className="text-slate-500 text-[11px] block truncate" title={reason}>— {reason.length > 50 ? reason.slice(0, 50) + '…' : reason}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* My completed (optional toggle) */}
       {filteredMyCompleted.length > 0 && (

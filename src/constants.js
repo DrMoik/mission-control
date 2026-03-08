@@ -159,6 +159,51 @@ export const MERIT_ICONS = [
   '🏠','🏢','🏭','🗼','🗽','⛩️','🎑','🏞️','🗺️','🧭',
 ];
 
+/** Session class — semantic grouping (work, learning, belonging, recovery). */
+export const SESSION_CLASSES = [
+  { id: 'work', label: { en: 'Work', es: 'Trabajo' } },
+  { id: 'learning', label: { en: 'Learning', es: 'Aprendizaje' } },
+  { id: 'belonging', label: { en: 'Belonging', es: 'Pertenencia' } },
+  { id: 'recovery', label: { en: 'Recovery', es: 'Recuperación' } },
+];
+
+/** Session type — granular activity type. */
+export const SESSION_TYPES = [
+  { id: 'build', label: { en: 'Build', es: 'Construcción' } },
+  { id: 'homework', label: { en: 'Homework', es: 'Tarea' } },
+  { id: 'study', label: { en: 'Study', es: 'Estudio' } },
+  { id: 'debug', label: { en: 'Debug', es: 'Depuración' } },
+  { id: 'reading', label: { en: 'Reading', es: 'Lectura' } },
+  { id: 'social', label: { en: 'Social', es: 'Social' } },
+  { id: 'blowoff', label: { en: 'Blowoff', es: 'Desconexión' } },
+  { id: 'other', label: { en: 'Other', es: 'Otro' } },
+];
+
+/** Default merit families for path inference. Teams can override in Admin. */
+export const MERIT_FAMILIES_DEFAULT = [
+  { id: 'technical', name: 'Técnico', description: '' },
+  { id: 'leadership', name: 'Liderazgo', description: '' },
+  { id: 'collaboration', name: 'Colaboración', description: '' },
+  { id: 'innovation', name: 'Innovación', description: '' },
+  { id: 'learning', name: 'Aprendizaje', description: '' },
+  { id: 'reliability', name: 'Confiabilidad', description: '' },
+  { id: 'documentation', name: 'Documentación', description: '' },
+  { id: 'communication', name: 'Comunicación', description: '' },
+  { id: 'community', name: 'Comunidad', description: '' },
+];
+
+/** Default knowledge areas. Teams can override in Admin. Ensures Knowledge Map has sensible starters. */
+export const KNOWLEDGE_AREAS_DEFAULT = [
+  { id: 'ros', name: 'ROS' },
+  { id: 'control', name: 'Teoría de control' },
+  { id: 'python', name: 'Python' },
+  { id: 'cad', name: 'CAD / Diseño mecánico' },
+  { id: 'electronics', name: 'Electrónica' },
+  { id: 'vision', name: 'Visión por computadora' },
+  { id: 'documentation', name: 'Documentación técnica' },
+  { id: 'project_management', name: 'Gestión de proyectos' },
+];
+
 /** Task review grades (assigner rates completed work). Points configurable in Admin. */
 export const TASK_GRADES = ['ok', 'good', 'excellent', 'perfect'];
 

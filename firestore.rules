@@ -223,21 +223,34 @@ service cloud.firestore {
       allow create: if request.auth != null &&
         isRookieOrAbove(request.resource.data.teamId) &&
         request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      // Team admins may approve: only status, completedAt, approvedBy, approvedAt
+      allow update: if isTeamAdmin(resource.data.teamId) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt', 'approvedBy', 'approvedAt']);
+      allow delete: if false;
     }
 
+    // Tasks: support assigneeMembershipIds[] (multi-assignee) and legacy assigneeMembershipId
+    function isTaskAssignee(teamId) {
+      return resource.data.get('assigneeMembershipIds', []).hasAny([request.auth.uid + '_' + teamId]) ||
+             resource.data.get('assigneeMembershipId', '') == request.auth.uid + '_' + teamId;
+    }
+    function isTaskAssigner() {
+      return resource.data.get('assignedByMembershipId', '') != '' &&
+             exists(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)) &&
+             get(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)).data.userId == request.auth.uid;
+    }
     match /tasks/{taskId} {
       allow read: if isActiveMember(resource.data.teamId);
       allow create: if isLeaderOrAbove(request.resource.data.teamId);
       allow update: if isActiveMember(resource.data.teamId) && (
-        get(/databases/$(database)/documents/memberships/$(resource.data.assigneeMembershipId)).data.userId == request.auth.uid ||
-        get(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)).data.userId == request.auth.uid ||
-        isLeaderOrAbove(resource.data.teamId)
+        isLeaderOrAbove(resource.data.teamId) ||
+        isTaskAssignee(resource.data.teamId) ||
+        isTaskAssigner()
       );
       allow delete: if isActiveMember(resource.data.teamId) && (
-        get(/databases/$(database)/documents/memberships/$(resource.data.assigneeMembershipId)).data.userId == request.auth.uid ||
-        get(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)).data.userId == request.auth.uid ||
-        isTeamAdmin(resource.data.teamId)
+        isTeamAdmin(resource.data.teamId) ||
+        isTaskAssignee(resource.data.teamId) ||
+        isTaskAssigner()
       );
     }
 
@@ -246,6 +259,18 @@ service cloud.firestore {
       allow create: if isLeaderOrAbove(request.resource.data.teamId);
       allow update: if isLeaderOrAbove(resource.data.teamId);
       allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamSessions/{sessionId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+    match /teamSessions/{sessionId}/attendance/{attendanceId} {
+      allow read: if isActiveMember(get(/databases/$(database)/documents/teamSessions/$(sessionId)).data.teamId);
+      allow create, update: if isLeaderOrAbove(get(/databases/$(database)/documents/teamSessions/$(sessionId)).data.teamId);
+      allow delete: if false;
     }
 
     match /teamSwots/{swotId} {
