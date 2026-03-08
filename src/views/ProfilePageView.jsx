@@ -4,7 +4,7 @@
 // another member's profile from the members list.
 //
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT, SYSTEM_MERIT_DESCRIPTIONS } from '../constants.js';
@@ -108,6 +108,8 @@ export default function ProfilePageView({
   const [editingWeekly, setEditingWeekly] = useState(false);
   const [weeklyDraft,   setWeeklyDraft]   = useState({ advanced: '', failedAt: '', learned: '' });
   const [savingWeekly,  setSavingWeekly]  = useState(false);
+  const currentWeekOf = getSundayOfWeekLocal();
+  const [selectedWeekOf, setSelectedWeekOf] = useState(currentWeekOf);
   const [reawarding,    setReawarding]   = useState(false);
 
   const { getEvidenceForMember } = useKnowledgeMap({
@@ -142,9 +144,16 @@ export default function ProfilePageView({
   }, [detailMerit]);
 
   const cat     = categories.find((c) => c.id === membership.categoryId);
-  const weekOf  = getSundayOfWeekLocal(); // Sunday–Saturday week, local time (weeks start Sunday)
-  // Match by week: normalize stored weekOf to Sunday so any day matches current week Sunday
+  const weekOf  = selectedWeekOf || currentWeekOf; // Default to current week; user can browse previous
   const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToSunday(s.weekOf) === weekOf);
+  const availableWeeks = useMemo(() => {
+    const set = new Set([currentWeekOf]);
+    weeklyStatuses.forEach((s) => {
+      const norm = s.weekOf && normalizeWeekOfToSunday(s.weekOf);
+      if (norm) set.add(norm);
+    });
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }, [currentWeekOf, weeklyStatuses]);
   const totalPoints = meritEvents
     .filter((e) => e.type === 'award')
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
@@ -628,6 +637,39 @@ export default function ProfilePageView({
 
             <div className="min-w-0">
               <SectionHeading label={t('section_weekly')} />
+              {availableWeeks.length > 1 && (
+                <div className="flex items-center gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idx = availableWeeks.indexOf(weekOf);
+                      const nextIdx = Math.min(idx + 1, availableWeeks.length - 1);
+                      if (nextIdx !== idx) setSelectedWeekOf(availableWeeks[nextIdx]);
+                    }}
+                    disabled={availableWeeks.indexOf(weekOf) >= availableWeeks.length - 1}
+                    className="text-slate-400 hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-1"
+                    aria-label={t('week_prev') || 'Semana anterior'}
+                  >
+                    ←
+                  </button>
+                  <span className="text-[10px] text-slate-500 font-medium flex-1 text-center">
+                    {weekOf === currentWeekOf ? t('weekly_this_week') : `Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idx = availableWeeks.indexOf(weekOf);
+                      const nextIdx = Math.max(idx - 1, 0);
+                      if (nextIdx !== idx) setSelectedWeekOf(availableWeeks[nextIdx]);
+                    }}
+                    disabled={availableWeeks.indexOf(weekOf) <= 0}
+                    className="text-slate-400 hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-1"
+                    aria-label={t('week_next') || 'Semana siguiente'}
+                  >
+                    →
+                  </button>
+                </div>
+              )}
               {editingWeekly ? (
                 <div className="bg-slate-800 rounded-lg p-4 space-y-3">
                   {[['advanced', t('weekly_advanced'), t('weekly_ph_advanced')], ['failedAt', t('weekly_failed_at'), t('weekly_ph_failed')], ['learned', t('weekly_learned'), t('weekly_ph_learned')]].map(([key, label, ph]) => (
@@ -648,7 +690,10 @@ export default function ProfilePageView({
               ) : thisWeek ? (
                 <div className="bg-slate-800/60 rounded-lg p-4 space-y-3 border border-slate-700/30">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-slate-500">{`Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`}</p>
+                    {availableWeeks.length <= 1 && (
+                      <p className="text-[10px] text-slate-500">{weekOf === currentWeekOf ? t('weekly_this_week') : `Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`}</p>
+                    )}
+                    {availableWeeks.length > 1 && <span />}
                     {canEditThis && <button onClick={startWeeklyEdit} className="text-[11px] text-amber-400 underline">{t('edit')}</button>}
                   </div>
                   {[['advanced', t('weekly_advanced'), thisWeek.advanced], ['failedAt', t('weekly_failed_at'), thisWeek.failedAt], ['learned', t('weekly_learned'), thisWeek.learned]].map(([key, label, text]) => {
@@ -663,7 +708,11 @@ export default function ProfilePageView({
                 </div>
               ) : (
                 <div className="flex items-center justify-between bg-slate-800/40 rounded-lg px-3 py-2">
-                  <p className="text-xs text-slate-500 italic">{t('no_weekly_status')}</p>
+                  <p className="text-xs text-slate-500 italic">
+                    {availableWeeks.length > 1
+                      ? `${weekOf === currentWeekOf ? t('weekly_this_week') : `Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`} — ${t('no_weekly_status')}`
+                      : t('no_weekly_status')}
+                  </p>
                   {canEditThis && (
                     <button onClick={startWeeklyEdit} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1 rounded">{t('post_weekly_status')}</button>
                   )}

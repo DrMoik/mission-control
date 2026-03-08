@@ -104,13 +104,22 @@ export default function ProfileModal({
   const [editingWeekly, setEditingWeekly] = useState(false);
   const [weeklyDraft,   setWeeklyDraft]   = useState({ advanced: '', failedAt: '', learned: '' });
   const [savingWeekly,  setSavingWeekly]  = useState(false);
+  const currentWeekOf = getSundayOfWeekLocal();
+  const [selectedWeekOf, setSelectedWeekOf] = useState(currentWeekOf);
 
   if (!membership) return null;
 
   const cat     = categories.find((c) => c.id === membership.categoryId);
-  const weekOf  = getSundayOfWeekLocal(); // Sunday–Saturday week, local time (weeks start Sunday)
-  // Match by week: normalize stored weekOf to Sunday so any day matches current week Sunday
+  const weekOf  = selectedWeekOf || currentWeekOf;
   const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToSunday(s.weekOf) === weekOf);
+  const availableWeeks = useMemo(() => {
+    const set = new Set([currentWeekOf]);
+    weeklyStatuses.forEach((s) => {
+      const norm = s.weekOf && normalizeWeekOfToSunday(s.weekOf);
+      if (norm) set.add(norm);
+    });
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }, [currentWeekOf, weeklyStatuses]);
 
   // ── Edit form helpers ──────────────────────────────────────────────────────
 
@@ -662,6 +671,39 @@ export default function ProfileModal({
 
               {/* ── Section 5: Weekly Status ── */}
               <SectionHeading label={t('section_weekly')} />
+              {availableWeeks.length > 1 && (
+                <div className="flex items-center gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idx = availableWeeks.indexOf(weekOf);
+                      const nextIdx = Math.min(idx + 1, availableWeeks.length - 1);
+                      if (nextIdx !== idx) setSelectedWeekOf(availableWeeks[nextIdx]);
+                    }}
+                    disabled={availableWeeks.indexOf(weekOf) >= availableWeeks.length - 1}
+                    className="text-slate-400 hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-1"
+                    aria-label={t('week_prev') || 'Semana anterior'}
+                  >
+                    ←
+                  </button>
+                  <span className="text-[10px] text-slate-500 font-medium flex-1 text-center">
+                    {weekOf === currentWeekOf ? t('weekly_this_week') : `Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idx = availableWeeks.indexOf(weekOf);
+                      const nextIdx = Math.max(idx - 1, 0);
+                      if (nextIdx !== idx) setSelectedWeekOf(availableWeeks[nextIdx]);
+                    }}
+                    disabled={availableWeeks.indexOf(weekOf) <= 0}
+                    className="text-slate-400 hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-1"
+                    aria-label={t('week_next') || 'Semana siguiente'}
+                  >
+                    →
+                  </button>
+                </div>
+              )}
               {editingWeekly ? (
                 <div className="bg-slate-800 rounded-lg p-4 space-y-3">
                   {[
@@ -688,7 +730,10 @@ export default function ProfileModal({
               ) : thisWeek ? (
                 <div className="bg-slate-800/60 rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-slate-500">{`Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`}</p>
+                    {availableWeeks.length <= 1 && (
+                      <p className="text-[10px] text-slate-500">{weekOf === currentWeekOf ? t('weekly_this_week') : `Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`}</p>
+                    )}
+                    {availableWeeks.length > 1 && <span />}
                     {canEditThis && (
                       <button onClick={startWeeklyEdit} className="text-[11px] text-amber-400 underline">{t('edit')}</button>
                     )}
@@ -709,7 +754,11 @@ export default function ProfileModal({
                 </div>
               ) : (
                 <div className="flex items-center justify-between bg-slate-800/40 rounded-lg px-3 py-2">
-                  <p className="text-xs text-slate-500 italic">{t('no_weekly_status')}</p>
+                  <p className="text-xs text-slate-500 italic">
+                    {availableWeeks.length > 1
+                      ? `${weekOf === currentWeekOf ? t('weekly_this_week') : `Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`} — ${t('no_weekly_status')}`
+                      : t('no_weekly_status')}
+                  </p>
                   {canEditThis && (
                     <button onClick={startWeeklyEdit}
                       className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1 rounded transition-colors">

@@ -172,6 +172,8 @@ export const STRINGS = {
     my_overdue_tasks:      'Tareas vencidas',
     weekly_streak:         'Racha semanal',
     weekly_this_week:      'Esta semana',
+    week_prev:             'Semana anterior',
+    week_next:             'Semana siguiente',
     weekly_posted:         'Publicado',
     weekly_not_posted:     'Sin publicar',
     profile_completion:    'Perfil',
