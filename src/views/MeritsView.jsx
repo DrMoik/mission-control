@@ -90,6 +90,10 @@ export default function MeritsView({
   const [gridFilterOpenTipo,  setGridFilterOpenTipo]  = useState(false);
   const [gridFilterOpenCategoria, setGridFilterOpenCategoria] = useState(false);
   const [gridFilterOpenNivel, setGridFilterOpenNivel] = useState(false);
+  const [gridSortBy,   setGridSortBy]   = useState('name');
+  const [gridSortDir,  setGridSortDir]  = useState('asc');
+  const [auditSortBy,  setAuditSortBy]  = useState('date');
+  const [auditSortDir, setAuditSortDir] = useState('desc');
   const [awardFilterOpenTipo, setAwardFilterOpenTipo] = useState(false);
   const [awardFilterOpenCategoria, setAwardFilterOpenCategoria] = useState(false);
   const [awardFilterOpenNivel, setAwardFilterOpenNivel] = useState(false);
@@ -202,6 +206,72 @@ export default function MeritsView({
     }
     return list;
   }, [merits, gridSearch, gridScopeFilter, gridFamilyFilters, gridDomainFilters, gridTierFilter, lang, meritFamilies]);
+
+  const sortedGridMerits = useMemo(() => {
+    const arr = [...filteredGridMerits];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      switch (gridSortBy) {
+        case 'name':
+          cmp = (a.name || '').localeCompare(b.name || '');
+          break;
+        case 'points':
+          cmp = (a.points ?? 0) - (b.points ?? 0);
+          break;
+        case 'category':
+          cmp = (ensureString(categories.find((c) => c.id === a.categoryId)?.name) || '').localeCompare(ensureString(categories.find((c) => c.id === b.categoryId)?.name) || '');
+          break;
+        default:
+          break;
+      }
+      return gridSortDir === 'asc' ? cmp : -cmp;
+    });
+    return arr;
+  }, [filteredGridMerits, gridSortBy, gridSortDir, categories]);
+
+  const sortedAuditEvents = useMemo(() => {
+    const arr = [...meritEvents];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      const tsA = tsToDate(a.createdAt)?.getTime?.() ?? 0;
+      const tsB = tsToDate(b.createdAt)?.getTime?.() ?? 0;
+      switch (auditSortBy) {
+        case 'date':
+          cmp = tsA - tsB;
+          break;
+        case 'member':
+          cmp = (ensureString(memberships.find((m) => m.id === a.membershipId)?.displayName) || '').localeCompare(ensureString(memberships.find((m) => m.id === b.membershipId)?.displayName) || '');
+          break;
+        case 'merit':
+          cmp = (a.meritName || '').localeCompare(b.meritName || '');
+          break;
+        case 'points':
+          cmp = (a.points ?? 0) - (b.points ?? 0);
+          break;
+        default:
+          cmp = tsA - tsB;
+      }
+      return auditSortDir === 'asc' ? cmp : -cmp;
+    });
+    return arr;
+  }, [meritEvents, auditSortBy, auditSortDir, memberships]);
+
+  const toggleGridSort = (col) => {
+    setGridSortBy(col);
+    setGridSortDir((d) => (gridSortBy === col ? (d === 'asc' ? 'desc' : 'asc') : 'asc'));
+  };
+  const toggleAuditSort = (col) => {
+    setAuditSortBy(col);
+    setAuditSortDir((d) => (auditSortBy === col ? (d === 'asc' ? 'desc' : 'asc') : 'desc'));
+  };
+  const SortTh = ({ col, label, currentSortBy, currentDir, onToggle }) => (
+    <th className="px-3 py-2">
+      <button type="button" onClick={() => onToggle(col)} className="text-left hover:text-slate-200 transition-colors flex items-center gap-0.5">
+        {label}
+        {currentSortBy === col && <span className="text-[10px]">{currentDir === 'asc' ? '▲' : '▼'}</span>}
+      </button>
+    </th>
+  );
 
   const handleCreate = () => {
     if (!meritForm.name.trim())                             { alert(t('name') + ' required.');    return; }
@@ -774,6 +844,24 @@ export default function MeritsView({
               placeholder={t('merit_search_placeholder')}
               className="flex-1 min-w-[140px] px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px]"
             />
+            {filteredGridMerits.length > 1 && (
+              <select
+                value={`${gridSortBy}-${gridSortDir}`}
+                onChange={(e) => {
+                  const [col, dir] = e.target.value.split('-');
+                  setGridSortBy(col);
+                  setGridSortDir(dir);
+                }}
+                className="px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px] text-slate-300"
+              >
+                <option value="name-asc">{t('name')} ▲</option>
+                <option value="name-desc">{t('name')} ▼</option>
+                <option value="points-asc">{t('points')} ▲</option>
+                <option value="points-desc">{t('points')} ▼</option>
+                <option value="category-asc">{t('category')} ▲</option>
+                <option value="category-desc">{t('category')} ▼</option>
+              </select>
+            )}
           </div>
           {merits.length > 5 && (
             <div className="flex flex-wrap gap-2">
@@ -856,11 +944,11 @@ export default function MeritsView({
         </div>
         {merits.length === 0 ? (
           <div className="text-xs text-slate-500">{t('no_merits')}</div>
-        ) : filteredGridMerits.length === 0 ? (
+        ) : sortedGridMerits.length === 0 ? (
           <div className="text-xs text-slate-500">{t('no_merits_match')}</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {filteredGridMerits.map((m) => (
+            {sortedGridMerits.map((m) => (
               <div
                 key={m.id}
                 role="button"
@@ -1103,17 +1191,17 @@ export default function MeritsView({
           <span>{t('merit_audit_log')}</span>
           {isPlatformAdmin && <span className="text-amber-400">{t('platform_admin_editable')}</span>}
         </div>
-        {meritEvents.length === 0 ? (
+        {sortedAuditEvents.length === 0 ? (
           <div className="p-4 text-xs text-slate-500">{t('no_events_yet')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="text-left text-slate-400 border-b border-slate-700">
-                  <th className="px-3 py-2">{t('th_when')}</th>
-                  <th className="px-3 py-2">{t('th_member')}</th>
-                  <th className="px-3 py-2">{t('merit')}</th>
-                  <th className="px-3 py-2">{t('points')}</th>
+                  <SortTh col="date" label={t('th_when')} currentSortBy={auditSortBy} currentDir={auditSortDir} onToggle={toggleAuditSort} />
+                  <SortTh col="member" label={t('th_member')} currentSortBy={auditSortBy} currentDir={auditSortDir} onToggle={toggleAuditSort} />
+                  <SortTh col="merit" label={t('merit')} currentSortBy={auditSortBy} currentDir={auditSortDir} onToggle={toggleAuditSort} />
+                  <SortTh col="points" label={t('points')} currentSortBy={auditSortBy} currentDir={auditSortDir} onToggle={toggleAuditSort} />
                   <th className="px-3 py-2">{t('awarded_by')}</th>
                   <th className="px-3 py-2">{t('th_note')}</th>
                   <th className="px-3 py-2">{t('th_type')}</th>
@@ -1121,7 +1209,7 @@ export default function MeritsView({
                 </tr>
               </thead>
               <tbody>
-                {meritEvents.map((evt) => {
+                {sortedAuditEvents.map((evt) => {
                   const m       = memberships.find((mm) => mm.id === evt.membershipId);
                   const ts      = tsToDate(evt.createdAt);
                   const isEditing = editingEventId === evt.id;

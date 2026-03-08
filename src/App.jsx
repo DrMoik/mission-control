@@ -368,10 +368,11 @@ export default function App() {
     if (teamDict?.length) return teamDict;
     return SKILL_DICTIONARY_DEFAULT;
   }, [currentTeam?.skillDictionary]);
-  const knowledgeAreas = useMemo(
-    () => skillDictionary.filter((s) => s.type === 'technical').map((s) => ({ id: s.id, name: s.label })),
-    [skillDictionary],
-  );
+  const knowledgeAreas = useMemo(() => {
+    const teamAreas = currentTeam?.knowledgeAreas;
+    if (teamAreas?.length) return teamAreas;
+    return skillDictionary.filter((s) => s.type === 'technical').map((s) => ({ id: s.id, name: s.label }));
+  }, [currentTeam?.knowledgeAreas, skillDictionary]);
 
   const myTeams = useMemo(() => {
     const ids = new Set(userMemberships.map((m) => m.teamId));
@@ -2177,6 +2178,7 @@ export default function App() {
 
             {view === 'overview' && (
               <OverviewView
+                onViewProfile={handleViewProfile}
                 team={currentTeam}
                 teamMemberships={teamMemberships}
                 teamMeritEvents={teamMeritEvents}

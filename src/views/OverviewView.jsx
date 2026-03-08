@@ -98,7 +98,7 @@ function PointsHistogram({ distribution }) {
   );
 }
 
-export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamPosts = [], teamModules, teamCategories = [], canEdit, onSave, onNavigateFeed }) {
+export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamPosts = [], teamModules, teamCategories = [], canEdit, onSave, onNavigateFeed, onViewProfile }) {
   const [editing, setEditing] = useState(false);
   const [draft,   setDraft]   = useState(null);
   const [showPointsDetail, setShowPointsDetail] = useState(false);
@@ -417,11 +417,19 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                       const d = item.date ? new Date(item.date) : null;
                       const dateStr = d ? d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
                       if (item.type === 'merit') {
+                        const membership = teamMemberships?.find((m) => m.id === item.membershipId);
                         return (
                           <li key={`t-${i}`} className="text-slate-300 flex items-start gap-2">
                             <span className="text-emerald-400 shrink-0">🏆</span>
                             <span>
-                              <strong className="text-slate-200">{ensureString(item.memberName)}</strong> {t('inicio_merit_awarded')}{' '}
+                              {onViewProfile && membership ? (
+                                <button type="button" onClick={() => onViewProfile(membership)} className="font-semibold text-slate-200 hover:text-emerald-400 hover:underline text-left">
+                                  {ensureString(item.memberName)}
+                                </button>
+                              ) : (
+                                <strong className="text-slate-200">{ensureString(item.memberName)}</strong>
+                              )}{' '}
+                              {t('inicio_merit_awarded')}{' '}
                               <span className="text-emerald-400">+{item.points} pts</span> — {ensureString(item.meritName)}
                             </span>
                             <span className="text-slate-500 shrink-0 text-[10px]">{dateStr}</span>

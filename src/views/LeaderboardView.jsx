@@ -24,8 +24,10 @@ function getAssigneeIds(task) {
 export default function LeaderboardView({ leaderboard, memberships, weeklyStatuses = [], tasks = [], categories = [], onViewProfile }) {
   const [tab,  setTab] = useState('season');
   const [mode, setMode] = useState('points'); // 'points' | 'effort'
+  const [sortBy, setSortBy] = useState('score'); // 'score' | 'name' | 'category'
+  const [sortDir, setSortDir] = useState('desc'); // desc = high first (default for rankings)
 
-  const pointsRows = tab === 'season' ? leaderboard.season : leaderboard.allTime;
+  const pointsRowsRaw = (tab === 'season' ? leaderboard?.season : leaderboard?.allTime) ?? [];
 
   const effortRows = React.useMemo(() => {
     const weeklyByMember = {};
@@ -56,7 +58,41 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
       .sort((a, b) => b.effort - a.effort);
   }, [memberships, weeklyStatuses, tasks, categories]);
 
-  const rows = mode === 'effort' ? effortRows : pointsRows;
+  const sortedRows = React.useMemo(() => {
+    const arr = mode === 'effort' ? [...effortRows] : [...pointsRowsRaw];
+    if (sortBy === 'score') {
+      arr.sort((a, b) => {
+        const va = mode === 'effort' ? (a.effort ?? 0) : (a.points ?? 0);
+        const vb = mode === 'effort' ? (b.effort ?? 0) : (b.points ?? 0);
+        return sortDir === 'asc' ? va - vb : vb - va;
+      });
+    } else if (sortBy === 'name') {
+      arr.sort((a, b) => {
+        const cmp = (a.name || '').localeCompare(b.name || '');
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    } else if (sortBy === 'category') {
+      arr.sort((a, b) => {
+        const cmp = (a.categoryName || '').localeCompare(b.categoryName || '');
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
+    return arr;
+  }, [mode, pointsRowsRaw, effortRows, sortBy, sortDir]);
+
+  const rows = sortedRows;
+  const toggleSort = (col) => {
+    setSortBy(col);
+    setSortDir((d) => (sortBy === col ? (d === 'asc' ? 'desc' : 'asc') : (col === 'score' ? 'desc' : 'asc')));
+  };
+  const SortTh = ({ col, label, className = '' }) => (
+    <th className={className}>
+      <button type="button" onClick={() => toggleSort(col)} className="text-left hover:text-slate-200 transition-colors flex items-center gap-0.5">
+        {label}
+        {sortBy === col && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+      </button>
+    </th>
+  );
   const showEffortCols = mode === 'effort';
 
   return (
@@ -105,16 +141,17 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
             <thead>
               <tr className="text-left text-xs text-slate-400 border-b border-slate-700">
                 <th className="px-3 py-2 w-10">#</th>
-                <th className="px-3 py-2">{t('th_member')}</th>
+                <SortTh col="name" label={t('th_member')} className="px-3 py-2" />
                 <th className="px-3 py-2">{t('th_role')}</th>
-                <th className="px-3 py-2">{t('th_category')}</th>
+                <SortTh col="category" label={t('th_category')} className="px-3 py-2" />
                 {showEffortCols ? (
                   <>
                     <th className="px-3 py-2 text-right">{t('leaderboard_weekly_count')}</th>
                     <th className="px-3 py-2 text-right">{t('leaderboard_tasks_done')}</th>
+                    <SortTh col="score" label={t('leaderboard_effort') || 'Esfuerzo'} className="px-3 py-2 text-right" />
                   </>
                 ) : (
-                  <th className="px-3 py-2 text-right">{t('points')}</th>
+                  <SortTh col="score" label={t('points')} className="px-3 py-2 text-right" />
                 )}
               </tr>
             </thead>
@@ -142,7 +179,8 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
                   {showEffortCols ? (
                     <>
                       <td className="px-3 py-2 text-right font-mono text-slate-300">{row.weeklyCount ?? 0}</td>
-                      <td className="px-3 py-2 text-right font-mono font-bold text-emerald-400">{row.tasksDone ?? 0}</td>
+                      <td className="px-3 py-2 text-right font-mono text-slate-300">{row.tasksDone ?? 0}</td>
+                      <td className="px-3 py-2 text-right font-mono font-bold text-emerald-400">{row.effort ?? 0}</td>
                     </>
                   ) : (
                     <td className="px-3 py-2 text-right font-mono font-bold text-emerald-400">{row.points}</td>

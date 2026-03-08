@@ -72,7 +72,9 @@ export default function MembersView({
   const [search,        setSearch]        = useState('');
   const [roleFilter,    setRoleFilter]    = useState('');
   const [catFilter,     setCatFilter]     = useState('');
-  const [skillFilter,   setSkillFilter]   = useState('');   // collaboration skill search
+  const [skillFilter,   setSkillFilter]   = useState('');
+  const [sortBy,        setSortBy]        = useState('name');
+  const [sortDir,       setSortDir]       = useState('asc');   // collaboration skill search
   const [showGhostForm, setShowGhostForm] = useState(false);
   const [addStrikeMember, setAddStrikeMember] = useState(null); // { id, displayName }
   const [strikeEvidenceMember, setStrikeEvidenceMember] = useState(null); // member to show strike evidence
@@ -104,7 +106,7 @@ export default function MembersView({
   }, [active, knowledgeAreas, skillDictionary]);
 
   // Apply search + filter to active members
-  const filtered = active.filter((m) => {
+  const filteredRaw = active.filter((m) => {
     if (search     && !m.displayName?.toLowerCase().includes(search.toLowerCase())) return false;
     if (roleFilter && m.role !== roleFilter)                                         return false;
     if (catFilter  && m.categoryId !== catFilter)                                   return false;
@@ -127,6 +129,46 @@ export default function MembersView({
     }
     return true;
   });
+
+  const filtered = useMemo(() => {
+    const arr = [...filteredRaw];
+    const cmp = (a, b) => {
+      let va, vb;
+      switch (sortBy) {
+        case 'name':
+          va = (ensureString(a.displayName) || '').toLowerCase();
+          vb = (ensureString(b.displayName) || '').toLowerCase();
+          return va.localeCompare(vb);
+        case 'role':
+          va = ROLE_ORDER.indexOf(a.role);
+          vb = ROLE_ORDER.indexOf(b.role);
+          return (va < 0 ? 999 : va) - (vb < 0 ? 999 : vb);
+        case 'category':
+          va = ensureString(categories.find((c) => c.id === a.categoryId)?.name) || '';
+          vb = ensureString(categories.find((c) => c.id === b.categoryId)?.name) || '';
+          return va.localeCompare(vb);
+        case 'strikes':
+          va = a.strikes ?? 0;
+          vb = b.strikes ?? 0;
+          return va - vb;
+        default:
+          return 0;
+      }
+    };
+    arr.sort((a, b) => (sortDir === 'asc' ? cmp(a, b) : -cmp(a, b)));
+    return arr;
+  }, [filteredRaw, sortBy, sortDir, categories]);
+
+  const toggleSort = (col) => {
+    setSortBy(col);
+    setSortDir((d) => (sortBy === col ? (d === 'asc' ? 'desc' : 'asc') : 'asc'));
+  };
+  const SortHeader = ({ col, label }) => (
+    <button type="button" onClick={() => toggleSort(col)} className="text-left hover:text-slate-200 transition-colors flex items-center gap-0.5">
+      {label}
+      {sortBy === col && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+    </button>
+  );
 
   // For each member, detect whether they can help someone who is looking for a specific skill
   // (only shown when a skill filter is active)
@@ -323,10 +365,10 @@ export default function MembersView({
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="text-left text-slate-400 border-b border-slate-700">
-                <th className="px-3 py-2">{t('th_member')}</th>
-                <th className="px-3 py-2">{t('th_role')}</th>
-                <th className="px-3 py-2">{t('th_category')}</th>
-                <th className="px-3 py-2">{t('th_strikes')}</th>
+                <th className="px-3 py-2"><SortHeader col="name" label={t('th_member')} /></th>
+                <th className="px-3 py-2"><SortHeader col="role" label={t('th_role')} /></th>
+                <th className="px-3 py-2"><SortHeader col="category" label={t('th_category')} /></th>
+                <th className="px-3 py-2"><SortHeader col="strikes" label={t('th_strikes')} /></th>
                 {canEdit && <th className="px-3 py-2">{t('hr_complaints_count')}</th>}
               </tr>
             </thead>
