@@ -272,19 +272,11 @@ export default function App() {
   const [navCollapsed,   setNavCollapsed]   = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
   const [expandedDomain, setExpandedDomain] = useState(null);
-
-  const currentDomain = VIEW_TO_DOMAIN[view] || null;
-  useEffect(() => {
-    if (mobileNavOpen && currentDomain) setExpandedDomain(currentDomain);
-  }, [mobileNavOpen, currentDomain]);
-  useEffect(() => {
-    if (currentDomain) setExpandedDomain((prev) => (prev === currentDomain ? prev : currentDomain));
-  }, [currentDomain]);
   const [previewRole,    setPreviewRole]    = useState(null);   // admin "preview as role" simulation
   const [renamingTeamId, setRenamingTeamId] = useState(null);  // team picker inline rename
   const [renameValue,    setRenameValue]    = useState('');
 
-  // Routing — derive view and profileMember from URL when team is selected
+  // Routing — derive view and profileMember from URL (must be before currentDomain)
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = (location.pathname || '/').replace(/^\/+|\/+$/g, '') || 'inicio';
@@ -295,6 +287,14 @@ export default function App() {
   const profileMember = profileMemberId
     ? teamMemberships.find((m) => m.id === profileMemberId) || null
     : null;
+
+  const currentDomain = VIEW_TO_DOMAIN[view] || null;
+  useEffect(() => {
+    if (mobileNavOpen && currentDomain) setExpandedDomain(currentDomain);
+  }, [mobileNavOpen, currentDomain]);
+  useEffect(() => {
+    if (currentDomain) setExpandedDomain((prev) => (prev === currentDomain ? prev : currentDomain));
+  }, [currentDomain]);
 
   const validViews = new Set(['inicio', 'overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'tasks', 'sessions', 'mapa', 'hr', 'myprofile', 'profile', 'admin']);
   const isViewValid = validViews.has(view);
@@ -1604,6 +1604,7 @@ export default function App() {
   */
 
   const handleViewProfile = (membership) => {
+    if (!membership?.id) return;
     navigate(`/profile/${membership.id}`);
   };
 
@@ -1854,6 +1855,7 @@ export default function App() {
   // ── Main app shell (team selected) ─────────────────────────────────────────
 
   const visibleDomains = NAV_DOMAINS.filter((d) => !d.adminOnly || canEdit);
+  const navItems = visibleDomains.flatMap((d) => d.items);
 
   return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
@@ -2433,7 +2435,7 @@ export default function App() {
                 className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded flex-1 transition-colors
                   ${view === tab.id ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}>
                 <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                <span className="text-[9px] leading-none truncate">{tab.label}</span>
+                <span className="text-[9px] leading-none truncate">{t(tab.labelKey)}</span>
               </button>
             );
           })}

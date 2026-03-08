@@ -765,12 +765,12 @@ export default function ProfilePageView({
                   {tendencies.map((tend) => {
                     const isExpanded = contributionExpanded[tend.id];
                     const ev = tend.evidence;
-                    const meritEvts = (ev.meritEventIds || [])
+                    const meritEvts = (ev?.meritEventIds || [])
                       .map((id) => allMeritEvents.find((e) => e.id === id))
                       .filter(Boolean);
                     const meritObjs = meritEvts.map((e) => merits.find((m) => m.id === e.meritId) || { name: e.meritName, logo: e.meritLogo || '🏆', points: e.points || 0, id: e.meritId });
-                    const taskObjs = (ev.taskIds || []).map((id) => tasks.find((t) => t.id === id)).filter(Boolean);
-                    const moduleObjs = (ev.moduleIds || []).map((id) => modules.find((m) => m.id === id)).filter(Boolean);
+                    const taskObjs = (ev?.taskIds || []).map((id) => tasks.find((t) => t.id === id)).filter(Boolean);
+                    const moduleObjs = (ev?.moduleIds || []).map((id) => modules.find((m) => m.id === id)).filter(Boolean);
                     return (
                       <div key={tend.id} className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/30">
                         <div className="font-medium text-slate-200">{t(tend.labelKey)}</div>
