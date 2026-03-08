@@ -2441,7 +2441,6 @@ export default function App() {
                 onSaveCareers={handleSaveTeamCareers}
                 onSaveSemesters={handleSaveTeamSemesters}
                 onSavePersonalityTags={handleSaveTeamPersonalityTags}
-                onSaveCollabSuggestions={handleSaveTeamCollabSuggestions}
                 onSaveMeritTags={handleSaveTeamMeritTags}
                 onSaveMeritTiers={handleSaveTeamMeritTiers}
                 onSaveMeritFamilies={handleSaveTeamMeritFamilies}

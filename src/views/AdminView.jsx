@@ -1,6 +1,6 @@
 // ─── AdminView ────────────────────────────────────────────────────────────────
 // Admin-only tab. Organized into:
-//   • PERFIL — Carreras, Semestres, Etiquetas de personalidad (dict tag:texto mostrado), Sugerencias de colaboración
+//   • PERFIL — Carreras, Semestres, Etiquetas de personalidad, Diccionario de habilidades
 //   • LOGROS Y MÉRITOS — Tipos, dominios, niveles, Puntos de logros del sistema (Actualización semanal, Perfil completo, 50 actualizaciones) — retroactivo
 //   • TAREAS — Puntos por calificación (retroactivo)
 
@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { t } from '../strings.js';
 import {
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT,
-  COLLAB_TAG_SUGGESTIONS, MERIT_DOMAINS, MERIT_TIERS,
+  MERIT_DOMAINS, MERIT_TIERS,
   MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT, SKILL_DICTIONARY_DEFAULT, SKILL_TYPES,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, ADMIN_PLACEHOLDERS,
@@ -111,7 +111,6 @@ export default function AdminView({
   onSaveCareers,
   onSaveSemesters,
   onSavePersonalityTags,
-  onSaveCollabSuggestions,
   onSaveMeritTags,
   onSaveMeritTiers,
   onSaveMeritFamilies,
@@ -140,7 +139,6 @@ export default function AdminView({
     }
     return PERSONALITY_TAGS_DEFAULT;
   })();
-  const collabSuggestions = team.collabTagSuggestions?.length ? team.collabTagSuggestions : COLLAB_TAG_SUGGESTIONS;
   const domains = team.domains?.length ? team.domains : MERIT_DOMAINS;
   const meritTiers = team.meritTiers?.length ? team.meritTiers : MERIT_TIERS;
   const meritFamilies = team.meritFamilies?.length ? team.meritFamilies : MERIT_FAMILIES_DEFAULT;
@@ -182,7 +180,7 @@ export default function AdminView({
       {/* ═══════════ PERFIL — opciones del formulario de perfil de miembro ═══════════ */}
       <div className="border-l-4 border-emerald-600/50 pl-4">
         <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-1">{tFn('admin_section_profile') || 'Perfil'}</h3>
-        <p className="text-[11px] text-slate-500 mb-4">{tFn('admin_section_profile_hint') || 'Opciones del formulario de perfil: carreras, semestres, etiquetas de personalidad (diccionario tag:texto mostrado), sugerencias de colaboración.'}</p>
+        <p className="text-[11px] text-slate-500 mb-4">{tFn('admin_section_profile_hint') || 'Opciones del formulario de perfil: carreras, semestres, etiquetas de personalidad, diccionario de habilidades.'}</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <section className="bg-slate-800 rounded-xl p-4 space-y-3">
             <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_careers_majors') || 'Carreras / Majors'}</h4>
@@ -252,27 +250,67 @@ export default function AdminView({
             </button>
           </section>
 
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_collab_suggestions') || 'Sugerencias de colaboración'}</h4>
-            <textarea
-              key="collab"
-              defaultValue={(collabSuggestions || []).join(', ')}
-              id="admin-collab"
-              rows={3}
-              placeholder={ADMIN_PLACEHOLDERS.collab}
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
-            />
-            <button
-              onClick={() => {
-                const el = document.getElementById('admin-collab');
-                save('collab', onSaveCollabSuggestions, parseList(el?.value || ''));
-              }}
-              disabled={saving === 'collab'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
-            >
-              {saving === 'collab' ? tFn('saving') || 'Guardando…' : tFn('save')}
-            </button>
-          </section>
+          {onSaveSkillDictionary && (
+            <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
+              <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_skill_dictionary') || 'Diccionario de habilidades'}</h4>
+              <p className="text-[10px] text-slate-500">{tFn('admin_skill_dictionary_hint') || 'Una por línea: id: etiqueta: tipo. Tipos: technical, learning, support, collaboration. Para perfil de colaboración.'}</p>
+              <textarea
+                key="skillDictionary"
+                defaultValue={serializeSkillDictionary(skillDictionary)}
+                id="admin-skill-dictionary"
+                rows={8}
+                placeholder="ros: ROS: technical\nstress_management: Manejo del estrés: support"
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+              />
+              <button
+                onClick={() => {
+                  const el = document.getElementById('admin-skill-dictionary');
+                  save('skillDictionary', onSaveSkillDictionary, parseSkillDictionary(el?.value || ''));
+                }}
+                disabled={saving === 'skillDictionary'}
+                className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              >
+                {saving === 'skillDictionary' ? tFn('saving') || 'Guardando…' : tFn('save')}
+              </button>
+            </section>
+          )}
+
+          {skillProposals.filter((p) => (p.status || 'pending') === 'pending').length > 0 && (
+            <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
+              <h4 className="text-sm font-semibold text-amber-400">{tFn('admin_skill_proposals') || 'Propuestas de habilidades'}</h4>
+              <p className="text-[10px] text-slate-500">{tFn('admin_skill_proposals_hint') || 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas al diccionario.'}</p>
+              <div className="space-y-2">
+                {skillProposals.filter((p) => (p.status || 'pending') === 'pending').map((p) => {
+                  const proposer = memberships.find((m) => m.id === p.proposedByMembershipId);
+                  return (
+                    <div key={p.id} className="flex items-center justify-between gap-2 py-2 px-3 bg-slate-900/60 rounded border border-slate-600">
+                      <div>
+                        <span className="text-sm text-slate-200 font-medium">{p.label || p.proposedLabel}</span>
+                        {p.proposedType && <span className="text-[10px] text-slate-500 ml-1">({p.proposedType})</span>}
+                        {proposer && <span className="text-[10px] text-slate-500 ml-2">— {proposer.displayName || '?'}</span>}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => onApproveSkillProposal?.(p.id)}
+                          className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-2 py-1 rounded"
+                        >
+                          {tFn('approve') || 'Aprobar'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onRejectSkillProposal?.(p.id)}
+                          className="text-xs bg-slate-600 hover:bg-slate-500 text-slate-200 px-2 py-1 rounded"
+                        >
+                          {tFn('reject') || 'Rechazar'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </div>
       </div>
 
@@ -372,68 +410,6 @@ export default function AdminView({
               {saving === 'knowledgeAreas' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
-
-          {onSaveSkillDictionary && (
-            <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
-              <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_skill_dictionary') || 'Diccionario de habilidades'}</h4>
-              <p className="text-[10px] text-slate-500">{tFn('admin_skill_dictionary_hint') || 'Una por línea: id: etiqueta: tipo. Tipos: technical, learning, support, collaboration. Para perfil de colaboración.'}</p>
-              <textarea
-                key="skillDictionary"
-                defaultValue={serializeSkillDictionary(skillDictionary)}
-                id="admin-skill-dictionary"
-                rows={8}
-                placeholder="ros: ROS: technical\nstress_management: Manejo del estrés: support"
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
-              />
-              <button
-                onClick={() => {
-                  const el = document.getElementById('admin-skill-dictionary');
-                  save('skillDictionary', onSaveSkillDictionary, parseSkillDictionary(el?.value || ''));
-                }}
-                disabled={saving === 'skillDictionary'}
-                className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
-              >
-                {saving === 'skillDictionary' ? tFn('saving') || 'Guardando…' : tFn('save')}
-              </button>
-            </section>
-          )}
-
-          {skillProposals.filter((p) => (p.status || 'pending') === 'pending').length > 0 && (
-            <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
-              <h4 className="text-sm font-semibold text-amber-400">{tFn('admin_skill_proposals') || 'Propuestas de habilidades'}</h4>
-              <p className="text-[10px] text-slate-500">{tFn('admin_skill_proposals_hint') || 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas a Áreas de conocimiento.'}</p>
-              <div className="space-y-2">
-                {skillProposals.filter((p) => (p.status || 'pending') === 'pending').map((p) => {
-                  const proposer = memberships.find((m) => m.id === p.proposedByMembershipId);
-                  return (
-                    <div key={p.id} className="flex items-center justify-between gap-2 py-2 px-3 bg-slate-900/60 rounded border border-slate-600">
-                      <div>
-                        <span className="text-sm text-slate-200 font-medium">{p.label || p.proposedLabel}</span>
-                        {p.proposedType && <span className="text-[10px] text-slate-500 ml-1">({p.proposedType})</span>}
-                        {proposer && <span className="text-[10px] text-slate-500 ml-2">— {proposer.displayName || '?'}</span>}
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => onApproveSkillProposal?.(p.id)}
-                          className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-2 py-1 rounded"
-                        >
-                          {tFn('approve') || 'Aprobar'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onRejectSkillProposal?.(p.id)}
-                          className="text-xs bg-slate-600 hover:bg-slate-500 text-slate-200 px-2 py-1 rounded"
-                        >
-                          {tFn('reject') || 'Rechazar'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
 
           <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
             <div className="flex items-center gap-2">

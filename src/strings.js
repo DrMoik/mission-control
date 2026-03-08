@@ -72,7 +72,7 @@ export const STRINGS = {
     admin_knowledge_areas: 'Áreas de conocimiento',
     admin_knowledge_areas_hint: 'Una por línea: id: nombre. Para el mapa de conocimientos.',
     admin_skill_proposals: 'Propuestas de habilidades',
-    admin_skill_proposals_hint: 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas a Áreas de conocimiento.',
+    admin_skill_proposals_hint: 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas al diccionario.',
     approve: 'Aprobar',
     reject: 'Rechazar',
     admin_retroactive: 'Retroactivo',
