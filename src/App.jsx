@@ -1983,18 +1983,18 @@ export default function App() {
   const navItems = [
     { id: 'inicio',      label: t('nav_inicio'),      Icon: Home },
     ...(isAtLeastRookie ? [
-      { id: 'tasks',       label: t('nav_tasks'),       Icon: CheckSquare },
+      { id: 'overview',    label: t('nav_overview'),    Icon: LayoutDashboard },
       { id: 'feed',        label: t('nav_feed'),        Icon: Rss },
+      { id: 'categories',  label: t('nav_categories'),  Icon: Grid },
+      { id: 'members',     label: t('nav_members'),     Icon: Users },
       { id: 'merits',      label: t('nav_merits'),      Icon: Trophy },
       { id: 'leaderboard', label: t('nav_leaderboard'), Icon: Award },
-      { id: 'overview',    label: t('nav_overview'),    Icon: LayoutDashboard },
-      { id: 'members',     label: t('nav_members'),     Icon: Users },
-      { id: 'categories',  label: t('nav_categories'),  Icon: Grid },
       { id: 'calendar',    label: t('nav_calendar'),    Icon: Calendar },
-      { id: 'hr',          label: t('nav_hr'),          Icon: MessagesSquare },
       { id: 'tools',       label: t('nav_tools'),       Icon: Wrench },
       { id: 'academy',     label: t('nav_academy'),     Icon: GraduationCap },
       { id: 'funding',     label: t('nav_funding'),     Icon: Wallet },
+      { id: 'tasks',       label: t('nav_tasks'),       Icon: CheckSquare },
+      { id: 'hr',          label: t('nav_hr'),          Icon: MessagesSquare },
     ] : []),
     ...(currentMembership ? [{ id: 'myprofile', label: t('nav_myprofile'), Icon: User }] : []),
     ...(canEdit ? [{ id: 'admin', label: t('nav_admin'), Icon: Settings }] : []),
@@ -2150,7 +2150,6 @@ export default function App() {
                 teamTasks={teamTasks}
                 teamWeeklyStatuses={teamWeeklyStatuses}
                 teamMeritEvents={teamMeritEvents}
-                teamPosts={teamPosts}
                 teamMemberships={teamMemberships}
                 currentMembership={currentMembership}
                 tsToDate={tsToDate}
@@ -2166,10 +2165,12 @@ export default function App() {
                 team={currentTeam}
                 teamMemberships={teamMemberships}
                 teamMeritEvents={teamMeritEvents}
+                teamPosts={teamPosts}
                 teamModules={teamModules}
                 teamCategories={teamCategories}
                 canEdit={canEdit}
                 onSave={handleSaveOverview}
+                onNavigateFeed={() => navigate('/feed')}
               />
             )}
 
