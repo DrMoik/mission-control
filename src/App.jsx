@@ -51,8 +51,9 @@ import {
 } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getMondayOfWeekLocal, normalizeWeekOfToMonday } from './utils.js';
 
-// ── Shared UI atoms ───────────────────────────────────────────────────────────
-import { RoleBadge, GoogleIcon }   from './components/ui/index.js';
+// ── Shared UI atoms (direct imports to avoid barrel evaluation-order issues) ───
+import RoleBadge  from './components/ui/RoleBadge.jsx';
+import GoogleIcon from './components/ui/GoogleIcon.jsx';
 import {
   Home, LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, CalendarDays, Wrench,
   GraduationCap, Wallet, CheckSquare, User, Settings, MessagesSquare, Map, ChevronDown, ChevronRight,
