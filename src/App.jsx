@@ -28,7 +28,7 @@ import { useMeritHandlers } from './hooks/useMeritHandlers.js';
 import { useSessionHandlers } from './hooks/useSessionHandlers.js';
 import { t, lang, STRINGS }         from './strings.js';
 import {
-  EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS,
+  EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_DOMAINS,
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, PERSONALITY_TAGS_DEFAULT, MERIT_TIERS,
   MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
@@ -57,7 +57,6 @@ import {
 
 // ── Modals ────────────────────────────────────────────────────────────────────
 import JoinRequestModal            from './components/JoinRequestModal.jsx';
-import Breadcrumbs                 from './components/Breadcrumbs.jsx';
 
 // ── Full-page views (all lazy to avoid "Cannot access X before initialization" in bundle) ──
 const OverviewView     = lazy(() => import('./views/OverviewView.jsx'));
@@ -343,8 +342,7 @@ export default function App() {
 
   // Merit tags: team overrides, then platform config, then constants
   // Team tags; new teams get defaults from constants in handleCreateTeam
-  const meritAchievementTypes = (currentTeam?.achievementTypes?.length ? currentTeam.achievementTypes : MERIT_ACHIEVEMENT_TYPES);
-  const meritDomains         = (currentTeam?.domains?.length ? currentTeam.domains : MERIT_DOMAINS);
+  const meritDomains = (currentTeam?.domains?.length ? currentTeam.domains : MERIT_DOMAINS);
 
   // Dropdown options: team overrides (from Admin tab) or constants
   const careerOptions        = (currentTeam?.careerOptions?.length ? currentTeam.careerOptions : CAREER_OPTIONS);
@@ -513,8 +511,7 @@ export default function App() {
         name,
         createdAt: serverTimestamp(),
         overview: { tagline: '', about: '', history: '', objectives: '', kpis: [] },
-        achievementTypes: MERIT_ACHIEVEMENT_TYPES,
-        domains:          MERIT_DOMAINS,
+        domains: MERIT_DOMAINS,
       });
       // Seed default categories
       for (const catName of ['Aspirants', 'Mechanics', 'Software', 'Sciences']) {
@@ -581,11 +578,10 @@ export default function App() {
     if (selectedTeamId === teamId) setSelectedTeamId(null);
   };
 
-  const handleSaveTeamMeritTags = async (achievementTypes, domains) => {
+  const handleSaveTeamMeritTags = async (domains) => {
     if (!currentTeam || (!canEdit && !isPlatformAdmin)) return;
     await updateDoc(doc(db, 'teams', currentTeam.id), {
-      achievementTypes: Array.isArray(achievementTypes) ? achievementTypes.filter(Boolean) : [],
-      domains:          Array.isArray(domains)          ? domains.filter(Boolean)          : [],
+      domains: Array.isArray(domains) ? domains.filter(Boolean) : [],
     });
   };
 
@@ -2073,7 +2069,6 @@ export default function App() {
 
           {/* Main content area */}
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-900/50">
-            <Breadcrumbs view={view} profileMember={profileMember} onNavigate={goToView} lang={lang} />
             <Suspense fallback={<div className="py-12 text-center text-slate-400 text-sm">{t('loading')}</div>}>
             {view === 'inicio' && (
               <InicioView
@@ -2167,7 +2162,6 @@ export default function App() {
                 currentMembership={currentMembership}
                 memberRole={memberRole}
                 isPlatformAdmin={isPlatformAdmin}
-                achievementTypes={meritAchievementTypes}
                 domains={meritDomains}
                 meritTiers={meritTiers}
                 meritFamilies={meritFamilies}

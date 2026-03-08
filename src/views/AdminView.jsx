@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { t } from '../strings.js';
 import {
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT,
-  COLLAB_TAG_SUGGESTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS, MERIT_TIERS,
+  COLLAB_TAG_SUGGESTIONS, MERIT_DOMAINS, MERIT_TIERS,
   MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, ADMIN_PLACEHOLDERS,
@@ -116,7 +116,6 @@ export default function AdminView({
     return PERSONALITY_TAGS_DEFAULT;
   })();
   const collabSuggestions = team.collabTagSuggestions?.length ? team.collabTagSuggestions : COLLAB_TAG_SUGGESTIONS;
-  const achievementTypes = team.achievementTypes?.length ? team.achievementTypes : MERIT_ACHIEVEMENT_TYPES;
   const domains = team.domains?.length ? team.domains : MERIT_DOMAINS;
   const meritTiers = team.meritTiers?.length ? team.meritTiers : MERIT_TIERS;
   const meritFamilies = team.meritFamilies?.length ? team.meritFamilies : MERIT_FAMILIES_DEFAULT;
@@ -251,35 +250,11 @@ export default function AdminView({
         </div>
       </div>
 
-      {/* ═══════════ LOGROS Y MÉRITOS — tipos, dominios, niveles, puntos automáticos ═══════════ */}
+      {/* ═══════════ LOGROS Y MÉRITOS — dominios, niveles, familias, puntos automáticos ═══════════ */}
       <div className="border-l-4 border-amber-600/50 pl-4">
         <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-1">{tFn('admin_section_merits') || 'Logros y méritos'}</h3>
-        <p className="text-[11px] text-slate-500 mb-4">{tFn('admin_section_merits_hint') || 'Tipos de logro, dominios, niveles y puntos de logros automáticos (Actualización semanal, Perfil completo, 50 actualizaciones). Al guardar los puntos del sistema se aplican retroactivamente a todos los eventos existentes.'}</p>
+        <p className="text-[11px] text-slate-500 mb-4">{tFn('admin_section_merits_hint') || 'Dominios, niveles, familias de mérito y puntos de logros automáticos (Actualización semanal, Perfil completo, 50 actualizaciones). Al guardar los puntos del sistema se aplican retroactivamente a todos los eventos existentes.'}</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-emerald-400">{tFn('merit_attr_types') || 'Tipos de logro'}</h4>
-            <textarea
-              key="types"
-              defaultValue={(achievementTypes || []).join(', ')}
-              id="admin-types"
-              rows={2}
-              placeholder={ADMIN_PLACEHOLDERS.types}
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
-            />
-            <button
-              onClick={() => {
-                const el = document.getElementById('admin-types');
-                const arr = parseList(el?.value || '');
-                if (arr.length === 0) { alert(tFn('platform_config_min_one') || 'Se requiere al menos un valor.'); return; }
-                save('types', () => onSaveMeritTags(arr, domains), arr);
-              }}
-              disabled={saving === 'types'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
-            >
-              {saving === 'types' ? tFn('saving') || 'Guardando…' : tFn('save')}
-            </button>
-          </section>
-
           <section className="bg-slate-800 rounded-xl p-4 space-y-3">
             <h4 className="text-sm font-semibold text-emerald-400">{tFn('merit_attr_domains') || 'Áreas / dominios'}</h4>
             <textarea
@@ -295,7 +270,7 @@ export default function AdminView({
                 const el = document.getElementById('admin-domains');
                 const arr = parseList(el?.value || '');
                 if (arr.length === 0) { alert(tFn('platform_config_min_one') || 'Se requiere al menos un valor.'); return; }
-                save('domains', () => onSaveMeritTags(achievementTypes, arr), arr);
+                save('domains', () => onSaveMeritTags(arr), arr);
               }}
               disabled={saving === 'domains'}
               className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"

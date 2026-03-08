@@ -7,7 +7,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { t, lang } from '../strings.js';
-import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS, MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS, MERIT_TIERS } from '../constants.js';
+import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS, MERIT_DOMAINS, MERIT_TIERS } from '../constants.js';
 import { tsToDate, getL, fillL, ensureString } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import { BilingualField } from '../components/ui/index.js';
@@ -16,19 +16,18 @@ import { BilingualField } from '../components/ui/index.js';
  * @param {{
  *   merits, categories, memberships, meritEvents,
  *   canEdit, canCreateMerit, canAward, canEditMerit, currentMembership, memberRole, isPlatformAdmin,
- *   achievementTypes, domains,
+ *   domains,
  *   onCreateMerit, onUpdateMerit, onDeleteMerit, onRecoverMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile
  * }} props
  */
 export default function MeritsView({
   merits, categories, memberships, meritEvents, userProfile,
   canEdit, canCreateMerit, canAward, canEditMerit, currentMembership, memberRole, isPlatformAdmin,
-  achievementTypes: achievementTypesProp, domains: domainsProp,
+  domains: domainsProp,
   meritTiers: meritTiersProp,
   meritFamilies = [], knowledgeAreas = [],
   onCreateMerit, onUpdateMerit, onDeleteMerit, onRecoverMerit, onAwardMerit, onRevokeMerit, onEditMeritEvent, onViewProfile,
 }) {
-  const achievementTypes = achievementTypesProp ?? MERIT_ACHIEVEMENT_TYPES;
   const domains = domainsProp ?? MERIT_DOMAINS;
   const meritTiers = meritTiersProp ?? MERIT_TIERS;
 
@@ -36,7 +35,7 @@ export default function MeritsView({
   const leaderCategoryId = (memberRole === 'leader' && !isPlatformAdmin) ? currentMembership?.categoryId : null;
   const [meritForm, setMeritForm] = useState({
     name: '', points: 100, categoryId: leaderCategoryId || '', logo: '🏆', assignableBy: 'leader',
-    tags: [], achievementTypes: [], domains: [], tier: '', repeatable: true,
+    tags: [], domains: [], tier: '', repeatable: true,
     familyIds: [], knowledgeAreaIds: [],
     shortDescription: { en: '', es: '' },
     longDescription:  { en: '', es: '' },
@@ -63,7 +62,6 @@ export default function MeritsView({
       logo: m.logo || '🏆',
       assignableBy: m.assignableBy || 'leader',
       tags: m.tags || [],
-      achievementTypes: m.achievementTypes || [],
       domains: m.domains || [],
       tier: m.tier || '',
       repeatable: m.repeatable !== false,
@@ -81,12 +79,12 @@ export default function MeritsView({
   const [memberSearch,       setMemberSearch]       = useState('');
   const [meritSearch,        setMeritSearch]        = useState('');
   const [meritScopeFilter,   setMeritScopeFilter]   = useState(''); // '' = all, 'global' = global only, categoryId = that category
-  const [meritTypeFilters,   setMeritTypeFilters]   = useState([]); // multi-select
+  const [meritFamilyFilters, setMeritFamilyFilters]  = useState([]); // multi-select by familyIds
   const [meritDomainFilters, setMeritDomainFilters] = useState([]);
   const [meritTierFilter,    setMeritTierFilter]    = useState('');
   const [gridSearch,         setGridSearch]         = useState('');
   const [gridScopeFilter,    setGridScopeFilter]    = useState('');
-  const [gridTypeFilters,    setGridTypeFilters]    = useState([]);
+  const [gridFamilyFilters,  setGridFamilyFilters]  = useState([]);
   const [gridDomainFilters,   setGridDomainFilters]  = useState([]);
   const [gridTierFilter,     setGridTierFilter]     = useState('');
   const [gridFilterOpenTipo,  setGridFilterOpenTipo]  = useState(false);
@@ -154,17 +152,17 @@ export default function MeritsView({
         const name = (m.name || '').toLowerCase();
         const short = (getL(m.shortDescription, lang) || '').toLowerCase();
         const tags = (m.tags || []).join(' ').toLowerCase();
-        const types = (m.achievementTypes || []).join(' ').toLowerCase();
+        const familyNames = (m.familyIds || []).map((fid) => meritFamilies.find((f) => f.id === fid)?.name).filter(Boolean).join(' ').toLowerCase();
         const domains = (m.domains || []).join(' ').toLowerCase();
-        return name.includes(q) || short.includes(q) || tags.includes(q) || types.includes(q) || domains.includes(q);
+        return name.includes(q) || short.includes(q) || tags.includes(q) || familyNames.includes(q) || domains.includes(q);
       });
     }
     if (meritScopeFilter) {
       if (meritScopeFilter === 'global') list = list.filter((m) => !m.categoryId);
       else list = list.filter((m) => m.categoryId === meritScopeFilter);
     }
-    if (meritTypeFilters.length > 0) {
-      list = list.filter((m) => (m.achievementTypes || []).some((t) => meritTypeFilters.includes(t)));
+    if (meritFamilyFilters.length > 0) {
+      list = list.filter((m) => (m.familyIds || []).some((fid) => meritFamilyFilters.includes(fid)));
     }
     if (meritDomainFilters.length > 0) {
       list = list.filter((m) => (m.domains || []).some((d) => meritDomainFilters.includes(d)));
@@ -173,7 +171,7 @@ export default function MeritsView({
       list = list.filter((m) => (m.tier || '') === meritTierFilter);
     }
     return list;
-  }, [assignableMerits, meritSearch, meritScopeFilter, meritTypeFilters, meritDomainFilters, meritTierFilter, lang]);
+  }, [assignableMerits, meritSearch, meritScopeFilter, meritFamilyFilters, meritDomainFilters, meritTierFilter, lang, meritFamilies]);
 
   // Filtered merits for definitions grid
   const filteredGridMerits = useMemo(() => {
@@ -184,17 +182,17 @@ export default function MeritsView({
         const name = (m.name || '').toLowerCase();
         const short = (getL(m.shortDescription, lang) || '').toLowerCase();
         const tags = (m.tags || []).join(' ').toLowerCase();
-        const types = (m.achievementTypes || []).join(' ').toLowerCase();
+        const familyNames = (m.familyIds || []).map((fid) => meritFamilies.find((f) => f.id === fid)?.name).filter(Boolean).join(' ').toLowerCase();
         const domains = (m.domains || []).join(' ').toLowerCase();
-        return name.includes(q) || short.includes(q) || tags.includes(q) || types.includes(q) || domains.includes(q);
+        return name.includes(q) || short.includes(q) || tags.includes(q) || familyNames.includes(q) || domains.includes(q);
       });
     }
     if (gridScopeFilter) {
       if (gridScopeFilter === 'global') list = list.filter((m) => !m.categoryId);
       else list = list.filter((m) => m.categoryId === gridScopeFilter);
     }
-    if (gridTypeFilters.length > 0) {
-      list = list.filter((m) => (m.achievementTypes || []).some((t) => gridTypeFilters.includes(t)));
+    if (gridFamilyFilters.length > 0) {
+      list = list.filter((m) => (m.familyIds || []).some((fid) => gridFamilyFilters.includes(fid)));
     }
     if (gridDomainFilters.length > 0) {
       list = list.filter((m) => (m.domains || []).some((d) => gridDomainFilters.includes(d)));
@@ -203,7 +201,7 @@ export default function MeritsView({
       list = list.filter((m) => (m.tier || '') === gridTierFilter);
     }
     return list;
-  }, [merits, gridSearch, gridScopeFilter, gridTypeFilters, gridDomainFilters, gridTierFilter, lang]);
+  }, [merits, gridSearch, gridScopeFilter, gridFamilyFilters, gridDomainFilters, gridTierFilter, lang, meritFamilies]);
 
   const handleCreate = () => {
     if (!meritForm.name.trim())                             { alert(t('name') + ' required.');    return; }
@@ -215,7 +213,7 @@ export default function MeritsView({
       fillL(meritForm.longDescription),
       meritForm.assignableBy,
       meritForm.tags || [],
-      meritForm.achievementTypes || [],
+      [], // achievementTypes deprecated; use familyIds
       meritForm.domains || [],
       meritForm.tier || null,
       meritForm.repeatable !== false,
@@ -224,7 +222,7 @@ export default function MeritsView({
     );
     setMeritForm({
       name: '', points: 100, categoryId: leaderCategoryId || '', logo: '🏆', assignableBy: 'leader',
-      tags: [], achievementTypes: [], domains: [], tier: '', repeatable: true,
+      tags: [], domains: [], tier: '', repeatable: true,
       familyIds: [], knowledgeAreaIds: [],
       shortDescription: { en: '', es: '' },
       longDescription:  { en: '', es: '' },
@@ -417,22 +415,7 @@ export default function MeritsView({
 
           {/* Attributes for search/filter (500+ logros) */}
           <div className="space-y-2">
-            <label className="text-[11px] text-slate-500 block">{t('merit_attr_types')}</label>
-            <div className="flex flex-wrap gap-1">
-              {achievementTypes.map((type) => {
-                const sel = (meritForm.achievementTypes || []).includes(type);
-                return (
-                  <button key={type} type="button"
-                    onClick={() => setMeritForm((f) => ({
-                      ...f, achievementTypes: sel ? (f.achievementTypes || []).filter((t) => t !== type) : [...(f.achievementTypes || []), type],
-                    }))}
-                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
-                    {type}
-                  </button>
-                );
-              })}
-            </div>
-            <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_domains')}</label>
+            <label className="text-[11px] text-slate-500 block">{t('merit_attr_domains')}</label>
             <div className="flex flex-wrap gap-1">
               {domains.map((d) => {
                 const sel = (meritForm.domains || []).includes(d);
@@ -664,20 +647,7 @@ export default function MeritsView({
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] text-slate-500 block">{t('merit_attr_types')}</label>
-                <div className="flex flex-wrap gap-1">
-                  {achievementTypes.map((type) => {
-                    const sel = (editForm.achievementTypes || []).includes(type);
-                    return (
-                      <button key={type} type="button"
-                        onClick={() => setEditForm((f) => ({
-                          ...f, achievementTypes: sel ? (f.achievementTypes || []).filter((t) => t !== type) : [...(f.achievementTypes || []), type],
-                        }))}
-                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{type}</button>
-                    );
-                  })}
-                </div>
-                <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_domains')}</label>
+                <label className="text-[11px] text-slate-500 block">{t('merit_attr_domains')}</label>
                 <div className="flex flex-wrap gap-1">
                   {domains.map((d) => {
                     const sel = (editForm.domains || []).includes(d);
@@ -773,7 +743,6 @@ export default function MeritsView({
                     logo: editForm.logo || '🏆',
                     assignableBy: editForm.assignableBy || 'leader',
                     tags: editForm.tags || [],
-                    achievementTypes: editForm.achievementTypes || [],
                     domains: editForm.domains || [],
                     tier: editForm.tier || null,
                     repeatable: editForm.repeatable !== false,
@@ -808,25 +777,27 @@ export default function MeritsView({
           </div>
           {merits.length > 5 && (
             <div className="flex flex-wrap gap-2">
+              {meritFamilies.length > 0 && (
               <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 w-full max-w-xs">
                 <button type="button" onClick={() => setGridFilterOpenTipo((v) => !v)}
                   className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
-                  {t('merit_filter_type')} {gridTypeFilters.length > 0 && `(${gridTypeFilters.length})`}
+                  {t('merit_attr_families') || 'Familia'} {gridFamilyFilters.length > 0 && `(${gridFamilyFilters.length})`}
                   <span className={`inline-block text-slate-500 transition-transform ${gridFilterOpenTipo ? '' : '-rotate-90'}`}>▼</span>
                 </button>
                 {gridFilterOpenTipo && (
                   <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">
-                    {achievementTypes.map((type) => {
-                      const sel = gridTypeFilters.includes(type);
+                    {meritFamilies.map((f) => {
+                      const sel = gridFamilyFilters.includes(f.id);
                       return (
-                        <button key={type} type="button"
-                          onClick={() => setGridTypeFilters(sel ? gridTypeFilters.filter((t) => t !== type) : [...gridTypeFilters, type])}
-                          className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{type}</button>
+                        <button key={f.id} type="button"
+                          onClick={() => setGridFamilyFilters(sel ? gridFamilyFilters.filter((x) => x !== f.id) : [...gridFamilyFilters, f.id])}
+                          className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{f.name}</button>
                       );
                     })}
                   </div>
                 )}
               </div>
+              )}
               <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 w-full max-w-xs">
                 <button type="button" onClick={() => setGridFilterOpenCategoria((v) => !v)}
                   className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
@@ -910,7 +881,7 @@ export default function MeritsView({
                   <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className="font-mono text-emerald-400 font-bold">{m.points} {t('pts_label')}</span>
                     {m.categoryId ? <span className="truncate">· {ensureString(categories.find((c) => c.id === m.categoryId)?.name)}</span> : <span>· {t('global_category')}</span>}
-                    {(m.achievementTypes || []).length > 0 && <span>· {(m.achievementTypes || []).join(', ')}</span>}
+                    {(m.familyIds || []).length > 0 && <span>· {(m.familyIds || []).map((fid) => meritFamilies.find((f) => f.id === fid)?.name).filter(Boolean).join(', ') || '—'}</span>}
                     {m.tier && <span>· {t('merit_tier_' + m.tier)}</span>}
                   </div>
                   {getL(m.shortDescription, lang) && (
@@ -1019,25 +990,27 @@ export default function MeritsView({
                 className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs mb-2"
               />
               <div className="flex flex-wrap gap-2 mb-2">
+                {meritFamilies.length > 0 && (
                 <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 max-w-xs">
                   <button type="button" onClick={() => setAwardFilterOpenTipo((v) => !v)}
                     className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
-                    {t('merit_filter_type')} {meritTypeFilters.length > 0 && `(${meritTypeFilters.length})`}
+                    {t('merit_attr_families') || 'Familia'} {meritFamilyFilters.length > 0 && `(${meritFamilyFilters.length})`}
                     <span className={`inline-block text-slate-500 transition-transform ${awardFilterOpenTipo ? '' : '-rotate-90'}`}>▼</span>
                   </button>
                   {awardFilterOpenTipo && (
                     <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">
-                      {achievementTypes.map((type) => {
-                        const sel = meritTypeFilters.includes(type);
+                      {meritFamilies.map((f) => {
+                        const sel = meritFamilyFilters.includes(f.id);
                         return (
-                          <button key={type} type="button"
-                            onClick={() => setMeritTypeFilters(sel ? meritTypeFilters.filter((t) => t !== type) : [...meritTypeFilters, type])}
-                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{type}</button>
+                          <button key={f.id} type="button"
+                            onClick={() => setMeritFamilyFilters(sel ? meritFamilyFilters.filter((x) => x !== f.id) : [...meritFamilyFilters, f.id])}
+                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{f.name}</button>
                         );
                       })}
                     </div>
                   )}
                 </div>
+                )}
                 <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 max-w-xs">
                   <button type="button" onClick={() => setAwardFilterOpenCategoria((v) => !v)}
                     className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
@@ -1110,7 +1083,7 @@ export default function MeritsView({
                           <span className="text-[10px] text-slate-500">
                             {m.points} {t('pts_label')}
                             {m.categoryId ? ` · ${ensureString(categories.find((c) => c.id === m.categoryId)?.name)}` : ` · ${t('global_category')}`}
-                            {(m.achievementTypes || []).length > 0 && ` · ${(m.achievementTypes || []).join(', ')}`}
+                            {(m.familyIds || []).length > 0 && ` · ${(m.familyIds || []).map((fid) => meritFamilies.find((f) => f.id === fid)?.name).filter(Boolean).join(', ') || '—'}`}
                             {m.tier && ` · ${t('merit_tier_' + m.tier)}`}
                           </span>
                         </div>

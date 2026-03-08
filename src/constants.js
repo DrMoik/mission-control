@@ -52,7 +52,7 @@ export const MERIT_TAG_SUGGESTIONS = [
   'comunicación', 'documentación', 'presentación',
 ];
 
-/** Achievement type — for filtering 500+ logros. Leaders award only in their category. Defaults in Spanish. */
+/** @deprecated Use meritFamilies / familyIds instead. Kept for PlatformConfigSection (legacy). */
 export const MERIT_ACHIEVEMENT_TYPES = [
   'técnico', 'liderazgo', 'colaboración', 'innovación', 'creatividad', 'hito',
   'investigación', 'comunicación', 'documentación', 'presentación', 'otro',
