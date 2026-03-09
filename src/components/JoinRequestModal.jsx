@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { t, lang } from '../strings.js';
 import { getL, ensureString } from '../utils.js';
+import ModalOverlay from './ModalOverlay.jsx';
 
 /**
  * @param {{
@@ -22,8 +23,8 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
   const canSubmit = true;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-      <div className="bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+    <ModalOverlay onClickBackdrop={onCancel}>
+      <div className="bg-surface-raised rounded-2xl w-full max-w-md shadow-surface-xl overflow-hidden border border-slate-700/40">
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-900 to-slate-800 px-6 py-5">
           <h2 className="text-white font-bold text-lg">{t('join_title')}</h2>
@@ -99,6 +100,6 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
           </div>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

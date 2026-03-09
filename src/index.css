@@ -1,12 +1,69 @@
+/* ─── Design system: premium SaaS tokens ───────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --bg-base: #0f172a;   /* slate-900 */
-    --accent: #10b981;   /* emerald-500 */
-    --accent-muted: rgba(16, 185, 129, 0.15);
+    /* Font */
+    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Surfaces — layered dark theme */
+    --surface-base: #0c1222;
+    --surface-raised: #131b2e;
+    --surface-overlay: #1a2438;
+    --surface-sunken: #080d18;
+
+    /* Primary accent — refined emerald */
+    --primary: #0d9488;
+    --primary-hover: #14b8a6;
+    --primary-muted: rgba(13, 148, 136, 0.15);
+    --primary-subtle: rgba(13, 148, 136, 0.08);
+
+    /* Content hierarchy */
+    --content-primary: #f1f5f9;
+    --content-secondary: #94a3b8;
+    --content-tertiary: #64748b;
+    --content-inverse: #0f172a;
+
+    /* Semantic colors */
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+
+    /* Border */
+    --border-subtle: rgba(148, 163, 184, 0.12);
+    --border-default: rgba(148, 163, 184, 0.2);
+
+    /* Transitions */
+    --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+
+    /* Layout */
+    --page-padding-x: 1.5rem;
+    --page-padding-y: 1.5rem;
+    --section-gap: 2rem;
+    --content-max: 72rem;
+    --content-narrow: 42rem;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --page-padding-x: 2rem;
+      --page-padding-y: 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --page-padding-x: 2.5rem;
+      --page-padding-y: 2.5rem;
+    }
   }
 
   html {
@@ -16,13 +73,162 @@
   body {
     margin: 0;
     min-height: 100vh;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: var(--font-sans);
+    font-feature-settings: 'rlig' 1, 'calt' 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: var(--surface-base);
+    color: var(--content-primary);
   }
 
-  /* Subtle focus ring for accessibility */
+  /* Focus ring — consistent, accessible */
   *:focus-visible {
-    @apply outline-none ring-2 ring-emerald-500/60 ring-offset-2 ring-offset-slate-900;
+    outline: none;
+    box-shadow: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--primary);
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: var(--primary-subtle);
+    color: var(--content-primary);
+  }
+}
+
+@layer components {
+  /* Utility classes using design tokens */
+  .surface-raised {
+    background-color: var(--surface-raised);
+  }
+
+  .surface-overlay {
+    background-color: var(--surface-overlay);
+  }
+
+  .text-content-secondary {
+    color: var(--content-secondary);
+  }
+
+  .text-content-tertiary {
+    color: var(--content-tertiary);
+  }
+
+  .border-subtle {
+    border-color: var(--border-subtle);
+  }
+
+  .transition-premium {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-out);
+  }
+
+  /* ─── Layout primitives ──────────────────────────────────────────────────── */
+
+  .page-container {
+    width: 100%;
+    max-width: var(--content-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--page-padding-x);
+    padding-right: var(--page-padding-x);
+    padding-top: var(--page-padding-y);
+    padding-bottom: var(--page-padding-y);
+  }
+
+  .section-gap {
+    gap: var(--section-gap);
+  }
+
+  .section-spacing > * + * {
+    margin-top: var(--section-gap);
+  }
+
+  /* ─── Motion & interaction ───────────────────────────────────────────────── */
+
+  @keyframes modal-overlay-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes modal-panel-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes dropdown-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .modal-overlay {
+    animation: modal-overlay-in 0.2s var(--ease-out) forwards;
+  }
+
+  .modal-panel {
+    animation: modal-panel-in 0.2s var(--ease-out) forwards;
+  }
+
+  .dropdown-in {
+    animation: dropdown-in 0.15s var(--ease-out) forwards;
+  }
+
+  .animate-spin-slow {
+    animation: spin 0.8s linear infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 1.5s ease-in-out infinite;
+  }
+
+  /* ─── Shell: accent bar & header ─────────────────────────────────────────── */
+  .shell-accent-bar {
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-hover) 100%);
+  }
+
+  .shell-header {
+    background: var(--surface-overlay);
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .shell-sidebar {
+    background: var(--surface-overlay);
+    border-right: 1px solid var(--border-subtle);
+  }
+
+  .shell-nav-active {
+    background: var(--primary) !important;
+    color: var(--content-inverse) !important;
+  }
+
+  .shell-nav-hover:hover {
+    background: var(--primary-subtle);
+    color: var(--content-primary);
+  }
+
+  .shell-content {
+    background: linear-gradient(180deg, var(--surface-base) 0%, var(--surface-sunken) 100%);
   }
 }

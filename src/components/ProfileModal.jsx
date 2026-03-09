@@ -13,10 +13,13 @@
 // Collaboration: SkillPicker (taxonomy) + legacy tags (no estandarizado).
 
 import React, { useState, useMemo, useRef } from 'react';
+import { X, Cake } from 'lucide-react';
 import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongField } from './ui/index.js';
 import ImageCropModal           from './ImageCropModal.jsx';
+import ModalOverlay             from './ModalOverlay.jsx';
+import SafeProfileImage         from './ui/SafeProfileImage.jsx';
 import { getL, toL, fillL, ensureString, getSundayOfWeekLocal, normalizeWeekOfToSunday, formatBirthdateDisplay, isBlockedImageHost } from '../utils.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -235,28 +238,42 @@ export default function ProfileModal({
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
+    <ModalOverlay onClickBackdrop={onClose}>
       <div
-        className="bg-slate-900 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl max-h-[92vh] overflow-y-auto"
+        className="bg-slate-900 rounded-xl w-full max-w-lg overflow-hidden shadow-surface-xl max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Cover photo + avatar — z-10 so they render above content */}
         <div className="relative z-10 shrink-0">
           <div className="h-48 bg-gradient-to-r from-emerald-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-t-xl">
             {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) && (
-              <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
-                className="w-full h-full object-cover" alt="" />
+              <SafeProfileImage
+                src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
+                fallback={<div className="w-full h-full bg-gradient-to-br from-emerald-900/60 to-slate-800" />}
+                className="w-full h-full object-cover"
+                alt=""
+              />
             )}
             <button onClick={onClose}
-              className="absolute top-3 right-3 z-30 text-white/80 hover:text-white w-7 h-7 bg-black/50 rounded-full flex items-center justify-center text-sm">
-              ✕
+              className="absolute top-3 right-3 z-30 text-white/80 hover:text-white w-7 h-7 bg-black/50 rounded-full flex items-center justify-center"
+              title={t('close') || 'Cerrar'}
+              aria-label={t('close') || 'Cerrar'}>
+              <X className="w-4 h-4" strokeWidth={2} />
             </button>
           </div>
           {/* Avatar — z-20 so it renders above content section */}
           <div className="absolute -bottom-12 left-5 z-20">
             {(editing ? draft.photoURL : membership.photoURL) ? (
-              <img src={editing ? draft.photoURL : membership.photoURL}
-                className="w-36 h-36 rounded-full border-4 border-slate-900 object-cover object-[center_top]" alt="" />
+              <SafeProfileImage
+                src={editing ? draft.photoURL : membership.photoURL}
+                fallback={
+                  <div className="w-36 h-36 rounded-full border-4 border-slate-900 bg-slate-600 flex items-center justify-center text-3xl font-bold">
+                    {(membership.displayName || '?')[0].toUpperCase()}
+                  </div>
+                }
+                className="w-36 h-36 rounded-full border-4 border-slate-900 object-cover object-[center_top]"
+                alt=""
+              />
             ) : (
               <div className="w-36 h-36 rounded-full border-4 border-slate-900 bg-slate-600 flex items-center justify-center text-3xl font-bold">
                 {(membership.displayName || '?')[0].toUpperCase()}
@@ -298,7 +315,12 @@ export default function ProfileModal({
                 <label className="text-[11px] text-slate-500 block mb-0.5">{t('profile_photo_url')}</label>
                 <div className="flex gap-2 items-center flex-wrap">
                   {draft.photoURL ? (
-                    <img src={draft.photoURL} className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-600" alt="" />
+                    <SafeProfileImage
+                      src={draft.photoURL}
+                      fallback={<div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>}
+                      className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-600"
+                      alt=""
+                    />
                   ) : (
                     <div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>
                   )}
@@ -328,7 +350,12 @@ export default function ProfileModal({
                 <label className="text-[11px] text-slate-500 block mb-0.5">{t('cover_photo_url')}</label>
                 <div className="flex gap-2 items-center flex-wrap">
                   {draft.coverPhotoURL ? (
-                    <img src={draft.coverPhotoURL} className="w-14 h-9 rounded object-cover shrink-0 border border-slate-600" alt="" />
+                    <SafeProfileImage
+                      src={draft.coverPhotoURL}
+                      fallback={<div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>}
+                      className="w-14 h-9 rounded object-cover shrink-0 border border-slate-600"
+                      alt=""
+                    />
                   ) : (
                     <div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>
                   )}
@@ -506,7 +533,10 @@ export default function ProfileModal({
                   {(membership.birthdate || membership.university || membership.career || membership.semester || membership.email) && (
                     <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
                       {membership.birthdate && (
-                        <span>🎂 {formatBirthdateDisplay(membership.birthdate)}</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Cake className="w-3.5 h-3.5 text-slate-500 shrink-0" strokeWidth={2} />
+                          {formatBirthdateDisplay(membership.birthdate)}
+                        </span>
                       )}
                       {membership.university && <span>{membership.university}</span>}
                       {membership.career     && <span>{membership.career}</span>}
@@ -827,6 +857,6 @@ export default function ProfileModal({
           onApply={(url) => { set('coverPhotoURL', url); setCropTarget(null); }}
           onCancel={() => setCropTarget(null)} />
       )}
-    </div>
+    </ModalOverlay>
   );
 }

@@ -123,7 +123,7 @@ export default function TagInput({ label, value = [], onChange, placeholder = 'A
         />
       </div>
       {showDropdown && filteredSuggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-0.5 z-20 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-40 overflow-y-auto py-1">
+        <div className="dropdown-in absolute top-full left-0 right-0 mt-0.5 z-20 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-40 overflow-y-auto py-1">
           {filteredSuggestions.map((s, i) => (
             <button
               key={s}

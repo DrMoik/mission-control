@@ -4,6 +4,7 @@
 // Edit permission is resolved per-meeting via resolveCanEdit().
 
 import React, { useState }       from 'react';
+import { X } from 'lucide-react';
 import { t, lang } from '../../strings.js';
 import { BilingualField }        from '../../components/ui/index.js';
 import { getL, toL, fillL, ensureString } from '../../utils.js';
@@ -187,7 +188,7 @@ export default function MeetingsSection({
                         className="accent-emerald-500" />
                       <span className={`text-sm flex-1 ${a.done ? 'line-through text-slate-500' : ''}`}>{ensureString(a.text, lang)}</span>
                       {canEditThis && (
-                        <button onClick={() => removeAction(m, a.id)} className="text-[11px] text-red-400">✕</button>
+                        <button onClick={() => removeAction(m, a.id)} className="text-red-400 hover:text-red-300 p-0.5" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
                       )}
                     </div>
                   ))}

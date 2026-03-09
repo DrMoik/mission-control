@@ -4,15 +4,16 @@
 // MVP shows learned, applied, recognized; inferred in hook but hidden in UI.
 
 import React, { useState, useMemo } from 'react';
+import { BookOpen, Wrench, Trophy, Link2 } from 'lucide-react';
 import { t, lang } from '../strings.js';
 import { ensureString } from '../utils.js';
 import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
 
 const EVIDENCE_TYPE_LABELS = {
-  learned:    { short: '📚', label: 'Aprendido' },
-  applied:    { short: '🔧', label: 'Aplicado' },
-  recognized: { short: '🏆', label: 'Reconocido' },
-  inferred:   { short: '🔗', label: 'Inferido' },
+  learned:    { Icon: BookOpen, label: 'Aprendido', color: 'text-indigo-400' },
+  applied:    { Icon: Wrench, label: 'Aplicado', color: 'text-amber-400' },
+  recognized: { Icon: Trophy, label: 'Reconocido', color: 'text-emerald-400' },
+  inferred:   { Icon: Link2, label: 'Inferido', color: 'text-slate-400' },
 };
 
 export default function KnowledgeMapView({
@@ -144,15 +145,20 @@ export default function KnowledgeMapView({
                       <td className="px-3 py-2 text-slate-300">{getAreaName(row.knowledgeAreaId)}</td>
                       <td className="px-3 py-2">
                         <div className="flex flex-wrap gap-1">
-                          {typesShown.map((type) => (
-                            <span
-                              key={type}
-                              className="px-1.5 py-0.5 rounded bg-slate-700 text-slate-300"
-                              title={EVIDENCE_TYPE_LABELS[type]?.label}
-                            >
-                              {EVIDENCE_TYPE_LABELS[type]?.short} {EVIDENCE_TYPE_LABELS[type]?.label}
-                            </span>
-                          ))}
+                          {typesShown.map((type) => {
+                            const def = EVIDENCE_TYPE_LABELS[type];
+                            const Icon = def?.Icon;
+                            return (
+                              <span
+                                key={type}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-700 text-slate-300"
+                                title={def?.label}
+                              >
+                                {Icon && <Icon className={`w-3.5 h-3.5 shrink-0 ${def.color || ''}`} strokeWidth={2} />}
+                                {def?.label}
+                              </span>
+                            );
+                          })}
                         </div>
                       </td>
                       <td className="px-3 py-2">
@@ -171,12 +177,19 @@ export default function KnowledgeMapView({
                         <td colSpan={4} className="px-3 py-2 bg-slate-900/80 border-b border-slate-700 text-[11px]">
                           <div className="space-y-1">
                             <div className="font-medium text-slate-400 mb-1">{t('knowledge_map_sources') || 'Fuentes:'}</div>
-                            {row.items.map((item) => (
-                              <div key={`${item.source}-${item.sourceId}`} className="flex gap-2">
-                                <span className="text-slate-500 shrink-0">{EVIDENCE_TYPE_LABELS[item.type]?.short} {EVIDENCE_TYPE_LABELS[item.type]?.label}:</span>
-                                <span className="text-slate-300">{item.sourceLabel}</span>
-                              </div>
-                            ))}
+                            {row.items.map((item) => {
+                              const def = EVIDENCE_TYPE_LABELS[item.type];
+                              const Icon = def?.Icon;
+                              return (
+                                <div key={`${item.source}-${item.sourceId}`} className="flex gap-2 items-center">
+                                  <span className="flex items-center gap-1 text-slate-500 shrink-0">
+                                    {Icon && <Icon className={`w-3 h-3 ${def?.color || ''}`} strokeWidth={2} />}
+                                    {def?.label}:
+                                  </span>
+                                  <span className="text-slate-300">{item.sourceLabel}</span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </td>
                       </tr>

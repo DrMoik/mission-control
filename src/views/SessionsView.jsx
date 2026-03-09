@@ -29,6 +29,7 @@ export default function SessionsView({
   memberships = [],
   categories = [],
   canManageSessions,
+  authUser = null,
   onCreateSession,
   onUpdateSession,
   onDeleteSession,
@@ -38,6 +39,7 @@ export default function SessionsView({
   const [showNewForm, setShowNewForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [attendanceUISessionId, setAttendanceUISessionId] = useState(null);
   const [attendance, setAttendance] = useState({});
   const [attendanceDirty, setAttendanceDirty] = useState(false);
 
@@ -47,22 +49,30 @@ export default function SessionsView({
     sessionType: 'other',
     scheduledAt: '',
     durationMinutes: '',
-    description: '',
+    place: '',
+    shortDescription: '',
+    longDescription: '',
     categoryId: '',
   });
+  const [attendanceFilter, setAttendanceFilter] = useState('all'); // 'all' | 'attended' | 'not_attended'
 
   const getClassLabel = (id) => SESSION_CLASSES.find((c) => c.id === id)?.label?.[lang] || id;
   const getTypeLabel = (id) => SESSION_TYPES.find((c) => c.id === id)?.label?.[lang] || id;
 
   useEffect(() => {
-    if (!expandedId || !fetchAttendance) return;
+    setAttendanceUISessionId(null);
+    setAttendanceFilter('all');
+  }, [expandedId]);
+
+  useEffect(() => {
+    if (!expandedId || !fetchAttendance || attendanceUISessionId !== expandedId) return;
     fetchAttendance(expandedId).then((rows) => {
       const map = {};
       rows.forEach((r) => { map[r.membershipId] = r.attended; });
       setAttendance(map);
       setAttendanceDirty(false);
     });
-  }, [expandedId, fetchAttendance]);
+  }, [expandedId, attendanceUISessionId, fetchAttendance]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -73,10 +83,12 @@ export default function SessionsView({
       sessionType: newSession.sessionType || 'other',
       scheduledAt: newSession.scheduledAt || new Date().toISOString().slice(0, 16),
       durationMinutes: newSession.durationMinutes ? Number(newSession.durationMinutes) : null,
-      description: newSession.description?.trim() || null,
+      place: newSession.place?.trim() || null,
+      shortDescription: newSession.shortDescription?.trim() || null,
+      longDescription: newSession.longDescription?.trim() || null,
       categoryId: newSession.categoryId || null,
     });
-    setNewSession({ title: '', sessionClass: 'work', sessionType: 'other', scheduledAt: '', durationMinutes: '', description: '', categoryId: '' });
+    setNewSession({ title: '', sessionClass: 'work', sessionType: 'other', scheduledAt: '', durationMinutes: '', place: '', shortDescription: '', longDescription: '', categoryId: '' });
     setShowNewForm(false);
   };
 
@@ -95,6 +107,12 @@ export default function SessionsView({
   };
 
   const activeMembers = (memberships || []).filter((m) => m.status === 'active');
+  const filteredAttendanceMembers = (() => {
+    const list = activeMembers;
+    if (attendanceFilter === 'attended') return list.filter((m) => attendance[m.id]);
+    if (attendanceFilter === 'not_attended') return list.filter((m) => !attendance[m.id]);
+    return list;
+  })();
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -172,12 +190,30 @@ export default function SessionsView({
             </div>
           </div>
           <div>
-            <label className="text-[11px] text-slate-500 block mb-1">{t('session_description')}</label>
-            <textarea
-              value={newSession.description}
-              onChange={(e) => setNewSession((s) => ({ ...s, description: e.target.value }))}
+            <label className="text-[11px] text-slate-500 block mb-1">{t('session_place')}</label>
+            <input
+              value={newSession.place}
+              onChange={(e) => setNewSession((s) => ({ ...s, place: e.target.value }))}
+              placeholder="Ej. Lab 3, Zoom…"
+              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] text-slate-500 block mb-1">{t('session_short_description')}</label>
+            <input
+              value={newSession.shortDescription}
+              onChange={(e) => setNewSession((s) => ({ ...s, shortDescription: e.target.value }))}
               placeholder={t('task_description_ph')}
-              rows={2}
+              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] text-slate-500 block mb-1">{t('session_long_description')}</label>
+            <textarea
+              value={newSession.longDescription}
+              onChange={(e) => setNewSession((s) => ({ ...s, longDescription: e.target.value }))}
+              placeholder={t('task_description_ph')}
+              rows={3}
               className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
             />
           </div>
@@ -196,63 +232,104 @@ export default function SessionsView({
         <p className="text-xs text-slate-500 italic py-4">{t('session_no_sessions')}</p>
       ) : (
         <div className="space-y-2">
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              className="bg-slate-800 rounded-lg border border-slate-600 overflow-hidden"
-            >
+          {sessions.map((session) => {
+            const isOrganizer = session.createdBy === authUser?.uid;
+            const canTakeAttendance = isOrganizer || canManageSessions;
+            const isExpanded = expandedId === session.id;
+            const showAttendanceUI = isExpanded && canTakeAttendance && attendanceUISessionId === session.id;
+            return (
               <div
-                className="p-4 cursor-pointer flex items-center justify-between gap-2"
-                onClick={() => setExpandedId((id) => (id === session.id ? null : session.id))}
+                key={session.id}
+                className="bg-slate-800 rounded-lg border border-slate-600 overflow-hidden"
               >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-slate-200">{ensureString(session.title, lang)}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">
-                      {getClassLabel(session.sessionClass)} · {getTypeLabel(session.sessionType)}
-                    </span>
+                <div
+                  className="p-4 cursor-pointer"
+                  onClick={() => setExpandedId((id) => (id === session.id ? null : session.id))}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-slate-200">{ensureString(session.title, lang)}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">
+                          {getClassLabel(session.sessionClass)} · {getTypeLabel(session.sessionType)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {formatDatetime(session.scheduledAt)}
+                        {session.durationMinutes && ` · ${session.durationMinutes} min`}
+                        {session.place && ` · ${ensureString(session.place, lang)}`}
+                      </p>
+                      {(session.shortDescription || session.description) && (
+                        <p className={`text-xs text-slate-400 mt-2 whitespace-pre-wrap ${!isExpanded ? 'line-clamp-2' : ''}`}>{ensureString(session.shortDescription || session.description, lang)}</p>
+                      )}
+                    </div>
+                    <span className={`shrink-0 transition-transform ${isExpanded ? '' : '-rotate-90'}`}>▼</span>
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    {formatDatetime(session.scheduledAt)}
-                    {session.durationMinutes && ` · ${session.durationMinutes} min`}
-                  </p>
                 </div>
-                <span className={`shrink-0 transition-transform ${expandedId === session.id ? '' : '-rotate-90'}`}>▼</span>
-              </div>
 
-              {expandedId === session.id && (
-                <div className="border-t border-slate-700 p-4 space-y-4">
-                  {session.description && (
-                    <p className="text-xs text-slate-400 whitespace-pre-wrap">{ensureString(session.description, lang)}</p>
-                  )}
-
-                  {canManageSessions && (
-                    <>
-                      <div>
-                        <h4 className="text-xs font-semibold text-slate-400 mb-2">{t('session_attendance')}</h4>
-                        <div className="space-y-1 max-h-48 overflow-y-auto">
-                          {activeMembers.map((m) => (
-                            <label key={m.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-slate-700/30 rounded px-2 py-1">
-                              <input
-                                type="checkbox"
-                                checked={Boolean(attendance[m.id])}
-                                onChange={() => toggleAttendance(m.id)}
-                                className="rounded"
-                              />
-                              <span className="text-slate-200">{ensureString(m.displayName, lang) || '—'}</span>
-                            </label>
-                          ))}
-                        </div>
-                        {attendanceDirty && (
-                          <button
-                            type="button"
-                            onClick={handleSaveAttendanceClick}
-                            className="mt-2 text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded"
-                          >
-                            {t('session_save_attendance')}
-                          </button>
+                {isExpanded && (
+                  <div className="border-t border-slate-700 p-4 space-y-4">
+                    {(session.place || session.longDescription || session.description) && (
+                      <div className="space-y-1">
+                        {session.place && <p className="text-xs text-slate-400"><span className="text-slate-500">{t('session_place')}:</span> {ensureString(session.place, lang)}</p>}
+                        {(session.longDescription || session.description) && (
+                          <p className="text-xs text-slate-400 whitespace-pre-wrap">{ensureString(session.longDescription || session.description, lang)}</p>
                         )}
                       </div>
+                    )}
+                    {canTakeAttendance && (
+                      <div>
+                        {!showAttendanceUI ? (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setAttendanceUISessionId(session.id); }}
+                            className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded"
+                          >
+                            {t('session_take_attendance')}
+                          </button>
+                        ) : (
+                          <>
+                            <h4 className="text-xs font-semibold text-slate-400 mb-2">{t('session_attendance')}</h4>
+                            <div className="flex gap-1 mb-2">
+                              {['all', 'attended', 'not_attended'].map((f) => (
+                                <button
+                                  key={f}
+                                  type="button"
+                                  onClick={() => setAttendanceFilter(f)}
+                                  className={`text-[11px] px-2 py-1 rounded ${attendanceFilter === f ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                                >
+                                  {f === 'all' ? t('session_attendance_all') : f === 'attended' ? t('session_attendance_attended') : t('session_attendance_not_attended')}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="space-y-1 max-h-48 overflow-y-auto">
+                              {filteredAttendanceMembers.map((m) => (
+                                <label key={m.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-slate-700/30 rounded px-2 py-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={Boolean(attendance[m.id])}
+                                    onChange={() => toggleAttendance(m.id)}
+                                    className="rounded"
+                                  />
+                                  <span className="text-slate-200">{ensureString(m.displayName, lang) || '—'}</span>
+                                </label>
+                              ))}
+                            </div>
+                            {attendanceDirty && (
+                              <button
+                                type="button"
+                                onClick={handleSaveAttendanceClick}
+                                className="mt-2 text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded"
+                              >
+                                {t('session_save_attendance')}
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {canManageSessions && (
                       <div className="flex gap-2 pt-2 border-t border-slate-700">
                         <button
                           type="button"
@@ -269,12 +346,12 @@ export default function SessionsView({
                           {t('delete')}
                         </button>
                       </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -306,7 +383,9 @@ function EditSessionModal({ session, categories, onCancel, onSave, getClassLabel
   const [sessionType, setSessionType] = useState(session.sessionType || 'other');
   const [scheduledAt, setScheduledAt] = useState(toDatetimeLocal(session.scheduledAt));
   const [durationMinutes, setDurationMinutes] = useState(session.durationMinutes ?? '');
-  const [description, setDescription] = useState(session.description || '');
+  const [place, setPlace] = useState(session.place || '');
+  const [shortDescription, setShortDescription] = useState(session.shortDescription || session.description || '');
+  const [longDescription, setLongDescription] = useState(session.longDescription || session.description || '');
   const [categoryId, setCategoryId] = useState(session.categoryId || '');
 
   return (
@@ -369,11 +448,28 @@ function EditSessionModal({ session, categories, onCancel, onSave, getClassLabel
           </div>
         </div>
         <div>
-          <label className="text-[11px] text-slate-500 block mb-1">{t('session_description')}</label>
+          <label className="text-[11px] text-slate-500 block mb-1">{t('session_place')}</label>
+          <input
+            value={place}
+            onChange={(e) => setPlace(e.target.value)}
+            placeholder="Ej. Lab 3, Zoom…"
+            className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-[11px] text-slate-500 block mb-1">{t('session_short_description')}</label>
+          <input
+            value={shortDescription}
+            onChange={(e) => setShortDescription(e.target.value)}
+            className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
+          />
+        </div>
+        <div>
+          <label className="text-[11px] text-slate-500 block mb-1">{t('session_long_description')}</label>
           <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
+            value={longDescription}
+            onChange={(e) => setLongDescription(e.target.value)}
+            rows={3}
             className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
           />
         </div>
@@ -386,7 +482,10 @@ function EditSessionModal({ session, categories, onCancel, onSave, getClassLabel
               sessionType,
               scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
               durationMinutes: durationMinutes ? Number(durationMinutes) : null,
-              description: description.trim() || null,
+              place: place.trim() || null,
+              shortDescription: shortDescription.trim() || null,
+              longDescription: longDescription.trim() || null,
+              description: shortDescription.trim() || longDescription.trim() || null,
               categoryId: categoryId || null,
             })}
             className="px-4 py-2 bg-emerald-500 text-black text-sm font-semibold rounded"

@@ -8,6 +8,7 @@ import { getL, toL, fillL, ensureString, parseCalendarDate } from '../utils.js';
 
 export default function CalendarView({
   teamEvents = [],
+  teamSessions = [],
   categories = [],
   memberships = [],
   currentMembership,
@@ -76,18 +77,35 @@ export default function CalendarView({
       .filter(Boolean);
   }, [memberships, lang]);
 
+  const sessionEvents = useMemo(() => {
+    return (teamSessions || []).map((s) => {
+      const d = parseCalendarDate(s.scheduledAt);
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return {
+        id:            `session-${s.id}`,
+        title:         typeof s.title === 'string' ? s.title : (s.title?.es || s.title?.en || 'Sesión'),
+        date:          dateStr,
+        description:   s.description || null,
+        categoryId:    s.categoryId || null,
+        isSession:     true,
+      };
+    });
+  }, [teamSessions]);
+
   const filteredTeamEvents = useMemo(() => filterItems(teamEvents), [filterItems, teamEvents]);
+  const filteredSessions = useMemo(() => filterItems(sessionEvents), [filterItems, sessionEvents]);
   const filteredBirthdays = useMemo(() => filterItems(birthdayEvents), [filterItems, birthdayEvents]);
   const visibleEvents = useMemo(() => {
     const team = filteredTeamEvents || [];
+    const sessions = filteredSessions || [];
     const birthdays = showBirthdays ? (filteredBirthdays || []) : [];
-    const merged = [...team, ...birthdays];
+    const merged = [...team, ...sessions, ...birthdays];
     return merged.sort((a, b) => {
       const da = parseCalendarDate(a.date);
       const db = parseCalendarDate(b.date);
       return da - db;
     });
-  }, [filteredTeamEvents, filteredBirthdays, showBirthdays]);
+  }, [filteredTeamEvents, filteredSessions, filteredBirthdays, showBirthdays]);
 
   const canCreate = canEditTools;
 
@@ -221,7 +239,7 @@ export default function CalendarView({
               const isPast    = d < new Date();
               const catName   = evt.categoryId
                 ? ensureString(categories.find((c) => c.id === evt.categoryId)?.name, lang) : null;
-              const canDelEvt = !evt.isBirthday && resolveCanEdit(evt);
+              const canDelEvt = !evt.isBirthday && !evt.isSession && resolveCanEdit(evt);
               return (
                 <div key={evt.id} className={`flex items-start gap-4 px-4 py-3 ${isPast ? 'opacity-40' : ''}`}>
                   <div className="shrink-0 bg-slate-700 rounded-lg p-2 text-center w-14">
@@ -237,6 +255,10 @@ export default function CalendarView({
                         ? <span className="text-[9px] bg-pink-900/40 text-pink-300 px-1.5 py-0.5 rounded-full">
                             {t('calendar_filter_birthdays')}
                           </span>
+                        : evt.isSession
+                          ? <span className="text-[9px] bg-violet-900/40 text-violet-300 px-1.5 py-0.5 rounded-full">
+                              {t('session_title')}
+                            </span>
                         : catName
                           ? <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1.5 py-0.5 rounded-full">
                               {t('scope_category')} {catName}

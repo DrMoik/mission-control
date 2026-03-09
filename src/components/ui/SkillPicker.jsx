@@ -175,7 +175,7 @@ export default function SkillPicker({
         />
       </div>
       {showDropdown && (filteredSkills.length > 0 || canPropose) && (
-        <div className="absolute top-full left-0 right-0 mt-0.5 z-20 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-48 overflow-y-auto py-1">
+        <div className="dropdown-in absolute top-full left-0 right-0 mt-0.5 z-20 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-48 overflow-y-auto py-1">
           {filteredSkills.map((s, i) => (
             <button
               key={s.id}

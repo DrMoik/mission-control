@@ -49,9 +49,15 @@ export function useSessionHandlers({
       scheduledAt,
       durationMinutes,
       description,
+      shortDescription,
+      longDescription,
+      place,
       categoryId,
     }) => {
       if (!currentTeam || !authUser || !canManageSessions) return;
+      const desc = (description || '').trim();
+      const short = (shortDescription || desc || '').trim() || null;
+      const long = (longDescription || desc || '').trim() || null;
       await addDoc(collection(db, 'teamSessions'), {
         teamId:          currentTeam.id,
         categoryId:      categoryId || null,
@@ -60,7 +66,10 @@ export function useSessionHandlers({
         sessionType:     sessionType || 'other',
         scheduledAt:     scheduledAt ? new Date(scheduledAt) : serverTimestamp(),
         durationMinutes: durationMinutes ? Number(durationMinutes) : null,
-        description:     (description || '').trim() || null,
+        place:           (place || '').trim() || null,
+        shortDescription: short,
+        longDescription: long,
+        description:     desc || short || null,
         notes:           null,
         artifactUrls:    [],
         meritId:         null,

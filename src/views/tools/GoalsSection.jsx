@@ -4,6 +4,7 @@
 // Edit permission is resolved per-goal via resolveCanEdit().
 
 import React, { useState }    from 'react';
+import { X } from 'lucide-react';
 import { t, lang } from '../../strings.js';
 import { BilingualField }       from '../../components/ui/index.js';
 import { getL, toL, fillL, ensureString } from '../../utils.js';
@@ -234,7 +235,7 @@ export default function GoalsSection({
                       <span className="text-sm flex-1">{ensureString(kr.text, lang)}</span>
                       <span className="text-xs font-mono text-emerald-400 w-10 text-right">{kr.progress}%</span>
                       {canEditThis && (
-                        <button onClick={() => removeKR(goal, kr.id)} className="text-[11px] text-red-400">✕</button>
+                        <button onClick={() => removeKR(goal, kr.id)} className="text-red-400 hover:text-red-300 p-0.5" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
                       )}
                     </div>
                     {canEditThis ? (

@@ -4,6 +4,7 @@
 // Shows "last edited by" stamp at the bottom.
 
 import React, { useState } from 'react';
+import { X, Check } from 'lucide-react';
 import { t, lang } from '../../strings.js';
 import { ensureString } from '../../utils.js';
 
@@ -108,7 +109,7 @@ export default function BoardView({
                       <span className="text-slate-100 font-medium">{cardTitle}</span>
                       {canEditThis && (
                         <button onClick={() => deleteCard(col.id, card.id)}
-                          className="opacity-0 group-hover:opacity-100 text-red-400 shrink-0 transition-opacity">✕</button>
+                          className="opacity-0 group-hover:opacity-100 text-red-400 shrink-0 transition-opacity p-0.5" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
                       )}
                     </div>
                     {(card.assignedByNames || card.assignedByName) && (
@@ -183,15 +184,15 @@ export default function BoardView({
                                           return next;
                                         });
                                       }}
-                                      className={`w-full text-left px-2 py-1.5 rounded text-[11px] transition-colors ${
+                                      className={`w-full text-left px-2 py-1.5 rounded text-[11px] transition-colors flex items-center gap-2 ${
                                         selected
                                           ? 'bg-emerald-600/40 text-emerald-200 border border-emerald-500/50'
                                           : 'text-slate-300 hover:bg-slate-600/50 border border-transparent'
                                       }`}
                                     >
-                                      <span className="font-medium">{ensureString(m.displayName, lang)}</span>
-                                      {cat && <span className="text-slate-500 text-[9px] ml-1">({ensureString(cat.name, lang)})</span>}
-                                      {selected && <span className="float-right text-emerald-400">✓</span>}
+                                      <span className="font-medium min-w-0 truncate">{ensureString(m.displayName, lang)}</span>
+                                      {cat && <span className="text-slate-500 text-[9px] shrink-0">({ensureString(cat.name, lang)})</span>}
+                                      {selected && <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-auto" strokeWidth={2.5} />}
                                     </button>
                                   );
                                 })

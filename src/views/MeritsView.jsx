@@ -7,9 +7,11 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { t, lang } from '../strings.js';
-import { MERIT_ICONS, ASSIGNABLE_BY_OPTIONS, MERIT_DOMAINS, MERIT_TIERS } from '../constants.js';
+import { ASSIGNABLE_BY_OPTIONS, MERIT_DOMAINS, MERIT_TIERS } from '../constants.js';
+import { ACHIEVEMENT_ICON_CATEGORIES, ACHIEVEMENT_ICON_AREAS, ACHIEVEMENT_ICON_COLORS, getIconUrl, resolveIconFilter } from '../config/achievementIcons.js';
 import { tsToDate, getL, fillL, ensureString, domainToLabel } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
+import AchievementBadge         from '../components/AchievementBadge.jsx';
 import { BilingualField } from '../components/ui/index.js';
 
 /**
@@ -34,7 +36,7 @@ export default function MeritsView({
   // Leaders can only create for their area; pre-fill categoryId
   const leaderCategoryId = (memberRole === 'leader' && !isPlatformAdmin) ? currentMembership?.categoryId : null;
   const [meritForm, setMeritForm] = useState({
-    name: '', points: 100, categoryId: leaderCategoryId || '', logo: '🏆', assignableBy: 'leader',
+    name: '', points: 100, categoryId: leaderCategoryId || '', logo: 'trophy', logoColor: '', assignableBy: 'leader',
     tags: [], domains: [], tier: '', repeatable: true,
     familyIds: [], knowledgeAreaIds: [],
     shortDescription: { en: '', es: '' },
@@ -59,7 +61,8 @@ export default function MeritsView({
       name: m.name || '',
       points: m.points ?? 100,
       categoryId: m.categoryId || '',
-      logo: m.logo || '🏆',
+      logo: m.logo || 'trophy',
+      logoColor: m.logoColor || '',
       assignableBy: m.assignableBy || 'leader',
       tags: m.tags || [],
       domains: m.domains || [],
@@ -73,6 +76,8 @@ export default function MeritsView({
   }, [editingMerit]);
 
   const [showIconPicker,  setShowIconPicker]  = useState(false);
+  const [editIconPickerOpen, setEditIconPickerOpen] = useState(false);
+  const [iconPickerTab,   setIconPickerTab]   = useState('categories'); // 'categories' | 'areas'
   const [cropSrc,         setCropSrc]         = useState(null);
   const [cropTarget,     setCropTarget]      = useState('create'); // 'create' | 'edit'
   const [awardForm,       setAwardForm]       = useState({ membershipId: '', meritId: '', evidence: '' });
@@ -289,9 +294,10 @@ export default function MeritsView({
       meritForm.repeatable !== false,
       meritForm.familyIds || [],
       meritForm.knowledgeAreaIds || [],
+      meritForm.logoColor || '',
     );
     setMeritForm({
-      name: '', points: 100, categoryId: leaderCategoryId || '', logo: '🏆', assignableBy: 'leader',
+      name: '', points: 100, categoryId: leaderCategoryId || '', logo: 'trophy', logoColor: '', assignableBy: 'leader',
       tags: [], domains: [], tier: '', repeatable: true,
       familyIds: [], knowledgeAreaIds: [],
       shortDescription: { en: '', es: '' },
@@ -319,7 +325,7 @@ export default function MeritsView({
           <div className="flex flex-wrap gap-2">
             {orphanedMerits.map(({ meritId, sampleEvent }) => (
               <div key={meritId} className="flex items-center gap-2 px-3 py-2 bg-slate-800/60 rounded-lg border border-slate-600">
-                <span className="text-lg">{sampleEvent.meritLogo || '🏆'}</span>
+                <AchievementBadge icon={sampleEvent.meritLogo || 'trophy'} color={sampleEvent.meritLogoColor} unlocked size="sm" compact className="shrink-0" />
                 <span className="text-sm text-slate-200">{sampleEvent.meritName}</span>
                 <span className="text-xs text-emerald-400 font-mono">+{sampleEvent.points} pts</span>
                 <button
@@ -365,28 +371,76 @@ export default function MeritsView({
                 <div className="w-12 h-12 bg-slate-900 border border-slate-700 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
                   {meritForm.logo?.startsWith('http') || meritForm.logo?.startsWith('data:') ? (
                     <img src={meritForm.logo} className="w-full h-full object-cover" alt="" />
-                  ) : (
-                    <span className="text-2xl">{meritForm.logo || '🏆'}</span>
-                  )}
+                  ) : (() => {
+                    const url = getIconUrl(meritForm.logo || 'trophy');
+                    const filter = resolveIconFilter(meritForm.logoColor);
+                    return url ? (
+                      <img src={url} alt="" className="w-7 h-7 object-contain" style={filter ? { filter } : { filter: 'brightness(0) invert(1)' }} />
+                    ) : null;
+                  })()}
                 </div>
 
                 <div className="flex-1 space-y-1 min-w-0">
-                  {/* Emoji picker button */}
+                  {/* Icon picker */}
                   <div className="relative">
                     <button type="button" onClick={() => setShowIconPicker((s) => !s)}
-                      className="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-[11px] text-slate-300 rounded transition-colors w-full text-left">
-                      {t('pick_emoji')}
+                      className="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-[11px] text-slate-300 rounded transition-colors w-full text-left flex items-center gap-2">
+                      <img src={getIconUrl('trophy')} alt="" className="w-4 h-4 object-contain opacity-80 [filter:brightness(0)_invert(1)]" />
+                      {t('pick_icon') || t('pick_emoji') || 'Elegir icono'}
+                      <span className="text-[10px] opacity-75 ml-auto">▾</span>
                     </button>
                     {showIconPicker && (
-                      <div className="absolute top-9 left-0 z-20 bg-slate-900 border border-slate-600 rounded-lg p-2 w-64 shadow-xl max-h-48 overflow-y-auto">
-                        <div className="grid grid-cols-8 gap-0.5">
-                          {MERIT_ICONS.map((icon) => (
-                            <button key={icon} type="button"
-                              onClick={() => { setMeritForm((f) => ({ ...f, logo: icon })); setShowIconPicker(false); }}
-                              className={`text-base p-1 rounded hover:bg-slate-700 transition-colors ${meritForm.logo === icon ? 'ring-1 ring-emerald-500 bg-slate-700' : ''}`}>
-                              {icon}
-                            </button>
-                          ))}
+                      <div className="absolute top-9 left-0 z-20 bg-slate-900 border border-slate-600 rounded-lg shadow-xl w-80 max-h-64 overflow-hidden flex flex-col">
+                        <div className="flex border-b border-slate-600 shrink-0">
+                          <button type="button" onClick={() => setIconPickerTab('categories')}
+                            className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-colors ${iconPickerTab === 'categories' ? 'bg-slate-700 text-content-primary' : 'text-content-tertiary hover:text-content-secondary'}`}>
+                            {t('merit_attr_families') || 'Categorías'}
+                          </button>
+                          <button type="button" onClick={() => setIconPickerTab('areas')}
+                            className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-colors ${iconPickerTab === 'areas' ? 'bg-slate-700 text-content-primary' : 'text-content-tertiary hover:text-content-secondary'}`}>
+                            {t('merit_attr_domains') || 'Áreas'}
+                          </button>
+                        </div>
+                        <div className="overflow-y-auto p-2 flex-1">
+                          {iconPickerTab === 'categories' ? (
+                            Object.entries(ACHIEVEMENT_ICON_CATEGORIES).map(([id, { label, icons }]) => (
+                              <div key={id} className="mb-3">
+                                <div className="text-[10px] font-semibold text-content-tertiary uppercase tracking-wide mb-1.5">{label}</div>
+                                <div className="grid grid-cols-6 gap-1">
+                                  {icons.map((key) => {
+                                    const url = getIconUrl(key);
+                                    return url ? (
+                                      <button key={key} type="button"
+                                        onClick={() => { setMeritForm((f) => ({ ...f, logo: key })); setShowIconPicker(false); }}
+                                        title={key}
+                                        className={`p-1.5 rounded hover:bg-slate-700 transition-colors flex items-center justify-center ${meritForm.logo === key ? 'ring-1 ring-primary bg-slate-700' : ''}`}>
+                                        <img src={url} alt="" className="w-5 h-5 object-contain [filter:brightness(0)_invert(1)]" />
+                                      </button>
+                                    ) : null;
+                                  })}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            Object.entries(ACHIEVEMENT_ICON_AREAS).map(([id, { label, icons }]) => (
+                              <div key={id} className="mb-3">
+                                <div className="text-[10px] font-semibold text-content-tertiary uppercase tracking-wide mb-1.5">{label}</div>
+                                <div className="grid grid-cols-6 gap-1">
+                                  {icons.map((key) => {
+                                    const url = getIconUrl(key);
+                                    return url ? (
+                                      <button key={key} type="button"
+                                        onClick={() => { setMeritForm((f) => ({ ...f, logo: key })); setShowIconPicker(false); }}
+                                        title={key}
+                                        className={`p-1.5 rounded hover:bg-slate-700 transition-colors flex items-center justify-center ${meritForm.logo === key ? 'ring-1 ring-primary bg-slate-700' : ''}`}>
+                                        <img src={url} alt="" className="w-5 h-5 object-contain [filter:brightness(0)_invert(1)]" />
+                                      </button>
+                                    ) : null;
+                                  })}
+                                </div>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
                     )}
@@ -398,7 +452,7 @@ export default function MeritsView({
                       placeholder={t('paste_image_url')}
                       value={meritForm.logo?.startsWith('http') ? meritForm.logo : ''}
                       className="flex-1 min-w-0 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px]"
-                      onChange={(e) => setMeritForm((f) => ({ ...f, logo: e.target.value || '🏆' }))}
+                      onChange={(e) => setMeritForm((f) => ({ ...f, logo: e.target.value || 'trophy' }))}
                     />
                     <button type="button"
                       disabled={!(meritForm.logo?.startsWith('http') || meritForm.logo?.startsWith('data:'))}
@@ -408,6 +462,25 @@ export default function MeritsView({
                       ⟳
                     </button>
                   </div>
+                  {/* Color picker — only for icon keys, not custom URLs */}
+                  {!(meritForm.logo?.startsWith('http') || meritForm.logo?.startsWith('data:')) && (
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      <span className="text-[10px] text-slate-500">{t('color') || 'Color'}:</span>
+                      {ACHIEVEMENT_ICON_COLORS.map((c) => (
+                        <button key={c.id || 'default'} type="button"
+                          onClick={() => setMeritForm((f) => ({ ...f, logoColor: c.id || '' }))}
+                          title={c.label}
+                          className={`w-5 h-5 rounded-full border-2 transition-all shrink-0 ${(meritForm.logoColor || '') === (c.id || '') ? 'border-white scale-110' : 'border-slate-600 hover:border-slate-500'}`}
+                          style={c.hex ? { backgroundColor: c.hex } : { backgroundColor: 'transparent', borderStyle: 'dashed' }}
+                        />
+                      ))}
+                      <input type="text" placeholder="#hex" maxLength={9}
+                        value={meritForm.logoColor?.startsWith('#') ? meritForm.logoColor : ''}
+                        onChange={(e) => { const v = e.target.value.trim(); setMeritForm((f) => ({ ...f, logoColor: v || '' })); }}
+                        className="w-14 px-1.5 py-0.5 bg-slate-900 border border-slate-600 rounded text-[10px] font-mono"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -588,13 +661,15 @@ export default function MeritsView({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-5 flex items-center gap-4">
-              <div className="w-16 h-16 flex items-center justify-center bg-slate-700 rounded-xl overflow-hidden border border-slate-600 shrink-0">
-                {detailMerit.logo && (detailMerit.logo.startsWith('http') || detailMerit.logo.startsWith('data:')) ? (
-                  <img src={detailMerit.logo} className="w-full h-full object-cover" alt="" />
-                ) : (
-                  <span className="text-4xl">{detailMerit.logo || '🏆'}</span>
-                )}
-              </div>
+              <AchievementBadge
+                icon={detailMerit.logo || 'trophy'}
+                color={detailMerit.logoColor}
+                tier={detailMerit.tier}
+                unlocked
+                size="lg"
+                compact
+                className="shrink-0"
+              />
               <div className="min-w-0">
                 <h2 className="font-bold text-lg leading-tight">{detailMerit.name}</h2>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -643,27 +718,99 @@ export default function MeritsView({
             </div>
             <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="flex flex-wrap gap-3 items-end">
-                <div className="shrink-0 min-w-[140px]">
+                <div className="shrink-0 min-w-[180px]">
                   <label className="text-[11px] text-slate-500 block mb-1">{t('logo')}</label>
-                  <div className="flex gap-1 items-center">
-                    <div className="w-10 h-10 bg-slate-800 border border-slate-600 rounded flex items-center justify-center overflow-hidden shrink-0">
+                  <div className="flex items-start gap-2">
+                    {/* Preview */}
+                    <div className="w-12 h-12 bg-slate-900 border border-slate-700 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
                       {editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:') ? (
                         <img src={editForm.logo} className="w-full h-full object-cover" alt="" />
-                      ) : (
-                        <span className="text-xl">{editForm.logo || '🏆'}</span>
+                      ) : (() => {
+                        const url = getIconUrl(editForm.logo || 'trophy');
+                        const filter = resolveIconFilter(editForm.logoColor);
+                        return url ? (
+                          <img src={url} alt="" className="w-7 h-7 object-contain" style={filter ? { filter } : { filter: 'brightness(0) invert(1)' }} />
+                        ) : null;
+                      })()}
+                    </div>
+                    <div className="flex-1 space-y-1 min-w-0">
+                      {/* Choose icon button — same as create form */}
+                      <div className="relative">
+                        <button type="button" onClick={() => setEditIconPickerOpen((s) => !s)}
+                          className="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-[11px] text-slate-300 rounded transition-colors w-full text-left flex items-center gap-2">
+                          <img src={getIconUrl('trophy')} alt="" className="w-4 h-4 object-contain opacity-80 [filter:brightness(0)_invert(1)]" />
+                          {t('pick_icon') || t('pick_emoji') || 'Elegir icono'}
+                          <span className="text-[10px] opacity-75 ml-auto">▾</span>
+                        </button>
+                        {editIconPickerOpen && (
+                          <div className="absolute top-9 left-0 z-30 bg-slate-900 border border-slate-600 rounded-lg shadow-xl w-80 max-h-64 overflow-hidden flex flex-col">
+                            <div className="flex border-b border-slate-600 shrink-0">
+                              <button type="button" onClick={() => setIconPickerTab('categories')}
+                                className={`flex-1 px-2 py-1.5 text-[11px] font-medium ${iconPickerTab === 'categories' ? 'bg-slate-700 text-content-primary' : 'text-content-tertiary'}`}>
+                                {t('merit_attr_families') || 'Categorías'}
+                              </button>
+                              <button type="button" onClick={() => setIconPickerTab('areas')}
+                                className={`flex-1 px-2 py-1.5 text-[11px] font-medium ${iconPickerTab === 'areas' ? 'bg-slate-700 text-content-primary' : 'text-content-tertiary'}`}>
+                                {t('merit_attr_domains') || 'Áreas'}
+                              </button>
+                            </div>
+                            <div className="overflow-y-auto p-2 flex-1 max-h-48">
+                              {(iconPickerTab === 'categories' ? Object.entries(ACHIEVEMENT_ICON_CATEGORIES) : Object.entries(ACHIEVEMENT_ICON_AREAS)).map(([id, { label, icons }]) => (
+                                <div key={id} className="mb-3">
+                                  <div className="text-[10px] font-semibold text-content-tertiary uppercase tracking-wide mb-1.5">{label}</div>
+                                  <div className="grid grid-cols-6 gap-1">
+                                    {icons.map((key) => {
+                                      const url = getIconUrl(key);
+                                      return url ? (
+                                        <button key={key} type="button"
+                                          onClick={() => { setEditForm((f) => f ? { ...f, logo: key } : null); setEditIconPickerOpen(false); }}
+                                          title={key}
+                                          className={`p-1.5 rounded hover:bg-slate-700 flex items-center justify-center ${editForm.logo === key ? 'ring-1 ring-primary bg-slate-700' : ''}`}>
+                                          <img src={url} alt="" className="w-5 h-5 object-contain [filter:brightness(0)_invert(1)]" />
+                                        </button>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {/* URL input + reframe */}
+                      <div className="flex gap-1">
+                        <input
+                          placeholder={t('paste_image_url')}
+                          value={editForm.logo?.startsWith('http') ? editForm.logo : ''}
+                          className="flex-1 min-w-0 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px]"
+                          onChange={(e) => setEditForm((f) => ({ ...f, logo: e.target.value || 'trophy' }))}
+                        />
+                        <button type="button"
+                          disabled={!(editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:'))}
+                          onClick={() => { setCropTarget('edit'); setCropSrc(editForm.logo); setEditIconPickerOpen(false); }}
+                          title="Reframe"
+                          className="w-8 h-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-white font-semibold rounded shrink-0">⟳</button>
+                      </div>
+                      {/* Color picker */}
+                      {!(editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:')) && (
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          <span className="text-[10px] text-slate-500">{t('color') || 'Color'}:</span>
+                          {ACHIEVEMENT_ICON_COLORS.map((c) => (
+                            <button key={c.id || 'default'} type="button"
+                              onClick={() => setEditForm((f) => f ? { ...f, logoColor: c.id || '' } : null)}
+                              title={c.label}
+                              className={`w-5 h-5 rounded-full border-2 transition-all shrink-0 ${(editForm.logoColor || '') === (c.id || '') ? 'border-white scale-110' : 'border-slate-600 hover:border-slate-500'}`}
+                              style={c.hex ? { backgroundColor: c.hex } : { backgroundColor: 'transparent', borderStyle: 'dashed' }}
+                            />
+                          ))}
+                          <input type="text" placeholder="#hex" maxLength={9}
+                            value={editForm.logoColor?.startsWith('#') ? editForm.logoColor : ''}
+                            onChange={(e) => { const v = e.target.value.trim(); setEditForm((f) => f ? { ...f, logoColor: v || '' } : null); }}
+                            className="w-14 px-1.5 py-0.5 bg-slate-900 border border-slate-600 rounded text-[10px] font-mono"
+                          />
+                        </div>
                       )}
                     </div>
-                    <input
-                      placeholder={t('paste_image_url')}
-                      value={editForm.logo?.startsWith('http') ? editForm.logo : ''}
-                      className="flex-1 min-w-0 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
-                      onChange={(e) => setEditForm((f) => ({ ...f, logo: e.target.value || '🏆' }))}
-                    />
-                    <button type="button"
-                      disabled={!(editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:'))}
-                      onClick={() => { setCropTarget('edit'); setCropSrc(editForm.logo); }}
-                      title="Reframe"
-                      className="w-8 h-8 flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm rounded shrink-0">⟳</button>
                   </div>
                 </div>
                 <div className="flex-1 min-w-[120px]">
@@ -810,7 +957,8 @@ export default function MeritsView({
                     name: editForm.name.trim(),
                     points: Number(editForm.points),
                     categoryId: editForm.categoryId || null,
-                    logo: editForm.logo || '🏆',
+                    logo: editForm.logo || 'trophy',
+                    logoColor: editForm.logoColor || null,
                     assignableBy: editForm.assignableBy || 'leader',
                     tags: editForm.tags || [],
                     domains: editForm.domains || [],
@@ -955,15 +1103,17 @@ export default function MeritsView({
                 tabIndex={0}
                 onClick={() => setDetailMerit(m)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailMerit(m); } }}
-                className="flex items-center gap-3 p-3 bg-slate-700/40 hover:bg-slate-700/70 rounded-lg transition-colors text-left w-full group cursor-pointer"
+                className="flex items-center gap-3 p-3 bg-slate-700/40 hover:bg-slate-700/70 rounded-xl transition-colors text-left w-full group cursor-pointer"
               >
-                <div className="shrink-0 w-12 h-12 flex items-center justify-center bg-slate-700 rounded-xl overflow-hidden border border-slate-600">
-                  {m.logo && (m.logo.startsWith('http') || m.logo.startsWith('data:')) ? (
-                    <img src={m.logo} className="w-full h-full object-cover" alt={m.name} />
-                  ) : (
-                    <span className="text-3xl">{m.logo || '🏆'}</span>
-                  )}
-                </div>
+                <AchievementBadge
+                  icon={m.logo || 'trophy'}
+                  color={m.logoColor}
+                  tier={m.tier}
+                  unlocked
+                  size="md"
+                  compact
+                  className="shrink-0"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm truncate group-hover:text-emerald-300 transition-colors">{m.name}</div>
                   <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap">
@@ -1165,7 +1315,7 @@ export default function MeritsView({
                         onClick={() => setAwardForm((f) => ({ ...f, meritId: m.id }))}
                         className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-700/50 transition-colors ${awardForm.meritId === m.id ? 'bg-emerald-900/40 border-l-2 border-emerald-500' : ''}`}
                       >
-                        <span className="text-lg shrink-0">{m.logo && !m.logo.startsWith('http') ? m.logo : '🏆'}</span>
+                        <AchievementBadge icon={m.logo || 'trophy'} color={m.logoColor} tier={m.tier} unlocked size="sm" compact className="shrink-0" />
                         <div className="min-w-0 flex-1">
                           <span className="text-sm font-medium truncate block">{m.name}</span>
                           <span className="text-[10px] text-slate-500">
@@ -1223,7 +1373,7 @@ export default function MeritsView({
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1">
-                          <span className="text-base">{merits?.find((mm) => mm.id === evt.meritId)?.logo ?? evt.meritLogo ?? '🏆'}</span>
+                          <AchievementBadge icon={merits?.find((mm) => mm.id === evt.meritId)?.logo ?? evt.meritLogo ?? 'trophy'} color={merits?.find((mm) => mm.id === evt.meritId)?.logoColor ?? evt.meritLogoColor} unlocked size="sm" compact className="inline-flex" />
                           {evt.meritName || '?'}
                         </div>
                       </td>

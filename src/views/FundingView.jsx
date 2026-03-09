@@ -5,6 +5,7 @@
 // All team members can view; leaders+ can add/edit entries and accounts.
 
 import React, { useState } from 'react';
+import { X } from 'lucide-react';
 import { t } from '../strings.js';
 
 function formatMoney(n) {
@@ -309,7 +310,7 @@ export default function FundingView({
                     <td className="px-3 py-2 text-right font-mono text-slate-200">{formatMoney(e._balanceAfter)}</td>
                     {canEdit && (
                       <td className="px-3 py-2">
-                        <button onClick={() => onDeleteEntry?.(e.id)} className="text-red-400 hover:text-red-300 text-xs" title={t('delete')}>✕</button>
+                        <button onClick={() => onDeleteEntry?.(e.id)} className="text-red-400 hover:text-red-300 p-0.5" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
                       </td>
                     )}
                   </tr>

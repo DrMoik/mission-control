@@ -128,6 +128,17 @@ export function normalizeWeekOfToMonday(weekOfStr) {
   return normalizeWeekOfToSunday(weekOfStr);
 }
 
+/** Returns true if weekOf (YYYY-MM-DD) falls in current or previous week (Sunday–Saturday). */
+export function isWeekEligibleForPoints(weekOf) {
+  const sunday = normalizeWeekOfToSunday(weekOf);
+  if (!sunday) return false;
+  const thisSunday = getSundayOfWeekLocal();
+  const d = new Date();
+  d.setDate(d.getDate() - 7);
+  const lastSunday = getSundayOfWeekLocal(d);
+  return sunday === thisSunday || sunday === lastSunday;
+}
+
 // ── Bilingual field helpers ────────────────────────────────────────────────────
 // Bilingual fields are stored as { en: string, es: string }.
 // UI is Spanish-only for now; these helpers remain for backward-compat with stored data.

@@ -6,10 +6,13 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { Cake } from 'lucide-react';
 import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT, SYSTEM_MERIT_DESCRIPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongField } from '../components/ui/index.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
+import SafeProfileImage         from '../components/ui/SafeProfileImage.jsx';
+import AchievementBadge         from '../components/AchievementBadge.jsx';
 import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
 import { useContributionPath } from '../hooks/useContributionPath.js';
 import { getL, toL, fillL, ensureString, getSundayOfWeekLocal, normalizeWeekOfToSunday, formatBirthdateDisplay, isBlockedImageHost, computeProfileCompletion, tsToDate, formatMissingFieldsList } from '../utils.js';
@@ -300,8 +303,12 @@ export default function ProfilePageView({
         <div className="h-60 bg-gradient-to-br from-emerald-950/80 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden shadow-xl">
           {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) ? (
             <>
-              <img src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
-                className="w-full h-full object-cover object-center" alt="" />
+              <SafeProfileImage
+                src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
+                fallback={<div className="w-full h-full bg-gradient-to-br from-emerald-900/60 to-slate-800" />}
+                className="w-full h-full object-cover object-center"
+                alt=""
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
             </>
           ) : (
@@ -310,8 +317,16 @@ export default function ProfilePageView({
         </div>
         <div className="absolute -bottom-16 left-6 z-20">
           {(editing ? draft.photoURL : membership.photoURL) ? (
-            <img src={editing ? draft.photoURL : membership.photoURL}
-              className="w-48 h-48 rounded-full border-4 border-slate-800 object-cover object-[center_top] shadow-lg ring-2 ring-emerald-500/30" alt="" />
+            <SafeProfileImage
+              src={editing ? draft.photoURL : membership.photoURL}
+              fallback={
+                <div className="w-48 h-48 rounded-full border-4 border-slate-800 bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
+                  {(ensureString(membership.displayName, lang) || '?')[0].toUpperCase()}
+                </div>
+              }
+              className="w-48 h-48 rounded-full border-4 border-slate-800 object-cover object-[center_top] shadow-lg ring-2 ring-emerald-500/30"
+              alt=""
+            />
           ) : (
             <div className="w-48 h-48 rounded-full border-4 border-slate-800 bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
               {(ensureString(membership.displayName, lang) || '?')[0].toUpperCase()}
@@ -364,7 +379,12 @@ export default function ProfilePageView({
               <label className="text-[11px] text-slate-500 block mb-0.5">{t('profile_photo_url')}</label>
               <div className="flex gap-2 items-center flex-wrap">
                 {draft.photoURL ? (
-                  <img src={draft.photoURL} className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-600" alt="" />
+                  <SafeProfileImage
+                    src={draft.photoURL}
+                    fallback={<div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>}
+                    className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-600"
+                    alt=""
+                  />
                 ) : (
                   <div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>
                 )}
@@ -393,7 +413,12 @@ export default function ProfilePageView({
               <label className="text-[11px] text-slate-500 block mb-0.5">{t('cover_photo_url')}</label>
               <div className="flex gap-2 items-center flex-wrap">
                 {draft.coverPhotoURL ? (
-                  <img src={draft.coverPhotoURL} className="w-14 h-9 rounded object-cover shrink-0 border border-slate-600" alt="" />
+                  <SafeProfileImage
+                    src={draft.coverPhotoURL}
+                    fallback={<div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>}
+                    className="w-14 h-9 rounded object-cover shrink-0 border border-slate-600"
+                    alt=""
+                  />
                 ) : (
                   <div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>
                 )}
@@ -576,7 +601,10 @@ export default function ProfilePageView({
                 {(membership.birthdate || membership.university || membership.career || membership.semester || membership.email) && (
                   <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
                     {membership.birthdate && (
-                      <span>🎂 {formatBirthdateDisplay(membership.birthdate)}</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Cake className="w-3.5 h-3.5 text-slate-500 shrink-0" strokeWidth={2} />
+                        {formatBirthdateDisplay(membership.birthdate)}
+                      </span>
                     )}
                     {membership.university && <span>{ensureString(membership.university, lang)}</span>}
                     {membership.career     && <span>{ensureString(membership.career, lang)}</span>}
@@ -881,12 +909,15 @@ export default function ProfilePageView({
                         const sysDesc = meritName && (SYSTEM_MERIT_DESCRIPTIONS[meritName] || SYSTEM_MERIT_DESCRIPTIONS[evt.meritName]);
                         const displayMerit = merit || (meritName ? {
                           name: meritName,
-                          logo: evt.meritLogo || '🏆',
+                          logo: evt.meritLogo || 'trophy',
+                          logoColor: evt.meritLogoColor,
                           points: evt.points || 0,
                           categoryId: null,
                           shortDescription: sysDesc?.shortDescription,
                           longDescription: sysDesc?.longDescription,
                         } : null);
+                        const iconLogo = merit?.logo ?? evt.meritLogo ?? 'trophy';
+                        const iconColor = merit?.logoColor ?? evt.meritLogoColor;
                         return (
                           <button
                             key={`${evt.meritId || ''}-${evt.meritName || ''}-${evt.id}`}
@@ -895,7 +926,7 @@ export default function ProfilePageView({
                             title={t('merit_click_to_view') || 'Clic para ver descripción'}
                             className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 rounded-lg px-3 py-2 text-left w-full sm:w-auto hover:bg-amber-950/50 hover:border-amber-500/60 transition-colors cursor-pointer group"
                           >
-                            <span className="text-xl shrink-0">{evt.meritLogo || '🏆'}</span>
+                            <AchievementBadge icon={iconLogo} color={iconColor} size="sm" compact className="shrink-0" />
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-slate-200 group-hover:text-amber-200 transition-colors">
                                 {evt.meritName || t('merit')}{count > 1 && <span className="text-slate-400 ml-1">×{count}</span>}
@@ -929,7 +960,7 @@ export default function ProfilePageView({
                     const meritEvts = (ev?.meritEventIds || [])
                       .map((id) => allMeritEvents.find((e) => e.id === id))
                       .filter(Boolean);
-                    const meritObjs = meritEvts.map((e) => merits.find((m) => m.id === e.meritId) || { name: e.meritName, logo: e.meritLogo || '🏆', points: e.points || 0, id: e.meritId });
+                    const meritObjs = meritEvts.map((e) => merits.find((m) => m.id === e.meritId) || { name: e.meritName, logo: e.meritLogo || 'trophy', logoColor: e.meritLogoColor, points: e.points || 0, id: e.meritId });
                     const taskObjs = (ev?.taskIds || []).map((id) => tasks.find((t) => t.id === id)).filter(Boolean);
                     const moduleObjs = (ev?.moduleIds || []).map((id) => modules.find((m) => m.id === id)).filter(Boolean);
                     return (
@@ -1037,7 +1068,7 @@ export default function ProfilePageView({
                 {detailMerit.logo && (detailMerit.logo.startsWith('http') || detailMerit.logo.startsWith('data:')) ? (
                   <img src={detailMerit.logo} className="w-full h-full object-cover" alt="" />
                 ) : (
-                  <span className="text-4xl">{detailMerit.logo || '🏆'}</span>
+                  <AchievementBadge icon={detailMerit.logo || 'trophy'} color={detailMerit.logoColor} size="md" compact className="!gap-0" />
                 )}
               </div>
               <div className="min-w-0">

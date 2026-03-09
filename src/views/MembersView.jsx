@@ -9,6 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { t } from '../strings.js';
 import { ROLE_ORDER, CAREER_OPTIONS } from '../constants.js';
 import { RoleBadge, StrikePips, MemberAvatar } from '../components/ui/index.js';
+import SafeProfileImage from '../components/ui/SafeProfileImage.jsx';
 import AddStrikeModal from '../components/AddStrikeModal.jsx';
 import { ensureString, tsToDate } from '../utils.js';
 
@@ -274,7 +275,12 @@ export default function MembersView({
               return (
                 <div key={m.id} className="px-4 py-3 flex items-start gap-3">
                   {m.photoURL ? (
-                    <img src={m.photoURL} className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5" alt="" />
+                    <SafeProfileImage
+                      src={m.photoURL}
+                      fallback={<div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">{(m.displayName || '?')[0].toUpperCase()}</div>}
+                      className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5"
+                      alt=""
+                    />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">
                       {(m.displayName || '?')[0].toUpperCase()}

@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { t } from '../strings.js';
+import ModalOverlay from './ModalOverlay.jsx';
 
 /**
  * @param {{
@@ -43,11 +44,8 @@ export default function AddStrikeModal({ memberName, onConfirm, onCancel }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onCancel}>
-      <div
-        className="bg-slate-800 rounded-xl border border-slate-600 shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalOverlay onClickBackdrop={onCancel}>
+      <div className="bg-surface-raised rounded-xl border border-slate-600 shadow-surface-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b border-slate-700">
           <h3 className="text-sm font-semibold text-slate-200">{t('add_strike_evidence_title')}</h3>
           <p className="text-[11px] text-slate-500 mt-1">{t('add_strike_evidence_hint')}</p>
@@ -90,6 +88,6 @@ export default function AddStrikeModal({ memberName, onConfirm, onCancel }) {
           </div>
         </form>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

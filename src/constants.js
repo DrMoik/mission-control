@@ -2,6 +2,9 @@
 // Centralised place for all static configuration values.
 // Change role names, career options, or icon sets here; nothing else needs to change.
 
+/** localStorage key for the last selected team ID. */
+export const SELECTED_TEAM_STORAGE_KEY = 'mission-control:selectedTeamId';
+
 /** Ordered from lowest to highest privilege. */
 export const ROLE_ORDER = [
   'aspirant', 'rookie', 'junior', 'senior', 'leader', 'facultyAdvisor', 'teamAdmin',
@@ -130,34 +133,10 @@ export const EMPTY_PROFILE = {
 };
 
 /**
- * Emoji and symbol options for merit logos.
- * Organised into thematic groups for easier browsing.
+ * Merit logo options: Game-Icons keys (primary). See config/achievementIcons.js.
+ * Kept for imports; actual list is ACHIEVEMENT_ICON_KEYS.
  */
-export const MERIT_ICONS = [
-  // Awards & Achievement
-  '🏆','🥇','🥈','🥉','🎖️','🏅','🎗️','👑','💎','⭐',
-  '🌟','✨','💫','🔥','⚡','💥','🎯','🎪','🎠','🎡',
-  // Tech & Engineering
-  '🤖','🚀','🛸','🔬','🧬','🔭','📡','💻','🖥️','⌨️',
-  '🖱️','💾','📱','🔋','💡','🔦','🔧','🔩','⚙️','🛠️',
-  '🔌','🧲','📐','📏','🏗️','⚗️','🧪','🧫','🧰','🪛',
-  // People & Team
-  '👥','🤝','🦾','🧠','👨‍💻','👩‍💻','👨‍🔬','👩‍🔬','👨‍🏫','👩‍🏫',
-  '🙌','💪','🫡','🧑‍🚀','👨‍🏭','👩‍🏭','🤓','😎','🥸','🎓',
-  // Creativity & Learning
-  '🎨','🖌️','✏️','📝','📚','📖','📊','📈','📉','🗂️',
-  '🗃️','📌','📍','🔖','🏷️','📰','🗞️','📓','📔','📒',
-  // Sports & Competition
-  '⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸',
-  '🥊','🎿','🛷','🏋️','🤸','🧗','🏄','🚴','🏊','🎽',
-  // Nature & Science
-  '🌱','🌿','🍀','🌳','🦋','🐝','🌊','🌋','🌌','🌠',
-  '☄️','🌤️','⛅','🌈','❄️','🔮','🪐','🌙','☀️','🌞',
-  // Music & Media
-  '🎵','🎶','🎸','🎹','🎺','🎻','🥁','🎤','📢','🔔',
-  // Places & Navigation
-  '🏠','🏢','🏭','🗼','🗽','⛩️','🎑','🏞️','🗺️','🧭',
-];
+export const MERIT_ICONS = []; // Use ACHIEVEMENT_ICON_KEYS from achievementIcons.js
 
 /** Session class — semantic grouping (work, learning, belonging, recovery). */
 export const SESSION_CLASSES = [

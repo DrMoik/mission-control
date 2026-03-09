@@ -53,9 +53,9 @@ export default function MyCommitmentsCard({
   const profileCompletion = computeProfileCompletion(currentMembership);
 
   return (
-    <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50">
-      <h3 className="text-sm font-semibold text-slate-200 mb-3">{t('my_commitments')}</h3>
-      <p className="text-[11px] text-slate-500 mb-4">{t('my_commitments_desc')}</p>
+    <div className="bg-surface-raised rounded-xl p-4 border border-slate-700/40 shadow-surface-sm">
+      <h3 className="text-sm font-semibold text-content-primary mb-3">{t('my_commitments')}</h3>
+      <p className="text-xs text-content-secondary mb-4">{t('my_commitments_desc')}</p>
 
       <div className="space-y-3">
         {/* Tasks */}

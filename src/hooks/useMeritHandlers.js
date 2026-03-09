@@ -55,7 +55,7 @@ export function useMeritHandlers({
     return false;
   }, [canEdit, memberRole, currentMembership?.categoryId]);
 
-  const handleCreateMerit = useCallback(async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader', tags = [], achievementTypes = [], domains = [], tier = null, repeatable = true, familyIds = [], knowledgeAreaIds = []) => {
+  const handleCreateMerit = useCallback(async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader', tags = [], achievementTypes = [], domains = [], tier = null, repeatable = true, familyIds = [], knowledgeAreaIds = [], logoColor = '') => {
     if (!currentTeam) { alert('No team selected.'); return; }
     if (!canCreateMerit) { alert('No permission to create logros.'); return; }
     if (memberRole === 'leader' && !isPlatformAdmin) {
@@ -70,7 +70,7 @@ export function useMeritHandlers({
         name,
         points:           Number(points),
         categoryId:       categoryId       || null,
-        logo:             logo             || '🏆',
+        logo:             logo             || 'trophy',
         shortDescription: shortDescription || '',
         longDescription:  longDescription  || '',
         assignableBy:     assignableBy     || 'leader',
@@ -81,6 +81,7 @@ export function useMeritHandlers({
         repeatable:       repeatable !== false,
         familyIds:        Array.isArray(familyIds) ? familyIds.filter(Boolean) : [],
         knowledgeAreaIds: Array.isArray(knowledgeAreaIds) ? knowledgeAreaIds.filter(Boolean) : [],
+        logoColor:        logoColor || null,
         createdAt: serverTimestamp(),
       });
     } catch (err) {
@@ -107,7 +108,8 @@ export function useMeritHandlers({
         name:           sampleEvent.meritName,
         points:         Number(sampleEvent.points) || 100,
         categoryId:     null,
-        logo:           sampleEvent.meritLogo || '🏆',
+        logo:           sampleEvent.meritLogo || 'trophy',
+        logoColor:      sampleEvent.meritLogoColor || null,
         shortDescription: '',
         longDescription:  '',
         assignableBy:   'leader',
@@ -132,7 +134,7 @@ export function useMeritHandlers({
         name:             updates.name             ?? merit.name,
         points:           Number(updates.points ?? merit.points),
         categoryId:       updates.categoryId       ?? merit.categoryId ?? null,
-        logo:             updates.logo             ?? merit.logo ?? '🏆',
+        logo:             updates.logo             ?? merit.logo ?? 'trophy',
         shortDescription: updates.shortDescription ?? merit.shortDescription ?? '',
         longDescription:  updates.longDescription  ?? merit.longDescription ?? '',
         assignableBy:     updates.assignableBy     ?? merit.assignableBy ?? 'leader',
@@ -143,6 +145,7 @@ export function useMeritHandlers({
         repeatable:       updates.repeatable !== undefined ? updates.repeatable !== false : merit.repeatable !== false,
         familyIds:        Array.isArray(updates.familyIds) ? updates.familyIds.filter(Boolean) : (merit.familyIds || []),
         knowledgeAreaIds: Array.isArray(updates.knowledgeAreaIds) ? updates.knowledgeAreaIds.filter(Boolean) : (merit.knowledgeAreaIds || []),
+        logoColor:        updates.logoColor !== undefined ? (updates.logoColor || null) : (merit.logoColor ?? null),
       });
     } catch (err) {
       console.error('[Logro] Update Firestore error:', err);
@@ -191,7 +194,8 @@ export function useMeritHandlers({
       membershipId,
       meritId,
       meritName:            merit.name,
-      meritLogo:            merit.logo || '🏆',
+      meritLogo:            merit.logo || 'trophy',
+      meritLogoColor:       merit.logoColor || null,
       points:               merit.points,
       type:                 'award',
       evidence:             evidence || '',

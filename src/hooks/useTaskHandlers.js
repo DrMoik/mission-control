@@ -112,7 +112,7 @@ export function useTaskHandlers({
         membershipId,
         meritId:               null,
         meritName,
-        meritLogo:             '✓',
+        meritLogo:             'checked-shield',
         points:                pointsPerMember,
         type:                 'award',
         evidence,

@@ -8,6 +8,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { Trophy, FileText, X, CalendarDays } from 'lucide-react';
 import { t, lang } from '../strings.js';
 import { BilingualField }      from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString, tsToDate } from '../utils.js';
@@ -98,7 +99,7 @@ function PointsHistogram({ distribution }) {
   );
 }
 
-export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamPosts = [], teamModules, teamCategories = [], canEdit, onSave, onNavigateFeed, onViewProfile }) {
+export default function OverviewView({ team, teamMemberships, teamMeritEvents, teamPosts = [], teamSessions = [], teamModules, teamCategories = [], canEdit, onSave, onNavigateFeed, onNavigateSessions, onViewProfile }) {
   const [editing, setEditing] = useState(false);
   const [draft,   setDraft]   = useState(null);
   const [showPointsDetail, setShowPointsDetail] = useState(false);
@@ -307,7 +308,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                 <input value={kpi.value} onChange={(e) => updateKpiValue(i, e.target.value)}
                   placeholder="e.g. 3 / 42%"
                   className="flex-1 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs" />
-                <button onClick={() => removeKpi(i)} className="text-red-400 text-xs px-2 hover:text-red-300 shrink-0">✕</button>
+                <button onClick={() => removeKpi(i)} className="text-red-400 text-xs p-1 hover:text-red-300 shrink-0" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
               </div>
             </div>
           ))}
@@ -364,7 +365,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
         ))}
       </div>
 
-      {/* 7-day team summary — merits, posts */}
+      {/* 7-day team summary — merits, posts, sessions */}
       {(() => {
         const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
         const awards = (teamMeritEvents || [])
@@ -379,11 +380,21 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
           }))
           .filter((a) => a.ts >= sevenDaysAgo);
         const posts = (teamPosts || []).filter((p) => (tsToDate(p.createdAt)?.getTime?.() ?? 0) >= sevenDaysAgo);
+        const sessions = (teamSessions || [])
+          .filter((s) => (tsToDate(s.createdAt)?.getTime?.() ?? 0) >= sevenDaysAgo)
+          .map((s) => ({
+            type: 'session',
+            date: tsToDate(s.createdAt)?.getTime?.() ?? 0,
+            sessionId: s.id,
+            title: ensureString(s.title, lang),
+            scheduledAt: s.scheduledAt,
+          }));
         const teamItems = [
           ...awards.map((a) => ({ ...a, date: a.ts })),
           ...(posts.length > 0 ? [{ type: 'posts', date: Math.max(...posts.map((p) => tsToDate(p.createdAt)?.getTime?.() ?? 0)), count: posts.length }] : []),
+          ...sessions.map((s) => ({ ...s, date: s.date })),
         ].sort((a, b) => b.date - a.date).slice(0, 10);
-        const hasTeam = awards.length > 0 || posts.length > 0;
+        const hasTeam = awards.length > 0 || posts.length > 0 || sessions.length > 0;
         return (
           <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/30 to-slate-800/80 p-4">
             <h3 className="text-xs font-semibold text-emerald-400/90 uppercase tracking-wide mb-3">{t('inicio_team')} · {t('inicio_summary_7d')}</h3>
@@ -392,7 +403,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                 <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm mb-3">
                   {awards.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-lg">🏆</span>
+                      <Trophy className="w-5 h-5 text-emerald-400 shrink-0" strokeWidth={2} />
                       <span className="text-slate-200">
                         <strong className="text-emerald-400">{awards.length}</strong>{' '}
                         {awards.length === 1 ? t('inicio_merit_count') : t('inicio_merits_count')}
@@ -404,9 +415,17 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                   )}
                   {posts.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-blue-400">📝</span>
+                      <FileText className="w-5 h-5 text-blue-400 shrink-0" strokeWidth={2} />
                       <span className="text-slate-300">
                         <strong>{posts.length}</strong> {posts.length === 1 ? t('inicio_post_count') : t('inicio_posts_count')}
+                      </span>
+                    </div>
+                  )}
+                  {sessions.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <CalendarDays className="w-5 h-5 text-violet-400 shrink-0" strokeWidth={2} />
+                      <span className="text-slate-300">
+                        <strong>{sessions.length}</strong> {sessions.length === 1 ? t('inicio_session_count') : t('inicio_sessions_count')}
                       </span>
                     </div>
                   )}
@@ -420,7 +439,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                         const membership = teamMemberships?.find((m) => m.id === item.membershipId);
                         return (
                           <li key={`t-${i}`} className="text-slate-300 flex items-start gap-2">
-                            <span className="text-emerald-400 shrink-0">🏆</span>
+                            <Trophy className="w-4 h-4 text-emerald-400 shrink-0" strokeWidth={2} />
                             <span>
                               {onViewProfile && membership ? (
                                 <button type="button" onClick={() => onViewProfile(membership)} className="font-semibold text-slate-200 hover:text-emerald-400 hover:underline text-left">
@@ -439,10 +458,35 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                       if (item.type === 'posts' && onNavigateFeed) {
                         return (
                           <li key={`t-p-${i}`} className="text-slate-300 flex items-start gap-2">
-                            <span className="text-blue-400 shrink-0">📝</span>
+                            <FileText className="w-4 h-4 text-blue-400 shrink-0" strokeWidth={2} />
                             <button type="button" onClick={onNavigateFeed} className="text-left hover:text-slate-100 transition-colors">
                               <strong className="text-slate-200">{item.count}</strong> {item.count === 1 ? t('inicio_post_feed') : t('inicio_posts_feed')}
                             </button>
+                            <span className="text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
+                          </li>
+                        );
+                      }
+                      if (item.type === 'session') {
+                        const schedStr = item.scheduledAt
+                          ? (() => {
+                              const d = tsToDate(item.scheduledAt);
+                              return d ? d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                            })()
+                          : '';
+                        return (
+                          <li key={`t-s-${item.sessionId}`} className="text-slate-300 flex items-start gap-2">
+                            <CalendarDays className="w-4 h-4 text-violet-400 shrink-0" strokeWidth={2} />
+                            {onNavigateSessions ? (
+                              <button type="button" onClick={onNavigateSessions} className="text-left hover:text-slate-100 transition-colors">
+                                <strong className="text-slate-200">{item.title || t('inicio_session_created')}</strong>
+                                {schedStr && <span className="text-slate-500 ml-1">— {schedStr}</span>}
+                              </button>
+                            ) : (
+                              <span>
+                                <strong className="text-slate-200">{item.title || t('inicio_session_created')}</strong>
+                                {schedStr && <span className="text-slate-500 ml-1">— {schedStr}</span>}
+                              </span>
+                            )}
                             <span className="text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
                           </li>
                         );

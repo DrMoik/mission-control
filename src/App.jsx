@@ -8,10 +8,11 @@
 //
 // Business logic that lives elsewhere:
 //   constants.js   — static lookup tables (roles, careers, …)
-//   utils.js       — pure helper functions (rankOf, tsToDate, …)
-//   strings.js     — t() and STRINGS (Spanish only)
-//   components/    — shared modals and UI atoms
-//   views/         — one file per full-page view
+//   config/       — navigation structure (NAV_DOMAINS, VIEW_TO_DOMAIN)
+//   utils.js      — pure helper functions (rankOf, tsToDate, …)
+//   strings.js    — t() and STRINGS (Spanish only)
+//   components/   — shared modals and UI atoms
+//   views/        — one file per full-page view
 
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -32,31 +33,18 @@ import {
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, PERSONALITY_TAGS_DEFAULT, MERIT_TIERS,
   MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT, SKILL_DICTIONARY_DEFAULT, SKILL_TYPES,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
-  SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES,
+  SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES, SELECTED_TEAM_STORAGE_KEY,
 } from './constants.js';
-import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels } from './utils.js';
-
-/** Returns true if weekOf (YYYY-MM-DD) falls in current or previous week (Sunday–Saturday). */
-function isWeekEligibleForPoints(weekOf) {
-  const sunday = normalizeWeekOfToSunday(weekOf);
-  if (!sunday) return false;
-  const thisSunday = getSundayOfWeekLocal();
-  const d = new Date();
-  d.setDate(d.getDate() - 7);
-  const lastSunday = getSundayOfWeekLocal(d);
-  return sunday === thisSunday || sunday === lastSunday;
-}
-
-// ── Shared UI atoms (direct imports to avoid barrel evaluation-order issues) ───
+import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels, isWeekEligibleForPoints } from './utils.js';
+import { NAV_DOMAINS, VIEW_TO_DOMAIN } from './config/navigation.js';
 import RoleBadge  from './components/ui/RoleBadge.jsx';
 import GoogleIcon from './components/ui/GoogleIcon.jsx';
-import {
-  Home, LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, CalendarDays, Wrench,
-  GraduationCap, Wallet, CheckSquare, User, Settings, MessagesSquare, Map, ChevronDown, ChevronRight,
-} from 'lucide-react';
+import HamburgerIcon from './components/ui/HamburgerIcon.jsx';
+import InlineTeamRename from './components/InlineTeamRename.jsx';
+import SafeProfileImage from './components/ui/SafeProfileImage.jsx';
+import { Home, User, Settings, ChevronDown, ChevronRight, X } from 'lucide-react';
 
-// ── Modals ────────────────────────────────────────────────────────────────────
-import JoinRequestModal            from './components/JoinRequestModal.jsx';
+import JoinRequestModal from './components/JoinRequestModal.jsx';
 
 // ── Full-page views (all lazy to avoid "Cannot access X before initialization" in bundle) ──
 const OverviewView     = lazy(() => import('./views/OverviewView.jsx'));
@@ -76,137 +64,6 @@ const MembersView     = lazy(() => import('./views/MembersView.jsx'));
 const MeritsView      = lazy(() => import('./views/MeritsView.jsx'));
 const HRView          = lazy(() => import('./views/HRView.jsx'));
 const AdminView       = lazy(() => import('./views/AdminView.jsx'));
-
-// ── Navigation domain structure (two levels only) ───────────────────────────────
-const NAV_DOMAINS = [
-  {
-    id: 'comunidad',
-    labelKey: 'nav_domain_comunidad',
-    Icon: Users,
-    items: [
-      { id: 'overview', labelKey: 'nav_overview', Icon: LayoutDashboard },
-      { id: 'feed', labelKey: 'nav_feed', Icon: Rss },
-      { id: 'categories', labelKey: 'nav_categories', Icon: Grid },
-      { id: 'members', labelKey: 'nav_members', Icon: Users },
-      { id: 'sessions', labelKey: 'nav_sessions', Icon: CalendarDays },
-      { id: 'hr', labelKey: 'nav_hr', Icon: MessagesSquare },
-    ],
-  },
-  {
-    id: 'trabajo',
-    labelKey: 'nav_domain_trabajo',
-    Icon: CheckSquare,
-    items: [
-      { id: 'tasks', labelKey: 'nav_tasks', Icon: CheckSquare },
-      { id: 'calendar', labelKey: 'nav_calendar', Icon: Calendar },
-      { id: 'tools', labelKey: 'nav_tools', Icon: Wrench },
-    ],
-  },
-  {
-    id: 'aprendizaje',
-    labelKey: 'nav_domain_aprendizaje',
-    Icon: GraduationCap,
-    items: [
-      { id: 'academy', labelKey: 'nav_academy', Icon: GraduationCap },
-      { id: 'mapa', labelKey: 'nav_knowledge_map', Icon: Map },
-    ],
-  },
-  {
-    id: 'reconocimiento',
-    labelKey: 'nav_domain_reconocimiento',
-    Icon: Trophy,
-    items: [
-      { id: 'merits', labelKey: 'nav_merits', Icon: Trophy },
-      { id: 'leaderboard', labelKey: 'nav_leaderboard', Icon: Award },
-    ],
-  },
-  {
-    id: 'admin_group',
-    labelKey: 'nav_domain_admin',
-    Icon: Settings,
-    items: [
-      { id: 'admin', labelKey: 'nav_admin', Icon: Settings },
-      { id: 'funding', labelKey: 'nav_funding', Icon: Wallet },
-    ],
-    adminOnly: true,
-  },
-];
-
-const VIEW_TO_DOMAIN = {};
-NAV_DOMAINS.forEach((d) => {
-  d.items.forEach((it) => { VIEW_TO_DOMAIN[it.id] = d.id; });
-});
-
-// Standard hamburger menu icon (three horizontal bars)
-function HamburgerIcon({ className = 'w-5 h-5' }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
-  );
-}
-
-// ── InlineTeamRename ──────────────────────────────────────────────────────────
-// Small component rendered in the app header so platform admins can
-// rename or delete the currently-open team without leaving the page.
-function InlineTeamRename({ team, isPlatformAdmin, onRename, onDelete, t }) {
-  const [editing,  setEditing]  = React.useState(false);
-  const [value,    setValue]    = React.useState('');
-
-  if (!team) return null;
-
-  if (!isPlatformAdmin) {
-    return <span className="font-bold text-sm truncate">{team.name}</span>;
-  }
-
-  const start = () => { setValue(team.name); setEditing(true); };
-  const commit = () => { onRename(team.id, value); setEditing(false); };
-
-  if (editing) {
-    return (
-      <div className="flex items-center gap-1">
-        <input
-          autoFocus
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
-          className="px-2 py-1 bg-slate-800 border border-emerald-600 rounded text-sm font-bold w-44"
-        />
-        <button onClick={commit}
-          className="text-[11px] bg-emerald-500 text-black font-semibold px-2 py-1 rounded">
-          {t('save')}
-        </button>
-        <button onClick={() => setEditing(false)} className="text-[11px] text-slate-400 underline">
-          {t('cancel')}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-1.5 min-w-0">
-      <span className="font-bold text-sm truncate">{team.name}</span>
-      <button onClick={start}
-        title={t('rename_team')}
-        className="text-slate-500 hover:text-amber-400 transition-colors text-xs shrink-0"
-      >
-        …
-      </button>
-      <button onClick={() => onDelete(team.id)}
-        title={t('delete_team')}
-        className="text-slate-500 hover:text-red-400 transition-colors text-xs shrink-0"
-      >
-        ×
-      </button>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-const SELECTED_TEAM_STORAGE_KEY = 'mission-control:selectedTeamId';
 
 export default function App() {
 
@@ -896,7 +753,7 @@ export default function App() {
       membershipId:         membership.id,
       meritId:              null,
       meritName:            SYSTEM_MERIT_NAMES.suggestionAccepted,
-      meritLogo:            '💡',
+      meritLogo:            'bulb',
       points:               points,
       type:                 'award',
       evidence:             suggestion.id,
@@ -1115,7 +972,7 @@ export default function App() {
                 membershipId:      mid,
                 meritId:           null,
                 meritName:         SYSTEM_MERIT_NAMES.profileComplete,
-                meritLogo:         '✅',
+                meritLogo:         'checked-shield',
                 points:            systemMeritPoints.profileComplete,
                 type:              'award',
                 evidence:          'profile_complete_50',
@@ -1180,7 +1037,7 @@ export default function App() {
           membershipId,
           meritId:      null,
           meritName:    SYSTEM_MERIT_NAMES.weeklyUpdate,
-          meritLogo:    '📝',
+          meritLogo:    'quill',
           points:       systemMeritPoints.weeklyUpdate,
           type:         'award',
           evidence:     weekOf,
@@ -1208,7 +1065,7 @@ export default function App() {
             membershipId,
             meritId:      null,
             meritName:    SYSTEM_MERIT_NAMES.milestone50,
-            meritLogo:    '🎯',
+            meritLogo:    'archery-target',
             points:       systemMeritPoints.milestone50,
             type:         'award',
             evidence:     'milestone_50',
@@ -1705,8 +1562,8 @@ export default function App() {
   // ── Loading splash ─────────────────────────────────────────────────────────
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-slate-400 text-sm">{t('loading')}</div>
+      <div className="min-h-screen bg-surface-base flex items-center justify-center">
+        <div className="text-content-tertiary text-sm">{t('loading')}</div>
       </div>
     );
   }
@@ -1714,7 +1571,7 @@ export default function App() {
   // ── Unauthenticated — public team browser ──────────────────────────────────
   if (!authUser) {
     return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
+        <div className="min-h-screen bg-surface-base text-content-primary flex flex-col">
           <header className="border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="font-bold text-lg leading-tight">{t('app_name')}</h1>
@@ -1729,8 +1586,9 @@ export default function App() {
               </button>
             </div>
           </header>
-          <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6">
-            <p className="text-slate-400 text-sm mb-5">{t('sign_in_google')} — {t('app_subtitle')}</p>
+          <main className="flex-1 w-full">
+            <div className="page-container max-w-content-wide mx-auto">
+              <p className="text-content-secondary text-sm mb-6">{t('sign_in_google')} — {t('app_subtitle')}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {allTeams.map((team) => (
                 <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-2 border border-slate-700/40 shadow-sm hover:border-slate-600/50 transition-colors">
@@ -1744,8 +1602,9 @@ export default function App() {
                 </div>
               ))}
               {allTeams.length === 0 && (
-                <div className="col-span-2 text-center text-slate-500 text-sm py-12">{t('no_teams_sign_in')}</div>
+                <div className="col-span-2 text-center text-content-tertiary text-sm py-12">{t('no_teams_sign_in')}</div>
               )}
+            </div>
             </div>
           </main>
         </div>
@@ -1757,8 +1616,8 @@ export default function App() {
     // Wait for user memberships to load so teams appear immediately (avoids refresh after Google login)
     if (authUser && !userMembershipsReady) {
       return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-          <div className="text-slate-400 text-sm">{t('loading')}</div>
+        <div className="min-h-screen bg-surface-base flex items-center justify-center">
+          <div className="text-content-tertiary text-sm">{t('loading')}</div>
         </div>
       );
     }
@@ -1817,7 +1676,8 @@ export default function App() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
+        <div className="min-h-screen bg-surface-base text-content-primary flex flex-col">
+          <div className="shell-accent-bar shrink-0" />
           {joinTarget && (
             <JoinRequestModal
               team={joinTarget}
@@ -1827,13 +1687,20 @@ export default function App() {
             />
           )}
 
-          <header className="border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
+          <header className="shell-header px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="font-bold text-base leading-tight">{t('app_name')}</h1>
-              <p className="text-[11px] text-slate-500 hidden sm:block">{t('app_subtitle')}</p>
+              <h1 className="font-bold text-lg leading-tight text-content-primary">{t('app_name')}</h1>
+              <p className="text-xs text-content-secondary hidden sm:block">{t('app_subtitle')}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-              {userProfile?.photoURL && <img src={userProfile.photoURL} className="w-7 h-7 rounded-full" alt="" />}
+              {userProfile?.photoURL ? (
+                <SafeProfileImage
+                  src={userProfile.photoURL}
+                  fallback={<div className="w-7 h-7 rounded-full bg-slate-600 flex items-center justify-center text-[10px] font-bold">{(userProfile?.displayName || '?')[0].toUpperCase()}</div>}
+                  className="w-7 h-7 rounded-full"
+                  alt=""
+                />
+              ) : null}
               <span className="text-sm text-slate-200 hidden sm:inline">{userProfile?.displayName}</span>
               {isPlatformAdmin && (
                 <span className="text-[10px] bg-yellow-500 text-black px-1.5 py-0.5 rounded font-bold hidden sm:inline">
@@ -1844,7 +1711,8 @@ export default function App() {
             </div>
           </header>
 
-          <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6 space-y-6">
+          <main className="flex-1 w-full">
+            <div className="page-container max-w-content-wide mx-auto section-spacing">
             {activeMyTeams.length > 0 && (
               <div>
                 <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{t('your_teams')}</h2>
@@ -1852,9 +1720,9 @@ export default function App() {
                   {activeMyTeams.map((team) => {
                     const mem = userMemberships.find((m) => m.teamId === team.id);
                     return (
-                      <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-1 border border-slate-700/40 shadow-sm hover:border-emerald-500/30 transition-colors">
+                      <div key={team.id} className="bg-surface-raised rounded-xl p-4 space-y-1 border border-slate-700/40 shadow-surface-sm hover:border-primary/40 hover:shadow-surface-md transition-all duration-200">
                         <button onClick={() => { setSelectedTeamId(team.id); navigate('/inicio'); }}
-                          className="w-full text-left hover:text-emerald-300 transition-colors active:scale-95">
+                          className="w-full text-left hover:text-primary transition-colors active:scale-[0.98]">
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="font-bold text-sm">{team.name}</h3>
                             {mem && <RoleBadge role={mem.role} />}
@@ -1899,12 +1767,12 @@ export default function App() {
                 <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{t('join_a_team')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {otherTeams.map((team) => (
-                    <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-2 border border-slate-700/40 shadow-sm hover:border-slate-600/50 transition-colors">
+                    <div key={team.id} className="bg-surface-raised rounded-xl p-4 space-y-2 border border-slate-700/40 shadow-surface-sm hover:border-primary/40 hover:shadow-surface-md transition-all duration-200">
                       <h3 className="font-bold text-sm">{team.name}</h3>
                       {getL(team.overview?.tagline, lang) && <p className="text-xs text-slate-400 italic">"{getL(team.overview.tagline, lang)}"</p>}
                       {getL(team.overview?.about, lang)   && <p className="text-xs text-slate-500 line-clamp-2">{getL(team.overview.about, lang)}</p>}
                       <button onClick={() => setJoinTarget(team)}
-                        className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded hover:bg-emerald-400 transition-colors">
+                        className="text-xs bg-primary text-content-inverse font-semibold px-3 py-1.5 rounded-lg hover:bg-primary-hover transition-colors">
                         {t('request_to_join')}
                       </button>
                       <AdminTeamActions team={team} />
@@ -1931,8 +1799,9 @@ export default function App() {
             )}
 
             {activeMyTeams.length === 0 && pendingMyTeams.length === 0 && otherTeams.length === 0 && (
-              <div className="text-center text-slate-500 text-sm py-12">{t('no_teams')}</div>
+              <div className="text-center text-content-tertiary text-sm py-12">{t('no_teams')}</div>
             )}
+            </div>
           </main>
         </div>
     );
@@ -1944,21 +1813,22 @@ export default function App() {
   const navItems = visibleDomains.flatMap((d) => d.items);
 
   return (
-      <div className="h-screen overflow-hidden bg-slate-900 text-slate-100 flex flex-col">
-
+      <div className="h-screen overflow-hidden bg-surface-base text-content-primary flex flex-col">
+        {/* ── Top accent bar ── */}
+        <div className="shell-accent-bar shrink-0" />
 
         {/* ── Mobile nav overlay (accordion domains) ── */}
         {mobileNavOpen && (
           <div className="fixed inset-0 z-40 flex md:hidden">
             <div className="absolute inset-0 bg-black/60" onClick={() => setMobileNavOpen(false)} />
-            <nav className="relative z-50 w-64 bg-slate-950 border-r border-slate-800 p-3 overflow-y-auto">
+            <nav className="relative z-50 w-64 shell-sidebar p-3 overflow-y-auto">
               <div className="flex items-center justify-between mb-3">
                 <span className="font-bold text-sm">{currentTeam?.name}</span>
-                <button onClick={() => setMobileNavOpen(false)} className="text-slate-400 hover:text-white text-lg">✕</button>
+                <button onClick={() => setMobileNavOpen(false)} className="text-content-tertiary hover:text-content-primary p-1" title={t('close') || 'Cerrar'} aria-label={t('close') || 'Cerrar'}><X className="w-5 h-5" strokeWidth={2} /></button>
               </div>
               <button onClick={() => { goToView('inicio'); setMobileNavOpen(false); }}
                 className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm transition-colors
-                  ${view === 'inicio' ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
+                  ${view === 'inicio' ? 'shell-nav-active font-semibold' : 'text-content-secondary shell-nav-hover'}`}>
                 <Home className="w-5 h-5 shrink-0" strokeWidth={1.5} />
                 <span>{t('nav_inicio')}</span>
               </button>
@@ -1970,7 +1840,7 @@ export default function App() {
                     <button
                       onClick={() => setExpandedDomain(isExpanded ? null : domain.id)}
                       className={`w-full text-left px-3 py-2.5 rounded flex items-center justify-between text-sm transition-colors
-                        ${isActiveDomain ? 'bg-slate-700 text-slate-100' : 'text-slate-300 hover:bg-slate-800'}`}>
+                        ${isActiveDomain ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
                       <div className="flex items-center gap-2">
                         <domain.Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
                         <span>{t(domain.labelKey)}</span>
@@ -1983,7 +1853,7 @@ export default function App() {
                           <button key={item.id} onClick={() => { goToView(item.id); setMobileNavOpen(false); }}
                             title={item.id === 'hr' ? t('hr_page_title') : undefined}
                             className={`w-full text-left px-3 py-2 rounded flex items-center gap-2 text-sm transition-colors
-                              ${view === item.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+                              ${view === item.id ? 'shell-nav-active font-semibold' : 'text-content-tertiary shell-nav-hover'}`}>
                             <item.Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                             <span>{t(item.labelKey)}</span>
                           </button>
@@ -1997,16 +1867,16 @@ export default function App() {
                 {currentMembership && (
                   <button onClick={() => { goToView('myprofile'); setMobileNavOpen(false); }}
                     className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm
-                      ${view === 'myprofile' ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-400 hover:text-white'}`}>
+                      ${view === 'myprofile' ? 'shell-nav-active font-semibold' : 'text-content-tertiary shell-nav-hover'}`}>
                     <User className="w-5 h-5 shrink-0" strokeWidth={1.5} />
                     <span>{t('nav_myprofile')}</span>
                   </button>
                 )}
                 <button onClick={() => { setSelectedTeamId(null); setPreviewRole(null); setMobileNavOpen(false); }}
-                  className="w-full text-left text-xs text-slate-400 hover:text-white px-2 py-1.5">
+                  className="w-full text-left text-xs text-content-tertiary hover:text-content-primary px-2 py-1.5">
                   ← {t('switch_team')}
                 </button>
-                <button onClick={handleSignOut} className="w-full text-left text-xs text-slate-400 hover:text-white px-2 py-1.5">
+                <button onClick={handleSignOut} className="w-full text-left text-xs text-content-tertiary hover:text-content-primary px-2 py-1.5">
                   {t('sign_out')}
                 </button>
               </div>
@@ -2015,18 +1885,18 @@ export default function App() {
         )}
 
         {/* ── Header ── */}
-        <header className="border-b border-slate-800/80 px-4 py-3 flex items-center justify-between shrink-0 bg-slate-950/80 backdrop-blur-sm gap-2">
+        <header className="shell-header px-4 py-3 flex items-center justify-between shrink-0 gap-2">
           <div className="flex items-center gap-2 min-w-0">
             {/* Mobile hamburger */}
             <button onClick={() => setMobileNavOpen(true)}
-              className="md:hidden text-slate-400 hover:text-white w-8 h-8 flex items-center justify-center rounded hover:bg-slate-800 transition-colors shrink-0"
+              className="md:hidden text-content-tertiary hover:text-content-primary w-8 h-8 flex items-center justify-center rounded shell-nav-hover transition-colors shrink-0"
               title={t('expand_menu')}
               aria-label={t('expand_menu')}>
               <HamburgerIcon />
             </button>
             {/* Desktop sidebar collapse toggle */}
             <button onClick={() => setNavCollapsed((c) => !c)}
-              className="hidden md:flex text-slate-400 hover:text-white w-8 h-8 items-center justify-center rounded hover:bg-slate-800 transition-colors shrink-0"
+              className="hidden md:flex text-content-tertiary hover:text-content-primary w-8 h-8 items-center justify-center rounded shell-nav-hover transition-colors shrink-0"
               title={navCollapsed ? t('expand_menu') : t('collapse_menu')}
               aria-label={navCollapsed ? t('expand_menu') : t('collapse_menu')}>
               <HamburgerIcon />
@@ -2065,7 +1935,7 @@ export default function App() {
             )}
             {canEdit && (
               <button onClick={() => goToView('admin')}
-                className="p-2 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                className="p-2 rounded shell-nav-hover text-content-tertiary hover:text-content-primary transition-colors"
                 title={t('nav_admin')}
                 aria-label={t('nav_admin')}>
                 <Settings className="w-5 h-5" strokeWidth={1.5} />
@@ -2077,20 +1947,28 @@ export default function App() {
               title={t('nav_myprofile')}
               aria-label={t('nav_myprofile')}>
               {(currentMembership?.photoURL || userProfile?.photoURL) ? (
-                <img src={currentMembership?.photoURL || userProfile?.photoURL}
-                  className="w-8 h-8 rounded-full object-cover object-[center_top] border-2 border-slate-600 hover:border-emerald-500 transition-colors" alt="" />
+                <SafeProfileImage
+                  src={currentMembership?.photoURL || userProfile?.photoURL}
+                  fallback={
+                    <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-500 flex items-center justify-center text-sm font-bold">
+                      {(currentMembership?.displayName || userProfile?.displayName || '?')[0].toUpperCase()}
+                    </div>
+                  }
+                  className="w-8 h-8 rounded-full object-cover object-[center_top] border-2 border-slate-600 hover:border-primary transition-colors"
+                  alt=""
+                />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-500 flex items-center justify-center text-sm font-bold">
                   {(userProfile?.displayName || '?')[0].toUpperCase()}
                 </div>
               )}
-              <span className="text-sm text-slate-300 hidden lg:inline">{currentMembership?.displayName || userProfile?.displayName}</span>
+              <span className="text-sm text-content-secondary hidden lg:inline">{currentMembership?.displayName || userProfile?.displayName}</span>
             </button>
             <button onClick={() => { setSelectedTeamId(null); setPreviewRole(null); }}
-              className="text-xs text-slate-400 hover:text-white transition-colors hidden sm:block">
+              className="text-xs text-content-tertiary hover:text-content-primary transition-colors hidden sm:block">
               {t('switch_team')}
             </button>
-            <button onClick={handleSignOut} className="text-xs text-slate-400 hover:text-white transition-colors hidden sm:block">
+            <button onClick={handleSignOut} className="text-xs text-content-tertiary hover:text-content-primary transition-colors hidden sm:block">
               {t('sign_out')}
             </button>
           </div>
@@ -2108,12 +1986,12 @@ export default function App() {
         <div className="flex flex-1 min-h-0 overflow-hidden">
 
           {/* Desktop sidebar (domain groups) */}
-          <nav className={`hidden md:block ${navCollapsed ? 'w-12' : 'w-48'} border-r border-slate-800/80 p-2 shrink-0 transition-all duration-200 bg-slate-950/60 flex flex-col min-w-0 overflow-hidden`}>
+          <nav className={`hidden md:block shell-sidebar ${navCollapsed ? 'w-12' : 'w-48'} p-2 shrink-0 transition-all duration-200 flex flex-col min-w-0 overflow-hidden`}>
             <div className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
               <button onClick={() => goToView('inicio')}
                 className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors flex-shrink-0
                   ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
-                  ${view === 'inicio' ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-300 hover:bg-slate-800'}`}>
+                  ${view === 'inicio' ? 'shell-nav-active font-semibold' : 'text-content-secondary shell-nav-hover'}`}>
                 <Home className="w-5 h-5 shrink-0" strokeWidth={1.5} />
                 {!navCollapsed && <span className="truncate">{t('nav_inicio')}</span>}
               </button>
@@ -2129,7 +2007,7 @@ export default function App() {
                       }}
                       className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors
                         ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
-                        ${isActiveDomain ? 'bg-slate-700 text-slate-100' : 'text-slate-300 hover:bg-slate-800'}`}>
+                        ${isActiveDomain ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
                       <domain.Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
                       {!navCollapsed && (
                         <>
@@ -2144,7 +2022,7 @@ export default function App() {
                           <button key={item.id} onClick={() => goToView(item.id)}
                             title={item.id === 'hr' ? t('hr_page_title') : undefined}
                             className={`w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-sm transition-colors
-                              ${view === item.id ? 'bg-emerald-500 text-black font-semibold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+                              ${view === item.id ? 'shell-nav-active font-semibold' : 'text-content-tertiary shell-nav-hover'}`}>
                             <item.Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
                             <span className="truncate">{t(item.labelKey)}</span>
                           </button>
@@ -2158,8 +2036,9 @@ export default function App() {
           </nav>
 
           {/* Main content area */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-900/50">
-            <Suspense fallback={<div className="py-12 text-center text-slate-400 text-sm">{t('loading')}</div>}>
+          <main className="flex-1 overflow-y-auto shell-content">
+            <div className="page-container min-h-full">
+              <Suspense fallback={<div className="py-16 text-center text-content-tertiary text-sm">{t('loading')}</div>}>
             {view === 'inicio' && (
               <InicioView
                 team={currentTeam}
@@ -2183,11 +2062,13 @@ export default function App() {
                 teamMemberships={teamMemberships}
                 teamMeritEvents={teamMeritEvents}
                 teamPosts={teamPosts}
+                teamSessions={teamSessions}
                 teamModules={teamModules}
                 teamCategories={teamCategories}
                 canEdit={canEdit}
                 onSave={handleSaveOverview}
                 onNavigateFeed={() => navigate('/feed')}
+                onNavigateSessions={() => navigate('/sessions')}
               />
             )}
 
@@ -2285,6 +2166,7 @@ export default function App() {
             {view === 'calendar' && isAtLeastRookie && (
               <CalendarView
                 teamEvents={teamEvents}
+                teamSessions={teamSessions}
                 categories={teamCategories}
                 memberships={teamMemberships}
                 currentMembership={currentMembership}
@@ -2374,6 +2256,7 @@ export default function App() {
                 memberships={teamMemberships}
                 categories={teamCategories}
                 canManageSessions={canManageSessions}
+                authUser={authUser}
                 onCreateSession={handleCreateSession}
                 onUpdateSession={handleUpdateSession}
                 onDeleteSession={handleDeleteSession}
@@ -2515,6 +2398,7 @@ export default function App() {
               />
             )}
             </Suspense>
+            </div>
           </main>
         </div>
 

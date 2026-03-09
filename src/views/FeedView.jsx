@@ -3,8 +3,11 @@
 // per-post comments.  Authors and admins may delete their own content.
 
 import React, { useState } from 'react';
+import { X } from 'lucide-react';
 import { t } from '../strings.js';
 import { tsToDate } from '../utils.js';
+import { SafeProfileImage, Button, Textarea, Input } from '../components/ui/index.js';
+import { Card } from '../components/layout/index.js';
 
 /**
  * @param {{
@@ -50,33 +53,30 @@ export default function FeedView({
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 max-w-2xl">
-      <h2 className="text-base font-semibold">Feed</h2>
+    <div className="space-y-6 max-w-2xl">
+      <h2 className="text-lg font-semibold text-content-primary">Feed</h2>
 
       {/* Post composer */}
-      <div className="bg-slate-800 rounded-lg p-4 space-y-2">
-        <textarea rows={3} value={newContent} onChange={(e) => setNewContent(e.target.value)}
-          placeholder={t('share_ph')}
-          className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm resize-none" />
+      <Card className="space-y-3">
+        <Textarea rows={3} value={newContent} onChange={(e) => setNewContent(e.target.value)}
+          placeholder={t('share_ph')} />
         {showImageField && (
-          <input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)}
+          <Input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)}
             placeholder={t('paste_img_ph')}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-xs" />
+            className="text-xs" />
         )}
         {newImageUrl && (
-          <img src={newImageUrl} alt="preview" className="rounded-lg max-h-48 object-contain bg-slate-900 w-full" />
+          <img src={newImageUrl} alt="preview" className="rounded-lg max-h-48 object-contain bg-surface-sunken w-full" />
         )}
-        <div className="flex items-center justify-between">
-          <button onClick={() => setShowImageField((s) => !s)}
-            className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors">
+        <div className="flex items-center justify-between pt-1">
+          <Button variant="ghost" size="sm" onClick={() => setShowImageField((s) => !s)}>
             {showImageField ? t('remove_image_btn') : t('add_image_btn')}
-          </button>
-          <button onClick={handlePost} disabled={!newContent.trim()}
-            className="px-4 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded disabled:opacity-40 transition-opacity">
+          </Button>
+          <Button variant="primary" size="sm" onClick={handlePost} disabled={!newContent.trim()}>
             {t('post')}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {posts.length === 0 && (
         <div className="text-center text-xs text-slate-500 py-10">{t('feed_no_posts_guidance')}</div>
@@ -89,13 +89,20 @@ export default function FeedView({
           .sort((a, b) => tsToDate(a.createdAt) - tsToDate(b.createdAt));
         const isExpanded = expandedPostId === post.id;
         const isOwn      = post.authorId === authUser?.uid;
+        const authorMembership = memberships.find((m) => m.userId === post.authorId);
+        const authorPhoto = authorMembership?.photoURL || post.authorPhoto;
 
         return (
-          <div key={post.id} className="bg-slate-800 rounded-lg overflow-hidden">
+          <Card key={post.id} hover className="overflow-hidden">
             {/* Post body */}
             <div className="flex items-start gap-3 p-4">
-              {post.authorPhoto ? (
-                <img src={post.authorPhoto} className="w-9 h-9 rounded-full shrink-0" alt="" />
+              {authorPhoto ? (
+                <SafeProfileImage
+                  src={authorPhoto}
+                  fallback={<div className="w-9 h-9 rounded-full bg-slate-600 shrink-0 flex items-center justify-center text-sm font-bold">{(post.authorName || '?')[0].toUpperCase()}</div>}
+                  className="w-9 h-9 rounded-full shrink-0"
+                  alt=""
+                />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-slate-600 shrink-0 flex items-center justify-center text-sm font-bold">
                   {(post.authorName || '?')[0].toUpperCase()}
@@ -116,9 +123,9 @@ export default function FeedView({
                 )}
               </div>
               {(canEdit || isOwn) && (
-                <button onClick={() => onDeletePost(post.id)} className="shrink-0 text-[11px] text-red-400 underline">
+                <Button variant="link" size="sm" onClick={() => onDeletePost(post.id)} className="shrink-0 text-error hover:text-red-400">
                   {t('delete')}
-                </button>
+                </Button>
               )}
             </div>
 
@@ -149,7 +156,7 @@ export default function FeedView({
                       <p className="text-xs text-slate-200 mt-0.5">{c.content}</p>
                     </div>
                     {(canEdit || c.authorId === authUser?.uid) && (
-                      <button onClick={() => onDeleteComment(c.id)} className="text-[11px] text-red-400 shrink-0 mt-1">✕</button>
+                      <button onClick={() => onDeleteComment(c.id)} className="text-red-400 hover:text-red-300 shrink-0 mt-1 p-0.5" title={t('delete')} aria-label={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
                     )}
                   </div>
                 ))}
@@ -166,7 +173,7 @@ export default function FeedView({
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         );
       })}
     </div>

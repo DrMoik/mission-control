@@ -2,6 +2,8 @@
 
 **Cómo usar la plataforma**
 
+> **Asset attribution:** Achievement badge icons (trophy, medal, crown) are from [Game-Icons.net](https://game-icons.net/) by [Lorc](https://lorcblog.blogspot.com) under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). See [ASSETS_ATTRIBUTION.md](ASSETS_ATTRIBUTION.md) for details.
+
 Mission Control es una plataforma de méritos y aprendizaje en equipo: te unes a un equipo, avanzas por roles, ganas logros, completas módulos de academia y usas herramientas compartidas (tableros, reuniones, objetivos, etc.). Esta guía explica cómo usarla.
 
 ---

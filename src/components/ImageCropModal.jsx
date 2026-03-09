@@ -22,6 +22,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../strings.js';
 import { isBlockedImageHost, isNoCorsImageHost } from '../utils.js';
+import ModalOverlay from './ModalOverlay.jsx';
 
 export default function ImageCropModal({
   src,
@@ -232,14 +233,8 @@ export default function ImageCropModal({
   }, [onCancel]);
 
   const modalContent = (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
-      onClick={handleBackdropClick}
-    >
-      <div
-        className="bg-slate-800 rounded-2xl p-5 w-full max-w-lg shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalOverlay onClickBackdrop={handleBackdropClick} className="z-[60]">
+      <div className="bg-surface-raised rounded-2xl p-5 w-full max-w-lg shadow-surface-xl">
         <h3 className="text-white font-semibold mb-1 text-sm">{label}</h3>
         <p className="text-[11px] text-slate-400 mb-3">{t('drag_instruction')}</p>
 
@@ -322,7 +317,7 @@ export default function ImageCropModal({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 
   return createPortal(modalContent, document.body);

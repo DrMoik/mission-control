@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { t, lang } from '../strings.js';
 import { BilingualField } from '../components/ui/index.js';
+import SafeProfileImage from '../components/ui/SafeProfileImage.jsx';
 import { getL, toL, fillL, ensureString } from '../utils.js';
 
 export default function CategoriesView({
@@ -129,7 +130,12 @@ export default function CategoriesView({
                           className="flex items-center gap-2 bg-slate-700/50 hover:bg-slate-700 rounded-lg px-2.5 py-1.5 transition-colors"
                         >
                           {m.photoURL ? (
-                            <img src={m.photoURL} className="w-6 h-6 rounded-full object-cover" alt="" />
+                            <SafeProfileImage
+                              src={m.photoURL}
+                              fallback={<div className="w-6 h-6 rounded-full bg-slate-500 flex items-center justify-center text-[10px] font-bold">{(m.displayName || '?')[0].toUpperCase()}</div>}
+                              className="w-6 h-6 rounded-full object-cover"
+                              alt=""
+                            />
                           ) : (
                             <div className="w-6 h-6 rounded-full bg-slate-500 flex items-center justify-center text-[10px] font-bold">
                               {(m.displayName || '?')[0].toUpperCase()}
