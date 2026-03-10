@@ -61,7 +61,9 @@ export default function TasksView({
   const filteredTasksPendingMyReview = tasksPendingMyReview.filter((t) => matchesSearch(t));
 
   const TaskCard = ({ task, isCompleted, showRequestReview, showGrade }) => {
-    const assignerName = task.assignedByName || '—';
+    const assignerName = task.assignedByName
+      || memberships.find((m) => m.id === task.assignedByMembershipId)?.displayName
+      || '—';
     const due = task.dueDate ? tsToDate(task.dueDate) : null;
     const now = new Date();
     const isOverdue = due && due < now && (task.status || 'pending') === 'pending';
@@ -74,7 +76,7 @@ export default function TasksView({
       .join(', ') || '—';
     const isAssignee = assigneeIds.includes(currentMembership?.id);
     const isAssigner = task.assignedByMembershipId === currentMembership?.id;
-    const canDelete = isAssignee || isAssigner;
+    const canDelete = isAssignee || isAssigner || canViewAllTasks;
     const canRequestReview = showRequestReview && isAssignee && (task.status || 'pending') === 'pending' && !task.blocked;
     const isPendingReview = task.status === 'pending_review';
     const isBlocked = Boolean(task.blocked);
@@ -194,8 +196,10 @@ export default function TasksView({
                 )}
               </div>
             )}
-            {isPendingReview && isAssignee && (
-              <p className="text-xs text-amber-400/90 mt-1">{t('task_waiting_review')}</p>
+            {isPendingReview && (
+              <p className="text-xs text-amber-400/90 mt-1">
+                {(t('task_review_responsible') || 'Revisión a cargo de')}: <span className="font-medium text-amber-300">{assignerName}</span>
+              </p>
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">

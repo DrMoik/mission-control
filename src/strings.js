@@ -558,6 +558,7 @@ export const STRINGS = {
     task_from_pm_tools:  'Las tareas se crean desde herramientas de gestión de proyecto (p. ej. tableros SCRUM).',
     task_request_review:   'Solicitar Revisión',
     task_waiting_review:   'En espera de revisión por el responsable.',
+    task_review_responsible: 'Revisión a cargo de',
     task_pending_your_review: 'Pendientes de tu revisión',
     task_assign_merit:     'Asignar logro…',
     task_assign_merit_hint: 'Elige un logro del catálogo para asignar. Los puntos los define el admin.',
