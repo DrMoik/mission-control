@@ -73,7 +73,9 @@ export default function MembersView({
   const [search,        setSearch]        = useState('');
   const [roleFilter,    setRoleFilter]    = useState('');
   const [catFilter,     setCatFilter]     = useState('');
+  const [strikesFilter, setStrikesFilter] = useState(''); // '' | '0' | '1' | '2' | '3'
   const [skillFilter,   setSkillFilter]   = useState('');
+  const [complaintsFilter, setComplaintsFilter] = useState(''); // '' | 'none' | 'any' (only when canEdit)
   const [sortBy,        setSortBy]        = useState('name');
   const [sortDir,       setSortDir]       = useState('asc');   // collaboration skill search
   const [showGhostForm, setShowGhostForm] = useState(false);
@@ -106,11 +108,18 @@ export default function MembersView({
     return [...set].sort();
   }, [active, knowledgeAreas, skillDictionary]);
 
-  // Apply search + filter to active members
+  // Apply search + filter to active members (all filters combine with AND)
   const filteredRaw = active.filter((m) => {
     if (search     && !m.displayName?.toLowerCase().includes(search.toLowerCase())) return false;
     if (roleFilter && m.role !== roleFilter)                                         return false;
     if (catFilter  && m.categoryId !== catFilter)                                   return false;
+    if (strikesFilter) {
+      const s = m.strikes ?? 0;
+      if (strikesFilter === '0' && s !== 0) return false;
+      if (strikesFilter === '1' && s !== 1) return false;
+      if (strikesFilter === '2' && s !== 2) return false;
+      if (strikesFilter === '3' && s !== 3) return false;
+    }
     if (skillFilter) {
       const sk = skillFilter.toLowerCase().trim();
       const areaNames = [
@@ -127,6 +136,11 @@ export default function MembersView({
       ].map((t) => ensureString(t));
       const allTags = [...areaNames, ...legacyTags];
       if (!allTags.some((tag) => tag.toLowerCase().includes(sk))) return false;
+    }
+    if (complaintsFilter && canEdit) {
+      const count = complaintsAgainstMember.filter((c) => c.targetMembershipId === m.id).length;
+      if (complaintsFilter === 'none' && count > 0) return false;
+      if (complaintsFilter === 'any' && count === 0) return false;
     }
     return true;
   });
@@ -328,9 +342,25 @@ export default function MembersView({
           <option value="">{t('all_categories_opt')}</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
         </select>
-        {(search || roleFilter || catFilter || skillFilter) && (
+        <select value={strikesFilter} onChange={(e) => setStrikesFilter(e.target.value)}
+          className="px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs">
+          <option value="">{t('all_strikes')}</option>
+          <option value="0">{t('filter_strikes_0')}</option>
+          <option value="1">{t('filter_strikes_1')}</option>
+          <option value="2">{t('filter_strikes_2')}</option>
+          <option value="3">{t('filter_strikes_3')}</option>
+        </select>
+        {canEdit && (
+          <select value={complaintsFilter} onChange={(e) => setComplaintsFilter(e.target.value)}
+            className="px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs">
+            <option value="">{t('all_complaints')}</option>
+            <option value="none">{t('filter_complaints_none')}</option>
+            <option value="any">{t('filter_complaints_any')}</option>
+          </select>
+        )}
+        {(search || roleFilter || catFilter || strikesFilter || skillFilter || complaintsFilter) && (
           <button
-            onClick={() => { setSearch(''); setRoleFilter(''); setCatFilter(''); setSkillFilter(''); }}
+            onClick={() => { setSearch(''); setRoleFilter(''); setCatFilter(''); setStrikesFilter(''); setSkillFilter(''); setComplaintsFilter(''); }}
             className="text-xs text-slate-400 underline"
           >
             {t('clear_filters')}

@@ -11,9 +11,11 @@ const iconModules = import.meta.glob('../assets/achievement-icons/*.svg', {
 
 /** Icon key → resolved URL */
 const ICON_URL_MAP = {};
-for (const [path, url] of Object.entries(iconModules)) {
-  const match = path.match(/\/([^/]+)\.svg$/);
-  if (match) ICON_URL_MAP[match[1]] = url;
+for (const [path, mod] of Object.entries(iconModules)) {
+  const url = typeof mod === 'string' ? mod : (mod?.default ?? mod);
+  const base = path.split(/[/\\]/).pop() || '';
+  const key = base.replace(/\.svg$/i, '');
+  if (key && url) ICON_URL_MAP[key] = url;
 }
 
 /** Preset colors for merit icon tinting. filter = CSS filter to convert white icon to this color. */
