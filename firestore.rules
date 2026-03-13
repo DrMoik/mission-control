@@ -85,6 +85,45 @@ service cloud.firestore {
         && meritCategoryId == membershipDoc(teamId).data.get('categoryId', null);
     }
 
+    function isLeaderOrAboveInTeamList(teamIds) {
+      return isPlatformAdmin() || (
+        (teamIds.size() > 0 && isLeaderOrAbove(teamIds[0])) ||
+        (teamIds.size() > 1 && isLeaderOrAbove(teamIds[1])) ||
+        (teamIds.size() > 2 && isLeaderOrAbove(teamIds[2])) ||
+        (teamIds.size() > 3 && isLeaderOrAbove(teamIds[3])) ||
+        (teamIds.size() > 4 && isLeaderOrAbove(teamIds[4])) ||
+        (teamIds.size() > 5 && isLeaderOrAbove(teamIds[5])) ||
+        (teamIds.size() > 6 && isLeaderOrAbove(teamIds[6])) ||
+        (teamIds.size() > 7 && isLeaderOrAbove(teamIds[7])) ||
+        (teamIds.size() > 8 && isLeaderOrAbove(teamIds[8])) ||
+        (teamIds.size() > 9 && isLeaderOrAbove(teamIds[9]))
+      );
+    }
+
+    function channelDocPath(channelId) {
+      return /databases/$(database)/documents/crossTeamChannels/$(channelId);
+    }
+
+    function channelTeamPath(channelId, teamId) {
+      return /databases/$(database)/documents/crossTeamChannelTeams/$(channelId + '_' + teamId);
+    }
+
+    function channelExists(channelId) {
+      return exists(channelDocPath(channelId));
+    }
+
+    function channelDoc(channelId) {
+      return get(channelDocPath(channelId));
+    }
+
+    function channelTeamExists(channelId, teamId) {
+      return exists(channelTeamPath(channelId, teamId));
+    }
+
+    function channelTeamDoc(channelId, teamId) {
+      return get(channelTeamPath(channelId, teamId));
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null &&
         (request.auth.uid == userId || isPlatformAdmin());
@@ -166,7 +205,12 @@ service cloud.firestore {
       allow create: if request.auth != null &&
         membershipExists(request.resource.data.teamId) &&
         membershipDoc(request.resource.data.teamId).data.status == 'active';
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isPlatformAdmin() ||
+        (
+          channelExists(resource.data.channelId) &&
+          isLeaderOrAbove(channelDoc(resource.data.channelId).data.createdByTeamId)
+        );
     }
 
     match /skillProposals/{proposalId} {
@@ -386,9 +430,109 @@ service cloud.firestore {
       allow delete: if isLeaderOrAbove(resource.data.teamId);
     }
 
+    match /teamInventoryItems/{itemId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isTeamAdmin(request.resource.data.teamId) ||
+        (isLeaderOrAbove(request.resource.data.teamId) &&
+         request.resource.data.categoryId != null &&
+         request.resource.data.categoryId == membershipDoc(request.resource.data.teamId).data.categoryId);
+      allow update: if isTeamAdmin(resource.data.teamId) ||
+        isLeaderCanEditMerit(resource.data.teamId, resource.data.get('categoryId', null));
+      allow delete: if isTeamAdmin(resource.data.teamId) ||
+        isLeaderCanEditMerit(resource.data.teamId, resource.data.get('categoryId', null));
+    }
+
+    match /teamInventoryLoans/{loanId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /crossTeamChannels/{channelId} {
+      allow read: if isLeaderOrAbove(resource.data.createdByTeamId) ||
+        isLeaderOrAboveInTeamList(resource.data.get('memberTeamIds', [])) ||
+        isLeaderOrAboveInTeamList(resource.data.get('pendingTeamIds', []));
+      allow create: if request.auth != null &&
+        request.resource.data.createdByTeamId != null &&
+        isLeaderOrAbove(request.resource.data.createdByTeamId);
+      allow update: if isPlatformAdmin() ||
+        isLeaderOrAbove(resource.data.createdByTeamId) ||
+        (
+          isLeaderOrAboveInTeamList(resource.data.get('pendingTeamIds', [])) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberTeamIds', 'pendingTeamIds', 'declinedTeamIds', 'updatedAt'])
+        ) ||
+        (
+          isLeaderOrAboveInTeamList(resource.data.get('memberTeamIds', [])) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberTeamIds', 'updatedAt'])
+        ) ||
+        (
+          isLeaderOrAboveInTeamList(resource.data.get('memberTeamIds', [])) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessageAt', 'updatedAt'])
+        );
+      allow delete: if isPlatformAdmin() || isLeaderOrAbove(resource.data.createdByTeamId);
+    }
+
+    match /crossTeamChannelTeams/{channelTeamId} {
+      allow read: if isPlatformAdmin() ||
+        isLeaderOrAbove(resource.data.teamId) ||
+        (
+          channelExists(resource.data.channelId) &&
+          isLeaderOrAboveInTeamList(channelDoc(resource.data.channelId).data.get('memberTeamIds', []))
+        );
+      allow create: if request.auth != null &&
+        request.resource.data.ownerTeamId != null &&
+        request.resource.data.teamId != null &&
+        isLeaderOrAbove(request.resource.data.ownerTeamId);
+      allow update: if isPlatformAdmin() ||
+        (
+          isLeaderOrAbove(resource.data.ownerTeamId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'channelName',
+            'channelDescription',
+            'status',
+            'invitedByMembershipId',
+            'invitedByMembershipName',
+            'invitedAt',
+            'respondedAt',
+            'respondedByMembershipId',
+            'updatedAt'
+          ])
+        ) ||
+        (
+          isLeaderOrAbove(resource.data.teamId) &&
+          request.resource.data.teamId == resource.data.teamId &&
+          request.resource.data.channelId == resource.data.channelId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt', 'respondedByMembershipId', 'updatedAt'])
+        );
+      allow delete: if isPlatformAdmin() || isLeaderOrAbove(resource.data.ownerTeamId);
+    }
+
+    match /crossTeamMessages/{messageId} {
+      allow read: if request.auth != null &&
+        resource.data.channelId != null &&
+        exists(/databases/$(database)/documents/crossTeamChannels/$(resource.data.channelId)) &&
+        isLeaderOrAboveInTeamList(
+          get(/databases/$(database)/documents/crossTeamChannels/$(resource.data.channelId)).data.get('memberTeamIds', [])
+        );
+      allow create: if request.auth != null &&
+        request.resource.data.channelId != null &&
+        request.resource.data.teamId != null &&
+        exists(/databases/$(database)/documents/crossTeamChannels/$(request.resource.data.channelId)) &&
+        isLeaderOrAbove(request.resource.data.teamId) &&
+        (
+          (
+            channelTeamExists(request.resource.data.channelId, request.resource.data.teamId) &&
+            channelTeamDoc(request.resource.data.channelId, request.resource.data.teamId).data.status in ['owner', 'member']
+          ) ||
+          get(/databases/$(database)/documents/crossTeamChannels/$(request.resource.data.channelId)).data.get('memberTeamIds', []).hasAny([request.resource.data.teamId])
+        );
+      allow update, delete: if false;
+    }
+
     match /auditLog/{logId} {
       allow read: if isTeamAdmin(resource.data.teamId);
-      allow create: if isTeamAdmin(request.resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
       allow update, delete: if false;
     }
 

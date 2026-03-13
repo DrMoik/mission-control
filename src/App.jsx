@@ -20,7 +20,7 @@ import { auth, db } from './firebase.js';
 import {
   collection, doc, setDoc, getDoc, updateDoc, deleteDoc,
   addDoc, query, where, onSnapshot, serverTimestamp, Timestamp, runTransaction,
-  getDocs, writeBatch,
+  getDocs, writeBatch, arrayUnion, arrayRemove,
 } from 'firebase/firestore';
 import { useAuth } from './hooks/useAuth.js';
 import { useFirebaseSubscriptions } from './hooks/useFirebaseSubscriptions.js';
@@ -55,7 +55,9 @@ const CalendarView    = lazy(() => import('./views/CalendarView.jsx'));
 const ToolsView       = lazy(() => import('./views/ToolsView.jsx'));
 const AcademyView     = lazy(() => import('./views/AcademyView.jsx'));
 const FeedView        = lazy(() => import('./views/FeedView.jsx'));
+const ChannelsView    = lazy(() => import('./views/ChannelsView.jsx'));
 const FundingView     = lazy(() => import('./views/FundingView.jsx'));
+const InventoryView   = lazy(() => import('./views/InventoryView.jsx'));
 const TasksView       = lazy(() => import('./views/TasksView.jsx'));
 const ProfilePageView = lazy(() => import('./views/ProfilePageView.jsx'));
 const SessionsView    = lazy(() => import('./views/SessionsView.jsx'));
@@ -105,6 +107,10 @@ export default function App() {
     teamWeeklyStatuses,
     teamFundingAccounts,
     teamFundingEntries,
+    teamInventoryItems,
+    teamInventoryLoans,
+    crossTeamChannels,
+    crossTeamChannelInvitations,
     teamTasks,
     teamHrSuggestions,
     teamHrComplaints,
@@ -153,7 +159,7 @@ export default function App() {
     if (currentDomain) setExpandedDomain((prev) => (prev === currentDomain ? prev : currentDomain));
   }, [currentDomain]);
 
-  const validViews = new Set(['inicio', 'overview', 'feed', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'tasks', 'sessions', 'mapa', 'hr', 'myprofile', 'profile', 'admin']);
+  const validViews = new Set(['inicio', 'overview', 'feed', 'channels', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'inventory', 'tasks', 'sessions', 'mapa', 'hr', 'myprofile', 'profile', 'admin']);
   const isViewValid = validViews.has(view);
 
   // Redirect invalid paths to /inicio (only when team is selected, to avoid running in team picker)
@@ -187,6 +193,10 @@ export default function App() {
   const isMember        = effectiveAdmin || Boolean(currentMembership);
   // Real permission level — unaffected by preview mode (used for UI controls)
   const isAdminLevel    = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor';
+  const canViewInventory = isMember;
+  const canManageInventory = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
+  const canUseCrossTeamChannels = effectiveAdmin || atLeast(effectiveRole, 'leader');
+  const canManageCrossTeamChannels = isPlatformAdmin || atLeast(memberRole, 'leader');
 
   const currentTeam = useMemo(
     () => allTeams.find((t) => t.id === selectedTeamId) || null,
@@ -197,6 +207,12 @@ export default function App() {
   useEffect(() => {
     if (selectedTeamId && view === 'admin' && !canEdit) navigate('/inicio', { replace: true });
   }, [selectedTeamId, view, canEdit, navigate]);
+  useEffect(() => {
+    if (selectedTeamId && view === 'inventory' && !canViewInventory) navigate('/inicio', { replace: true });
+  }, [selectedTeamId, view, canViewInventory, navigate]);
+  useEffect(() => {
+    if (selectedTeamId && view === 'channels' && !canUseCrossTeamChannels) navigate('/inicio', { replace: true });
+  }, [selectedTeamId, view, canUseCrossTeamChannels, navigate]);
 
   // Merit tags: team overrides, then platform config, then constants
   // Team tags; new teams get defaults from constants in handleCreateTeam
@@ -298,6 +314,28 @@ export default function App() {
       console.warn('Audit log failed:', e);
     }
   }, [currentTeam, canEdit, authUser, userProfile]);
+
+  const logChannelAudit = useCallback(async (action, channelId, details = {}) => {
+    if (!currentTeam || !authUser || !canManageCrossTeamChannels) return;
+    try {
+      await addDoc(collection(db, 'auditLog'), {
+        teamId: currentTeam.id,
+        userId: authUser.uid,
+        userName: currentMembership?.displayName || userProfile?.displayName || authUser.email || 'Member',
+        action,
+        targetType: 'crossTeamChannel',
+        targetId: channelId || null,
+        details: {
+          actorTeamId: currentTeam.id,
+          actorMembershipId: currentMembership?.id || null,
+          ...details,
+        },
+        createdAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.warn('Channel audit failed:', e);
+    }
+  }, [currentTeam, authUser, currentMembership, userProfile, canManageCrossTeamChannels]);
 
   // Extracted handlers (hooks)
   const {
@@ -1271,6 +1309,99 @@ export default function App() {
 
   // ── Tools: Calendar ────────────────────────────────────────────────────────
 
+  const canEditInventoryItem = React.useCallback((item) => {
+    if (!item) return false;
+    if (canEdit) return true;
+    return memberRole === 'leader'
+      && !!currentMembership?.categoryId
+      && item.categoryId === currentMembership.categoryId;
+  }, [canEdit, memberRole, currentMembership]);
+
+  const handleCreateInventoryItem = async (data) => {
+    if (!currentTeam || !canManageInventory) return;
+    const payload = {
+      name: String(data?.name || '').trim(),
+      type: ['tool', 'consumable', 'equipment'].includes(data?.type) ? data.type : 'equipment',
+      quantity: Math.max(0, Number(data?.quantity) || 0),
+      unit: String(data?.unit || '').trim(),
+      minQuantity: Math.max(0, Number(data?.minQuantity) || 0),
+      categoryId: data?.categoryId || null,
+      notes: String(data?.notes || '').trim(),
+    };
+    if (!payload.name) return;
+    if (!canEdit && payload.categoryId !== currentMembership?.categoryId) return;
+    await addDoc(collection(db, 'teamInventoryItems'), {
+      teamId: currentTeam.id,
+      createdAt: serverTimestamp(),
+      ...payload,
+      ...lastEditedStamp(),
+    });
+  };
+
+  const handleUpdateInventoryItem = async (itemId, updates) => {
+    const item = teamInventoryItems.find((entry) => entry.id === itemId);
+    if (!item || !canEditInventoryItem(item)) return;
+    const nextCategoryId = updates?.categoryId ?? item.categoryId ?? null;
+    if (!canEdit && nextCategoryId !== currentMembership?.categoryId) return;
+    await updateDoc(doc(db, 'teamInventoryItems', itemId), {
+      name: String(updates?.name ?? item.name ?? '').trim(),
+      type: ['tool', 'consumable', 'equipment'].includes(updates?.type) ? updates.type : (item.type || 'equipment'),
+      quantity: Math.max(0, Number(updates?.quantity ?? item.quantity) || 0),
+      unit: String(updates?.unit ?? item.unit ?? '').trim(),
+      minQuantity: Math.max(0, Number(updates?.minQuantity ?? item.minQuantity) || 0),
+      categoryId: nextCategoryId,
+      notes: String(updates?.notes ?? item.notes ?? '').trim(),
+      ...lastEditedStamp(),
+    });
+  };
+
+  const handleDeleteInventoryItem = async (itemId) => {
+    const item = teamInventoryItems.find((entry) => entry.id === itemId);
+    if (!item || !canEditInventoryItem(item)) return;
+    await deleteDoc(doc(db, 'teamInventoryItems', itemId));
+  };
+
+  const handleCreateInventoryLoan = async ({ itemId, membershipId, quantity = 1, dueDate = '', notes = '' }) => {
+    if (!currentTeam || !canManageInventory || !currentMembership) return;
+    const item = teamInventoryItems.find((entry) => entry.id === itemId);
+    const borrower = teamMemberships.find((entry) => entry.id === membershipId);
+    if (!item || !borrower) return;
+    if (item.type === 'consumable') return;
+    const qty = Math.max(1, Number(quantity) || 1);
+    const activeLoaned = teamInventoryLoans
+      .filter((loan) => loan.itemId === itemId && !loan.returnedAt)
+      .reduce((sum, loan) => sum + (Number(loan.quantity) || 0), 0);
+    const available = Math.max(0, Number(item.quantity || 0) - activeLoaned);
+    if (qty > available) return;
+    await addDoc(collection(db, 'teamInventoryLoans'), {
+      teamId: currentTeam.id,
+      itemId,
+      itemName: item.name || '',
+      membershipId,
+      borrowerName: borrower.displayName || 'Member',
+      quantity: qty,
+      dueDate: dueDate || '',
+      notes: String(notes || '').trim(),
+      loanedAt: serverTimestamp(),
+      loanedByMembershipId: currentMembership.id,
+      loanedByName: currentMembership.displayName || userProfile?.displayName || authUser?.email || 'Unknown',
+      returnedAt: null,
+      returnedByMembershipId: null,
+      returnedByName: '',
+    });
+  };
+
+  const handleReturnInventoryLoan = async (loanId) => {
+    if (!currentTeam || !canManageInventory || !currentMembership) return;
+    const loan = teamInventoryLoans.find((entry) => entry.id === loanId);
+    if (!loan || loan.returnedAt) return;
+    await updateDoc(doc(db, 'teamInventoryLoans', loanId), {
+      returnedAt: serverTimestamp(),
+      returnedByMembershipId: currentMembership.id,
+      returnedByName: currentMembership.displayName || userProfile?.displayName || authUser?.email || 'Unknown',
+    });
+  };
+
   const handleCreateEvent = async ({ title, date, description, categoryId }) => {
     if (!currentTeam) return;
     // Resolve permission: global events need canEditTools, category events need canEditToolItem
@@ -1525,6 +1656,324 @@ export default function App() {
     if (!comment) return;
     if (comment.authorId !== authUser.uid && !canEdit) return;
     await deleteDoc(doc(db, 'comments', commentId));
+  };
+
+  const deleteInChunks = async (refs, chunkSize = 400) => {
+    for (let i = 0; i < refs.length; i += chunkSize) {
+      const batch = writeBatch(db);
+      refs.slice(i, i + chunkSize).forEach((ref) => batch.delete(ref));
+      await batch.commit();
+    }
+  };
+
+  // Cross-team channels
+  const handleCreateCrossTeamChannel = async ({ name, description = '', invitedTeamIds = [] }) => {
+    const trimmedName = String(name || '').trim();
+    if (!authUser || !currentTeam || !trimmedName || !canManageCrossTeamChannels) return;
+
+    const uniqueInvitedTeamIds = [...new Set(
+      invitedTeamIds
+        .map((teamId) => String(teamId || '').trim())
+        .filter((teamId) => teamId && teamId !== currentTeam.id),
+    )];
+
+    const channelRef = doc(collection(db, 'crossTeamChannels'));
+    const batch = writeBatch(db);
+    const actorName = currentMembership?.displayName || userProfile?.displayName || authUser.email || 'Member';
+
+    batch.set(channelRef, {
+      createdByTeamId: currentTeam.id,
+      createdByTeamName: currentTeam.name || 'Equipo',
+      createdByMembershipId: currentMembership?.id || null,
+      createdByMembershipName: actorName,
+      name: trimmedName,
+      description: String(description || '').trim(),
+      memberTeamIds: [currentTeam.id],
+      pendingTeamIds: uniqueInvitedTeamIds,
+      declinedTeamIds: [],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lastMessageAt: serverTimestamp(),
+    });
+
+    batch.set(doc(db, 'crossTeamChannelTeams', `${channelRef.id}_${currentTeam.id}`), {
+      channelId: channelRef.id,
+      channelName: trimmedName,
+      channelDescription: String(description || '').trim(),
+      ownerTeamId: currentTeam.id,
+      ownerTeamName: currentTeam.name || 'Equipo',
+      teamId: currentTeam.id,
+      teamName: currentTeam.name || 'Equipo',
+      status: 'owner',
+      invitedByMembershipId: currentMembership?.id || null,
+      invitedByMembershipName: actorName,
+      invitedAt: serverTimestamp(),
+      respondedAt: serverTimestamp(),
+      respondedByMembershipId: currentMembership?.id || null,
+      updatedAt: serverTimestamp(),
+    });
+
+    uniqueInvitedTeamIds.forEach((teamId) => {
+      const invitedTeam = allTeams.find((team) => team.id === teamId);
+      batch.set(doc(db, 'crossTeamChannelTeams', `${channelRef.id}_${teamId}`), {
+        channelId: channelRef.id,
+        channelName: trimmedName,
+        channelDescription: String(description || '').trim(),
+        ownerTeamId: currentTeam.id,
+        ownerTeamName: currentTeam.name || 'Equipo',
+        teamId,
+        teamName: invitedTeam?.name || 'Equipo',
+        status: 'pending',
+        invitedByMembershipId: currentMembership?.id || null,
+        invitedByMembershipName: actorName,
+        invitedAt: serverTimestamp(),
+        respondedAt: null,
+        respondedByMembershipId: null,
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
+    await logChannelAudit('channel_create', channelRef.id, {
+      invitedTeamIds: uniqueInvitedTeamIds,
+      channelName: trimmedName,
+    });
+  };
+
+  const handleInviteTeamsToChannel = async (channelId, invitedTeamIds = []) => {
+    const channel = crossTeamChannels.find((entry) => entry.id === channelId);
+    if (!channel || !currentTeam || !canManageCrossTeamChannels) return;
+    if (!isPlatformAdmin && channel.createdByTeamId !== currentTeam.id) return;
+
+    const relationSnap = await getDocs(query(collection(db, 'crossTeamChannelTeams'), where('channelId', '==', channelId)));
+    const activeOrPendingTeamIds = new Set(
+      relationSnap.docs
+        .map((docSnap) => docSnap.data())
+        .filter((entry) => ['owner', 'member', 'pending'].includes(entry.status))
+        .map((entry) => entry.teamId),
+    );
+    const existingDeclined = new Set(
+      relationSnap.docs
+        .map((docSnap) => docSnap.data())
+        .filter((entry) => ['declined', 'left'].includes(entry.status))
+        .map((entry) => entry.teamId),
+    );
+    const teamIdsToInvite = [...new Set(
+      invitedTeamIds
+        .map((teamId) => String(teamId || '').trim())
+        .filter((teamId) => teamId && !activeOrPendingTeamIds.has(teamId) && teamId !== channel.createdByTeamId),
+    )];
+
+    if (!teamIdsToInvite.length) return;
+
+    const batch = writeBatch(db);
+    const actorName = currentMembership?.displayName || userProfile?.displayName || authUser?.email || 'Member';
+
+    const channelUpdates = {
+      pendingTeamIds: arrayUnion(...teamIdsToInvite),
+      updatedAt: serverTimestamp(),
+    };
+    const declinedIdsToClear = teamIdsToInvite.filter((teamId) => existingDeclined.has(teamId));
+    if (declinedIdsToClear.length) {
+      channelUpdates.declinedTeamIds = arrayRemove(...declinedIdsToClear);
+    }
+    batch.update(doc(db, 'crossTeamChannels', channelId), channelUpdates);
+
+    teamIdsToInvite.forEach((teamId) => {
+      const invitedTeam = allTeams.find((team) => team.id === teamId);
+      batch.set(doc(db, 'crossTeamChannelTeams', `${channelId}_${teamId}`), {
+        channelId,
+        channelName: channel.name || 'Canal',
+        channelDescription: channel.description || '',
+        ownerTeamId: channel.createdByTeamId,
+        ownerTeamName: channel.createdByTeamName || currentTeam.name || 'Equipo',
+        teamId,
+        teamName: invitedTeam?.name || 'Equipo',
+        status: 'pending',
+        invitedByMembershipId: currentMembership?.id || null,
+        invitedByMembershipName: actorName,
+        invitedAt: serverTimestamp(),
+        respondedAt: null,
+        respondedByMembershipId: null,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    });
+
+    await batch.commit();
+    await logChannelAudit('channel_invite', channelId, { invitedTeamIds: teamIdsToInvite });
+  };
+
+  const handleAcceptCrossTeamInvitation = async (invitationId) => {
+    if (!authUser || !selectedTeamId || !canManageCrossTeamChannels) return;
+    const invitation = crossTeamChannelInvitations.find((entry) => entry.id === invitationId);
+    if (!invitation || invitation.teamId !== selectedTeamId || invitation.status !== 'pending') return;
+
+    await runTransaction(db, async (tx) => {
+      const invitationRef = doc(db, 'crossTeamChannelTeams', invitationId);
+      const channelRef = doc(db, 'crossTeamChannels', invitation.channelId);
+      const [invitationSnap, channelSnap] = await Promise.all([tx.get(invitationRef), tx.get(channelRef)]);
+      if (!invitationSnap.exists() || !channelSnap.exists()) return;
+
+      const invitationData = invitationSnap.data();
+      const channelData = channelSnap.data();
+      if (invitationData.status !== 'pending' || invitationData.teamId !== selectedTeamId) return;
+
+      const memberTeamIds = new Set(channelData.memberTeamIds || []);
+      memberTeamIds.add(selectedTeamId);
+      const pendingTeamIds = (channelData.pendingTeamIds || []).filter((teamId) => teamId !== selectedTeamId);
+      const declinedTeamIds = (channelData.declinedTeamIds || []).filter((teamId) => teamId !== selectedTeamId);
+
+      tx.update(channelRef, {
+        memberTeamIds: [...memberTeamIds],
+        pendingTeamIds,
+        declinedTeamIds,
+        updatedAt: serverTimestamp(),
+      });
+      tx.update(invitationRef, {
+        status: 'member',
+        respondedAt: serverTimestamp(),
+        respondedByMembershipId: currentMembership?.id || null,
+        updatedAt: serverTimestamp(),
+      });
+    });
+    await logChannelAudit('channel_accept_invite', invitation.channelId, { targetTeamId: selectedTeamId });
+  };
+
+  const handleDeclineCrossTeamInvitation = async (invitationId) => {
+    if (!authUser || !selectedTeamId || !canManageCrossTeamChannels) return;
+    const invitation = crossTeamChannelInvitations.find((entry) => entry.id === invitationId);
+    if (!invitation || invitation.teamId !== selectedTeamId || invitation.status !== 'pending') return;
+
+    await runTransaction(db, async (tx) => {
+      const invitationRef = doc(db, 'crossTeamChannelTeams', invitationId);
+      const channelRef = doc(db, 'crossTeamChannels', invitation.channelId);
+      const [invitationSnap, channelSnap] = await Promise.all([tx.get(invitationRef), tx.get(channelRef)]);
+      if (!invitationSnap.exists() || !channelSnap.exists()) return;
+
+      const invitationData = invitationSnap.data();
+      const channelData = channelSnap.data();
+      if (invitationData.status !== 'pending' || invitationData.teamId !== selectedTeamId) return;
+
+      const pendingTeamIds = (channelData.pendingTeamIds || []).filter((teamId) => teamId !== selectedTeamId);
+      const declinedTeamIds = new Set(channelData.declinedTeamIds || []);
+      declinedTeamIds.add(selectedTeamId);
+
+      tx.update(channelRef, {
+        pendingTeamIds,
+        declinedTeamIds: [...declinedTeamIds],
+        updatedAt: serverTimestamp(),
+      });
+      tx.update(invitationRef, {
+        status: 'declined',
+        respondedAt: serverTimestamp(),
+        respondedByMembershipId: currentMembership?.id || null,
+        updatedAt: serverTimestamp(),
+      });
+    });
+    await logChannelAudit('channel_decline_invite', invitation.channelId, { targetTeamId: selectedTeamId });
+  };
+
+  const handleUpdateCrossTeamChannel = async (channelId, updates) => {
+    const channel = crossTeamChannels.find((entry) => entry.id === channelId);
+    if (!channel || !canManageCrossTeamChannels) return;
+    if (!isPlatformAdmin && channel.createdByTeamId !== selectedTeamId) return;
+
+    const nextName = typeof updates?.name === 'string' ? updates.name.trim() : channel.name;
+    const nextDescription = typeof updates?.description === 'string' ? updates.description.trim() : channel.description;
+    if (!nextName) return;
+
+    const relationSnap = await getDocs(query(collection(db, 'crossTeamChannelTeams'), where('channelId', '==', channelId)));
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'crossTeamChannels', channelId), {
+      name: nextName,
+      description: nextDescription || '',
+      updatedAt: serverTimestamp(),
+    });
+    relationSnap.docs.forEach((docSnap) => {
+      batch.set(docSnap.ref, {
+        channelName: nextName,
+        channelDescription: nextDescription || '',
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    });
+    await batch.commit();
+    await logChannelAudit('channel_update', channelId, { channelName: nextName });
+  };
+
+  const handleCreateCrossTeamMessage = async (channelId, content) => {
+    const channel = crossTeamChannels.find((entry) => entry.id === channelId);
+    const trimmedContent = String(content || '').trim();
+    if (!channel || !trimmedContent || !currentTeam || !authUser || !canManageCrossTeamChannels) return;
+    const relationSnap = await getDoc(doc(db, 'crossTeamChannelTeams', `${channelId}_${currentTeam.id}`));
+    const relation = relationSnap.exists() ? relationSnap.data() : null;
+    const isLegacyMember = (channel.memberTeamIds || []).includes(currentTeam.id);
+    if (!isPlatformAdmin && !['owner', 'member'].includes(relation?.status || '') && !isLegacyMember) return;
+
+    await addDoc(collection(db, 'crossTeamMessages'), {
+      channelId,
+      teamId: currentTeam.id,
+      teamName: currentTeam.name || 'Equipo',
+      membershipId: currentMembership?.id || null,
+      authorName: currentMembership?.displayName || userProfile?.displayName || authUser.email || 'Member',
+      content: trimmedContent,
+      createdAt: serverTimestamp(),
+    });
+
+    try {
+      await updateDoc(doc(db, 'crossTeamChannels', channelId), {
+        lastMessageAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.warn('Channel timestamp update failed:', e);
+    }
+    await logChannelAudit('channel_message', channelId);
+  };
+
+  const handleLeaveCrossTeamChannel = async (channelId) => {
+    const channel = crossTeamChannels.find((entry) => entry.id === channelId);
+    if (!channel || !selectedTeamId || !canManageCrossTeamChannels) return;
+    if (channel.createdByTeamId === selectedTeamId) return;
+    if (!(channel.memberTeamIds || []).includes(selectedTeamId)) return;
+
+    await runTransaction(db, async (tx) => {
+      const channelRef = doc(db, 'crossTeamChannels', channelId);
+      const invitationRef = doc(db, 'crossTeamChannelTeams', `${channelId}_${selectedTeamId}`);
+      const channelSnap = await tx.get(channelRef);
+      if (!channelSnap.exists()) return;
+
+      const channelData = channelSnap.data();
+      tx.update(channelRef, {
+        memberTeamIds: (channelData.memberTeamIds || []).filter((teamId) => teamId !== selectedTeamId),
+        updatedAt: serverTimestamp(),
+      });
+
+      const invitationSnap = await tx.get(invitationRef);
+      if (invitationSnap.exists()) {
+        tx.update(invitationRef, {
+          status: 'left',
+          respondedAt: serverTimestamp(),
+          respondedByMembershipId: currentMembership?.id || null,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    });
+    await logChannelAudit('channel_leave', channelId, { targetTeamId: selectedTeamId });
+  };
+
+  const handleDeleteCrossTeamChannel = async (channelId) => {
+    const channel = crossTeamChannels.find((entry) => entry.id === channelId);
+    if (!channel || !canManageCrossTeamChannels) return;
+    if (!isPlatformAdmin && channel.createdByTeamId !== selectedTeamId) return;
+
+    const invitationsSnap = await getDocs(query(collection(db, 'crossTeamChannelTeams'), where('channelId', '==', channelId)));
+    const messagesSnap = await getDocs(query(collection(db, 'crossTeamMessages'), where('channelId', '==', channelId)));
+    await deleteInChunks([
+      ...invitationsSnap.docs.map((docSnap) => docSnap.ref),
+      ...messagesSnap.docs.map((docSnap) => docSnap.ref),
+      doc(db, 'crossTeamChannels', channelId),
+    ]);
+    await logChannelAudit('channel_delete', channelId);
   };
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -1809,7 +2258,17 @@ export default function App() {
 
   // ── Main app shell (team selected) ─────────────────────────────────────────
 
-  const visibleDomains = NAV_DOMAINS.filter((d) => !d.adminOnly || canEdit);
+  const visibleDomains = NAV_DOMAINS
+    .map((domain) => ({
+      ...domain,
+      items: domain.items.filter((item) => {
+        if (item.access === 'admin') return canEdit;
+        if (item.access === 'leader') return canEditTools;
+        if (item.access === 'member') return isMember;
+        return true;
+      }),
+    }))
+    .filter((domain) => domain.items.length > 0);
   const navItems = visibleDomains.flatMap((d) => d.items);
 
   return (
@@ -2087,6 +2546,24 @@ export default function App() {
               />
             )}
 
+            {view === 'channels' && canUseCrossTeamChannels && (
+              <ChannelsView
+                currentTeam={currentTeam}
+                currentMembership={currentMembership}
+                allTeams={allTeams}
+                channels={crossTeamChannels}
+                pendingInvitations={crossTeamChannelInvitations}
+                onCreateChannel={handleCreateCrossTeamChannel}
+                onInviteTeams={handleInviteTeamsToChannel}
+                onAcceptInvitation={handleAcceptCrossTeamInvitation}
+                onDeclineInvitation={handleDeclineCrossTeamInvitation}
+                onUpdateChannel={handleUpdateCrossTeamChannel}
+                onCreateMessage={handleCreateCrossTeamMessage}
+                onLeaveChannel={handleLeaveCrossTeamChannel}
+                onDeleteChannel={handleDeleteCrossTeamChannel}
+              />
+            )}
+
             {view === 'categories' && isAtLeastRookie && (
               <CategoriesView
                 categories={teamCategories}
@@ -2237,7 +2714,24 @@ export default function App() {
               />
             )}
 
-            {view === 'funding' && isAtLeastRookie && (
+            {view === 'inventory' && canViewInventory && (
+              <InventoryView
+                items={teamInventoryItems}
+                loans={teamInventoryLoans}
+                categories={teamCategories}
+                memberships={teamMemberships}
+                canManageInventory={canManageInventory}
+                currentMembership={currentMembership}
+                canEditItem={canEditInventoryItem}
+                onCreateItem={handleCreateInventoryItem}
+                onUpdateItem={handleUpdateInventoryItem}
+                onDeleteItem={handleDeleteInventoryItem}
+                onCreateLoan={handleCreateInventoryLoan}
+                onReturnLoan={handleReturnInventoryLoan}
+              />
+            )}
+
+            {view === 'funding' && canEditTools && (
               <FundingView
                 accounts={teamFundingAccounts}
                 entries={teamFundingEntries}

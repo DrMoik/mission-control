@@ -3,7 +3,7 @@
 
 import {
   LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, CalendarDays, Wrench,
-  GraduationCap, Wallet, CheckSquare, Settings, MessagesSquare, Map,
+  GraduationCap, Wallet, CheckSquare, Settings, MessagesSquare, Map, Package,
 } from 'lucide-react';
 
 /** Navigation domain structure (two levels only). */
@@ -15,6 +15,7 @@ export const NAV_DOMAINS = [
     items: [
       { id: 'overview', labelKey: 'nav_overview', Icon: LayoutDashboard },
       { id: 'feed', labelKey: 'nav_feed', Icon: Rss },
+      { id: 'channels', labelKey: 'nav_channels', Icon: MessagesSquare, access: 'leader' },
       { id: 'categories', labelKey: 'nav_categories', Icon: Grid },
       { id: 'members', labelKey: 'nav_members', Icon: Users },
       { id: 'sessions', labelKey: 'nav_sessions', Icon: CalendarDays },
@@ -54,10 +55,10 @@ export const NAV_DOMAINS = [
     labelKey: 'nav_domain_admin',
     Icon: Settings,
     items: [
-      { id: 'admin', labelKey: 'nav_admin', Icon: Settings },
-      { id: 'funding', labelKey: 'nav_funding', Icon: Wallet },
+      { id: 'inventory', labelKey: 'nav_inventory', Icon: Package, access: 'member' },
+      { id: 'funding', labelKey: 'nav_funding', Icon: Wallet, access: 'leader' },
+      { id: 'admin', labelKey: 'nav_admin', Icon: Settings, access: 'admin' },
     ],
-    adminOnly: true,
   },
 ];
 

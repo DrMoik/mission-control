@@ -15,6 +15,7 @@ import {
   serverTimestamp,
   getDocs,
   updateDoc,
+  documentId,
 } from 'firebase/firestore';
 import { tsToDate } from '../utils.js';
 import { SYSTEM_MERIT_NAMES } from '../constants.js';
@@ -44,6 +45,10 @@ import { SYSTEM_MERIT_NAMES } from '../constants.js';
  *   teamWeeklyStatuses: object[],
  *   teamFundingAccounts: object[],
  *   teamFundingEntries: object[],
+ *   teamInventoryItems: object[],
+ *   teamInventoryLoans: object[],
+ *   crossTeamChannels: object[],
+ *   crossTeamChannelInvitations: object[],
  *   teamTasks: object[],
  *   userMembershipsReady: boolean,
  * }}
@@ -71,6 +76,10 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
   const [teamWeeklyStatuses, setTeamWeeklyStatuses] = useState([]);
   const [teamFundingAccounts, setTeamFundingAccounts] = useState([]);
   const [teamFundingEntries, setTeamFundingEntries] = useState([]);
+  const [teamInventoryItems, setTeamInventoryItems] = useState([]);
+  const [teamInventoryLoans, setTeamInventoryLoans] = useState([]);
+  const [crossTeamChannels, setCrossTeamChannels] = useState([]);
+  const [crossTeamChannelInvitations, setCrossTeamChannelInvitations] = useState([]);
   const [teamTasks, setTeamTasks] = useState([]);
   const [teamHrSuggestions, setTeamHrSuggestions] = useState([]);
   const [teamHrComplaints, setTeamHrComplaints] = useState([]);
@@ -114,8 +123,13 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
 
   // All data for the selected team — resets when team changes
   useEffect(() => {
-    if (!selectedTeamId) return;
+    if (!selectedTeamId) {
+      setCrossTeamChannels([]);
+      setCrossTeamChannelInvitations([]);
+      return;
+    }
     const unsubs = [];
+    const isPlatformAdmin = userProfile?.platformRole?.trim() === 'platformAdmin';
 
     const sub = (q, setter, transform) =>
       unsubs.push(
@@ -190,6 +204,86 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       query(collection(db, 'teamFundingEntries'), where('teamId', '==', selectedTeamId)),
       setTeamFundingEntries,
       (rows) => [...rows].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
+    );
+    sub(
+      query(collection(db, 'teamInventoryItems'), where('teamId', '==', selectedTeamId)),
+      setTeamInventoryItems,
+      (rows) => [...rows].sort((a, b) => {
+        const areaCmp = String(a.categoryId || '').localeCompare(String(b.categoryId || ''));
+        if (areaCmp !== 0) return areaCmp;
+        const typeCmp = String(a.type || '').localeCompare(String(b.type || ''));
+        if (typeCmp !== 0) return typeCmp;
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      }),
+    );
+    sub(
+      query(collection(db, 'teamInventoryLoans'), where('teamId', '==', selectedTeamId)),
+      setTeamInventoryLoans,
+      (rows) => [...rows].sort((a, b) => tsToDate(b.loanedAt) - tsToDate(a.loanedAt)),
+    );
+    if (isPlatformAdmin) {
+      sub(
+        collection(db, 'crossTeamChannels'),
+        setCrossTeamChannels,
+        (rows) => [...rows].sort((a, b) => {
+          const tsCmp = tsToDate(b.lastMessageAt) - tsToDate(a.lastMessageAt);
+          if (!Number.isNaN(tsCmp) && tsCmp !== 0) return tsCmp;
+          return String(a.name || '').localeCompare(String(b.name || ''));
+        }),
+      );
+    } else {
+      const channelDocUnsubs = [];
+      unsubs.push(() => channelDocUnsubs.splice(0).forEach((fn) => fn()));
+      unsubs.push(onSnapshot(
+        query(
+          collection(db, 'crossTeamChannelTeams'),
+          where('teamId', '==', selectedTeamId),
+          where('status', 'in', ['owner', 'member']),
+        ),
+        (snap) => {
+          channelDocUnsubs.splice(0).forEach((fn) => fn());
+          const channelIds = [...new Set(snap.docs.map((d) => d.data().channelId).filter(Boolean))];
+          if (!channelIds.length) {
+            setCrossTeamChannels([]);
+            return;
+          }
+
+          const channelMap = new Map();
+          const syncRows = () => {
+            setCrossTeamChannels(
+              [...channelMap.values()].sort((a, b) => {
+                const tsCmp = tsToDate(b.lastMessageAt) - tsToDate(a.lastMessageAt);
+                if (!Number.isNaN(tsCmp) && tsCmp !== 0) return tsCmp;
+                return String(a.name || '').localeCompare(String(b.name || ''));
+              }),
+            );
+          };
+
+          for (let i = 0; i < channelIds.length; i += 10) {
+            const chunk = channelIds.slice(i, i + 10);
+            const unsubChunk = onSnapshot(
+              query(collection(db, 'crossTeamChannels'), where(documentId(), 'in', chunk)),
+              (channelSnap) => {
+                chunk.forEach((id) => channelMap.delete(id));
+                channelSnap.docs.forEach((docSnap) => {
+                  channelMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+                });
+                syncRows();
+              },
+            );
+            channelDocUnsubs.push(unsubChunk);
+          }
+        },
+      ));
+    }
+    sub(
+      query(
+        collection(db, 'crossTeamChannelTeams'),
+        where('teamId', '==', selectedTeamId),
+        where('status', '==', 'pending'),
+      ),
+      setCrossTeamChannelInvitations,
+      (rows) => [...rows].sort((a, b) => tsToDate(b.invitedAt) - tsToDate(a.invitedAt)),
     );
     sub(
       query(collection(db, 'tasks'), where('teamId', '==', selectedTeamId)),
@@ -288,6 +382,10 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
     teamWeeklyStatuses,
     teamFundingAccounts,
     teamFundingEntries,
+    teamInventoryItems,
+    teamInventoryLoans,
+    crossTeamChannels,
+    crossTeamChannelInvitations,
     teamTasks,
     teamHrSuggestions,
     teamHrComplaints,
