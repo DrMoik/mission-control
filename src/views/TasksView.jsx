@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { t, lang } from '../strings.js';
 import { ensureString } from '../utils.js';
 import { TASK_GRADES } from '../constants.js';
+import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
 
 export default function TasksView({
   tasks,
@@ -15,7 +16,9 @@ export default function TasksView({
   canViewAllTasks = false,
   knowledgeAreas = [],
   onRequestTaskReview,
+  onCancelTaskReviewRequest,
   onGradeTask,
+  onRejectTaskReview,
   onDeleteTask,
   onSetBlocked,
   onUnblockTask,
@@ -29,11 +32,8 @@ export default function TasksView({
   const [taskSearch, setTaskSearch] = useState('');
   const [editingKnowledgeAreasTaskId, setEditingKnowledgeAreasTaskId] = useState(null);
 
-  const getAssigneeIds = (task) =>
-    task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
-
   const myTasks = (tasks || []).filter((task) =>
-    getAssigneeIds(task).includes(currentMembership?.id),
+    getTaskAssigneeIds(task).includes(currentMembership?.id),
   );
   const pending = myTasks.filter((t) => (t.status || 'pending') === 'pending');
   const pendingReviewMine = myTasks.filter((t) => t.status === 'pending_review');
@@ -60,6 +60,29 @@ export default function TasksView({
   const filteredMyCompleted = completed.filter((t) => matchesSearch(t));
   const filteredTasksPendingMyReview = tasksPendingMyReview.filter((t) => matchesSearch(t));
 
+  const getAcceptedDate = (task) => {
+    if (task.acceptedAt) return tsToDate(task.acceptedAt);
+    if (task.completedAt) return tsToDate(task.completedAt);
+    return null;
+  };
+
+  const formatAcceptanceLeadTime = (task) => {
+    const assigned = task.createdAt ? tsToDate(task.createdAt) : null;
+    const accepted = getAcceptedDate(task);
+    if (!assigned || !accepted) return null;
+    const diffMs = accepted - assigned;
+    if (!Number.isFinite(diffMs) || diffMs < 0) return null;
+
+    const totalMinutes = Math.round(diffMs / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+    if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    return `${minutes}m`;
+  };
+
   const TaskCard = ({ task, isCompleted, showRequestReview, showGrade }) => {
     const assignerName = task.assignedByName
       || memberships.find((m) => m.id === task.assignedByMembershipId)?.displayName
@@ -68,7 +91,7 @@ export default function TasksView({
     const now = new Date();
     const isOverdue = due && due < now && (task.status || 'pending') === 'pending';
     const overdueDays = isOverdue ? Math.ceil((now - due) / (24 * 60 * 60 * 1000)) : 0;
-    const assigneeIds = getAssigneeIds(task);
+    const assigneeIds = getTaskAssigneeIds(task);
     const assigneeNames = assigneeIds
       .map((id) => memberships.find((m) => m.id === id))
       .filter(Boolean)
@@ -76,10 +99,13 @@ export default function TasksView({
       .join(', ') || '—';
     const isAssignee = assigneeIds.includes(currentMembership?.id);
     const isAssigner = task.assignedByMembershipId === currentMembership?.id;
-    const canDelete = isAssignee || isAssigner || canViewAllTasks;
+    const canDelete = isAssigner || canViewAllTasks;
     const canRequestReview = showRequestReview && isAssignee && (task.status || 'pending') === 'pending' && !task.blocked;
     const isPendingReview = task.status === 'pending_review';
+    const canCancelReviewRequest = isAssignee && isPendingReview && onCancelTaskReviewRequest;
     const isBlocked = Boolean(task.blocked);
+    const acceptedAt = getAcceptedDate(task);
+    const acceptanceLeadTime = formatAcceptanceLeadTime(task);
     const statusLabel = task.status === 'completed' ? t('task_status_completed')
       : isPendingReview ? t('task_status_pending_review')
       : isBlocked ? t('task_status_blocked')
@@ -201,6 +227,11 @@ export default function TasksView({
                 {(t('task_review_responsible') || 'Revisión a cargo de')}: <span className="font-medium text-amber-300">{assignerName}</span>
               </p>
             )}
+            {!isPendingReview && task.reviewFeedback && (
+              <p className="text-xs text-rose-300/90 mt-1 whitespace-pre-wrap">
+                {(t('task_review_feedback') || 'Feedback de revisión')}: <span className="text-rose-200">{ensureString(task.reviewFeedback, lang)}</span>
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
             {isBlocked && isAssignee && onUnblockTask && (
@@ -234,8 +265,33 @@ export default function TasksView({
                 {t('task_request_review')}
               </button>
             )}
+            {canCancelReviewRequest && (
+              <button
+                type="button"
+                onClick={() => onCancelTaskReviewRequest(task.id)}
+                className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-3 py-1.5 rounded"
+              >
+                {t('task_cancel_submission')}
+              </button>
+            )}
             {showGrade && isAssigner && task.status === 'pending_review' && (
               <div className="flex flex-wrap gap-1">
+                {onRejectTaskReview && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const feedback = window.prompt(
+                        t('task_reject_prompt') || 'Explica por qué la entrega está incompleta o no cumple el estándar.',
+                        ensureString(task.reviewFeedback, lang) || '',
+                      );
+                      if (feedback === null) return;
+                      await onRejectTaskReview(task.id, feedback);
+                    }}
+                    className="text-[10px] bg-rose-900/50 hover:bg-rose-800 text-rose-100 px-2 py-1 rounded"
+                  >
+                    {t('task_reject_review')}
+                  </button>
+                )}
                 {TASK_GRADES.map((grade) => (
                   <button
                     key={grade}
@@ -260,9 +316,21 @@ export default function TasksView({
           </div>
         </div>
         {isCompleted && task.grade && (
-          <p className="text-[11px] text-slate-500">
-            {t('task_grade_label')}: {t(`task_grade_${task.grade}`)}
-          </p>
+          <div className="space-y-1">
+            <p className="text-[11px] text-slate-500">
+              {t('task_grade_label')}: {t(`task_grade_${task.grade}`)}
+            </p>
+            {acceptedAt && (
+              <p className="text-[11px] text-slate-500">
+                {t('task_accepted_at')}: {acceptedAt.toLocaleDateString()}
+              </p>
+            )}
+            {acceptanceLeadTime && (
+              <p className="text-[11px] text-slate-500">
+                {t('task_acceptance_time')}: {acceptanceLeadTime}
+              </p>
+            )}
+          </div>
         )}
       </div>
     );
@@ -386,6 +454,8 @@ export default function TasksView({
                     : t('task_status_assigned');
                   const created = task.createdAt ? tsToDate(task.createdAt) : null;
                   const completed = task.completedAt ? tsToDate(task.completedAt) : null;
+                  const accepted = getAcceptedDate(task);
+                  const acceptanceLeadTime = formatAcceptanceLeadTime(task);
                   const reason = task.blocked && task.blockedReason ? ensureString(task.blockedReason, lang) : '';
                   const meta = completed
                     ? `${status} · ${created?.toLocaleDateString() || '—'} → ${completed.toLocaleDateString()}`
@@ -398,6 +468,11 @@ export default function TasksView({
                       <div className="min-w-0 flex-1">
                         <span className="text-slate-200 truncate block">{ensureString(task.title, lang)}</span>
                         <span className="text-slate-500 text-[11px]">{meta}</span>
+                        {accepted && acceptanceLeadTime && (
+                          <span className="text-slate-500 text-[11px] block">
+                            {t('task_acceptance_time')}: {acceptanceLeadTime}
+                          </span>
+                        )}
                         {reason && <span className="text-slate-500 text-[11px] block truncate" title={reason}>— {reason.length > 50 ? reason.slice(0, 50) + '…' : reason}</span>}
                       </div>
                     </div>

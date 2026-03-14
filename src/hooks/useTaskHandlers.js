@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT } from '../constants.js';
+import { getPrimaryTaskAssigneeId, getTaskAssigneeIds } from '../utils/taskHelpers.js';
 
 /**
  * @param {{
@@ -23,7 +24,9 @@ import { TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TE
  *   canAssignTask: (assigneeMembershipId: string) => boolean,
  *   handleCreateTask: (opts: { assigneeMembershipId?: string, assigneeMembershipIds?: string[], title: string, description?: string, dueDate?: string }) => Promise<void>,
  *   handleRequestTaskReview: (taskId: string) => Promise<void>,
+ *   handleCancelTaskReviewRequest: (taskId: string) => Promise<void>,
  *   handleGradeTask: (taskId: string, grade: string) => Promise<void>,
+ *   handleRejectTaskReview: (taskId: string, feedback?: string) => Promise<void>,
  *   handleCompleteTask: (taskId: string) => Promise<void>,
  *   handleDeleteTask: (taskId: string) => Promise<void>,
  *   handleSetBlocked: (taskId: string, reason: string) => Promise<void>,
@@ -74,12 +77,25 @@ export function useTaskHandlers({
     if (!currentTeam || !authUser) return;
     const task = teamTasks.find((t) => t.id === taskId);
     if (!task) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const assigneeIds = getTaskAssigneeIds(task);
     const isAssignee = assigneeIds.includes(currentMembership?.id);
     if (!isAssignee || (task.status || 'pending') !== 'pending') return;
     await updateDoc(doc(db, 'tasks', taskId), {
       status:            'pending_review',
       requestedReviewAt: serverTimestamp(),
+    });
+  }, [currentTeam, authUser, currentMembership?.id, teamTasks]);
+
+  const handleCancelTaskReviewRequest = useCallback(async (taskId) => {
+    if (!currentTeam || !authUser) return;
+    const task = teamTasks.find((t) => t.id === taskId);
+    if (!task || task.status !== 'pending_review') return;
+    const assigneeIds = getTaskAssigneeIds(task);
+    const isAssignee = assigneeIds.includes(currentMembership?.id);
+    if (!isAssignee) return;
+    await updateDoc(doc(db, 'tasks', taskId), {
+      status: 'pending',
+      requestedReviewAt: null,
     });
   }, [currentTeam, authUser, currentMembership?.id, teamTasks]);
 
@@ -89,7 +105,7 @@ export function useTaskHandlers({
     if (!task || task.status !== 'pending_review') return;
     if (task.assignedByMembershipId !== currentMembership.id) return;
     if (!TASK_GRADES.includes(grade)) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const assigneeIds = getTaskAssigneeIds(task);
     const ptsInd = currentTeam.taskGradePointsIndividual || TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT;
     const ptsTeam = currentTeam.taskGradePointsTeam || TASK_GRADE_POINTS_TEAM_DEFAULT;
     const pointsPerMember = assigneeIds.length > 1
@@ -98,6 +114,7 @@ export function useTaskHandlers({
     await updateDoc(doc(db, 'tasks', taskId), {
       status:               'completed',
       grade,
+      acceptedAt:           serverTimestamp(),
       completedAt:          serverTimestamp(),
       gradedByMembershipId:  currentMembership.id,
     });
@@ -124,19 +141,45 @@ export function useTaskHandlers({
         createdAt:            serverTimestamp(),
       });
     }
-    if (canEdit) await logAudit('grade_task', 'task', taskId, { grade, membershipId: task.assigneeMembershipId || task.assigneeMembershipIds?.[0] });
+    if (canEdit) await logAudit('grade_task', 'task', taskId, { grade, membershipId: getPrimaryTaskAssigneeId(task) });
   }, [currentTeam, currentMembership, authUser, userProfile, teamTasks, canEdit, logAudit]);
+
+  const handleRejectTaskReview = useCallback(async (taskId, feedback = '') => {
+    if (!currentTeam || !authUser || !currentMembership) return;
+    const task = teamTasks.find((t) => t.id === taskId);
+    if (!task || task.status !== 'pending_review') return;
+    if (task.assignedByMembershipId !== currentMembership.id) return;
+    const trimmedFeedback = (feedback || '').trim();
+    await updateDoc(doc(db, 'tasks', taskId), {
+      status: 'pending',
+      requestedReviewAt: null,
+      reviewRejectedAt: serverTimestamp(),
+      reviewRejectedByMembershipId: currentMembership.id,
+      reviewFeedback: trimmedFeedback || null,
+      acceptedAt: null,
+      grade: null,
+      completedAt: null,
+      gradedByMembershipId: null,
+    });
+    if (canEdit) {
+      await logAudit('reject_task_review', 'task', taskId, {
+        feedback: trimmedFeedback || null,
+        membershipId: getPrimaryTaskAssigneeId(task),
+      });
+    }
+  }, [currentTeam, authUser, currentMembership, teamTasks, canEdit, logAudit]);
 
   const handleCompleteTask = useCallback(async (taskId) => {
     if (!currentTeam || !authUser) return;
     const task = teamTasks.find((t) => t.id === taskId);
     if (!task) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const assigneeIds = getTaskAssigneeIds(task);
     const isAssignee = assigneeIds.includes(currentMembership?.id);
     const isAdmin = canEdit;
     if (!isAssignee && !isAdmin) return;
     await updateDoc(doc(db, 'tasks', taskId), {
       status:      'completed',
+      acceptedAt:  serverTimestamp(),
       completedAt: serverTimestamp(),
     });
   }, [currentTeam, authUser, currentMembership?.id, teamTasks, canEdit]);
@@ -145,11 +188,9 @@ export function useTaskHandlers({
     if (!currentTeam) return;
     const task = teamTasks.find((t) => t.id === taskId);
     if (!task) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
-    const isAssignee = assigneeIds.includes(currentMembership?.id);
     const isAdmin = canEdit;
     const isAssigner = task.assignedByMembershipId === currentMembership?.id;
-    if (!isAssignee && !isAdmin && !isAssigner) return;
+    if (!isAdmin && !isAssigner) return;
     await deleteDoc(doc(db, 'tasks', taskId));
   }, [currentTeam, currentMembership?.id, teamTasks, canEdit]);
 
@@ -157,7 +198,7 @@ export function useTaskHandlers({
     if (!currentTeam || !authUser) return;
     const task = teamTasks.find((t) => t.id === taskId);
     if (!task) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const assigneeIds = getTaskAssigneeIds(task);
     const isAssignee = assigneeIds.includes(currentMembership?.id);
     if (!isAssignee || (task.status || 'pending') !== 'pending') return;
     await updateDoc(doc(db, 'tasks', taskId), {
@@ -172,7 +213,7 @@ export function useTaskHandlers({
     const task = teamTasks.find((t) => t.id === taskId);
     if (!task) return;
     if (!task.blocked) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const assigneeIds = getTaskAssigneeIds(task);
     const isAssignee = assigneeIds.includes(currentMembership?.id);
     const isAssigner = task.assignedByMembershipId === currentMembership?.id;
     const canUnblock = isAssignee || isAssigner || canEdit;
@@ -188,7 +229,7 @@ export function useTaskHandlers({
     if (!currentTeam || !authUser) return;
     const task = teamTasks.find((t) => t.id === taskId);
     if (!task) return;
-    const assigneeIds = task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
+    const assigneeIds = getTaskAssigneeIds(task);
     const isAssignee = assigneeIds.includes(currentMembership?.id);
     const isAssigner = task.assignedByMembershipId === currentMembership?.id;
     if (!isAssignee && !isAssigner && !canEdit) return;
@@ -204,7 +245,9 @@ export function useTaskHandlers({
     canAssignTask,
     handleCreateTask,
     handleRequestTaskReview,
+    handleCancelTaskReviewRequest,
     handleGradeTask,
+    handleRejectTaskReview,
     handleCompleteTask,
     handleDeleteTask,
     handleSetBlocked,

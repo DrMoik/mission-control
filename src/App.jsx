@@ -194,6 +194,7 @@ export default function App() {
   // Real permission level — unaffected by preview mode (used for UI controls)
   const isAdminLevel    = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor';
   const canViewInventory = isMember;
+  const canViewFunding = isMember;
   const canManageInventory = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
   const canUseCrossTeamChannels = effectiveAdmin || atLeast(effectiveRole, 'leader');
   const canManageCrossTeamChannels = isPlatformAdmin || atLeast(memberRole, 'leader');
@@ -210,6 +211,9 @@ export default function App() {
   useEffect(() => {
     if (selectedTeamId && view === 'inventory' && !canViewInventory) navigate('/inicio', { replace: true });
   }, [selectedTeamId, view, canViewInventory, navigate]);
+  useEffect(() => {
+    if (selectedTeamId && view === 'funding' && !canViewFunding) navigate('/inicio', { replace: true });
+  }, [selectedTeamId, view, canViewFunding, navigate]);
   useEffect(() => {
     if (selectedTeamId && view === 'channels' && !canUseCrossTeamChannels) navigate('/inicio', { replace: true });
   }, [selectedTeamId, view, canUseCrossTeamChannels, navigate]);
@@ -342,7 +346,9 @@ export default function App() {
     canAssignTask,
     handleCreateTask,
     handleRequestTaskReview,
+    handleCancelTaskReviewRequest,
     handleGradeTask,
+    handleRejectTaskReview,
     handleCompleteTask,
     handleDeleteTask,
     handleSetBlocked,
@@ -2731,7 +2737,7 @@ export default function App() {
               />
             )}
 
-            {view === 'funding' && canEditTools && (
+            {view === 'funding' && canViewFunding && (
               <FundingView
                 accounts={teamFundingAccounts}
                 entries={teamFundingEntries}
@@ -2762,10 +2768,7 @@ export default function App() {
             {view === 'mapa' && isAtLeastRookie && (
               <KnowledgeMapView
                 memberships={teamMemberships}
-                meritEvents={teamMeritEvents}
-                tasks={teamTasks}
                 moduleAttempts={teamModuleAttempts}
-                merits={teamMerits}
                 modules={teamModules}
                 knowledgeAreas={knowledgeAreas}
                 onViewProfile={handleViewProfile}
@@ -2779,7 +2782,9 @@ export default function App() {
                 currentMembership={currentMembership}
                 canViewAllTasks={canEdit}
                 onRequestTaskReview={handleRequestTaskReview}
+                onCancelTaskReviewRequest={handleCancelTaskReviewRequest}
                 onGradeTask={handleGradeTask}
+                onRejectTaskReview={handleRejectTaskReview}
                 onDeleteTask={handleDeleteTask}
                 onSetBlocked={handleSetBlocked}
                 onUnblockTask={handleUnblockTask}

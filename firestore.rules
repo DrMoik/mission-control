@@ -293,17 +293,92 @@ service cloud.firestore {
              exists(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)) &&
              get(/databases/$(database)/documents/memberships/$(resource.data.assignedByMembershipId)).data.userId == request.auth.uid;
     }
+    function taskMembershipId(teamId) {
+      return request.auth.uid + '_' + teamId;
+    }
+    function isTaskAssigneeWorkflowUpdate(teamId) {
+      return (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'requestedReviewAt']) &&
+        (
+          (
+            resource.data.status == 'pending' &&
+            request.resource.data.status == 'pending_review' &&
+            request.resource.data.requestedReviewAt != null
+          ) ||
+          (
+            resource.data.status == 'pending_review' &&
+            request.resource.data.status == 'pending' &&
+            request.resource.data.requestedReviewAt == null
+          )
+        )
+      ) || (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['blocked', 'blockedReason', 'blockedAt']) &&
+        (
+          (
+            resource.data.get('blocked', false) == false &&
+            resource.data.status == 'pending' &&
+            request.resource.data.blocked == true &&
+            request.resource.data.blockedAt != null
+          ) ||
+          (
+            resource.data.get('blocked', false) == true &&
+            request.resource.data.blocked == false &&
+            request.resource.data.blockedReason == null &&
+            request.resource.data.blockedAt == null
+          )
+        )
+      );
+    }
+    function isTaskAssignerWorkflowUpdate(teamId) {
+      return (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['knowledgeAreaIds'])
+      ) || (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['blocked', 'blockedReason', 'blockedAt']) &&
+        resource.data.get('blocked', false) == true &&
+        request.resource.data.blocked == false &&
+        request.resource.data.blockedReason == null &&
+        request.resource.data.blockedAt == null
+      ) || (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'grade', 'acceptedAt', 'completedAt', 'gradedByMembershipId']) &&
+        resource.data.status == 'pending_review' &&
+        request.resource.data.status == 'completed' &&
+        request.resource.data.grade in ['ok', 'good', 'excellent', 'perfect'] &&
+        request.resource.data.acceptedAt != null &&
+        request.resource.data.completedAt != null &&
+        request.resource.data.gradedByMembershipId == taskMembershipId(teamId)
+      ) || (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'requestedReviewAt',
+          'reviewRejectedAt',
+          'reviewRejectedByMembershipId',
+          'reviewFeedback',
+          'acceptedAt',
+          'grade',
+          'completedAt',
+          'gradedByMembershipId'
+        ]) &&
+        resource.data.status == 'pending_review' &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.requestedReviewAt == null &&
+        request.resource.data.reviewRejectedAt != null &&
+        request.resource.data.reviewRejectedByMembershipId == taskMembershipId(teamId) &&
+        request.resource.data.acceptedAt == null &&
+        request.resource.data.grade == null &&
+        request.resource.data.completedAt == null &&
+        request.resource.data.gradedByMembershipId == null
+      );
+    }
     match /tasks/{taskId} {
       allow read: if isActiveMember(resource.data.teamId);
       allow create: if isLeaderOrAbove(request.resource.data.teamId);
       allow update: if isActiveMember(resource.data.teamId) && (
         isLeaderOrAbove(resource.data.teamId) ||
-        isTaskAssignee(resource.data.teamId) ||
-        isTaskAssigner()
+        (isTaskAssignee(resource.data.teamId) && isTaskAssigneeWorkflowUpdate(resource.data.teamId)) ||
+        (isTaskAssigner() && isTaskAssignerWorkflowUpdate(resource.data.teamId))
       );
       allow delete: if isActiveMember(resource.data.teamId) && (
-        isTeamAdmin(resource.data.teamId) ||
-        isTaskAssignee(resource.data.teamId) ||
+        isLeaderOrAbove(resource.data.teamId) ||
         isTaskAssigner()
       );
     }

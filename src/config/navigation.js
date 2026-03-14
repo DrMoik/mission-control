@@ -56,7 +56,7 @@ export const NAV_DOMAINS = [
     Icon: Settings,
     items: [
       { id: 'inventory', labelKey: 'nav_inventory', Icon: Package, access: 'member' },
-      { id: 'funding', labelKey: 'nav_funding', Icon: Wallet, access: 'leader' },
+      { id: 'funding', labelKey: 'nav_funding', Icon: Wallet, access: 'member' },
       { id: 'admin', labelKey: 'nav_admin', Icon: Settings, access: 'admin' },
     ],
   },

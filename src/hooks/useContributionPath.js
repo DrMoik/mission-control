@@ -4,6 +4,7 @@
 
 import { useMemo } from 'react';
 import { evaluateTendency, selectTendencies } from '../contributionPathRules.js';
+import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
 
 const TENDENCY_ORDER = [
   'technical_specialist',
@@ -46,11 +47,9 @@ export function useContributionPath({
     const myMeritEvents = teamMeritEvents.filter(
       (e) => e.membershipId === membershipId && e.type === 'award',
     );
-    const getAssigneeIds = (t) =>
-      t.assigneeMembershipIds ?? (t.assigneeMembershipId ? [t.assigneeMembershipId] : []);
     const myTasksAsAssigner = teamTasks.filter((t) => t.assignedByMembershipId === membershipId);
     const myTasksAsAssignee = teamTasks.filter((t) =>
-      getAssigneeIds(t).includes(membershipId),
+      getTaskAssigneeIds(t).includes(membershipId),
     );
     const myModuleAttempts = teamModuleAttempts.filter(
       (a) => a.membershipId === membershipId && a.status === 'approved',

@@ -5,10 +5,7 @@
 import React from 'react';
 import { t } from '../strings.js';
 import { computeProfileCompletion, getSundayOfWeekLocal, normalizeWeekOfToSunday } from '../utils.js';
-
-function getAssigneeIds(task) {
-  return task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
-}
+import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
 
 export default function MyCommitmentsCard({
   tasks = [],
@@ -20,7 +17,7 @@ export default function MyCommitmentsCard({
 }) {
   if (!currentMembership) return null;
 
-  const myTasks = tasks.filter((task) => getAssigneeIds(task).includes(currentMembership.id));
+  const myTasks = tasks.filter((task) => getTaskAssigneeIds(task).includes(currentMembership.id));
   const pending = myTasks.filter((task) => (task.status || 'pending') === 'pending');
   const pendingReview = myTasks.filter((task) => task.status === 'pending_review');
   const now = new Date();

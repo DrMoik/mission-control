@@ -32,6 +32,12 @@ export default function MeritsView({
 }) {
   const domains = domainsProp ?? MERIT_DOMAINS;
   const meritTiers = meritTiersProp ?? MERIT_TIERS;
+  const normalizeSearch = (value) =>
+    (ensureString(value) || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
 
   // Leaders can only create for their area; pre-fill categoryId
   const leaderCategoryId = (memberRole === 'leader' && !isPlatformAdmin) ? currentMembership?.categoryId : null;
@@ -130,11 +136,11 @@ export default function MeritsView({
   }, [activeMembers, memberRole, isPlatformAdmin, currentMembership?.id, currentMembership?.categoryId]);
 
   const filteredMembersForAward = useMemo(() => {
-    const q = (memberSearch || '').toLowerCase().trim();
+    const q = normalizeSearch(memberSearch);
     if (!q) return membersForAward;
     return membersForAward.filter((m) => {
-      const name = (ensureString(m.displayName) || '').toLowerCase();
-      const role = (t('role_' + m.role) || m.role || '').toLowerCase();
+      const name = normalizeSearch(m.displayName);
+      const role = normalizeSearch(t('role_' + m.role) || m.role || '');
       return name.includes(q) || role.includes(q);
     });
   }, [membersForAward, memberSearch]);
@@ -155,14 +161,14 @@ export default function MeritsView({
   // Filtered merits for award form (search, scope, types, domains, tier, tags)
   const filteredAwardMerits = useMemo(() => {
     let list = assignableMerits;
-    const q = (meritSearch || '').toLowerCase().trim();
+    const q = normalizeSearch(meritSearch);
     if (q) {
       list = list.filter((m) => {
-        const name = (m.name || '').toLowerCase();
-        const short = (getL(m.shortDescription, lang) || '').toLowerCase();
-        const tags = (m.tags || []).join(' ').toLowerCase();
-        const familyNames = (m.familyIds || []).map((fid) => meritFamilies.find((f) => f.id === fid)?.name).filter(Boolean).join(' ').toLowerCase();
-        const domains = (m.domains || []).join(' ').toLowerCase();
+        const name = normalizeSearch(m.name || '');
+        const short = normalizeSearch(getL(m.shortDescription, lang) || '');
+        const tags = normalizeSearch((m.tags || []).join(' '));
+        const familyNames = normalizeSearch((m.familyIds || []).map((fid) => meritFamilies.find((f) => f.id === fid)?.name).filter(Boolean).join(' '));
+        const domains = normalizeSearch((m.domains || []).join(' '));
         return name.includes(q) || short.includes(q) || tags.includes(q) || familyNames.includes(q) || domains.includes(q);
       });
     }
@@ -181,6 +187,15 @@ export default function MeritsView({
     }
     return list;
   }, [assignableMerits, meritSearch, meritScopeFilter, meritFamilyFilters, meritDomainFilters, meritTierFilter, lang, meritFamilies]);
+
+  const selectedAwardMember = useMemo(
+    () => memberships.find((m) => m.id === awardForm.membershipId) || null,
+    [memberships, awardForm.membershipId],
+  );
+  const selectedAwardMerit = useMemo(
+    () => merits.find((m) => m.id === awardForm.meritId) || null,
+    [merits, awardForm.meritId],
+  );
 
   // Filtered merits for definitions grid
   const filteredGridMerits = useMemo(() => {
@@ -1170,6 +1185,11 @@ export default function MeritsView({
             {/* Member selector with search */}
             <div>
               <label className="text-[11px] text-slate-500 block mb-1">{t('member')}</label>
+              {selectedAwardMember && (
+                <div className="mb-2 rounded border border-emerald-700/50 bg-emerald-950/20 px-3 py-2 text-xs text-emerald-200">
+                  {ensureString(selectedAwardMember.displayName)} <span className="text-emerald-300/70">({t('role_' + selectedAwardMember.role) || selectedAwardMember.role})</span>
+                </div>
+              )}
               <input
                 type="search"
                 value={memberSearch}
@@ -1220,6 +1240,11 @@ export default function MeritsView({
             {/* Merit selector: search + filter chips + list */}
             <div>
               <label className="text-[11px] text-slate-500 block mb-1">{t('merit')}</label>
+              {selectedAwardMerit && (
+                <div className="mb-2 rounded border border-emerald-700/50 bg-emerald-950/20 px-3 py-2 text-xs text-emerald-200">
+                  {selectedAwardMerit.name}
+                </div>
+              )}
               <input
                 type="search"
                 value={meritSearch}

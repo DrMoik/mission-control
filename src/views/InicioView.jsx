@@ -6,12 +6,9 @@ import { Trophy, Check } from 'lucide-react';
 import { t } from '../strings.js';
 import { ensureString } from '../utils.js';
 import MyCommitmentsCard from '../components/MyCommitmentsCard.jsx';
+import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
 
 const LAST_VISIT_KEY = (teamId) => `mission-control:lastVisit_${teamId}`;
-
-function getAssigneeIds(task) {
-  return task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
-}
 
 export default function InicioView({
   team,
@@ -56,7 +53,7 @@ export default function InicioView({
     const personalItemsList = [];
 
     if (currentMembership) {
-      const myTasks = (teamTasks || []).filter((t) => getAssigneeIds(t).includes(currentMembership.id));
+      const myTasks = (teamTasks || []).filter((t) => getTaskAssigneeIds(t).includes(currentMembership.id));
       myTasks.forEach((task) => {
         const ts = tsToDate(task.createdAt)?.getTime?.() ?? 0;
         if (ts >= sevenDaysAgo) {

@@ -6,10 +6,7 @@ import React, { useState } from 'react';
 import { t, lang } from '../strings.js';
 import { ensureString } from '../utils.js';
 import { RoleBadge, MemberAvatar } from '../components/ui/index.js';
-
-function getAssigneeIds(task) {
-  return task.assigneeMembershipIds ?? (task.assigneeMembershipId ? [task.assigneeMembershipId] : []);
-}
+import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
 
 /**
  * @param {{
@@ -36,7 +33,7 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
     });
     const tasksByMember = {};
     (tasks || []).forEach((task) => {
-      const ids = getAssigneeIds(task);
+      const ids = getTaskAssigneeIds(task);
       if (task.status === 'completed') {
         ids.forEach((id) => { tasksByMember[id] = (tasksByMember[id] || 0) + 1; });
       }
