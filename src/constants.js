@@ -212,12 +212,15 @@ export const SYSTEM_MERIT_POINTS_DEFAULT = {
   milestone50:     100, // 50 actualizaciones
 };
 
+export const SESSION_ATTENDANCE_POINTS_DEFAULT = 25;
+
 /** Merit names for system auto-awards. Used for retroactive updates. */
 export const SYSTEM_MERIT_NAMES = {
   weeklyUpdate:     'Actualización semanal',
   profileComplete:  'Perfil completo',
   milestone50:      '50 actualizaciones',
   suggestionAccepted: 'Sugerencia implementada',
+  sessionAttendance: 'Asistencia a sesión',
 };
 
 /** Descriptions for system merits (shown when clicking on profile logros). */
@@ -241,5 +244,9 @@ export const SYSTEM_MERIT_DESCRIPTIONS = {
   [SYSTEM_MERIT_NAMES.suggestionAccepted]: {
     shortDescription: { en: 'Suggestion implemented.', es: 'Sugerencia implementada.' },
     longDescription:  { en: 'Awarded when an admin accepts your suggestion. Points (50–200) are chosen by the admin based on impact.', es: 'Se otorga cuando un admin acepta tu sugerencia. Los puntos (50–200) los elige el admin según el impacto.' },
+  },
+  [SYSTEM_MERIT_NAMES.sessionAttendance]: {
+    shortDescription: { en: 'Attended a team session.', es: 'Asistencia a una sesión del equipo.' },
+    longDescription:  { en: 'Awarded when attendance is registered for a session configured to grant points.', es: 'Se otorga cuando se registra asistencia en una sesión configurada para dar puntos.' },
   },
 };

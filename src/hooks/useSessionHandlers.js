@@ -6,13 +6,17 @@ import {
   collection,
   doc,
   addDoc,
+  getDoc,
   updateDoc,
   deleteDoc,
   getDocs,
+  query,
+  where,
   writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
+import { SESSION_ATTENDANCE_POINTS_DEFAULT, SYSTEM_MERIT_NAMES } from '../constants.js';
 
 /**
  * @param {{
@@ -53,6 +57,8 @@ export function useSessionHandlers({
       longDescription,
       place,
       categoryId,
+      grantsPoints,
+      meritPoints,
     }) => {
       if (!currentTeam || !authUser || !canManageSessions) return;
       const desc = (description || '').trim();
@@ -73,7 +79,8 @@ export function useSessionHandlers({
         notes:           null,
         artifactUrls:    [],
         meritId:         null,
-        meritPoints:     null,
+        grantsPoints:    Boolean(grantsPoints),
+        meritPoints:     grantsPoints ? Number(meritPoints || SESSION_ATTENDANCE_POINTS_DEFAULT) : null,
         createdBy:       authUser.uid,
         createdAt:       serverTimestamp(),
         lastEditedBy:    userProfile?.displayName || authUser?.email || '—',
@@ -117,6 +124,13 @@ export function useSessionHandlers({
   const handleSaveAttendance = useCallback(
     async (sessionId, attendance) => {
       if (!currentTeam || !authUser || !canManageSessions) return;
+      const sessionRef = doc(db, 'teamSessions', sessionId);
+      const sessionSnap = await getDoc(sessionRef);
+      if (!sessionSnap.exists()) return;
+
+      const session = sessionSnap.data();
+      const shouldGrantPoints = Boolean(session.grantsPoints);
+      const meritPoints = Number(session.meritPoints) || SESSION_ATTENDANCE_POINTS_DEFAULT;
       const batch = writeBatch(db);
       const attRef = collection(db, 'teamSessions', sessionId, 'attendance');
       for (const { membershipId, attended } of attendance) {
@@ -129,9 +143,59 @@ export function useSessionHandlers({
           recordedBy:  authUser.uid,
         });
       }
+
+      const meritEventsRef = collection(db, 'meritEvents');
+      const existingSnap = await getDocs(
+        query(
+          meritEventsRef,
+          where('teamId', '==', currentTeam.id),
+          where('meritName', '==', SYSTEM_MERIT_NAMES.sessionAttendance),
+          where('evidence', '==', `session_attendance:${sessionId}`),
+        ),
+      );
+
+      if (shouldGrantPoints) {
+
+        const existingByMembership = new Map(
+          existingSnap.docs.map((item) => [item.data().membershipId, { id: item.id, ...item.data() }]),
+        );
+
+        for (const { membershipId, attended } of attendance) {
+          if (!membershipId) continue;
+          const existing = existingByMembership.get(membershipId);
+
+          if (attended && !existing) {
+            const eventRef = doc(meritEventsRef);
+            batch.set(eventRef, {
+              teamId:          currentTeam.id,
+              membershipId,
+              meritId:         null,
+              meritName:       SYSTEM_MERIT_NAMES.sessionAttendance,
+              meritLogo:       'calendar',
+              points:          meritPoints,
+              type:            'award',
+              evidence:        `session_attendance:${sessionId}`,
+              autoAward:       true,
+              systemGiven:     true,
+              awardedByUserId: authUser.uid,
+              awardedByName:   userProfile?.displayName || authUser?.email || '—',
+              createdAt:       serverTimestamp(),
+            });
+          }
+
+          if (!attended && existing) {
+            batch.delete(doc(meritEventsRef, existing.id));
+          }
+        }
+      } else {
+        existingSnap.docs.forEach((item) => {
+          batch.delete(doc(meritEventsRef, item.id));
+        });
+      }
+
       await batch.commit();
     },
-    [currentTeam, authUser, canManageSessions],
+    [currentTeam, authUser, userProfile, canManageSessions],
   );
 
   return {

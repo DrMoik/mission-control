@@ -4,8 +4,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { t, lang } from '../strings.js';
-import { getL, ensureString } from '../utils.js';
-import { SESSION_CLASSES, SESSION_TYPES } from '../constants.js';
+import { ensureString } from '../utils.js';
+import { SESSION_ATTENDANCE_POINTS_DEFAULT, SESSION_CLASSES, SESSION_TYPES } from '../constants.js';
 
 function formatDatetime(ts) {
   if (!ts) return '—';
@@ -53,6 +53,8 @@ export default function SessionsView({
     shortDescription: '',
     longDescription: '',
     categoryId: '',
+    grantsPoints: false,
+    meritPoints: String(SESSION_ATTENDANCE_POINTS_DEFAULT),
   });
   const [attendanceFilter, setAttendanceFilter] = useState('all'); // 'all' | 'attended' | 'not_attended'
 
@@ -87,8 +89,10 @@ export default function SessionsView({
       shortDescription: newSession.shortDescription?.trim() || null,
       longDescription: newSession.longDescription?.trim() || null,
       categoryId: newSession.categoryId || null,
+      grantsPoints: Boolean(newSession.grantsPoints),
+      meritPoints: newSession.grantsPoints ? Number(newSession.meritPoints || SESSION_ATTENDANCE_POINTS_DEFAULT) : null,
     });
-    setNewSession({ title: '', sessionClass: 'work', sessionType: 'other', scheduledAt: '', durationMinutes: '', place: '', shortDescription: '', longDescription: '', categoryId: '' });
+    setNewSession({ title: '', sessionClass: 'work', sessionType: 'other', scheduledAt: '', durationMinutes: '', place: '', shortDescription: '', longDescription: '', categoryId: '', grantsPoints: false, meritPoints: String(SESSION_ATTENDANCE_POINTS_DEFAULT) });
     setShowNewForm(false);
   };
 
@@ -217,6 +221,30 @@ export default function SessionsView({
               className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
             />
           </div>
+          <label className="flex items-center gap-2 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={Boolean(newSession.grantsPoints)}
+              onChange={(e) => setNewSession((s) => ({ ...s, grantsPoints: e.target.checked }))}
+              className="rounded"
+            />
+            <span>{t('session_grants_points')}</span>
+          </label>
+          {newSession.grantsPoints && (
+            <div className="space-y-2">
+              <p className="text-xs text-emerald-400">{t('session_points_after_attendance')}</p>
+              <div>
+                <label className="text-[11px] text-slate-500 block mb-1">{t('session_points_amount')}</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={newSession.meritPoints}
+                  onChange={(e) => setNewSession((s) => ({ ...s, meritPoints: e.target.value }))}
+                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
+                />
+              </div>
+            </div>
+          )}
           <div className="flex gap-2">
             <button type="submit" className="px-4 py-2 bg-emerald-500 text-black text-sm font-semibold rounded">
               {t('save')}
@@ -253,6 +281,11 @@ export default function SessionsView({
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">
                           {getClassLabel(session.sessionClass)} · {getTypeLabel(session.sessionType)}
                         </span>
+                        {session.grantsPoints && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                            +{session.meritPoints || SESSION_ATTENDANCE_POINTS_DEFAULT} pts
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5">
                         {formatDatetime(session.scheduledAt)}
@@ -387,6 +420,8 @@ function EditSessionModal({ session, categories, onCancel, onSave, getClassLabel
   const [shortDescription, setShortDescription] = useState(session.shortDescription || session.description || '');
   const [longDescription, setLongDescription] = useState(session.longDescription || session.description || '');
   const [categoryId, setCategoryId] = useState(session.categoryId || '');
+  const [grantsPoints, setGrantsPoints] = useState(Boolean(session.grantsPoints));
+  const [meritPoints, setMeritPoints] = useState(String(session.meritPoints || SESSION_ATTENDANCE_POINTS_DEFAULT));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
@@ -473,6 +508,30 @@ function EditSessionModal({ session, categories, onCancel, onSave, getClassLabel
             className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
           />
         </div>
+        <label className="flex items-center gap-2 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300">
+          <input
+            type="checkbox"
+            checked={grantsPoints}
+            onChange={(e) => setGrantsPoints(e.target.checked)}
+            className="rounded"
+          />
+          <span>{t('session_grants_points')}</span>
+        </label>
+        {grantsPoints && (
+          <div className="space-y-2">
+            <p className="text-xs text-emerald-400">{t('session_points_after_attendance')}</p>
+            <div>
+              <label className="text-[11px] text-slate-500 block mb-1">{t('session_points_amount')}</label>
+              <input
+                type="number"
+                min="0"
+                value={meritPoints}
+                onChange={(e) => setMeritPoints(e.target.value)}
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
+              />
+            </div>
+          </div>
+        )}
         <div className="flex gap-2 pt-2">
           <button
             type="button"
@@ -487,6 +546,8 @@ function EditSessionModal({ session, categories, onCancel, onSave, getClassLabel
               longDescription: longDescription.trim() || null,
               description: shortDescription.trim() || longDescription.trim() || null,
               categoryId: categoryId || null,
+              grantsPoints,
+              meritPoints: grantsPoints ? Number(meritPoints || SESSION_ATTENDANCE_POINTS_DEFAULT) : null,
             })}
             className="px-4 py-2 bg-emerald-500 text-black text-sm font-semibold rounded"
           >
