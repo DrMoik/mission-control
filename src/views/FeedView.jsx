@@ -47,6 +47,13 @@ function splitMediaUrls(urls) {
   return { images, videos };
 }
 
+function getMediaItem(url) {
+  return {
+    url,
+    type: isHostedVideoUrl(url) || isEmbeddedVideoUrl(url) ? 'video' : 'image',
+  };
+}
+
 function getPostMediaUrls(post) {
   const imageUrls = Array.isArray(post.imageUrls) ? post.imageUrls : [];
   const normalized = imageUrls
@@ -57,9 +64,9 @@ function getPostMediaUrls(post) {
   return post.imageUrl ? [post.imageUrl] : [];
 }
 
-function FeedGalleryModal({ images, activeIndex, onClose, onNavigate }) {
+function FeedGalleryModal({ mediaItems, activeIndex, onClose, onNavigate }) {
   useEffect(() => {
-    if (!images.length) return undefined;
+    if (!mediaItems.length) return undefined;
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') onClose();
@@ -69,9 +76,11 @@ function FeedGalleryModal({ images, activeIndex, onClose, onNavigate }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [images.length, onClose, onNavigate]);
+  }, [mediaItems.length, onClose, onNavigate]);
 
-  if (!images.length) return null;
+  if (!mediaItems.length) return null;
+
+  const activeItem = mediaItems[activeIndex];
 
   return (
     <ModalOverlay onClickBackdrop={onClose} className="z-[70] p-3 sm:p-6">
@@ -85,7 +94,7 @@ function FeedGalleryModal({ images, activeIndex, onClose, onNavigate }) {
           <X className="h-5 w-5" />
         </button>
 
-        {images.length > 1 && (
+        {mediaItems.length > 1 && (
           <>
             <button
               type="button"
@@ -107,16 +116,38 @@ function FeedGalleryModal({ images, activeIndex, onClose, onNavigate }) {
         )}
 
         <div className="overflow-hidden rounded-2xl bg-black">
-          <SafeImage
-            src={images[activeIndex]}
-            alt=""
-            className="max-h-[82vh] w-full object-contain"
-            fallbackClass="flex h-[60vh] w-[min(92vw,1100px)] items-center justify-center"
-          />
+          {activeItem?.type === 'video' ? (
+            isEmbeddedVideoUrl(activeItem.url) ? (
+              <div className="relative w-[min(92vw,1100px)]" style={{ paddingTop: '56.25%' }}>
+                <iframe
+                  src={toEmbedUrl(activeItem.url)}
+                  className="absolute inset-0 h-full w-full"
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  title={`feed-modal-video-${activeIndex}`}
+                />
+              </div>
+            ) : (
+              <video
+                src={activeItem.url}
+                controls
+                autoPlay
+                preload="metadata"
+                className="max-h-[82vh] w-full bg-black"
+              />
+            )
+          ) : (
+            <SafeImage
+              src={activeItem?.url}
+              alt=""
+              className="max-h-[82vh] w-full object-contain"
+              fallbackClass="flex h-[60vh] w-[min(92vw,1100px)] items-center justify-center"
+            />
+          )}
         </div>
 
         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-300">
-          <span>{activeIndex + 1} / {images.length}</span>
+          <span>{activeIndex + 1} / {mediaItems.length}</span>
           <span>Usa las flechas del teclado para navegar</span>
         </div>
       </div>
@@ -124,34 +155,60 @@ function FeedGalleryModal({ images, activeIndex, onClose, onNavigate }) {
   );
 }
 
-function FeedGalleryTile({ imageUrl, onClick, overlay = null, className = '' }) {
+function FeedGalleryTile({ item, onClick, overlay = null, className = '' }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`relative h-full w-full overflow-hidden bg-slate-900 text-left ${className}`.trim()}
     >
-      <SafeImage
-        src={imageUrl}
-        alt=""
-        className="h-full w-full object-cover transition duration-200 hover:scale-[1.02]"
-        fallbackClass="h-full w-full"
-      />
+      {item.type === 'video' ? (
+        <>
+          <div className="flex h-full w-full items-center justify-center bg-black">
+            {isEmbeddedVideoUrl(item.url) ? (
+              <iframe
+                src={toEmbedUrl(item.url)}
+                className="h-full w-full pointer-events-none"
+                title={`feed-tile-video-${item.url}`}
+                tabIndex={-1}
+              />
+            ) : (
+              <video
+                src={item.url}
+                muted
+                playsInline
+                preload="metadata"
+                className="h-full w-full object-cover"
+              />
+            )}
+          </div>
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+            <div className="rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">Video</div>
+          </div>
+        </>
+      ) : (
+        <SafeImage
+          src={item.url}
+          alt=""
+          className="h-full w-full object-cover transition duration-200 hover:scale-[1.02]"
+          fallbackClass="h-full w-full"
+        />
+      )}
       {overlay}
     </button>
   );
 }
 
-function FeedImageGallery({ images, className = '', onOpenImage }) {
-  const visibleImages = images.slice(0, MAX_VISIBLE_POST_IMAGES);
-  const hiddenCount = Math.max(images.length - visibleImages.length, 0);
+function FeedMediaGallery({ mediaItems, className = '', onOpenItem }) {
+  const visibleItems = mediaItems.slice(0, MAX_VISIBLE_POST_IMAGES);
+  const hiddenCount = Math.max(mediaItems.length - visibleItems.length, 0);
 
-  if (visibleImages.length === 0) return null;
+  if (visibleItems.length === 0) return null;
 
-  const layoutCount = visibleImages.length;
-  const openImage = (index) => onOpenImage?.(index);
+  const layoutCount = visibleItems.length;
+  const openItem = (index) => onOpenItem?.(index);
   const getOverlay = (index) => (
-    hiddenCount > 0 && index === visibleImages.length - 1
+    hiddenCount > 0 && index === visibleItems.length - 1
       ? <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-2xl font-semibold text-white">+{hiddenCount}</div>
       : null
   );
@@ -160,7 +217,7 @@ function FeedImageGallery({ images, className = '', onOpenImage }) {
     return (
       <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
         <div className="aspect-[16/10]">
-          <FeedGalleryTile imageUrl={visibleImages[0]} onClick={() => openImage(0)} />
+          <FeedGalleryTile item={visibleItems[0]} onClick={() => openItem(0)} />
         </div>
       </div>
     );
@@ -170,8 +227,8 @@ function FeedImageGallery({ images, className = '', onOpenImage }) {
     return (
       <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
         <div className="grid h-[18rem] grid-cols-2 gap-1 sm:h-[22rem]">
-          {visibleImages.map((imageUrl, index) => (
-            <FeedGalleryTile key={`${imageUrl}-${index}`} imageUrl={imageUrl} onClick={() => openImage(index)} />
+          {visibleItems.map((item, index) => (
+            <FeedGalleryTile key={`${item.url}-${index}`} item={item} onClick={() => openItem(index)} />
           ))}
         </div>
       </div>
@@ -182,10 +239,10 @@ function FeedImageGallery({ images, className = '', onOpenImage }) {
     return (
       <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
         <div className="grid h-[22rem] grid-cols-2 gap-1 sm:h-[28rem]">
-          <FeedGalleryTile imageUrl={visibleImages[0]} onClick={() => openImage(0)} />
+          <FeedGalleryTile item={visibleItems[0]} onClick={() => openItem(0)} />
           <div className="grid grid-rows-2 gap-1">
-            <FeedGalleryTile imageUrl={visibleImages[1]} onClick={() => openImage(1)} />
-            <FeedGalleryTile imageUrl={visibleImages[2]} onClick={() => openImage(2)} />
+            <FeedGalleryTile item={visibleItems[1]} onClick={() => openItem(1)} />
+            <FeedGalleryTile item={visibleItems[2]} onClick={() => openItem(2)} />
           </div>
         </div>
       </div>
@@ -196,8 +253,8 @@ function FeedImageGallery({ images, className = '', onOpenImage }) {
     return (
       <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
         <div className="grid h-[22rem] grid-cols-2 grid-rows-2 gap-1 sm:h-[28rem]">
-          {visibleImages.map((imageUrl, index) => (
-            <FeedGalleryTile key={`${imageUrl}-${index}`} imageUrl={imageUrl} onClick={() => openImage(index)} />
+          {visibleItems.map((item, index) => (
+            <FeedGalleryTile key={`${item.url}-${index}`} item={item} onClick={() => openItem(index)} />
           ))}
         </div>
       </div>
@@ -208,18 +265,18 @@ function FeedImageGallery({ images, className = '', onOpenImage }) {
     <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
       <div className="grid h-[22rem] grid-rows-2 gap-1 sm:h-[28rem]">
         <div className="grid grid-cols-2 gap-1">
-          {visibleImages.slice(0, 2).map((imageUrl, index) => (
-            <FeedGalleryTile key={`${imageUrl}-${index}`} imageUrl={imageUrl} onClick={() => openImage(index)} />
+          {visibleItems.slice(0, 2).map((item, index) => (
+            <FeedGalleryTile key={`${item.url}-${index}`} item={item} onClick={() => openItem(index)} />
           ))}
         </div>
         <div className="grid grid-cols-3 gap-1">
-          {visibleImages.slice(2).map((imageUrl, offset) => {
+          {visibleItems.slice(2).map((item, offset) => {
             const index = offset + 2;
             return (
               <FeedGalleryTile
-                key={`${imageUrl}-${index}`}
-                imageUrl={imageUrl}
-                onClick={() => openImage(index)}
+                key={`${item.url}-${index}`}
+                item={item}
+                onClick={() => openItem(index)}
                 overlay={getOverlay(index)}
               />
             );
@@ -284,17 +341,21 @@ export default function FeedView({
   const [showImageField, setShowImageField] = useState(false);
   const [expandedPostId, setExpandedPostId] = useState(null);
   const [commentDrafts,  setCommentDrafts]  = useState({});
-  const [galleryState,   setGalleryState]   = useState({ images: [], index: 0 });
-  const composerMedia = useMemo(
-    () => splitMediaUrls(parseComposerMediaUrls(newImageUrls)),
+  const [galleryState,   setGalleryState]   = useState({ items: [], index: 0 });
+  const composerMediaUrls = useMemo(
+    () => parseComposerMediaUrls(newImageUrls),
     [newImageUrls],
+  );
+  const composerMediaItems = useMemo(
+    () => composerMediaUrls.map(getMediaItem),
+    [composerMediaUrls],
   );
 
   // ── Post / comment handlers ────────────────────────────────────────────────
 
   const handlePost = async () => {
     if (!newContent.trim()) return;
-    await onCreatePost(newContent.trim(), [...composerMedia.images, ...composerMedia.videos]);
+    await onCreatePost(newContent.trim(), composerMediaUrls);
     setNewContent('');
     setNewImageUrls('');
     setShowImageField(false);
@@ -307,17 +368,17 @@ export default function FeedView({
     setCommentDrafts((d) => ({ ...d, [postId]: '' }));
   };
 
-  const openGallery = (images, index) => {
-    if (!images.length) return;
-    setGalleryState({ images, index });
+  const openGallery = (items, index) => {
+    if (!items.length) return;
+    setGalleryState({ items, index });
   };
 
-  const closeGallery = () => setGalleryState({ images: [], index: 0 });
+  const closeGallery = () => setGalleryState({ items: [], index: 0 });
 
   const navigateGallery = (direction) => {
     setGalleryState((current) => {
-      if (!current.images.length) return current;
-      const nextIndex = (current.index + direction + current.images.length) % current.images.length;
+      if (!current.items.length) return current;
+      const nextIndex = (current.index + direction + current.items.length) % current.items.length;
       return { ...current, index: nextIndex };
     });
   };
@@ -337,10 +398,7 @@ export default function FeedView({
             placeholder={t('paste_img_ph')}
             className="text-xs" />
         )}
-        {composerMedia.images.length > 0 && (
-          <FeedImageGallery images={composerMedia.images} onOpenImage={(index) => openGallery(composerMedia.images, index)} />
-        )}
-        <FeedVideoGallery videos={composerMedia.videos} />
+        <FeedMediaGallery mediaItems={composerMediaItems} onOpenItem={(index) => openGallery(composerMediaItems, index)} />
         <div className="flex items-center justify-between pt-1">
           <Button variant="ghost" size="sm" onClick={() => setShowImageField((s) => !s)}>
             {showImageField ? t('remove_image_btn') : t('add_image_btn')}
@@ -364,7 +422,7 @@ export default function FeedView({
         const isOwn      = post.authorId === authUser?.uid;
         const authorMembership = memberships.find((m) => m.userId === post.authorId);
         const authorPhoto = authorMembership?.photoURL || post.authorPhoto;
-        const postMedia = splitMediaUrls(getPostMediaUrls(post));
+        const postMediaItems = getPostMediaUrls(post).map(getMediaItem);
 
         return (
           <Card key={post.id} hover className="overflow-hidden">
@@ -392,8 +450,7 @@ export default function FeedView({
                   <span className="text-[11px] text-slate-400">{tsToDate(post.createdAt).toLocaleString()}</span>
                 </div>
                 <p className="text-sm text-slate-200 mt-1.5 whitespace-pre-wrap leading-relaxed">{post.content}</p>
-                <FeedImageGallery images={postMedia.images} onOpenImage={(index) => openGallery(postMedia.images, index)} />
-                <FeedVideoGallery videos={postMedia.videos} />
+                <FeedMediaGallery mediaItems={postMediaItems} onOpenItem={(index) => openGallery(postMediaItems, index)} />
               </div>
               {(canEdit || isOwn) && (
                 <Button variant="link" size="sm" onClick={() => onDeletePost(post.id)} className="shrink-0 text-error hover:text-red-400">
@@ -450,9 +507,9 @@ export default function FeedView({
         );
       })}
 
-      {galleryState.images.length > 0 && (
+      {galleryState.items.length > 0 && (
         <FeedGalleryModal
-          images={galleryState.images}
+          mediaItems={galleryState.items}
           activeIndex={galleryState.index}
           onClose={closeGallery}
           onNavigate={navigateGallery}
