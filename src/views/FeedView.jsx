@@ -2,10 +2,11 @@
 // Social feed: create posts (optionally with an image URL), view and add
 // per-post comments.  Authors and admins may delete their own content.
 
-import React, { useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { t } from '../strings.js';
 import { tsToDate } from '../utils.js';
+import ModalOverlay from '../components/ModalOverlay.jsx';
 import SafeImage from '../components/ui/SafeImage.jsx';
 import { SafeProfileImage, Button, Textarea } from '../components/ui/index.js';
 import { Card } from '../components/layout/index.js';
@@ -22,59 +23,174 @@ function getPostImages(post) {
   return post.imageUrl ? [post.imageUrl] : [];
 }
 
-function getGalleryLayoutClass(imageCount) {
-  if (imageCount <= 1) return 'grid-cols-1';
-  if (imageCount === 2) return 'grid-cols-2';
-  if (imageCount === 3) return 'grid-cols-2 grid-rows-2';
-  if (imageCount === 4) return 'grid-cols-2 grid-rows-2';
-  return 'grid-cols-6 grid-rows-2';
+function FeedGalleryModal({ images, activeIndex, onClose, onNavigate }) {
+  useEffect(() => {
+    if (!images.length) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowLeft') onNavigate(-1);
+      if (event.key === 'ArrowRight') onNavigate(1);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [images.length, onClose, onNavigate]);
+
+  if (!images.length) return null;
+
+  return (
+    <ModalOverlay onClickBackdrop={onClose} className="z-[70] p-3 sm:p-6">
+      <div className="relative w-[min(92vw,1100px)] rounded-3xl bg-slate-950/95 p-3 sm:p-4">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 rounded-full bg-black/50 p-2 text-white transition hover:bg-black/70"
+          aria-label={t('close') || 'Close'}
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {images.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => onNavigate(-1)}
+              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 p-2 text-white transition hover:bg-black/75"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate(1)}
+              className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 p-2 text-white transition hover:bg-black/75"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </>
+        )}
+
+        <div className="overflow-hidden rounded-2xl bg-black">
+          <SafeImage
+            src={images[activeIndex]}
+            alt=""
+            className="max-h-[82vh] w-full object-contain"
+            fallbackClass="flex h-[60vh] w-[min(92vw,1100px)] items-center justify-center"
+          />
+        </div>
+
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-300">
+          <span>{activeIndex + 1} / {images.length}</span>
+          <span>Usa las flechas del teclado para navegar</span>
+        </div>
+      </div>
+    </ModalOverlay>
+  );
 }
 
-function getGalleryItemClass(imageCount, index) {
-  if (imageCount === 1) return 'col-span-1 row-span-1 aspect-[16/10]';
-  if (imageCount === 2) return 'col-span-1 row-span-1 aspect-square';
-  if (imageCount === 3) {
-    if (index === 0) return 'row-span-2 aspect-[4/5]';
-    return 'aspect-square';
-  }
-  if (imageCount === 4) return 'col-span-1 row-span-1 aspect-square';
-  if (index < 2) return 'col-span-3 aspect-[4/3]';
-  return 'col-span-2 aspect-square';
+function FeedGalleryTile({ imageUrl, onClick, overlay = null, className = '' }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative h-full w-full overflow-hidden bg-slate-900 text-left ${className}`.trim()}
+    >
+      <SafeImage
+        src={imageUrl}
+        alt=""
+        className="h-full w-full object-cover transition duration-200 hover:scale-[1.02]"
+        fallbackClass="h-full w-full"
+      />
+      {overlay}
+    </button>
+  );
 }
 
-function FeedImageGallery({ images, className = '' }) {
+function FeedImageGallery({ images, className = '', onOpenImage }) {
   const visibleImages = images.slice(0, MAX_VISIBLE_POST_IMAGES);
   const hiddenCount = Math.max(images.length - visibleImages.length, 0);
 
   if (visibleImages.length === 0) return null;
 
   const layoutCount = visibleImages.length;
+  const openImage = (index) => onOpenImage?.(index);
+  const getOverlay = (index) => (
+    hiddenCount > 0 && index === visibleImages.length - 1
+      ? <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-2xl font-semibold text-white">+{hiddenCount}</div>
+      : null
+  );
+
+  if (layoutCount === 1) {
+    return (
+      <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
+        <div className="aspect-[16/10]">
+          <FeedGalleryTile imageUrl={visibleImages[0]} onClick={() => openImage(0)} />
+        </div>
+      </div>
+    );
+  }
+
+  if (layoutCount === 2) {
+    return (
+      <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
+        <div className="grid h-[18rem] grid-cols-2 gap-1 sm:h-[22rem]">
+          {visibleImages.map((imageUrl, index) => (
+            <FeedGalleryTile key={`${imageUrl}-${index}`} imageUrl={imageUrl} onClick={() => openImage(index)} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (layoutCount === 3) {
+    return (
+      <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
+        <div className="grid h-[22rem] grid-cols-2 gap-1 sm:h-[28rem]">
+          <FeedGalleryTile imageUrl={visibleImages[0]} onClick={() => openImage(0)} />
+          <div className="grid grid-rows-2 gap-1">
+            <FeedGalleryTile imageUrl={visibleImages[1]} onClick={() => openImage(1)} />
+            <FeedGalleryTile imageUrl={visibleImages[2]} onClick={() => openImage(2)} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (layoutCount === 4) {
+    return (
+      <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
+        <div className="grid h-[22rem] grid-cols-2 grid-rows-2 gap-1 sm:h-[28rem]">
+          {visibleImages.map((imageUrl, index) => (
+            <FeedGalleryTile key={`${imageUrl}-${index}`} imageUrl={imageUrl} onClick={() => openImage(index)} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`mt-3 overflow-hidden rounded-2xl bg-slate-950 ${className}`.trim()}>
-      <div className={`grid gap-1 ${getGalleryLayoutClass(layoutCount)}`}>
-        {visibleImages.map((imageUrl, index) => {
-          const showOverflow = hiddenCount > 0 && index === visibleImages.length - 1;
-
-          return (
-            <div
-              key={`${imageUrl}-${index}`}
-              className={`relative overflow-hidden bg-slate-900 ${getGalleryItemClass(layoutCount, index)}`}
-            >
-              <SafeImage
-                src={imageUrl}
-                alt=""
-                className="h-full w-full object-cover"
-                fallbackClass="h-full w-full"
+      <div className="grid h-[22rem] grid-rows-2 gap-1 sm:h-[28rem]">
+        <div className="grid grid-cols-2 gap-1">
+          {visibleImages.slice(0, 2).map((imageUrl, index) => (
+            <FeedGalleryTile key={`${imageUrl}-${index}`} imageUrl={imageUrl} onClick={() => openImage(index)} />
+          ))}
+        </div>
+        <div className="grid grid-cols-3 gap-1">
+          {visibleImages.slice(2).map((imageUrl, offset) => {
+            const index = offset + 2;
+            return (
+              <FeedGalleryTile
+                key={`${imageUrl}-${index}`}
+                imageUrl={imageUrl}
+                onClick={() => openImage(index)}
+                overlay={getOverlay(index)}
               />
-              {showOverflow && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-2xl font-semibold text-white">
-                  +{hiddenCount}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -103,6 +219,7 @@ export default function FeedView({
   const [showImageField, setShowImageField] = useState(false);
   const [expandedPostId, setExpandedPostId] = useState(null);
   const [commentDrafts,  setCommentDrafts]  = useState({});
+  const [galleryState,   setGalleryState]   = useState({ images: [], index: 0 });
   const composerImages = useMemo(
     () => newImageUrls
       .split(/\r?\n|,/)
@@ -128,6 +245,21 @@ export default function FeedView({
     setCommentDrafts((d) => ({ ...d, [postId]: '' }));
   };
 
+  const openGallery = (images, index) => {
+    if (!images.length) return;
+    setGalleryState({ images, index });
+  };
+
+  const closeGallery = () => setGalleryState({ images: [], index: 0 });
+
+  const navigateGallery = (direction) => {
+    setGalleryState((current) => {
+      if (!current.images.length) return current;
+      const nextIndex = (current.index + direction + current.images.length) % current.images.length;
+      return { ...current, index: nextIndex };
+    });
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -144,7 +276,7 @@ export default function FeedView({
             className="text-xs" />
         )}
         {composerImages.length > 0 && (
-          <FeedImageGallery images={composerImages} />
+          <FeedImageGallery images={composerImages} onOpenImage={(index) => openGallery(composerImages, index)} />
         )}
         <div className="flex items-center justify-between pt-1">
           <Button variant="ghost" size="sm" onClick={() => setShowImageField((s) => !s)}>
@@ -197,7 +329,7 @@ export default function FeedView({
                   <span className="text-[11px] text-slate-400">{tsToDate(post.createdAt).toLocaleString()}</span>
                 </div>
                 <p className="text-sm text-slate-200 mt-1.5 whitespace-pre-wrap leading-relaxed">{post.content}</p>
-                <FeedImageGallery images={postImages} />
+                <FeedImageGallery images={postImages} onOpenImage={(index) => openGallery(postImages, index)} />
               </div>
               {(canEdit || isOwn) && (
                 <Button variant="link" size="sm" onClick={() => onDeletePost(post.id)} className="shrink-0 text-error hover:text-red-400">
@@ -253,6 +385,15 @@ export default function FeedView({
           </Card>
         );
       })}
+
+      {galleryState.images.length > 0 && (
+        <FeedGalleryModal
+          images={galleryState.images}
+          activeIndex={galleryState.index}
+          onClose={closeGallery}
+          onNavigate={navigateGallery}
+        />
+      )}
     </div>
   );
 }
