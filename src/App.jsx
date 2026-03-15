@@ -14,7 +14,7 @@
 //   components/   — shared modals and UI atoms
 //   views/        — one file per full-page view
 
-import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth, db } from './firebase.js';
 import {
@@ -27,6 +27,8 @@ import { useFirebaseSubscriptions } from './hooks/useFirebaseSubscriptions.js';
 import { useTaskHandlers } from './hooks/useTaskHandlers.js';
 import { useMeritHandlers } from './hooks/useMeritHandlers.js';
 import { useSessionHandlers } from './hooks/useSessionHandlers.js';
+import AppViewContent from './app/router/AppViewContent.jsx';
+import { getRouteState } from './app/router/routeState.js';
 import { t, lang, STRINGS }         from './strings.js';
 import {
   EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_DOMAINS,
@@ -45,27 +47,15 @@ import SafeProfileImage from './components/ui/SafeProfileImage.jsx';
 import { Home, User, Settings, ChevronDown, ChevronRight, X } from 'lucide-react';
 
 import JoinRequestModal from './components/JoinRequestModal.jsx';
-
-// ── Full-page views (all lazy to avoid "Cannot access X before initialization" in bundle) ──
-const OverviewView     = lazy(() => import('./views/OverviewView.jsx'));
-const InicioView       = lazy(() => import('./views/InicioView.jsx'));
-const CategoriesView  = lazy(() => import('./views/CategoriesView.jsx'));
-const LeaderboardView = lazy(() => import('./views/LeaderboardView.jsx'));
-const CalendarView    = lazy(() => import('./views/CalendarView.jsx'));
-const ToolsView       = lazy(() => import('./views/ToolsView.jsx'));
-const AcademyView     = lazy(() => import('./views/AcademyView.jsx'));
-const FeedView        = lazy(() => import('./views/FeedView.jsx'));
-const ChannelsView    = lazy(() => import('./views/ChannelsView.jsx'));
-const FundingView     = lazy(() => import('./views/FundingView.jsx'));
-const InventoryView   = lazy(() => import('./views/InventoryView.jsx'));
-const TasksView       = lazy(() => import('./views/TasksView.jsx'));
-const ProfilePageView = lazy(() => import('./views/ProfilePageView.jsx'));
-const SessionsView    = lazy(() => import('./views/SessionsView.jsx'));
-const KnowledgeMapView = lazy(() => import('./views/KnowledgeMapView.jsx'));
-const MembersView     = lazy(() => import('./views/MembersView.jsx'));
-const MeritsView      = lazy(() => import('./views/MeritsView.jsx'));
-const HRView          = lazy(() => import('./views/HRView.jsx'));
-const AdminView       = lazy(() => import('./views/AdminView.jsx'));
+import {
+  createFeedComment,
+  createFeedPost,
+  deleteFeedComment,
+  deleteFeedPost,
+  toggleFeedReaction,
+} from './domains/feed/feedService.js';
+import { submitHrComplaint, submitHrSuggestion } from './domains/hr/hrService.js';
+import { createCrossTeamMessage } from './domains/channels/channelService.js';
 
 export default function App() {
 
@@ -143,11 +133,7 @@ export default function App() {
   // Routing — derive view and profileMember from URL (must be before currentDomain)
   const navigate = useNavigate();
   const location = useLocation();
-  const pathname = (location.pathname || '/').replace(/^\/+|\/+$/g, '') || 'inicio';
-  const pathParts = pathname.split('/').filter(Boolean);
-  const routeView = pathParts[0] || 'inicio';  // first segment: inicio, overview, feed, profile, etc.
-  const profileMemberId = routeView === 'profile' && pathParts[1] ? pathParts[1] : null;
-  const view = routeView === 'profile' && !profileMemberId ? 'myprofile' : (routeView === 'profile' ? 'profile' : routeView);
+  const { view, profileMemberId, isViewValid } = getRouteState(location.pathname);
   const profileMember = profileMemberId
     ? teamMemberships.find((m) => m.id === profileMemberId) || null
     : null;
@@ -159,9 +145,6 @@ export default function App() {
   useEffect(() => {
     if (currentDomain) setExpandedDomain((prev) => (prev === currentDomain ? prev : currentDomain));
   }, [currentDomain]);
-
-  const validViews = new Set(['inicio', 'overview', 'feed', 'channels', 'categories', 'members', 'merits', 'leaderboard', 'calendar', 'tools', 'academy', 'funding', 'inventory', 'tasks', 'sessions', 'mapa', 'hr', 'myprofile', 'profile', 'admin']);
-  const isViewValid = validViews.has(view);
 
   // Redirect invalid paths to /inicio (only when team is selected, to avoid running in team picker)
   useEffect(() => {
@@ -749,37 +732,23 @@ export default function App() {
   const handleSubmitHrSuggestion = async (content, isAnonymous) => {
     if (!currentTeam || !authUser) throw new Error('Debes iniciar sesión.');
     if (!currentMembership || currentMembership.status !== 'active') throw new Error('Solo miembros activos pueden enviar sugerencias.');
-    await addDoc(collection(db, 'hrSuggestions'), {
+    await submitHrSuggestion({
       teamId: currentTeam.id,
-      content: (content || '').trim(),
-      isAnonymous: !!isAnonymous,
-      authorId: isAnonymous ? null : authUser.uid,
-      authorName: isAnonymous ? null : (userProfile?.displayName ?? authUser.displayName ?? ''),
-      status: 'pending',
-      createdAt: serverTimestamp(),
+      authUserId: authUser.uid,
+      authorName: userProfile?.displayName ?? authUser.displayName ?? '',
+      content,
+      isAnonymous,
     });
   };
 
   const handleSubmitHrComplaint = async (data) => {
     if (!currentTeam || !authUser) throw new Error('Debes iniciar sesión.');
     if (!currentMembership || currentMembership.status !== 'active') throw new Error('Solo miembros activos pueden enviar quejas.');
-    const hasEvidence =
-      (data.evidence?.text || '').trim() ||
-      (data.evidence?.link || '').trim();
-    if (!hasEvidence) throw new Error('Se requiere evidencia (texto o enlace).');
-    await addDoc(collection(db, 'hrComplaints'), {
+    await submitHrComplaint({
       teamId: currentTeam.id,
-      type: data.type || 'team',
-      targetCategoryId: data.targetCategoryId || null,
-      targetMembershipId: data.targetMembershipId || null,
-      content: (data.content || '').trim(),
-      evidence: {
-        text: (data.evidence?.text || '').trim() || null,
-        link: (data.evidence?.link || '').trim() || null,
-      },
-      authorId: authUser.uid,
+      authUserId: authUser.uid,
       authorName: userProfile?.displayName ?? authUser.displayName ?? '',
-      createdAt: serverTimestamp(),
+      data,
     });
   };
 
@@ -1625,21 +1594,13 @@ export default function App() {
 
   const handleCreatePost = async (content, mediaUrls = []) => {
     if (!authUser || !currentTeam || !isMember) return;
-    const normalizedMediaUrls = Array.isArray(mediaUrls)
-      ? mediaUrls.map((url) => String(url || '').trim()).filter(Boolean)
-      : [];
-
-    await addDoc(collection(db, 'posts'), {
-      teamId:      currentTeam.id,
+    await createFeedPost({
+      teamId: currentTeam.id,
+      authorId: authUser.uid,
+      authorName: userProfile?.displayName || 'Member',
+      authorPhoto: userProfile?.photoURL || null,
       content,
-      ...(normalizedMediaUrls.length > 0 ? {
-        imageUrls: normalizedMediaUrls,
-        imageUrl: normalizedMediaUrls[0],
-      } : {}),
-      authorId:    authUser.uid,
-      authorName:  userProfile?.displayName || 'Member',
-      authorPhoto: userProfile?.photoURL    || null,
-      createdAt:   serverTimestamp(),
+      mediaUrls,
     });
   };
 
@@ -1648,19 +1609,18 @@ export default function App() {
     const post = teamPosts.find((p) => p.id === postId);
     if (!post) return;
     if (post.authorId !== authUser.uid && !canEdit) return;
-    await deleteDoc(doc(db, 'posts', postId));
+    await deleteFeedPost(postId);
   };
 
   const handleCreateComment = async (postId, content) => {
     if (!authUser || !currentTeam || !isMember) return;
-    await addDoc(collection(db, 'comments'), {
-      teamId:      currentTeam.id,
+    await createFeedComment({
+      teamId: currentTeam.id,
       postId,
       content,
-      authorId:    authUser.uid,
-      authorName:  userProfile?.displayName || 'Member',
-      authorPhoto: userProfile?.photoURL    || null,
-      createdAt:   serverTimestamp(),
+      authorId: authUser.uid,
+      authorName: userProfile?.displayName || 'Member',
+      authorPhoto: userProfile?.photoURL || null,
     });
   };
 
@@ -1669,7 +1629,7 @@ export default function App() {
     const comment = teamComments.find((c) => c.id === commentId);
     if (!comment) return;
     if (comment.authorId !== authUser.uid && !canEdit) return;
-    await deleteDoc(doc(db, 'comments', commentId));
+    await deleteFeedComment(commentId);
   };
 
   const handleTogglePostReaction = async (postId, type) => {
@@ -1678,29 +1638,14 @@ export default function App() {
     if (!['like', 'love', 'fire'].includes(normalizedType)) return;
 
     try {
-      const reactionRef = doc(db, 'postReactions', `${postId}_${authUser.uid}`);
       const existing = teamPostReactions.find((reaction) => reaction.id === `${postId}_${authUser.uid}`);
-
-      if (!existing) {
-        await setDoc(reactionRef, {
-          teamId: currentTeam.id,
-          postId,
-          userId: authUser.uid,
-          type: normalizedType,
-          createdAt: serverTimestamp(),
-        });
-        return;
-      }
-
-      if (existing.type === normalizedType) {
-        await deleteDoc(reactionRef);
-        return;
-      }
-
-      await setDoc(reactionRef, {
+      await toggleFeedReaction({
+        teamId: currentTeam.id,
+        postId,
+        userId: authUser.uid,
         type: normalizedType,
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
+        existingReaction: existing,
+      });
     } catch (error) {
       console.error('Failed to toggle post reaction:', error);
       alert('No se pudo guardar la reaccion. Si acabas de agregar esta funcion, despliega las reglas de Firestore.');
@@ -1951,32 +1896,18 @@ export default function App() {
 
   const handleCreateCrossTeamMessage = async (channelId, content) => {
     const channel = crossTeamChannels.find((entry) => entry.id === channelId);
-    const trimmedContent = String(content || '').trim();
-    if (!channel || !trimmedContent || !currentTeam || !authUser || !canManageCrossTeamChannels) return;
-    const relationSnap = await getDoc(doc(db, 'crossTeamChannelTeams', `${channelId}_${currentTeam.id}`));
-    const relation = relationSnap.exists() ? relationSnap.data() : null;
-    const isLegacyMember = (channel.memberTeamIds || []).includes(currentTeam.id);
-    if (!isPlatformAdmin && !['owner', 'member'].includes(relation?.status || '') && !isLegacyMember) return;
-
-    await addDoc(collection(db, 'crossTeamMessages'), {
+    const didCreate = await createCrossTeamMessage({
       channelId,
-      teamId: currentTeam.id,
-      teamName: currentTeam.name || 'Equipo',
-      membershipId: currentMembership?.id || null,
-      authorName: currentMembership?.displayName || userProfile?.displayName || authUser.email || 'Member',
-      content: trimmedContent,
-      createdAt: serverTimestamp(),
+      currentTeam,
+      currentMembership,
+      authUser,
+      userProfile,
+      canManageCrossTeamChannels,
+      isPlatformAdmin,
+      channel,
+      content,
     });
-
-    try {
-      await updateDoc(doc(db, 'crossTeamChannels', channelId), {
-        lastMessageAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-    } catch (e) {
-      console.warn('Channel timestamp update failed:', e);
-    }
-    await logChannelAudit('channel_message', channelId);
+    if (didCreate) await logChannelAudit('channel_message', channelId);
   };
 
   const handleLeaveCrossTeamChannel = async (channelId) => {
@@ -2546,402 +2477,189 @@ export default function App() {
           {/* Main content area */}
           <main className="flex-1 overflow-y-auto shell-content">
             <div className="page-container min-h-full">
-              <Suspense fallback={<div className="py-16 text-center text-content-tertiary text-sm">{t('loading')}</div>}>
-            {view === 'inicio' && (
-              <InicioView
-                team={currentTeam}
-                teamTasks={teamTasks}
-                teamWeeklyStatuses={teamWeeklyStatuses}
-                teamMeritEvents={teamMeritEvents}
-                teamMemberships={teamMemberships}
-                currentMembership={currentMembership}
-                tsToDate={tsToDate}
-                onNavigateTasks={() => navigate('/tasks')}
-                onNavigateProfile={() => navigate('/profile')}
-                onNavigateOverview={() => navigate('/overview')}
-                onNavigateFeed={() => navigate('/feed')}
+              <AppViewContent
+                view={view}
+                profileMemberId={profileMemberId}
+                profileMember={profileMember}
+                authState={{
+                  authUser,
+                  userProfile,
+                  currentMembership,
+                  memberRole,
+                  isPlatformAdmin,
+                }}
+                teamState={{
+                  currentTeam,
+                  teamTasks,
+                  teamWeeklyStatuses,
+                  teamMeritEvents,
+                  teamMemberships,
+                  teamPosts,
+                  teamComments,
+                  teamPostReactions,
+                  crossTeamChannels,
+                  crossTeamChannelInvitations,
+                  teamCategories,
+                  teamHrComplaints,
+                  teamMerits,
+                  leaderboard,
+                  teamEvents,
+                  teamSessions,
+                  teamSwots,
+                  teamEisenhowers,
+                  teamPughs,
+                  teamBoards,
+                  teamMeetings,
+                  teamGoals,
+                  teamModules,
+                  teamModuleAttempts,
+                  teamInventoryItems,
+                  teamInventoryLoans,
+                  teamFundingAccounts,
+                  teamFundingEntries,
+                  teamHrSuggestions,
+                  teamSkillProposals,
+                  meritFamilies,
+                  knowledgeAreas,
+                  skillDictionary,
+                  allTeams,
+                  tsToDate,
+                }}
+                permissions={{
+                  isAtLeastRookie,
+                  canEdit,
+                  canUseCrossTeamChannels,
+                  canStrike,
+                  canCreateMerit,
+                  canAward,
+                  canViewInventory,
+                  canManageInventory,
+                  canViewFunding,
+                  canEditTools,
+                  canManageSessions,
+                }}
+                options={{
+                  careerOptions,
+                  semesterOptions,
+                  personalityTags,
+                  meritDomains,
+                  meritTiers,
+                }}
+                handlers={{
+                  handleViewProfile,
+                  handleSaveOverview,
+                  handleCreatePost,
+                  handleDeletePost,
+                  handleCreateComment,
+                  handleDeleteComment,
+                  handleTogglePostReaction,
+                  handleCreateCrossTeamChannel,
+                  handleInviteTeamsToChannel,
+                  handleAcceptCrossTeamInvitation,
+                  handleDeclineCrossTeamInvitation,
+                  handleUpdateCrossTeamChannel,
+                  handleCreateCrossTeamMessage,
+                  handleLeaveCrossTeamChannel,
+                  handleDeleteCrossTeamChannel,
+                  handleCreateCategory,
+                  handleDeleteCategory,
+                  handleUpdateCategory,
+                  canStrikeMember,
+                  canRemoveStrikeMember,
+                  handleUpdateMemberRole,
+                  handleAssignCategory,
+                  handleAddStrike,
+                  handleRemoveStrike,
+                  handleCreateGhostMember,
+                  handleApproveMember,
+                  handleRejectMember,
+                  handleCreateMerit,
+                  handleUpdateMerit,
+                  handleDeleteMerit,
+                  handleRecoverMerit,
+                  canEditMerit,
+                  handleAwardMerit,
+                  handleRevokeMerit,
+                  handleEditMeritEvent,
+                  handleCreateEvent,
+                  handleUpdateEvent,
+                  handleDeleteEvent,
+                  canEditToolItem,
+                  handleCreateTask,
+                  canAssignTask,
+                  handleCreateSwot,
+                  handleUpdateSwot,
+                  handleDeleteSwot,
+                  handleCreateEisenhower,
+                  handleUpdateEisenhower,
+                  handleDeleteEisenhower,
+                  handleCreatePugh,
+                  handleUpdatePugh,
+                  handleDeletePugh,
+                  handleCreateBoard,
+                  handleUpdateBoard,
+                  handleDeleteBoard,
+                  handleCreateMeeting,
+                  handleUpdateMeeting,
+                  handleDeleteMeeting,
+                  handleCreateGoal,
+                  handleUpdateGoal,
+                  handleDeleteGoal,
+                  handleCreateModule,
+                  handleUpdateModule,
+                  handleDeleteModule,
+                  handleRequestModuleReview,
+                  handleApproveModuleAttempt,
+                  canEditInventoryItem,
+                  handleCreateInventoryItem,
+                  handleUpdateInventoryItem,
+                  handleDeleteInventoryItem,
+                  handleCreateInventoryLoan,
+                  handleReturnInventoryLoan,
+                  handleCreateFundingAccount,
+                  handleUpdateFundingAccount,
+                  handleDeleteFundingAccount,
+                  handleCreateFundingEntry,
+                  handleDeleteFundingEntry,
+                  handleCreateSession,
+                  handleUpdateSession,
+                  handleDeleteSession,
+                  handleSaveAttendance,
+                  fetchAttendance,
+                  handleRequestTaskReview,
+                  handleCancelTaskReviewRequest,
+                  handleGradeTask,
+                  handleRejectTaskReview,
+                  handleDeleteTask,
+                  handleSetBlocked,
+                  handleUnblockTask,
+                  handleUpdateTask,
+                  handleSubmitHrSuggestion,
+                  handleSubmitHrComplaint,
+                  handleAcceptHrSuggestion,
+                  handleDismissHrSuggestion,
+                  handleReconsiderHrSuggestion,
+                  handleSaveTeamCareers,
+                  handleSaveTeamSemesters,
+                  handleSaveTeamPersonalityTags,
+                  handleSaveTeamMeritTags,
+                  handleSaveTeamMeritTiers,
+                  handleSaveTeamMeritFamilies,
+                  handleSaveKnowledgeAreas: handleSaveTeamKnowledgeAreas,
+                  handleSaveSkillDictionary,
+                  handleApproveSkillProposal,
+                  handleRejectSkillProposal,
+                  handleSaveSystemMeritPoints,
+                  handleSaveTaskGradePoints,
+                  handleUpdateMemberProfile,
+                  handleSaveWeeklyStatus,
+                  handleProposeSkill,
+                }}
+                nav={{
+                  navigate,
+                  goToView,
+                }}
               />
-            )}
-
-            {view === 'overview' && (
-              <OverviewView
-                onViewProfile={handleViewProfile}
-                team={currentTeam}
-                teamMemberships={teamMemberships}
-                teamMeritEvents={teamMeritEvents}
-                teamPosts={teamPosts}
-                teamSessions={teamSessions}
-                teamModules={teamModules}
-                teamCategories={teamCategories}
-                canEdit={canEdit}
-                onSave={handleSaveOverview}
-                onNavigateFeed={() => navigate('/feed')}
-                onNavigateSessions={() => navigate('/sessions')}
-              />
-            )}
-
-            {view === 'feed' && isAtLeastRookie && (
-                <FeedView
-                  posts={teamPosts}
-                  comments={teamComments}
-                  reactions={teamPostReactions}
-                  authUser={authUser}
-                  canEdit={canEdit}
-                  memberships={teamMemberships}
-                  onCreatePost={handleCreatePost}
-                  onDeletePost={handleDeletePost}
-                  onCreateComment={handleCreateComment}
-                  onDeleteComment={handleDeleteComment}
-                  onToggleReaction={handleTogglePostReaction}
-                  onViewProfile={handleViewProfile}
-                />
-              )}
-
-            {view === 'channels' && canUseCrossTeamChannels && (
-              <ChannelsView
-                currentTeam={currentTeam}
-                currentMembership={currentMembership}
-                allTeams={allTeams}
-                channels={crossTeamChannels}
-                pendingInvitations={crossTeamChannelInvitations}
-                onCreateChannel={handleCreateCrossTeamChannel}
-                onInviteTeams={handleInviteTeamsToChannel}
-                onAcceptInvitation={handleAcceptCrossTeamInvitation}
-                onDeclineInvitation={handleDeclineCrossTeamInvitation}
-                onUpdateChannel={handleUpdateCrossTeamChannel}
-                onCreateMessage={handleCreateCrossTeamMessage}
-                onLeaveChannel={handleLeaveCrossTeamChannel}
-                onDeleteChannel={handleDeleteCrossTeamChannel}
-              />
-            )}
-
-            {view === 'categories' && isAtLeastRookie && (
-              <CategoriesView
-                categories={teamCategories}
-                memberships={teamMemberships}
-                canEdit={canEdit}
-                onCreateCategory={handleCreateCategory}
-                onDeleteCategory={handleDeleteCategory}
-                onUpdateCategory={handleUpdateCategory}
-                onViewProfile={handleViewProfile}
-              />
-            )}
-
-            {view === 'members' && isAtLeastRookie && (
-              <MembersView
-                categories={teamCategories}
-                memberships={teamMemberships}
-                complaintsAgainstMember={teamHrComplaints.filter((c) => c.type === 'person' && c.targetMembershipId)}
-                canEdit={canEdit}
-                canStrike={canStrike}
-                canStrikeMember={canStrikeMember}
-                canRemoveStrikeMember={canRemoveStrikeMember}
-                isPlatformAdmin={isPlatformAdmin}
-                careerOptions={careerOptions}
-                knowledgeAreas={knowledgeAreas}
-                skillDictionary={skillDictionary}
-                onUpdateRole={handleUpdateMemberRole}
-                onAssignCategory={handleAssignCategory}
-                onAddStrike={handleAddStrike}
-                onRemoveStrike={handleRemoveStrike}
-                onViewProfile={handleViewProfile}
-                onCreateGhostMember={handleCreateGhostMember}
-                onApproveMember={handleApproveMember}
-                onRejectMember={handleRejectMember}
-              />
-            )}
-
-            {view === 'merits' && isAtLeastRookie && (
-              <MeritsView
-                merits={teamMerits}
-                categories={teamCategories}
-                memberships={teamMemberships}
-                meritEvents={teamMeritEvents}
-                userProfile={userProfile}
-                canEdit={canEdit}
-                canCreateMerit={canCreateMerit}
-                canAward={canAward}
-                currentMembership={currentMembership}
-                memberRole={memberRole}
-                isPlatformAdmin={isPlatformAdmin}
-                domains={meritDomains}
-                meritTiers={meritTiers}
-                meritFamilies={meritFamilies}
-                knowledgeAreas={knowledgeAreas}
-                onCreateMerit={handleCreateMerit}
-                onUpdateMerit={handleUpdateMerit}
-                onDeleteMerit={handleDeleteMerit}
-                onRecoverMerit={handleRecoverMerit}
-                canEditMerit={canEditMerit}
-                onAwardMerit={handleAwardMerit}
-                onRevokeMerit={handleRevokeMerit}
-                onEditMeritEvent={handleEditMeritEvent}
-                onViewProfile={handleViewProfile}
-              />
-            )}
-
-            {view === 'leaderboard' && isAtLeastRookie && (
-              <LeaderboardView
-                leaderboard={leaderboard}
-                memberships={teamMemberships}
-                weeklyStatuses={teamWeeklyStatuses}
-                tasks={teamTasks}
-                categories={teamCategories}
-                onViewProfile={handleViewProfile}
-              />
-            )}
-
-            {view === 'calendar' && isAtLeastRookie && (
-              <CalendarView
-                teamEvents={teamEvents}
-                teamSessions={teamSessions}
-                categories={teamCategories}
-                memberships={teamMemberships}
-                currentMembership={currentMembership}
-                canEdit={canEdit}
-                canEditTools={canEditTools}
-                resolveCanEdit={canEditToolItem}
-                onCreateEvent={handleCreateEvent}
-                onUpdateEvent={handleUpdateEvent}
-                onDeleteEvent={handleDeleteEvent}
-              />
-            )}
-
-            {view === 'tools' && isAtLeastRookie && (
-              <ToolsView
-                team={currentTeam}
-                teamEvents={teamEvents}
-                teamSwots={teamSwots}
-                teamEisenhowers={teamEisenhowers}
-                teamPughs={teamPughs}
-                teamBoards={teamBoards}
-                teamMeetings={teamMeetings}
-                teamGoals={teamGoals}
-                categories={teamCategories}
-                memberships={teamMemberships}
-                currentMembership={currentMembership}
-                memberRole={memberRole}
-                canEdit={canEdit}
-                canEditTools={canEditTools}
-                resolveCanEdit={canEditToolItem}
-                onCreateTask={handleCreateTask}
-                canAssignTask={canAssignTask}
-                onCreateEvent={handleCreateEvent}
-                onUpdateEvent={handleUpdateEvent}
-                onDeleteEvent={handleDeleteEvent}
-                onCreateSwot={handleCreateSwot}
-                onUpdateSwot={handleUpdateSwot}
-                onDeleteSwot={handleDeleteSwot}
-                onCreateEisenhower={handleCreateEisenhower}
-                onUpdateEisenhower={handleUpdateEisenhower}
-                onDeleteEisenhower={handleDeleteEisenhower}
-                onCreatePugh={handleCreatePugh}
-                onUpdatePugh={handleUpdatePugh}
-                onDeletePugh={handleDeletePugh}
-                onCreateBoard={handleCreateBoard}
-                onUpdateBoard={handleUpdateBoard}
-                onDeleteBoard={handleDeleteBoard}
-                onCreateMeeting={handleCreateMeeting}
-                onUpdateMeeting={handleUpdateMeeting}
-                onDeleteMeeting={handleDeleteMeeting}
-                onCreateGoal={handleCreateGoal}
-                onUpdateGoal={handleUpdateGoal}
-                onDeleteGoal={handleDeleteGoal}
-              />
-            )}
-
-            {view === 'academy' && isAtLeastRookie && (
-              <AcademyView
-                modules={teamModules}
-                moduleAttempts={teamModuleAttempts}
-                teamMemberships={teamMemberships}
-                canEdit={canEdit}
-                knowledgeAreas={knowledgeAreas}
-                onCreateModule={handleCreateModule}
-                onUpdateModule={handleUpdateModule}
-                onDeleteModule={handleDeleteModule}
-                onRequestModuleReview={handleRequestModuleReview}
-                onApproveModuleAttempt={handleApproveModuleAttempt}
-              />
-            )}
-
-            {view === 'inventory' && canViewInventory && (
-              <InventoryView
-                items={teamInventoryItems}
-                loans={teamInventoryLoans}
-                categories={teamCategories}
-                memberships={teamMemberships}
-                canManageInventory={canManageInventory}
-                currentMembership={currentMembership}
-                canEditItem={canEditInventoryItem}
-                onCreateItem={handleCreateInventoryItem}
-                onUpdateItem={handleUpdateInventoryItem}
-                onDeleteItem={handleDeleteInventoryItem}
-                onCreateLoan={handleCreateInventoryLoan}
-                onReturnLoan={handleReturnInventoryLoan}
-              />
-            )}
-
-            {view === 'funding' && canViewFunding && (
-              <FundingView
-                accounts={teamFundingAccounts}
-                entries={teamFundingEntries}
-                canEdit={canEditTools}
-                onCreateAccount={handleCreateFundingAccount}
-                onUpdateAccount={handleUpdateFundingAccount}
-                onDeleteAccount={handleDeleteFundingAccount}
-                onCreateEntry={handleCreateFundingEntry}
-                onDeleteEntry={handleDeleteFundingEntry}
-              />
-            )}
-
-            {view === 'sessions' && isAtLeastRookie && (
-              <SessionsView
-                sessions={teamSessions}
-                memberships={teamMemberships}
-                categories={teamCategories}
-                canManageSessions={canManageSessions}
-                authUser={authUser}
-                onCreateSession={handleCreateSession}
-                onUpdateSession={handleUpdateSession}
-                onDeleteSession={handleDeleteSession}
-                onSaveAttendance={handleSaveAttendance}
-                fetchAttendance={fetchAttendance}
-              />
-            )}
-
-            {view === 'mapa' && isAtLeastRookie && (
-              <KnowledgeMapView
-                memberships={teamMemberships}
-                moduleAttempts={teamModuleAttempts}
-                modules={teamModules}
-                knowledgeAreas={knowledgeAreas}
-                onViewProfile={handleViewProfile}
-              />
-            )}
-
-            {view === 'tasks' && isAtLeastRookie && (
-              <TasksView
-                tasks={teamTasks}
-                memberships={teamMemberships}
-                currentMembership={currentMembership}
-                canViewAllTasks={canEdit}
-                onRequestTaskReview={handleRequestTaskReview}
-                onCancelTaskReviewRequest={handleCancelTaskReviewRequest}
-                onGradeTask={handleGradeTask}
-                onRejectTaskReview={handleRejectTaskReview}
-                onDeleteTask={handleDeleteTask}
-                onSetBlocked={handleSetBlocked}
-                onUnblockTask={handleUnblockTask}
-                onUpdateTask={handleUpdateTask}
-                knowledgeAreas={knowledgeAreas}
-                tsToDate={tsToDate}
-              />
-            )}
-
-            {view === 'hr' && isAtLeastRookie && (
-              <HRView
-                suggestions={teamHrSuggestions}
-                complaints={teamHrComplaints}
-                categories={teamCategories}
-                memberships={teamMemberships}
-                canViewHr={canEdit}
-                isFaculty={isPlatformAdmin || memberRole === 'facultyAdvisor'}
-                authUserId={authUser?.uid}
-                onSubmitSuggestion={handleSubmitHrSuggestion}
-                onSubmitComplaint={handleSubmitHrComplaint}
-                onAcceptSuggestion={handleAcceptHrSuggestion}
-                onDismissSuggestion={handleDismissHrSuggestion}
-                onReconsiderSuggestion={handleReconsiderHrSuggestion}
-                suggestionMeritPoints={[50, 100, 150, 200]}
-              />
-            )}
-
-            {/* My Profile — full page */}
-            {view === 'admin' && canEdit && (
-              <AdminView
-                key={currentTeam?.id}
-                team={currentTeam}
-                t={t}
-                onSaveCareers={handleSaveTeamCareers}
-                onSaveSemesters={handleSaveTeamSemesters}
-                onSavePersonalityTags={handleSaveTeamPersonalityTags}
-                onSaveMeritTags={handleSaveTeamMeritTags}
-                onSaveMeritTiers={handleSaveTeamMeritTiers}
-                onSaveMeritFamilies={handleSaveTeamMeritFamilies}
-                onSaveKnowledgeAreas={handleSaveTeamKnowledgeAreas}
-                onSaveSkillDictionary={handleSaveSkillDictionary}
-                skillProposals={teamSkillProposals}
-                memberships={teamMemberships}
-                onApproveSkillProposal={handleApproveSkillProposal}
-                onRejectSkillProposal={handleRejectSkillProposal}
-                onSaveSystemMeritPoints={handleSaveSystemMeritPoints}
-                onSaveTaskGradePoints={handleSaveTaskGradePoints}
-              />
-            )}
-
-            {view === 'myprofile' && (
-              currentMembership ? (
-                <ProfilePageView
-                  membership={currentMembership}
-                  categories={teamCategories}
-                  merits={teamMerits}
-                  meritEvents={teamMeritEvents.filter((e) => e.membershipId === currentMembership.id)}
-                  tasks={teamTasks}
-                  modules={teamModules}
-                  moduleAttempts={teamModuleAttempts}
-                  meritFamilies={meritFamilies}
-                  knowledgeAreas={knowledgeAreas}
-                  skillDictionary={skillDictionary}
-                  allMeritEvents={teamMeritEvents}
-                  canEditThis={isPlatformAdmin || (authUser && currentMembership.userId === authUser.uid)}
-                  onSave={handleUpdateMemberProfile}
-                  weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === currentMembership.id)}
-                  onSaveWeeklyStatus={handleSaveWeeklyStatus}
-                  onProposeSkill={handleProposeSkill}
-                  careerOptions={careerOptions}
-                  semesterOptions={semesterOptions}
-                  personalityTags={personalityTags}
-                  onNavigate={goToView}
-                />
-              ) : (
-                <div className="py-12 text-center text-slate-400 text-sm">
-                  {t('loading')}
-                </div>
-              )
-            )}
-
-            {/* Viewing another member's profile — full page */}
-            {view === 'profile' && profileMemberId && !profileMember && (
-              <div className="py-12 text-center">
-                <p className="text-slate-400 text-sm">{t('member_not_found')}</p>
-              </div>
-            )}
-            {view === 'profile' && profileMember && (
-              <ProfilePageView
-                membership={profileMember}
-                categories={teamCategories}
-                merits={teamMerits}
-                meritEvents={teamMeritEvents.filter((e) => e.membershipId === profileMember.id)}
-                tasks={teamTasks}
-                modules={teamModules}
-                moduleAttempts={teamModuleAttempts}
-                meritFamilies={meritFamilies}
-                knowledgeAreas={knowledgeAreas}
-                skillDictionary={skillDictionary}
-                allMeritEvents={teamMeritEvents}
-                canEditThis={isPlatformAdmin || (authUser && profileMember.userId === authUser.uid)}
-                onSave={handleUpdateMemberProfile}
-                weeklyStatuses={teamWeeklyStatuses.filter((s) => s.membershipId === profileMember.id)}
-                onSaveWeeklyStatus={handleSaveWeeklyStatus}
-                onProposeSkill={handleProposeSkill}
-                careerOptions={careerOptions}
-                semesterOptions={semesterOptions}
-                personalityTags={personalityTags}
-                onNavigate={goToView}
-              />
-            )}
-            </Suspense>
             </div>
           </main>
         </div>
