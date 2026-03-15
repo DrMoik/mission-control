@@ -5,7 +5,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { t } from '../strings.js';
-import { tsToDate } from '../utils.js';
+import { toEmbedUrl, tsToDate } from '../utils.js';
 import ModalOverlay from '../components/ModalOverlay.jsx';
 import SafeImage from '../components/ui/SafeImage.jsx';
 import { SafeProfileImage, Button, Textarea } from '../components/ui/index.js';
@@ -13,7 +13,41 @@ import { Card } from '../components/layout/index.js';
 
 const MAX_VISIBLE_POST_IMAGES = 5;
 
-function getPostImages(post) {
+function parseComposerMediaUrls(value) {
+  return value
+    .split(/\r?\n|,/)
+    .map((url) => url.trim())
+    .filter(Boolean);
+}
+
+function isHostedVideoUrl(url) {
+  return /\.(mp4|webm|ogg|mov|m4v)(?:$|[?#])/i.test(url || '');
+}
+
+function isEmbeddedVideoUrl(url) {
+  const lower = String(url || '').toLowerCase();
+  return (
+    lower.includes('youtube.com/') ||
+    lower.includes('youtu.be/') ||
+    lower.includes('vimeo.com/') ||
+    lower.includes('/embed/') ||
+    lower.includes('player.vimeo.com/')
+  );
+}
+
+function splitMediaUrls(urls) {
+  const images = [];
+  const videos = [];
+
+  urls.forEach((url) => {
+    if (isHostedVideoUrl(url) || isEmbeddedVideoUrl(url)) videos.push(url);
+    else images.push(url);
+  });
+
+  return { images, videos };
+}
+
+function getPostMediaUrls(post) {
   const imageUrls = Array.isArray(post.imageUrls) ? post.imageUrls : [];
   const normalized = imageUrls
     .map((url) => String(url || '').trim())
@@ -196,6 +230,37 @@ function FeedImageGallery({ images, className = '', onOpenImage }) {
   );
 }
 
+function FeedVideoGallery({ videos, className = '' }) {
+  if (!videos.length) return null;
+
+  return (
+    <div className={`mt-3 space-y-3 ${className}`.trim()}>
+      {videos.map((videoUrl, index) => (
+        <div key={`${videoUrl}-${index}`} className="overflow-hidden rounded-2xl bg-slate-950">
+          {isEmbeddedVideoUrl(videoUrl) ? (
+            <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+              <iframe
+                src={toEmbedUrl(videoUrl)}
+                className="absolute inset-0 h-full w-full"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                title={`feed-video-${index}`}
+              />
+            </div>
+          ) : (
+            <video
+              src={videoUrl}
+              controls
+              preload="metadata"
+              className="max-h-[32rem] w-full bg-black"
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * @param {{
  *   posts:            object[],
@@ -203,7 +268,7 @@ function FeedImageGallery({ images, className = '', onOpenImage }) {
  *   authUser:         object | null,
  *   canEdit:          boolean,
  *   memberships:      object[],
- *   onCreatePost:     function(content: string, imageUrls: string[]): Promise<void>,
+ *   onCreatePost:     function(content: string, mediaUrls: string[]): Promise<void>,
  *   onDeletePost:     function(id: string): Promise<void>,
  *   onCreateComment:  function(postId: string, text: string): Promise<void>,
  *   onDeleteComment:  function(id: string): Promise<void>,
@@ -220,11 +285,8 @@ export default function FeedView({
   const [expandedPostId, setExpandedPostId] = useState(null);
   const [commentDrafts,  setCommentDrafts]  = useState({});
   const [galleryState,   setGalleryState]   = useState({ images: [], index: 0 });
-  const composerImages = useMemo(
-    () => newImageUrls
-      .split(/\r?\n|,/)
-      .map((url) => url.trim())
-      .filter(Boolean),
+  const composerMedia = useMemo(
+    () => splitMediaUrls(parseComposerMediaUrls(newImageUrls)),
     [newImageUrls],
   );
 
@@ -232,7 +294,7 @@ export default function FeedView({
 
   const handlePost = async () => {
     if (!newContent.trim()) return;
-    await onCreatePost(newContent.trim(), composerImages);
+    await onCreatePost(newContent.trim(), [...composerMedia.images, ...composerMedia.videos]);
     setNewContent('');
     setNewImageUrls('');
     setShowImageField(false);
@@ -275,9 +337,10 @@ export default function FeedView({
             placeholder={t('paste_img_ph')}
             className="text-xs" />
         )}
-        {composerImages.length > 0 && (
-          <FeedImageGallery images={composerImages} onOpenImage={(index) => openGallery(composerImages, index)} />
+        {composerMedia.images.length > 0 && (
+          <FeedImageGallery images={composerMedia.images} onOpenImage={(index) => openGallery(composerMedia.images, index)} />
         )}
+        <FeedVideoGallery videos={composerMedia.videos} />
         <div className="flex items-center justify-between pt-1">
           <Button variant="ghost" size="sm" onClick={() => setShowImageField((s) => !s)}>
             {showImageField ? t('remove_image_btn') : t('add_image_btn')}
@@ -301,7 +364,7 @@ export default function FeedView({
         const isOwn      = post.authorId === authUser?.uid;
         const authorMembership = memberships.find((m) => m.userId === post.authorId);
         const authorPhoto = authorMembership?.photoURL || post.authorPhoto;
-        const postImages = getPostImages(post);
+        const postMedia = splitMediaUrls(getPostMediaUrls(post));
 
         return (
           <Card key={post.id} hover className="overflow-hidden">
@@ -329,7 +392,8 @@ export default function FeedView({
                   <span className="text-[11px] text-slate-400">{tsToDate(post.createdAt).toLocaleString()}</span>
                 </div>
                 <p className="text-sm text-slate-200 mt-1.5 whitespace-pre-wrap leading-relaxed">{post.content}</p>
-                <FeedImageGallery images={postImages} onOpenImage={(index) => openGallery(postImages, index)} />
+                <FeedImageGallery images={postMedia.images} onOpenImage={(index) => openGallery(postMedia.images, index)} />
+                <FeedVideoGallery videos={postMedia.videos} />
               </div>
               {(canEdit || isOwn) && (
                 <Button variant="link" size="sm" onClick={() => onDeletePost(post.id)} className="shrink-0 text-error hover:text-red-400">

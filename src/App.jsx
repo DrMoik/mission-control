@@ -1622,18 +1622,18 @@ export default function App() {
 
   // ── Feed ───────────────────────────────────────────────────────────────────
 
-  const handleCreatePost = async (content, imageUrls = []) => {
+  const handleCreatePost = async (content, mediaUrls = []) => {
     if (!authUser || !currentTeam || !isMember) return;
-    const normalizedImageUrls = Array.isArray(imageUrls)
-      ? imageUrls.map((url) => String(url || '').trim()).filter(Boolean)
+    const normalizedMediaUrls = Array.isArray(mediaUrls)
+      ? mediaUrls.map((url) => String(url || '').trim()).filter(Boolean)
       : [];
 
     await addDoc(collection(db, 'posts'), {
       teamId:      currentTeam.id,
       content,
-      ...(normalizedImageUrls.length > 0 ? {
-        imageUrls: normalizedImageUrls,
-        imageUrl: normalizedImageUrls[0],
+      ...(normalizedMediaUrls.length > 0 ? {
+        imageUrls: normalizedMediaUrls,
+        imageUrl: normalizedMediaUrls[0],
       } : {}),
       authorId:    authUser.uid,
       authorName:  userProfile?.displayName || 'Member',
