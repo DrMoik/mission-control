@@ -464,8 +464,8 @@ export default function FeedView({
                 </div>
                 <p className="text-sm text-slate-200 mt-1.5 whitespace-pre-wrap leading-relaxed">{post.content}</p>
                 <FeedMediaGallery mediaItems={postMediaItems} onOpenItem={(index) => openGallery(postMediaItems, index)} />
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {REACTION_TYPES.map(({ id, emoji, label }) => {
+                <div className="mt-3 inline-flex items-center overflow-hidden rounded-full border border-slate-700 bg-slate-900/80">
+                  {REACTION_TYPES.map(({ id, emoji, label }, index) => {
                     const isActive = myReaction === id;
                     const count = reactionCounts[id] || 0;
                     return (
@@ -474,16 +474,17 @@ export default function FeedView({
                         type="button"
                         onClick={() => onToggleReaction?.(post.id, id)}
                         className={[
-                          'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors',
+                          'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors',
+                          index > 0 ? 'border-l border-slate-700' : '',
                           isActive
-                            ? 'border-sky-400 bg-sky-500/15 text-sky-200'
-                            : 'border-slate-700 bg-slate-900/80 text-slate-300 hover:border-slate-500 hover:text-slate-100',
+                            ? 'bg-sky-500/15 text-sky-200'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-slate-100',
                         ].join(' ')}
                         title={label}
                         aria-label={label}
                       >
-                        <span className="text-sm leading-none" aria-hidden="true">{emoji}</span>
-                        <span className="text-[11px] opacity-80">{count}</span>
+                        <span className="text-base leading-none" aria-hidden="true">{emoji}</span>
+                        <span className="min-w-[0.75rem] text-[11px] opacity-80">{count}</span>
                       </button>
                     );
                   })}
