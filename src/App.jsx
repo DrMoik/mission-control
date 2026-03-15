@@ -102,6 +102,7 @@ export default function App() {
     teamBoards,
     teamPosts,
     teamComments,
+    teamPostReactions,
     teamMeetings,
     teamGoals,
     teamWeeklyStatuses,
@@ -1671,6 +1672,37 @@ export default function App() {
     await deleteDoc(doc(db, 'comments', commentId));
   };
 
+  const handleTogglePostReaction = async (postId, type) => {
+    if (!authUser || !currentTeam || !isMember) return;
+    const normalizedType = String(type || '').trim();
+    if (!['like', 'love', 'fire'].includes(normalizedType)) return;
+
+    const reactionRef = doc(db, 'postReactions', `${postId}_${authUser.uid}`);
+    const existing = teamPostReactions.find((reaction) => reaction.id === `${postId}_${authUser.uid}`);
+
+    if (!existing) {
+      await setDoc(reactionRef, {
+        teamId: currentTeam.id,
+        postId,
+        userId: authUser.uid,
+        type: normalizedType,
+        createdAt: serverTimestamp(),
+      });
+      return;
+    }
+
+    if (existing.type === normalizedType) {
+      await deleteDoc(reactionRef);
+      return;
+    }
+
+    await setDoc(reactionRef, {
+      ...existing,
+      type: normalizedType,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  };
+
   const deleteInChunks = async (refs, chunkSize = 400) => {
     for (let i = 0; i < refs.length; i += chunkSize) {
       const batch = writeBatch(db);
@@ -2545,19 +2577,21 @@ export default function App() {
             )}
 
             {view === 'feed' && isAtLeastRookie && (
-              <FeedView
-                posts={teamPosts}
-                comments={teamComments}
-                authUser={authUser}
-                canEdit={canEdit}
-                memberships={teamMemberships}
-                onCreatePost={handleCreatePost}
-                onDeletePost={handleDeletePost}
-                onCreateComment={handleCreateComment}
-                onDeleteComment={handleDeleteComment}
-                onViewProfile={handleViewProfile}
-              />
-            )}
+                <FeedView
+                  posts={teamPosts}
+                  comments={teamComments}
+                  reactions={teamPostReactions}
+                  authUser={authUser}
+                  canEdit={canEdit}
+                  memberships={teamMemberships}
+                  onCreatePost={handleCreatePost}
+                  onDeletePost={handleDeletePost}
+                  onCreateComment={handleCreateComment}
+                  onDeleteComment={handleDeleteComment}
+                  onToggleReaction={handleTogglePostReaction}
+                  onViewProfile={handleViewProfile}
+                />
+              )}
 
             {view === 'channels' && canUseCrossTeamChannels && (
               <ChannelsView

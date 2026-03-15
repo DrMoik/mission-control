@@ -3,7 +3,7 @@
 // per-post comments.  Authors and admins may delete their own content.
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flame, Heart, ThumbsUp, X } from 'lucide-react';
 import { t } from '../strings.js';
 import { toEmbedUrl, tsToDate } from '../utils.js';
 import ModalOverlay from '../components/ModalOverlay.jsx';
@@ -12,6 +12,11 @@ import { SafeProfileImage, Button, Textarea } from '../components/ui/index.js';
 import { Card } from '../components/layout/index.js';
 
 const MAX_VISIBLE_POST_IMAGES = 5;
+const REACTION_TYPES = [
+  { id: 'like', label: 'Like', Icon: ThumbsUp },
+  { id: 'love', label: 'Love', Icon: Heart },
+  { id: 'fire', label: 'Fire', Icon: Flame },
+];
 
 function parseComposerMediaUrls(value) {
   return value
@@ -322,6 +327,7 @@ function FeedVideoGallery({ videos, className = '' }) {
  * @param {{
  *   posts:            object[],
  *   comments:         object[],
+ *   reactions:        object[],
  *   authUser:         object | null,
  *   canEdit:          boolean,
  *   memberships:      object[],
@@ -329,12 +335,13 @@ function FeedVideoGallery({ videos, className = '' }) {
  *   onDeletePost:     function(id: string): Promise<void>,
  *   onCreateComment:  function(postId: string, text: string): Promise<void>,
  *   onDeleteComment:  function(id: string): Promise<void>,
+ *   onToggleReaction: function(postId: string, type: string): Promise<void>,
  *   onViewProfile:    function(membership: object): void,
  * }} props
  */
 export default function FeedView({
-  posts, comments, authUser, canEdit, memberships,
-  onCreatePost, onDeletePost, onCreateComment, onDeleteComment,   onViewProfile,
+  posts, comments, reactions, authUser, canEdit, memberships,
+  onCreatePost, onDeletePost, onCreateComment, onDeleteComment, onToggleReaction, onViewProfile,
 }) {
   const [newContent,     setNewContent]     = useState('');
   const [newImageUrls,   setNewImageUrls]   = useState('');
@@ -386,7 +393,7 @@ export default function FeedView({
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="w-full max-w-none space-y-6 lg:max-w-2xl">
       <h2 className="text-lg font-semibold text-content-primary">Feed</h2>
 
       {/* Post composer */}
@@ -423,6 +430,12 @@ export default function FeedView({
         const authorMembership = memberships.find((m) => m.userId === post.authorId);
         const authorPhoto = authorMembership?.photoURL || post.authorPhoto;
         const postMediaItems = getPostMediaUrls(post).map(getMediaItem);
+        const postReactions = reactions.filter((reaction) => reaction.postId === post.id);
+        const myReaction = postReactions.find((reaction) => reaction.userId === authUser?.uid)?.type || null;
+        const reactionCounts = postReactions.reduce((acc, reaction) => {
+          acc[reaction.type] = (acc[reaction.type] || 0) + 1;
+          return acc;
+        }, {});
 
         return (
           <Card key={post.id} hover className="overflow-hidden">
@@ -451,6 +464,29 @@ export default function FeedView({
                 </div>
                 <p className="text-sm text-slate-200 mt-1.5 whitespace-pre-wrap leading-relaxed">{post.content}</p>
                 <FeedMediaGallery mediaItems={postMediaItems} onOpenItem={(index) => openGallery(postMediaItems, index)} />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {REACTION_TYPES.map(({ id, label, Icon }) => {
+                    const isActive = myReaction === id;
+                    const count = reactionCounts[id] || 0;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => onToggleReaction?.(post.id, id)}
+                        className={[
+                          'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors',
+                          isActive
+                            ? 'border-sky-400 bg-sky-500/15 text-sky-200'
+                            : 'border-slate-700 bg-slate-900/80 text-slate-300 hover:border-slate-500 hover:text-slate-100',
+                        ].join(' ')}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        <span>{label}</span>
+                        <span className="text-[11px] opacity-80">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               {(canEdit || isOwn) && (
                 <Button variant="link" size="sm" onClick={() => onDeletePost(post.id)} className="shrink-0 text-error hover:text-red-400">

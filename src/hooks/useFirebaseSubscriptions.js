@@ -40,6 +40,7 @@ import { SYSTEM_MERIT_NAMES } from '../constants.js';
  *   teamBoards: object[],
  *   teamPosts: object[],
  *   teamComments: object[],
+ *   teamPostReactions: object[],
  *   teamMeetings: object[],
  *   teamGoals: object[],
  *   teamWeeklyStatuses: object[],
@@ -71,6 +72,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
   const [teamBoards, setTeamBoards] = useState([]);
   const [teamPosts, setTeamPosts] = useState([]);
   const [teamComments, setTeamComments] = useState([]);
+  const [teamPostReactions, setTeamPostReactions] = useState([]);
   const [teamMeetings, setTeamMeetings] = useState([]);
   const [teamGoals, setTeamGoals] = useState([]);
   const [teamWeeklyStatuses, setTeamWeeklyStatuses] = useState([]);
@@ -188,6 +190,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)),
     );
     sub(query(collection(db, 'comments'), where('teamId', '==', selectedTeamId)), setTeamComments);
+    sub(query(collection(db, 'postReactions'), where('teamId', '==', selectedTeamId)), setTeamPostReactions);
     sub(query(collection(db, 'teamMeetings'), where('teamId', '==', selectedTeamId)), setTeamMeetings);
     sub(query(collection(db, 'teamGoals'), where('teamId', '==', selectedTeamId)), setTeamGoals);
     sub(
@@ -377,6 +380,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
     teamBoards,
     teamPosts,
     teamComments,
+    teamPostReactions,
     teamMeetings,
     teamGoals,
     teamWeeklyStatuses,

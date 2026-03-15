@@ -448,6 +448,22 @@ service cloud.firestore {
         (request.auth != null && resource.data.authorId == request.auth.uid);
     }
 
+    match /postReactions/{reactionId} {
+      allow read: if isRookieOrAbove(resource.data.teamId);
+      allow create: if isRookieOrAbove(request.resource.data.teamId) &&
+        request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isRookieOrAbove(resource.data.teamId) &&
+        request.auth != null &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.teamId == resource.data.teamId &&
+        request.resource.data.postId == resource.data.postId;
+      allow delete: if isRookieOrAbove(resource.data.teamId) &&
+        request.auth != null &&
+        resource.data.userId == request.auth.uid;
+    }
+
     match /teamMeetings/{meetingId} {
       allow read: if isActiveMember(resource.data.teamId);
       allow create: if isLeaderOrAbove(request.resource.data.teamId);
