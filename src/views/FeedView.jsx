@@ -23,6 +23,42 @@ function getLiveMemberName(memberships, { userId = null, fallback = 'Member' } =
   return String(membership?.displayName || fallback || 'Member').trim() || 'Member';
 }
 
+function ReactionPopover({ memberships, reactionsByType }) {
+  const sections = REACTION_TYPES
+    .map((reactionType) => {
+      const entries = reactionsByType[reactionType.id] || [];
+      if (!entries.length) return null;
+      return {
+        ...reactionType,
+        names: entries.map((entry) => getLiveMemberName(memberships, {
+          userId: entry.userId,
+          fallback: entry.authorName || 'Member',
+        })),
+      };
+    })
+    .filter(Boolean);
+
+  if (!sections.length) return null;
+
+  return (
+    <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden min-w-[13rem] rounded-2xl border border-slate-700 bg-slate-950/96 p-3 text-xs shadow-2xl group-hover:block group-focus-within:block">
+      <div className="space-y-2">
+        {sections.map((section) => (
+          <div key={section.id}>
+            <div className="mb-1 flex items-center gap-1.5 font-semibold text-slate-100">
+              <span aria-hidden="true">{section.emoji}</span>
+              <span>{section.label}</span>
+            </div>
+            <div className="text-slate-300">
+              {section.names.join(', ')}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function parseComposerMediaUrls(value) {
   return value
     .split(/\r?\n|,/)
@@ -442,6 +478,11 @@ export default function FeedView({
           acc[reaction.type] = (acc[reaction.type] || 0) + 1;
           return acc;
         }, {});
+        const reactionsByType = postReactions.reduce((acc, reaction) => {
+          if (!acc[reaction.type]) acc[reaction.type] = [];
+          acc[reaction.type].push(reaction);
+          return acc;
+        }, {});
 
         return (
           <Card key={post.id} hover className="overflow-hidden">
@@ -470,7 +511,7 @@ export default function FeedView({
                 </div>
                 <p className="text-sm text-slate-200 mt-1.5 whitespace-pre-wrap leading-relaxed">{post.content}</p>
                 <FeedMediaGallery mediaItems={postMediaItems} onOpenItem={(index) => openGallery(postMediaItems, index)} />
-                <div className="mt-3 inline-flex items-center overflow-hidden rounded-full border border-slate-700 bg-slate-900/80">
+                <div className="group relative mt-3 inline-flex items-center overflow-visible rounded-full border border-slate-700 bg-slate-900/80">
                   {REACTION_TYPES.map(({ id, emoji, label }, index) => {
                     const isActive = myReaction === id;
                     const count = reactionCounts[id] || 0;
@@ -494,6 +535,7 @@ export default function FeedView({
                       </button>
                     );
                   })}
+                  <ReactionPopover memberships={memberships} reactionsByType={reactionsByType} />
                 </div>
               </div>
               {(canEdit || isOwn) && (
