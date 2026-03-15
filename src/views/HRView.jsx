@@ -39,6 +39,13 @@ export default function HRView({
   onReconsiderSuggestion,
   suggestionMeritPoints = [50, 100, 150, 200],
 }) {
+  const memberNameByUserId = useMemo(
+    () => new Map(memberships.map((m) => [m.userId, ensureString(m.displayName)])),
+    [memberships],
+  );
+
+  const getLiveAuthorName = (entry) => memberNameByUserId.get(entry?.authorId) || ensureString(entry?.authorName);
+
   const [tab, setTab] = useState('suggestions');
   const [suggestionContent, setSuggestionContent] = useState('');
   const [suggestionAnonymous, setSuggestionAnonymous] = useState(false);
@@ -239,10 +246,10 @@ export default function HRView({
                       className="text-left p-4 rounded-xl border border-slate-600 bg-slate-800/80 hover:border-slate-500 hover:bg-slate-800 transition-colors"
                     >
                       <p className="text-slate-200 text-xs line-clamp-3">{preview}{preview.length >= 80 ? '…' : ''}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] text-slate-500">
-                          {s.isAnonymous ? t('hr_anonymous') : ensureString(s.authorName)}
-                        </span>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="text-[10px] text-slate-500">
+                            {s.isAnonymous ? t('hr_anonymous') : getLiveAuthorName(s)}
+                          </span>
                         <span className="text-[10px] text-slate-500">{formatDate(s.createdAt)}</span>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
                           status === 'pending' ? 'bg-amber-900/50 text-amber-300' :
@@ -277,10 +284,10 @@ export default function HRView({
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-sm font-semibold text-slate-200 mb-2">{t('hr_suggestions_list')}</h3>
-            <p className="text-sm text-slate-200 whitespace-pre-wrap mb-4">{ensureString(viewModalSuggestion.content)}</p>
-            <p className="text-xs text-slate-500 mb-4">
-              {viewModalSuggestion.isAnonymous ? t('hr_anonymous') : ensureString(viewModalSuggestion.authorName)}
-              {' · '}{formatDate(viewModalSuggestion.createdAt)}
+              <p className="text-sm text-slate-200 whitespace-pre-wrap mb-4">{ensureString(viewModalSuggestion.content)}</p>
+              <p className="text-xs text-slate-500 mb-4">
+                {viewModalSuggestion.isAnonymous ? t('hr_anonymous') : getLiveAuthorName(viewModalSuggestion)}
+                {' · '}{formatDate(viewModalSuggestion.createdAt)}
               {viewModalSuggestion.status === 'accepted' && viewModalSuggestion.meritPoints && (
                 <span className="ml-2 text-emerald-400">+{viewModalSuggestion.meritPoints} pts</span>
               )}
@@ -493,10 +500,10 @@ export default function HRView({
                           )}
                         </div>
                       )}
-                      <p className="text-slate-500 mt-1">
-                        {isFaculty ? `${ensureString(c.authorName)} — ` : ''}
-                        {formatDate(c.createdAt)}
-                      </p>
+                        <p className="text-slate-500 mt-1">
+                          {isFaculty ? `${getLiveAuthorName(c)} — ` : ''}
+                          {formatDate(c.createdAt)}
+                        </p>
                     </div>
                   );
                 })}

@@ -46,6 +46,7 @@ export default function ChannelsView({
 }) {
   const [selectedChannelId, setSelectedChannelId] = useState('');
   const [messages, setMessages] = useState([]);
+  const [channelMemberships, setChannelMemberships] = useState([]);
   const [channelTeams, setChannelTeams] = useState([]);
   const [composer, setComposer] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -83,6 +84,7 @@ export default function ChannelsView({
   useEffect(() => {
     if (!selectedChannel) {
       setMessages([]);
+      setChannelMemberships([]);
       setChannelTeams([]);
       setInviteDraft([]);
       setEditDraft({ name: '', description: '' });
@@ -133,7 +135,52 @@ export default function ChannelsView({
     };
   }, [selectedChannel]);
 
+  useEffect(() => {
+    if (!channelTeams.length) {
+      setChannelMemberships([]);
+      return undefined;
+    }
+
+    const activeTeamIds = [...new Set(channelTeams
+      .map((entry) => entry.teamId)
+      .filter(Boolean))];
+
+    if (!activeTeamIds.length) {
+      setChannelMemberships([]);
+      return undefined;
+    }
+
+    const unsubs = [];
+    const membershipMap = new Map();
+    const sync = () => setChannelMemberships([...membershipMap.values()]);
+
+    for (let i = 0; i < activeTeamIds.length; i += 10) {
+      const chunk = activeTeamIds.slice(i, i + 10);
+      const unsub = onSnapshot(
+        query(collection(db, 'memberships'), where('teamId', 'in', chunk)),
+        (snap) => {
+          chunk.forEach((teamId) => {
+            [...membershipMap.entries()].forEach(([id, membership]) => {
+              if (membership.teamId === teamId) membershipMap.delete(id);
+            });
+          });
+          snap.docs.forEach((docSnap) => {
+            membershipMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+          });
+          sync();
+        },
+      );
+      unsubs.push(unsub);
+    }
+
+    return () => unsubs.forEach((unsub) => unsub());
+  }, [channelTeams]);
+
   const teamNameById = useMemo(() => new Map(allTeams.map((team) => [team.id, team.name])), [allTeams]);
+  const membershipNameById = useMemo(
+    () => new Map(channelMemberships.map((membership) => [membership.id, membership.displayName])),
+    [channelMemberships],
+  );
 
   const availableCreateTeams = useMemo(
     () => allTeams.filter((team) => team.id !== currentTeam?.id),
@@ -505,13 +552,13 @@ export default function ChannelsView({
                   {messages.length === 0 && (
                     <p className="text-sm text-content-secondary">{t('channels_empty_messages')}</p>
                   )}
-                  {messages.map((message) => (
-                    <div key={message.id} className="rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3">
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <div className="flex flex-wrap items-baseline gap-2">
-                          <span className="text-sm font-semibold text-slate-100">{message.authorName}</span>
-                          <span className="text-xs text-emerald-300">{message.teamName || teamNameById.get(message.teamId) || 'Equipo'}</span>
-                        </div>
+                    {messages.map((message) => (
+                      <div key={message.id} className="rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3">
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <div className="flex flex-wrap items-baseline gap-2">
+                            <span className="text-sm font-semibold text-slate-100">{membershipNameById.get(message.membershipId) || message.authorName}</span>
+                            <span className="text-xs text-emerald-300">{message.teamName || teamNameById.get(message.teamId) || 'Equipo'}</span>
+                          </div>
                         <span className="text-[11px] text-slate-500">{tsToDate(message.createdAt).toLocaleString()}</span>
                       </div>
                       <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">{message.content}</p>

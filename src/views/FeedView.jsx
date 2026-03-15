@@ -18,6 +18,11 @@ const REACTION_TYPES = [
   { id: 'fire', emoji: '🔥', label: 'Fire' },
 ];
 
+function getLiveMemberName(memberships, { userId = null, fallback = 'Member' } = {}) {
+  const membership = memberships.find((entry) => entry.userId === userId);
+  return String(membership?.displayName || fallback || 'Member').trim() || 'Member';
+}
+
 function parseComposerMediaUrls(value) {
   return value
     .split(/\r?\n|,/)
@@ -429,6 +434,7 @@ export default function FeedView({
         const isOwn      = post.authorId === authUser?.uid;
         const authorMembership = memberships.find((m) => m.userId === post.authorId);
         const authorPhoto = authorMembership?.photoURL || post.authorPhoto;
+        const authorName = getLiveMemberName(memberships, { userId: post.authorId, fallback: post.authorName || 'Member' });
         const postMediaItems = getPostMediaUrls(post).map(getMediaItem);
         const postReactions = reactions.filter((reaction) => reaction.postId === post.id);
         const myReaction = postReactions.find((reaction) => reaction.userId === authUser?.uid)?.type || null;
@@ -444,13 +450,13 @@ export default function FeedView({
               {authorPhoto ? (
                 <SafeProfileImage
                   src={authorPhoto}
-                  fallback={<div className="w-9 h-9 rounded-full bg-slate-600 shrink-0 flex items-center justify-center text-sm font-bold">{(post.authorName || '?')[0].toUpperCase()}</div>}
+                  fallback={<div className="w-9 h-9 rounded-full bg-slate-600 shrink-0 flex items-center justify-center text-sm font-bold">{(authorName || '?')[0].toUpperCase()}</div>}
                   className="w-9 h-9 rounded-full shrink-0"
                   alt=""
                 />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-slate-600 shrink-0 flex items-center justify-center text-sm font-bold">
-                  {(post.authorName || '?')[0].toUpperCase()}
+                  {(authorName || '?')[0].toUpperCase()}
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -458,7 +464,7 @@ export default function FeedView({
                   <button
                     onClick={() => { const m = memberships.find((mb) => mb.userId === post.authorId); if (m) onViewProfile?.(m); }}
                     className="text-sm font-semibold hover:underline">
-                    {post.authorName}
+                    {authorName}
                   </button>
                   <span className="text-[11px] text-slate-400">{tsToDate(post.createdAt).toLocaleString()}</span>
                 </div>
@@ -513,12 +519,16 @@ export default function FeedView({
               <div className="border-t border-slate-700 px-4 pb-4 pt-3 space-y-3">
                 {postComments.map((c) => (
                   <div key={c.id} className="flex items-start gap-2">
+                    {(() => {
+                      const commentAuthorName = getLiveMemberName(memberships, { userId: c.authorId, fallback: c.authorName || 'Member' });
+                      return (
+                        <>
                     <div className="w-7 h-7 rounded-full bg-slate-600 shrink-0 flex items-center justify-center text-xs font-bold">
-                      {(c.authorName || '?')[0].toUpperCase()}
+                      {(commentAuthorName || '?')[0].toUpperCase()}
                     </div>
                     <div className="flex-1 bg-slate-700/60 rounded-lg px-3 py-2">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xs font-semibold">{c.authorName}</span>
+                        <span className="text-xs font-semibold">{commentAuthorName}</span>
                         <span className="text-[10px] text-slate-500">{tsToDate(c.createdAt).toLocaleString()}</span>
                       </div>
                       <p className="text-xs text-slate-200 mt-0.5">{c.content}</p>
@@ -526,6 +536,9 @@ export default function FeedView({
                     {(canEdit || c.authorId === authUser?.uid) && (
                       <button onClick={() => onDeleteComment(c.id)} className="text-red-400 hover:text-red-300 shrink-0 mt-1 p-0.5" title={t('delete')} aria-label={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
                     )}
+                        </>
+                      );
+                    })()}
                   </div>
                 ))}
                 <div className="flex gap-2 mt-1">
