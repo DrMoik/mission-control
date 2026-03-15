@@ -41,7 +41,8 @@ function ReactionPopover({ memberships, reactionsByType }) {
   if (!sections.length) return null;
 
   return (
-    <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden min-w-[13rem] rounded-2xl border border-slate-700 bg-slate-950/96 p-3 text-xs shadow-2xl group-hover:block group-focus-within:block">
+    <div className="pointer-events-none absolute bottom-full left-0 z-20 mb-3 hidden min-w-[13rem] rounded-2xl border border-slate-700/90 bg-slate-950 px-3 py-2.5 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.45)] ring-1 ring-black/40 backdrop-blur-sm group-hover:block group-focus-within:block">
+      <div className="absolute left-5 top-full h-3 w-3 -translate-y-1/2 rotate-45 border-b border-r border-slate-700/90 bg-slate-950" />
       <div className="space-y-2">
         {sections.map((section) => (
           <div key={section.id}>
