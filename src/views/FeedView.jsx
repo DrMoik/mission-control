@@ -3,7 +3,7 @@
 // per-post comments.  Authors and admins may delete their own content.
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Flame, Heart, ThumbsUp, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { t } from '../strings.js';
 import { toEmbedUrl, tsToDate } from '../utils.js';
 import ModalOverlay from '../components/ModalOverlay.jsx';
@@ -13,9 +13,9 @@ import { Card } from '../components/layout/index.js';
 
 const MAX_VISIBLE_POST_IMAGES = 5;
 const REACTION_TYPES = [
-  { id: 'like', label: 'Like', Icon: ThumbsUp },
-  { id: 'love', label: 'Love', Icon: Heart },
-  { id: 'fire', label: 'Fire', Icon: Flame },
+  { id: 'like', emoji: '👍', label: 'Like' },
+  { id: 'love', emoji: '❤️', label: 'Love' },
+  { id: 'fire', emoji: '🔥', label: 'Fire' },
 ];
 
 function parseComposerMediaUrls(value) {
@@ -465,7 +465,7 @@ export default function FeedView({
                 <p className="text-sm text-slate-200 mt-1.5 whitespace-pre-wrap leading-relaxed">{post.content}</p>
                 <FeedMediaGallery mediaItems={postMediaItems} onOpenItem={(index) => openGallery(postMediaItems, index)} />
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {REACTION_TYPES.map(({ id, label, Icon }) => {
+                  {REACTION_TYPES.map(({ id, emoji, label }) => {
                     const isActive = myReaction === id;
                     const count = reactionCounts[id] || 0;
                     return (
@@ -474,14 +474,15 @@ export default function FeedView({
                         type="button"
                         onClick={() => onToggleReaction?.(post.id, id)}
                         className={[
-                          'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors',
+                          'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-colors',
                           isActive
                             ? 'border-sky-400 bg-sky-500/15 text-sky-200'
                             : 'border-slate-700 bg-slate-900/80 text-slate-300 hover:border-slate-500 hover:text-slate-100',
                         ].join(' ')}
+                        title={label}
+                        aria-label={label}
                       >
-                        <Icon className="h-3.5 w-3.5" />
-                        <span>{label}</span>
+                        <span className="text-sm leading-none" aria-hidden="true">{emoji}</span>
                         <span className="text-[11px] opacity-80">{count}</span>
                       </button>
                     );

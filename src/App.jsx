@@ -1677,30 +1677,34 @@ export default function App() {
     const normalizedType = String(type || '').trim();
     if (!['like', 'love', 'fire'].includes(normalizedType)) return;
 
-    const reactionRef = doc(db, 'postReactions', `${postId}_${authUser.uid}`);
-    const existing = teamPostReactions.find((reaction) => reaction.id === `${postId}_${authUser.uid}`);
+    try {
+      const reactionRef = doc(db, 'postReactions', `${postId}_${authUser.uid}`);
+      const existing = teamPostReactions.find((reaction) => reaction.id === `${postId}_${authUser.uid}`);
 
-    if (!existing) {
+      if (!existing) {
+        await setDoc(reactionRef, {
+          teamId: currentTeam.id,
+          postId,
+          userId: authUser.uid,
+          type: normalizedType,
+          createdAt: serverTimestamp(),
+        });
+        return;
+      }
+
+      if (existing.type === normalizedType) {
+        await deleteDoc(reactionRef);
+        return;
+      }
+
       await setDoc(reactionRef, {
-        teamId: currentTeam.id,
-        postId,
-        userId: authUser.uid,
         type: normalizedType,
-        createdAt: serverTimestamp(),
-      });
-      return;
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    } catch (error) {
+      console.error('Failed to toggle post reaction:', error);
+      alert('No se pudo guardar la reaccion. Si acabas de agregar esta funcion, despliega las reglas de Firestore.');
     }
-
-    if (existing.type === normalizedType) {
-      await deleteDoc(reactionRef);
-      return;
-    }
-
-    await setDoc(reactionRef, {
-      ...existing,
-      type: normalizedType,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
   };
 
   const deleteInChunks = async (refs, chunkSize = 400) => {
