@@ -31,6 +31,7 @@ const emptyBook = () => ({
 });
 
 const emptyProgress = () => ({ lastPage: 1 });
+const isGoogleDriveUrl = (url) => String(url || '').includes('drive.google.com');
 
 export default function AcademyView({
   modules,
@@ -105,7 +106,7 @@ export default function AcademyView({
       return;
     }
     setReaderPage(Math.max(1, Number(readerBookProgress?.lastPage) || 1));
-    setReaderMode('pdf');
+    setReaderMode(isGoogleDriveUrl(readerBook.driveUrl) ? 'iframe' : 'pdf');
   }, [readerBook, readerBookProgress]);
 
   useEffect(() => {
@@ -619,7 +620,7 @@ export default function AcademyView({
                       {selectedBookProgress?.lastPage ? `Ultima pagina detectada: ${selectedBookProgress.lastPage}` : 'Aun no hay una pagina registrada.'}
                     </div>
                     <p className="mt-2 text-[11px] text-slate-500">
-                      La pagina se guarda automaticamente cuando el libro puede abrirse en el lector PDF interno.
+                      La pagina automatica solo funciona con PDFs compatibles con el lector interno. Los archivos de Google Drive usan el visor embebido.
                     </p>
                   </div>
                 </div>
@@ -698,7 +699,9 @@ export default function AcademyView({
               ) : readerBook.embedUrl ? (
                 <div className="flex h-full flex-col">
                   <div className="border-b border-slate-800 bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
-                    No se pudo cargar el PDF en modo interno. Se abrio el visor embebido de respaldo y la pagina ya no se puede detectar automaticamente para este archivo.
+                    {isGoogleDriveUrl(readerBook.driveUrl)
+                      ? 'Este libro usa el visor embebido de Google Drive. La pagina actual no se puede detectar automaticamente desde la app.'
+                      : 'No se pudo cargar el PDF en modo interno. Se abrio el visor embebido de respaldo y la pagina ya no se puede detectar automaticamente para este archivo.'}
                   </div>
                   <iframe
                     src={readerBook.embedUrl}
