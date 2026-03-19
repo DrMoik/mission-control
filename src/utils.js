@@ -309,6 +309,15 @@ export function toGoogleDriveOpenUrl(url) {
   return url;
 }
 
+export function toGoogleDriveDownloadUrl(url) {
+  if (!url) return '';
+  if (url.includes('drive.google.com')) {
+    const fileId = getGoogleDriveFileId(url);
+    return fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : url;
+  }
+  return url;
+}
+
 // ── Profile completion (for responsibility dashboard) ──────────────────────────
 
 const isNonEmptyStr = (v) => typeof v === 'string' && v.trim().length > 0;

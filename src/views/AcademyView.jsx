@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { t, lang } from '../strings.js';
-import { toEmbedUrl, tsToDate, getL, toL, fillL, ensureString } from '../utils.js';
+import { toEmbedUrl, tsToDate, getL, toL, fillL, ensureString, toGoogleDriveDownloadUrl } from '../utils.js';
 import { BilingualField } from '../components/ui/index.js';
 import ModalOverlay from '../components/ModalOverlay.jsx';
+import PdfReader from '../components/ui/PdfReader.jsx';
 import SafeImage from '../components/ui/SafeImage.jsx';
 
 const newTopicId = () => `t-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -29,16 +30,7 @@ const emptyBook = () => ({
   categoryId: '',
 });
 
-const emptyProgress = () => ({
-  lastPage: 1,
-});
-
-const withPageAnchor = (url, page) => {
-  if (!url || !page || Number(page) < 1) return url || '';
-  const normalized = String(url);
-  const clean = normalized.replace(/#page=\d+$/i, '');
-  return `${clean}#page=${Math.max(1, Number(page) || 1)}`;
-};
+const emptyProgress = () => ({ lastPage: 1 });
 
 export default function AcademyView({
   modules,
@@ -72,8 +64,8 @@ export default function AcademyView({
   const [newBook, setNewBook] = useState(emptyBook());
   const [editingBookId, setEditingBookId] = useState(null);
   const [editBookDraft, setEditBookDraft] = useState(emptyBook());
-  const [progressDraft, setProgressDraft] = useState(emptyProgress());
   const [readerBookId, setReaderBookId] = useState(null);
+  const [readerPage, setReaderPage] = useState(null);
 
   const selected = modules.find((m) => m.id === selectedId) || null;
   const attempt = selected ? moduleAttempts.find((a) => a.moduleId === selectedId) : null;
@@ -93,16 +85,6 @@ export default function AcademyView({
     : null;
 
   useEffect(() => {
-    if (selectedBookProgress) {
-      setProgressDraft({
-        lastPage: Math.max(1, Number(selectedBookProgress.lastPage) || 1),
-      });
-      return;
-    }
-    setProgressDraft(emptyProgress());
-  }, [selectedBookId, selectedBookProgress]);
-
-  useEffect(() => {
     if (selectedBookId && !visibleBooks.some((book) => book.id === selectedBookId)) {
       setSelectedBookId(null);
       setEditingBookId(null);
@@ -114,6 +96,22 @@ export default function AcademyView({
       setReaderBookId(null);
     }
   }, [readerBookId, visibleBooks]);
+
+  useEffect(() => {
+    if (!readerBook) {
+      setReaderPage(null);
+      return;
+    }
+    setReaderPage(Math.max(1, Number(readerBookProgress?.lastPage) || 1));
+  }, [readerBook, readerBookProgress]);
+
+  useEffect(() => {
+    if (!readerBook || !readerPage) return undefined;
+    const timeout = window.setTimeout(() => {
+      onSaveBookProgress(readerBook.id, { lastPage: readerPage });
+    }, 500);
+    return () => window.clearTimeout(timeout);
+  }, [readerBook, readerPage, onSaveBookProgress]);
 
   const getTopics = (mod) => {
     if (mod?.topics?.length) return mod.topics;
@@ -240,11 +238,6 @@ export default function AcademyView({
       categoryId: editBookDraft.categoryId || null,
     });
     setEditingBookId(null);
-  };
-
-  const handleSaveProgress = async () => {
-    if (!selectedBook) return;
-    await onSaveBookProgress(selectedBook.id, progressDraft);
   };
 
   const renderKnowledgeAreas = (value, setter) => (
@@ -618,20 +611,14 @@ export default function AcademyView({
 
                 <div className="border-t border-slate-700 pt-4 space-y-3">
                   <div className="text-xs font-semibold text-slate-300 uppercase tracking-wide">{t('academy_book_progress')}</div>
-                  <div>
-                    <label className="text-[11px] text-slate-500 block mb-1">{t('academy_book_last_page')}</label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={progressDraft.lastPage}
-                      onChange={(e) => setProgressDraft((p) => ({ ...p, lastPage: e.target.value }))}
-                      className="w-full max-w-[220px] px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm"
-                    />
-                    <p className="mt-2 text-[11px] text-slate-500">{t('academy_book_last_page_hint')}</p>
+                  <div className="rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-3">
+                    <div className="text-sm text-slate-200">
+                      {selectedBookProgress?.lastPage ? `Ultima pagina detectada: ${selectedBookProgress.lastPage}` : 'Aun no hay una pagina registrada.'}
+                    </div>
+                    <p className="mt-2 text-[11px] text-slate-500">
+                      La pagina se guarda automaticamente desde el lector cuando navegas entre paginas.
+                    </p>
                   </div>
-                  <button type="button" onClick={handleSaveProgress} className="rounded bg-emerald-500 px-4 py-2 text-sm font-semibold text-black">
-                    {t('academy_book_save_progress')}
-                  </button>
                 </div>
               </>
             )}
@@ -697,12 +684,12 @@ export default function AcademyView({
             </div>
 
             <div className="flex-1 bg-slate-950">
-              {readerBook.embedUrl ? (
-                <iframe
-                  src={withPageAnchor(readerBook.embedUrl, readerBookProgress?.lastPage)}
-                  className="h-full w-full"
+              {readerBook.driveUrl ? (
+                <PdfReader
+                  src={toGoogleDriveDownloadUrl(readerBook.driveUrl)}
+                  initialPage={readerBookProgress?.lastPage || 1}
                   title={ensureString(readerBook.title, lang)}
-                  referrerPolicy="no-referrer"
+                  onPageChange={setReaderPage}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center p-6 text-sm text-slate-400">
