@@ -10,6 +10,7 @@ export default function PdfReader({
   initialPage = 1,
   title = 'PDF',
   onPageChange,
+  onLoadError,
 }) {
   const canvasRef = useRef(null);
   const renderTaskRef = useRef(null);
@@ -49,6 +50,7 @@ export default function PdfReader({
         if (cancelled) return;
         setError(err?.message || 'No se pudo abrir el PDF.');
         setLoading(false);
+        onLoadError?.(err);
       });
 
     return () => {
@@ -94,6 +96,7 @@ export default function PdfReader({
         if (cancelled || err?.name === 'RenderingCancelledException') return;
         setError(err?.message || 'No se pudo renderizar la pagina.');
         setLoading(false);
+        onLoadError?.(err);
       }
     }
 
@@ -103,7 +106,7 @@ export default function PdfReader({
       cancelled = true;
       renderTaskRef.current?.cancel?.();
     };
-  }, [currentPage, zoom, pageCount, onPageChange]);
+  }, [currentPage, zoom, pageCount, onPageChange, onLoadError]);
 
   const previousDisabled = currentPage <= 1;
   const nextDisabled = pageCount > 0 ? currentPage >= pageCount : true;

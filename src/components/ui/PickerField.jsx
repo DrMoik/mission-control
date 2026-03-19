@@ -70,7 +70,7 @@ function formatDisplayValue(type, value) {
     : value;
 }
 
-function CalendarPanel({ selectedDate, viewMonth, onPrevMonth, onNextMonth, onPickDate }) {
+function CalendarPanel({ selectedDate, viewMonth, minDate, maxDate, onPrevMonth, onNextMonth, onPickDate }) {
   const days = useMemo(() => buildCalendarDays(viewMonth), [viewMonth]);
 
   return (
@@ -105,12 +105,19 @@ function CalendarPanel({ selectedDate, viewMonth, onPrevMonth, onNextMonth, onPi
         {days.map((day) => {
           const isCurrentMonth = day.getMonth() === viewMonth.getMonth();
           const isSelected = selectedDate && formatDateValue(selectedDate) === formatDateValue(day);
+          const isBeforeMin = minDate && formatDateValue(day) < formatDateValue(minDate);
+          const isAfterMax = maxDate && formatDateValue(day) > formatDateValue(maxDate);
+          const isDisabled = isBeforeMin || isAfterMax;
           return (
             <button
               key={day.toISOString()}
               type="button"
-              onClick={() => onPickDate(day)}
+              disabled={isDisabled}
+              onClick={() => !isDisabled && onPickDate(day)}
               className={`h-10 rounded-xl border text-sm transition-colors ${
+                isDisabled
+                  ? 'cursor-not-allowed border-slate-800 bg-slate-950/20 text-slate-700'
+                  :
                 isSelected
                   ? 'border-emerald-400 bg-emerald-500 text-slate-950 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]'
                   : isCurrentMonth
@@ -181,6 +188,8 @@ export default function PickerField({
   value = '',
   onChange,
   placeholder = '',
+  min = '',
+  max = '',
   className = '',
   buttonClassName = '',
   disabled = false,
@@ -191,6 +200,8 @@ export default function PickerField({
     if (type === 'date') return parseDateValue(value);
     return null;
   }, [type, value]);
+  const minDate = useMemo(() => (type !== 'time' ? parseDateValue(type === 'datetime-local' ? parseDateTimeValue(min).date : min) : null), [type, min]);
+  const maxDate = useMemo(() => (type !== 'time' ? parseDateValue(type === 'datetime-local' ? parseDateTimeValue(max).date : max) : null), [type, max]);
   const [viewMonth, setViewMonth] = useState(parsedDate ? toStartOfMonth(parsedDate) : toStartOfMonth(new Date()));
   const [draftTime, setDraftTime] = useState(type === 'datetime-local' ? parseDateTimeValue(value).time : value || '09:00');
 
@@ -210,6 +221,8 @@ export default function PickerField({
   const icon = type === 'time' ? <Clock3 className="h-4 w-4" /> : <CalendarDays className="h-4 w-4" />;
 
   const commitDate = (nextDate) => {
+    if (minDate && nextDate < minDate) return;
+    if (maxDate && nextDate > maxDate) return;
     const nextDateValue = formatDateValue(nextDate);
     if (type === 'datetime-local') {
       onChange?.(`${nextDateValue}T${draftTime || '09:00'}`);
@@ -275,6 +288,8 @@ export default function PickerField({
                 <CalendarPanel
                   selectedDate={parsedDate}
                   viewMonth={viewMonth}
+                  minDate={minDate}
+                  maxDate={maxDate}
                   onPrevMonth={() => setViewMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
                   onNextMonth={() => setViewMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
                   onPickDate={commitDate}

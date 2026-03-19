@@ -66,6 +66,7 @@ export default function AcademyView({
   const [editBookDraft, setEditBookDraft] = useState(emptyBook());
   const [readerBookId, setReaderBookId] = useState(null);
   const [readerPage, setReaderPage] = useState(null);
+  const [readerMode, setReaderMode] = useState('pdf');
 
   const selected = modules.find((m) => m.id === selectedId) || null;
   const attempt = selected ? moduleAttempts.find((a) => a.moduleId === selectedId) : null;
@@ -100,9 +101,11 @@ export default function AcademyView({
   useEffect(() => {
     if (!readerBook) {
       setReaderPage(null);
+      setReaderMode('pdf');
       return;
     }
     setReaderPage(Math.max(1, Number(readerBookProgress?.lastPage) || 1));
+    setReaderMode('pdf');
   }, [readerBook, readerBookProgress]);
 
   useEffect(() => {
@@ -616,7 +619,7 @@ export default function AcademyView({
                       {selectedBookProgress?.lastPage ? `Ultima pagina detectada: ${selectedBookProgress.lastPage}` : 'Aun no hay una pagina registrada.'}
                     </div>
                     <p className="mt-2 text-[11px] text-slate-500">
-                      La pagina se guarda automaticamente desde el lector cuando navegas entre paginas.
+                      La pagina se guarda automaticamente cuando el libro puede abrirse en el lector PDF interno.
                     </p>
                   </div>
                 </div>
@@ -684,13 +687,26 @@ export default function AcademyView({
             </div>
 
             <div className="flex-1 bg-slate-950">
-              {readerBook.driveUrl ? (
+              {readerBook.driveUrl && readerMode === 'pdf' ? (
                 <PdfReader
                   src={toGoogleDriveDownloadUrl(readerBook.driveUrl)}
                   initialPage={readerBookProgress?.lastPage || 1}
                   title={ensureString(readerBook.title, lang)}
                   onPageChange={setReaderPage}
+                  onLoadError={() => setReaderMode('iframe')}
                 />
+              ) : readerBook.embedUrl ? (
+                <div className="flex h-full flex-col">
+                  <div className="border-b border-slate-800 bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
+                    No se pudo cargar el PDF en modo interno. Se abrio el visor embebido de respaldo y la pagina ya no se puede detectar automaticamente para este archivo.
+                  </div>
+                  <iframe
+                    src={readerBook.embedUrl}
+                    className="h-full w-full"
+                    title={ensureString(readerBook.title, lang)}
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
               ) : (
                 <div className="flex h-full items-center justify-center p-6 text-sm text-slate-400">
                   {t('academy_book_preview_unavailable')}

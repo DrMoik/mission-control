@@ -2,9 +2,17 @@ import React, { useMemo, useState } from 'react';
 import { Check } from 'lucide-react';
 import { t, lang } from '../../strings.js';
 import { ensureString } from '../../utils.js';
+import ModalOverlay from '../../components/ModalOverlay.jsx';
 import PickerField from '../../components/ui/PickerField.jsx';
 
 const SLOT_STEP_OPTIONS = [15, 30, 60];
+const todayLocal = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const createPollForm = () => ({
   title: '',
@@ -215,6 +223,7 @@ export default function AvailabilityPollsSection({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [form, setForm] = useState(createPollForm());
   const [expandedId, setExpandedId] = useState(null);
+  const minDate = todayLocal();
 
   const draftDates = useMemo(
     () => buildDateRange(form.startDate, form.endDate),
@@ -302,7 +311,8 @@ export default function AvailabilityPollsSection({
           )}
 
           {showCreateForm && (
-            <form onSubmit={handleCreate} className="space-y-5 rounded-2xl border border-slate-700 bg-slate-800 p-4">
+            <ModalOverlay onClickBackdrop={() => { setShowCreateForm(false); setForm(createPollForm()); }}>
+              <form onSubmit={handleCreate} className="w-[min(96vw,1200px)] space-y-5 rounded-2xl border border-slate-700 bg-slate-800 p-4 shadow-2xl">
               <div className="border-b border-slate-700 pb-3 text-center">
                 <div className="text-lg font-semibold text-slate-100">Coordinar horario</div>
                 <div className="mt-1 text-xs text-slate-400">Elige un rango y marca con clics exactamente los horarios que quieres proponer.</div>
@@ -352,6 +362,7 @@ export default function AvailabilityPollsSection({
                     type="date"
                     value={form.startDate}
                     onChange={(value) => setForm((current) => ({ ...current, startDate: value }))}
+                    min={minDate}
                     placeholder="Seleccionar fecha"
                     className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
                   />
@@ -362,6 +373,7 @@ export default function AvailabilityPollsSection({
                     type="date"
                     value={form.endDate}
                     onChange={(value) => setForm((current) => ({ ...current, endDate: value }))}
+                    min={form.startDate || minDate}
                     placeholder="Seleccionar fecha"
                     className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
                   />
@@ -456,7 +468,8 @@ export default function AvailabilityPollsSection({
                   Crear encuesta
                 </button>
               </div>
-            </form>
+              </form>
+            </ModalOverlay>
           )}
         </div>
       )}
