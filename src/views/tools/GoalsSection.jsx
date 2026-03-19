@@ -7,6 +7,7 @@ import React, { useState }    from 'react';
 import { X } from 'lucide-react';
 import { t, lang } from '../../strings.js';
 import { BilingualField }       from '../../components/ui/index.js';
+import PickerField from '../../components/ui/PickerField.jsx';
 import { getL, toL, fillL, ensureString } from '../../utils.js';
 
 /**
@@ -111,7 +112,8 @@ export default function GoalsSection({
             <input value={form.owner} onChange={(e) => setForm((f) => ({ ...f, owner: e.target.value }))}
               placeholder={t('owner_ph')}
               className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
-            <input type="date" value={form.dueDate} onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
+            <PickerField type="date" value={form.dueDate} onChange={(value) => setForm((f) => ({ ...f, dueDate: value }))}
+              placeholder="Seleccionar fecha"
               className="w-36 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
             <select value={form.categoryId} onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
               className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">
@@ -210,7 +212,8 @@ export default function GoalsSection({
                   <input value={editGoalDraft.owner} onChange={(e) => setEditGoalDraft((f) => ({ ...f, owner: e.target.value }))}
                     placeholder={t('owner_ph')}
                     className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
-                  <input type="date" value={editGoalDraft.dueDate} onChange={(e) => setEditGoalDraft((f) => ({ ...f, dueDate: e.target.value }))}
+                  <PickerField type="date" value={editGoalDraft.dueDate} onChange={(value) => setEditGoalDraft((f) => ({ ...f, dueDate: value }))}
+                    placeholder="Seleccionar fecha"
                     className="w-36 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
                   <select value={editGoalDraft.categoryId} onChange={(e) => setEditGoalDraft((f) => ({ ...f, categoryId: e.target.value }))}
                     className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300">

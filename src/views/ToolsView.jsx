@@ -22,6 +22,7 @@
 import React, { useState, useMemo } from 'react';
 import { t, lang } from '../strings.js';
 import BoardTypeSection        from './tools/BoardTypeSection.jsx';
+import AvailabilityPollsSection from './tools/AvailabilityPollsSection.jsx';
 import MeetingsSection         from './tools/MeetingsSection.jsx';
 import GoalsSection            from './tools/GoalsSection.jsx';
 import { BilingualField, HowToUse, ScopeFilter } from '../components/ui/index.js';
@@ -43,6 +44,7 @@ const SWOT_META = [
  *   teamEisenhowers:   object[],
  *   teamPughs:         object[],
  *   teamBoards:        object[],
+ *   teamAvailabilityPolls: object[],
  *   teamMeetings:      object[],
  *   teamGoals:         object[],
  *   categories:        object[],
@@ -60,7 +62,7 @@ const SWOT_META = [
  * }} props
  */
 export default function ToolsView({
-  team, teamEvents, teamSwots = [], teamEisenhowers = [], teamPughs = [], teamBoards, teamMeetings, teamGoals,
+  team, teamEvents, teamSwots = [], teamEisenhowers = [], teamPughs = [], teamBoards, teamAvailabilityPolls = [], teamMeetings, teamGoals,
   categories, memberships = [], currentMembership, memberRole, canEdit, canEditTools,
   resolveCanEdit,
   onCreateTask, canAssignTask,
@@ -69,6 +71,7 @@ export default function ToolsView({
   onCreateEisenhower, onUpdateEisenhower, onDeleteEisenhower,
   onCreatePugh, onUpdatePugh, onDeletePugh,
   onCreateBoard,  onUpdateBoard,  onDeleteBoard,
+  onCreateAvailabilityPoll, onUpdateAvailabilityPoll, onDeleteAvailabilityPoll,
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
   onCreateGoal,   onUpdateGoal,   onDeleteGoal,
 }) {
@@ -140,6 +143,7 @@ export default function ToolsView({
   // Derived filtered collections
   const visibleSwots    = useMemo(() => filterItems(teamSwots),    [filterItems, teamSwots]);
   const visibleBoards   = useMemo(() => filterItems(teamBoards),   [filterItems, teamBoards]);
+  const visibleAvailabilityPolls = useMemo(() => filterItems(teamAvailabilityPolls), [filterItems, teamAvailabilityPolls]);
   const visibleMeetings = useMemo(() => filterItems(teamMeetings), [filterItems, teamMeetings]);
   const visibleGoals    = useMemo(() => filterItems(teamGoals),    [filterItems, teamGoals]);
   const visibleEisenhowerList = useMemo(() => filterItems(teamEisenhowers), [filterItems, teamEisenhowers]);
@@ -227,6 +231,7 @@ export default function ToolsView({
             ['boards', t('tab_kanban')],
             ['scrum', t('tab_scrum')],
             ['retro', t('tab_retro')],
+            ['availability', t('tab_availability')],
             ['meetings', t('tab_meetings')],
           ].map(([id, label]) => (
             <button key={id} onClick={() => { setToolTab(id); setScopeFilter('all'); }}
@@ -896,6 +901,25 @@ export default function ToolsView({
             onCreateMeeting={onCreateMeeting}
             onUpdateMeeting={onUpdateMeeting}
             onDeleteMeeting={onDeleteMeeting}
+          />
+        </div>
+      )}
+
+      {toolTab === 'availability' && (
+        <div className="space-y-4">
+          <HowToUse descKey="tool_desc_availability" />
+          <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+          <AvailabilityPollsSection
+            polls={visibleAvailabilityPolls}
+            categories={categories}
+            memberships={memberships}
+            currentMembership={currentMembership}
+            canCreate={canCreate}
+            resolveCanEdit={resolveCanEdit}
+            onCreatePoll={onCreateAvailabilityPoll}
+            onUpdatePoll={onUpdateAvailabilityPoll}
+            onDeletePoll={onDeleteAvailabilityPoll}
           />
         </div>
       )}

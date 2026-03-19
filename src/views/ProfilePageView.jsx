@@ -10,6 +10,7 @@ import { Cake } from 'lucide-react';
 import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT, SYSTEM_MERIT_DESCRIPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongField } from '../components/ui/index.js';
+import PickerField from '../components/ui/PickerField.jsx';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import SafeProfileImage         from '../components/ui/SafeProfileImage.jsx';
 import AchievementBadge         from '../components/AchievementBadge.jsx';
@@ -446,7 +447,8 @@ export default function ProfilePageView({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               <div>
                 <label className="text-[11px] text-slate-500 block mb-0.5">Fecha de nacimiento</label>
-                <input type="date" value={draft.birthdate || ''} onChange={(e) => set('birthdate', e.target.value)}
+                <PickerField type="date" value={draft.birthdate || ''} onChange={(value) => set('birthdate', value)}
+                  placeholder="Seleccionar fecha"
                   className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
               </div>
               <div>

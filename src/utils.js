@@ -281,6 +281,34 @@ export function toEmbedUrl(url) {
   return url;
 }
 
+export function getGoogleDriveFileId(url) {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  const directMatch = trimmed.match(/\/file\/d\/([^/]+)/);
+  if (directMatch) return directMatch[1];
+  const openMatch = trimmed.match(/[?&]id=([^&]+)/);
+  if (openMatch) return openMatch[1];
+  const ucMatch = trimmed.match(/\/uc\?.*?[?&]id=([^&]+)/);
+  if (ucMatch) return ucMatch[1];
+  return '';
+}
+
+export function toGoogleDrivePreviewUrl(url) {
+  if (!url) return '';
+  if (url.includes('/preview')) return url;
+  const fileId = getGoogleDriveFileId(url);
+  return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : '';
+}
+
+export function toGoogleDriveOpenUrl(url) {
+  if (!url) return '';
+  if (url.includes('drive.google.com')) {
+    const fileId = getGoogleDriveFileId(url);
+    return fileId ? `https://drive.google.com/file/d/${fileId}/view` : url;
+  }
+  return url;
+}
+
 // ── Profile completion (for responsibility dashboard) ──────────────────────────
 
 const isNonEmptyStr = (v) => typeof v === 'string' && v.trim().length > 0;

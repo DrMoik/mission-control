@@ -4,6 +4,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { t, lang } from '../strings.js';
 import { BilingualField, HowToUse, ScopeFilter } from '../components/ui/index.js';
+import PickerField from '../components/ui/PickerField.jsx';
 import { getL, toL, fillL, ensureString, parseCalendarDate } from '../utils.js';
 
 export default function CalendarView({
@@ -173,8 +174,9 @@ export default function CalendarView({
           <div className="flex flex-wrap gap-2 items-end">
             <div className="w-40">
               <label className="text-xs text-slate-400 block mb-1">{t('event_date')} *</label>
-              <input type="date" value={newEvent.date} onChange={(e) => setNewEvent((v) => ({ ...v, date: e.target.value }))}
-                required className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
+              <PickerField type="date" value={newEvent.date} onChange={(value) => setNewEvent((v) => ({ ...v, date: value }))}
+                placeholder="Seleccionar fecha"
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">{t('scope_label')}</label>
@@ -210,8 +212,9 @@ export default function CalendarView({
           <div className="flex flex-wrap gap-2 items-end">
             <div className="w-40">
               <label className="text-xs text-slate-400 block mb-1">{t('event_date')} *</label>
-              <input type="date" value={editEventDraft.date} onChange={(e) => setEditEventDraft((v) => ({ ...v, date: e.target.value }))}
-                required className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
+              <PickerField type="date" value={editEventDraft.date} onChange={(value) => setEditEventDraft((v) => ({ ...v, date: value }))}
+                placeholder="Seleccionar fecha"
+                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">{t('scope_label')}</label>

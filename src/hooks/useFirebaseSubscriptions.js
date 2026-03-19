@@ -32,12 +32,15 @@ import { SYSTEM_MERIT_NAMES } from '../constants.js';
  *   teamMeritEvents: object[],
  *   teamModules: object[],
  *   teamModuleAttempts: object[],
+ *   academyBooks: object[],
+ *   academyBookProgress: object[],
  *   teamEvents: object[],
  *   teamSessions: object[],
  *   teamSwots: object[],
  *   teamEisenhowers: object[],
  *   teamPughs: object[],
  *   teamBoards: object[],
+ *   teamAvailabilityPolls: object[],
  *   teamPosts: object[],
  *   teamComments: object[],
  *   teamPostReactions: object[],
@@ -64,12 +67,15 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
   const [teamMeritEvents, setTeamMeritEvents] = useState([]);
   const [teamModules, setTeamModules] = useState([]);
   const [teamModuleAttempts, setTeamModuleAttempts] = useState([]);
+  const [academyBooks, setAcademyBooks] = useState([]);
+  const [academyBookProgress, setAcademyBookProgress] = useState([]);
   const [teamEvents, setTeamEvents] = useState([]);
   const [teamSessions, setTeamSessions] = useState([]);
   const [teamSwots, setTeamSwots] = useState([]);
   const [teamEisenhowers, setTeamEisenhowers] = useState([]);
   const [teamPughs, setTeamPughs] = useState([]);
   const [teamBoards, setTeamBoards] = useState([]);
+  const [teamAvailabilityPolls, setTeamAvailabilityPolls] = useState([]);
   const [teamPosts, setTeamPosts] = useState([]);
   const [teamComments, setTeamComments] = useState([]);
   const [teamPostReactions, setTeamPostReactions] = useState([]);
@@ -159,6 +165,11 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       (rows) => [...rows].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)),
     );
     sub(
+      query(collection(db, 'academyBooks'), where('teamId', '==', selectedTeamId)),
+      setAcademyBooks,
+      (rows) => [...rows].sort((a, b) => String(a.title?.es || a.title?.en || a.title || '').localeCompare(String(b.title?.es || b.title?.en || b.title || ''))),
+    );
+    sub(
       query(collection(db, 'teamEvents'), where('teamId', '==', selectedTeamId)),
       setTeamEvents,
       (rows) => [...rows].sort((a, b) => tsToDate(a.date) - tsToDate(b.date)),
@@ -184,6 +195,11 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
     );
     sub(query(collection(db, 'teamBoards'), where('teamId', '==', selectedTeamId)), setTeamBoards);
+    sub(
+      query(collection(db, 'teamAvailabilityPolls'), where('teamId', '==', selectedTeamId)),
+      setTeamAvailabilityPolls,
+      (rows) => [...rows].sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''))),
+    );
     sub(
       query(collection(db, 'posts'), where('teamId', '==', selectedTeamId)),
       setTeamPosts,
@@ -330,6 +346,16 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
           setTeamModuleAttempts(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
         ),
       );
+      const progressQuery = query(
+        collection(db, 'academyBookProgress'),
+        where('teamId', '==', selectedTeamId),
+        where('userId', '==', authUser.uid),
+      );
+      unsubs.push(
+        onSnapshot(progressQuery, (snap) =>
+          setAcademyBookProgress(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        ),
+      );
     }
 
     return () => unsubs.forEach((u) => u());
@@ -372,12 +398,15 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
     teamMeritEvents,
     teamModules,
     teamModuleAttempts,
+    academyBooks,
+    academyBookProgress,
     teamEvents,
     teamSessions,
     teamSwots,
     teamEisenhowers,
     teamPughs,
     teamBoards,
+    teamAvailabilityPolls,
     teamPosts,
     teamComments,
     teamPostReactions,

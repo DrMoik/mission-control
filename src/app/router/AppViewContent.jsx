@@ -54,10 +54,13 @@ export default function AppViewContent({
     teamEisenhowers,
     teamPughs,
     teamBoards,
+    teamAvailabilityPolls,
     teamMeetings,
     teamGoals,
     teamModules,
     teamModuleAttempts,
+    academyBooks,
+    academyBookProgress,
     teamInventoryItems,
     teamInventoryLoans,
     teamFundingAccounts,
@@ -144,6 +147,9 @@ export default function AppViewContent({
     handleCreateBoard,
     handleUpdateBoard,
     handleDeleteBoard,
+    handleCreateAvailabilityPoll,
+    handleUpdateAvailabilityPoll,
+    handleDeleteAvailabilityPoll,
     handleCreateMeeting,
     handleUpdateMeeting,
     handleDeleteMeeting,
@@ -153,6 +159,10 @@ export default function AppViewContent({
     handleCreateModule,
     handleUpdateModule,
     handleDeleteModule,
+    handleCreateAcademyBook,
+    handleUpdateAcademyBook,
+    handleDeleteAcademyBook,
+    handleSaveAcademyBookProgress,
     handleRequestModuleReview,
     handleApproveModuleAttempt,
     canEditInventoryItem,
@@ -363,6 +373,7 @@ export default function AppViewContent({
           teamEisenhowers={teamEisenhowers}
           teamPughs={teamPughs}
           teamBoards={teamBoards}
+          teamAvailabilityPolls={teamAvailabilityPolls}
           teamMeetings={teamMeetings}
           teamGoals={teamGoals}
           categories={teamCategories}
@@ -389,6 +400,9 @@ export default function AppViewContent({
           onCreateBoard={handleCreateBoard}
           onUpdateBoard={handleUpdateBoard}
           onDeleteBoard={handleDeleteBoard}
+          onCreateAvailabilityPoll={handleCreateAvailabilityPoll}
+          onUpdateAvailabilityPoll={handleUpdateAvailabilityPoll}
+          onDeleteAvailabilityPoll={handleDeleteAvailabilityPoll}
           onCreateMeeting={handleCreateMeeting}
           onUpdateMeeting={handleUpdateMeeting}
           onDeleteMeeting={handleDeleteMeeting}
@@ -401,12 +415,21 @@ export default function AppViewContent({
         <AcademyView
           modules={teamModules}
           moduleAttempts={teamModuleAttempts}
+          books={academyBooks}
+          bookProgress={academyBookProgress}
           teamMemberships={teamMemberships}
+          categories={teamCategories}
+          currentMembership={currentMembership}
           canEdit={canEdit}
+          canManageBooks={canEditTools}
           knowledgeAreas={knowledgeAreas}
           onCreateModule={handleCreateModule}
           onUpdateModule={handleUpdateModule}
           onDeleteModule={handleDeleteModule}
+          onCreateBook={handleCreateAcademyBook}
+          onUpdateBook={handleUpdateAcademyBook}
+          onDeleteBook={handleDeleteAcademyBook}
+          onSaveBookProgress={handleSaveAcademyBookProgress}
           onRequestModuleReview={handleRequestModuleReview}
           onApproveModuleAttempt={handleApproveModuleAttempt}
         />

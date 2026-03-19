@@ -37,7 +37,7 @@ import {
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES, SELECTED_TEAM_STORAGE_KEY,
 } from './constants.js';
-import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels, isWeekEligibleForPoints } from './utils.js';
+import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels, isWeekEligibleForPoints, toGoogleDrivePreviewUrl, toGoogleDriveOpenUrl } from './utils.js';
 import { NAV_DOMAINS, VIEW_TO_DOMAIN } from './config/navigation.js';
 import RoleBadge  from './components/ui/RoleBadge.jsx';
 import GoogleIcon from './components/ui/GoogleIcon.jsx';
@@ -84,12 +84,15 @@ export default function App() {
     teamMeritEvents,
     teamModules,
     teamModuleAttempts,
+    academyBooks,
+    academyBookProgress,
     teamEvents,
     teamSessions,
     teamSwots,
     teamEisenhowers,
     teamPughs,
     teamBoards,
+    teamAvailabilityPolls,
     teamPosts,
     teamComments,
     teamPostReactions,
@@ -1268,6 +1271,61 @@ export default function App() {
   // Returns true if the current user may EDIT the given tool item.
   //   • Global item (categoryId == null) → any leader+ or admin
   //   • Category item → must be admin OR (leader assigned to that same category)
+  const handleCreateAcademyBook = async (book) => {
+    if (!currentTeam || !canEditTools) return;
+    const fakeItem = { categoryId: book.categoryId || null };
+    if (!canEditToolItem(fakeItem)) return;
+    await addDoc(collection(db, 'academyBooks'), {
+      teamId: currentTeam.id,
+      title: book.title,
+      author: book.author,
+      description: book.description,
+      coverUrl: book.coverUrl || '',
+      driveUrl: book.driveUrl,
+      embedUrl: toGoogleDrivePreviewUrl(book.driveUrl),
+      openUrl: toGoogleDriveOpenUrl(book.driveUrl),
+      categoryId: book.categoryId || null,
+      createdAt: serverTimestamp(),
+      ...lastEditedStamp(),
+    });
+  };
+
+  const handleUpdateAcademyBook = async (bookId, updates) => {
+    const book = academyBooks.find((item) => item.id === bookId);
+    if (!book || !canEditToolItem(book)) return;
+    const nextDriveUrl = updates.driveUrl ?? book.driveUrl ?? '';
+    await updateDoc(doc(db, 'academyBooks', bookId), {
+      ...updates,
+      embedUrl: toGoogleDrivePreviewUrl(nextDriveUrl),
+      openUrl: toGoogleDriveOpenUrl(nextDriveUrl),
+      ...lastEditedStamp(),
+    });
+  };
+
+  const handleDeleteAcademyBook = async (bookId) => {
+    const book = academyBooks.find((item) => item.id === bookId);
+    if (!book || !canEditToolItem(book)) return;
+    await deleteDoc(doc(db, 'academyBooks', bookId));
+  };
+
+  const handleSaveAcademyBookProgress = async (bookId, progress) => {
+    if (!currentTeam || !currentMembership || !authUser) return;
+    const book = academyBooks.find((item) => item.id === bookId);
+    if (!book) return;
+    const canViewBook = !book.categoryId || canEdit || currentMembership.categoryId === book.categoryId;
+    if (!canViewBook) return;
+    const progressId = `${bookId}_${currentMembership.id}`;
+    await setDoc(doc(db, 'academyBookProgress', progressId), {
+      teamId: currentTeam.id,
+      bookId,
+      membershipId: currentMembership.id,
+      userId: authUser.uid,
+      lastPage: Math.max(1, Number(progress.lastPage) || 1),
+      lastOpenedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  };
+
   const canEditToolItem = React.useCallback((item) => {
     if (!item) return false;
     if (canEdit) return true;                                    // admin always can
@@ -1566,6 +1624,51 @@ export default function App() {
     await deleteDoc(doc(db, 'teamMeetings', id));
   };
 
+  // —— Tools: Availability polls / when2meet-style coordination ——————————————
+
+  const handleCreateAvailabilityPoll = async (data) => {
+    const fakeItem = { categoryId: data.categoryId || null };
+    if (!currentTeam || !canEditToolItem(fakeItem)) return null;
+    const ref = await addDoc(collection(db, 'teamAvailabilityPolls'), {
+      teamId: currentTeam.id,
+      title: data.title,
+      description: data.description || '',
+      dateOptions: data.dateOptions || [],
+      timeOptions: data.timeOptions || [],
+      proposedSlots: data.proposedSlots || [],
+      slotMinutes: data.slotMinutes || 30,
+      responses: {},
+      agreedSlot: null,
+      expiresAt: null,
+      categoryId: data.categoryId || null,
+      createdAt: serverTimestamp(),
+      ...lastEditedStamp(),
+    });
+    return ref.id;
+  };
+  const handleUpdateAvailabilityPoll = async (id, updates) => {
+    const poll = teamAvailabilityPolls.find((item) => item.id === id);
+    if (!poll || !canEditToolItem(poll)) {
+      if (!currentMembership?.id || !poll) return;
+      if (poll.agreedSlot) return;
+      const currentResponses = poll.responses || {};
+      const nextResponses = updates.responses || {};
+      const changedKeys = Object.keys(updates);
+      const onlyResponses = changedKeys.length === 1 && changedKeys[0] === 'responses';
+      const onlyOwnResponseChanged = onlyResponses && Object.keys(nextResponses).every((membershipId) => (
+        membershipId === currentMembership.id ||
+        JSON.stringify(nextResponses[membershipId] || {}) === JSON.stringify(currentResponses[membershipId] || {})
+      ));
+      if (!onlyOwnResponseChanged) return;
+    }
+    await updateDoc(doc(db, 'teamAvailabilityPolls', id), { ...updates, ...lastEditedStamp() });
+  };
+  const handleDeleteAvailabilityPoll = async (id) => {
+    const poll = teamAvailabilityPolls.find((item) => item.id === id);
+    if (!poll || !canEditToolItem(poll)) return;
+    await deleteDoc(doc(db, 'teamAvailabilityPolls', id));
+  };
+
   // ── Tools: Goals / OKRs ────────────────────────────────────────────────────
 
   const handleCreateGoal = async (data) => {
@@ -1589,6 +1692,21 @@ export default function App() {
     if (!canEditToolItem(goal)) return;
     await deleteDoc(doc(db, 'teamGoals', id));
   };
+
+  useEffect(() => {
+    if (!(isAdminLevel || atLeast(memberRole, 'leader')) || !teamAvailabilityPolls.length) return;
+    const now = Date.now();
+    teamAvailabilityPolls.forEach((poll) => {
+      const expiresAt = poll.expiresAt;
+      const expiryDate = expiresAt && typeof expiresAt.toDate === 'function' ? expiresAt.toDate() : (expiresAt ? new Date(expiresAt) : null);
+      if (!expiryDate || Number.isNaN(expiryDate.getTime())) return;
+      if (expiryDate.getTime() <= now) {
+        deleteDoc(doc(db, 'teamAvailabilityPolls', poll.id)).catch((error) => {
+          console.warn('Cleanup availability poll:', error);
+        });
+      }
+    });
+  }, [isAdminLevel, memberRole, teamAvailabilityPolls]);
 
   // ── Feed ───────────────────────────────────────────────────────────────────
 
@@ -2509,10 +2627,13 @@ export default function App() {
                   teamEisenhowers,
                   teamPughs,
                   teamBoards,
+                  teamAvailabilityPolls,
                   teamMeetings,
                   teamGoals,
                   teamModules,
                   teamModuleAttempts,
+                  academyBooks,
+                  academyBookProgress,
                   teamInventoryItems,
                   teamInventoryLoans,
                   teamFundingAccounts,
@@ -2599,6 +2720,9 @@ export default function App() {
                   handleCreateBoard,
                   handleUpdateBoard,
                   handleDeleteBoard,
+                  handleCreateAvailabilityPoll,
+                  handleUpdateAvailabilityPoll,
+                  handleDeleteAvailabilityPoll,
                   handleCreateMeeting,
                   handleUpdateMeeting,
                   handleDeleteMeeting,
@@ -2608,6 +2732,10 @@ export default function App() {
                   handleCreateModule,
                   handleUpdateModule,
                   handleDeleteModule,
+                  handleCreateAcademyBook,
+                  handleUpdateAcademyBook,
+                  handleDeleteAcademyBook,
+                  handleSaveAcademyBookProgress,
                   handleRequestModuleReview,
                   handleApproveModuleAttempt,
                   canEditInventoryItem,

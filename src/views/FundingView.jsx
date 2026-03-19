@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { t } from '../strings.js';
+import PickerField from '../components/ui/PickerField.jsx';
 
 function formatMoney(n) {
   if (n == null || isNaN(n)) return '—';
@@ -238,7 +239,8 @@ export default function FundingView({
             </div>
             <div>
               <label className="text-[11px] text-slate-500 block mb-0.5">{t('funding_date')}</label>
-              <input type="date" value={entryDraft.date} onChange={(e) => setEntryDraft((d) => ({ ...d, date: e.target.value }))}
+              <PickerField type="date" value={entryDraft.date} onChange={(value) => setEntryDraft((d) => ({ ...d, date: value }))}
+                placeholder="Seleccionar fecha"
                 className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm" />
             </div>
             <div className="sm:col-span-2">

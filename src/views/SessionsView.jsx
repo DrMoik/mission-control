@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { t, lang } from '../strings.js';
+import PickerField from '../components/ui/PickerField.jsx';
 import { ensureString } from '../utils.js';
 import { SESSION_ATTENDANCE_POINTS_DEFAULT, SESSION_CLASSES, SESSION_TYPES } from '../constants.js';
 
@@ -174,10 +175,11 @@ export default function SessionsView({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[11px] text-slate-500 block mb-1">{t('session_scheduled')}</label>
-              <input
+              <PickerField
                 type="datetime-local"
                 value={newSession.scheduledAt}
-                onChange={(e) => setNewSession((s) => ({ ...s, scheduledAt: e.target.value }))}
+                onChange={(value) => setNewSession((s) => ({ ...s, scheduledAt: value }))}
+                placeholder="Seleccionar fecha y hora"
                 className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
               />
             </div>
@@ -464,10 +466,11 @@ function EditSessionModal({ session, categories, onCancel, onSave, getClassLabel
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-[11px] text-slate-500 block mb-1">{t('session_scheduled')}</label>
-            <input
+            <PickerField
               type="datetime-local"
               value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
+              onChange={setScheduledAt}
+              placeholder="Seleccionar fecha y hora"
               className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm"
             />
           </div>

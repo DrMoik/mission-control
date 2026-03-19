@@ -17,6 +17,7 @@ import { X, Cake } from 'lucide-react';
 import { t, lang } from '../strings.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongField } from './ui/index.js';
+import PickerField from './ui/PickerField.jsx';
 import ImageCropModal           from './ImageCropModal.jsx';
 import ModalOverlay             from './ModalOverlay.jsx';
 import SafeProfileImage         from './ui/SafeProfileImage.jsx';
@@ -384,7 +385,8 @@ export default function ProfileModal({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
                   <label className="text-[11px] text-slate-500 block mb-0.5">Fecha de nacimiento</label>
-                  <input type="date" value={draft.birthdate || ''} onChange={(e) => set('birthdate', e.target.value)}
+                  <PickerField type="date" value={draft.birthdate || ''} onChange={(value) => set('birthdate', value)}
+                    placeholder="Seleccionar fecha"
                     className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
                 </div>
                 <div>

@@ -283,6 +283,35 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /academyBooks/{bookId} {
+      allow read: if isRookieOrAbove(resource.data.teamId) && (
+        resource.data.get('categoryId', null) == null ||
+        isTeamAdmin(resource.data.teamId) ||
+        membershipDoc(resource.data.teamId).data.get('categoryId', null) == resource.data.get('categoryId', null)
+      );
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /academyBookProgress/{progressId} {
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        isTeamAdmin(resource.data.teamId)
+      );
+      allow create: if request.auth != null &&
+        isRookieOrAbove(request.resource.data.teamId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.membershipId == request.auth.uid + '_' + request.resource.data.teamId;
+      allow update: if request.auth != null &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.membershipId == resource.data.membershipId &&
+        request.resource.data.teamId == resource.data.teamId &&
+        request.resource.data.bookId == resource.data.bookId;
+      allow delete: if false;
+    }
+
     // Tasks: support assigneeMembershipIds[] (multi-assignee) and legacy assigneeMembershipId
     function isTaskAssignee(teamId) {
       return resource.data.get('assigneeMembershipIds', []).hasAny([request.auth.uid + '_' + teamId]) ||
@@ -428,6 +457,18 @@ service cloud.firestore {
       allow create: if isLeaderOrAbove(request.resource.data.teamId);
       allow update: if isLeaderOrAbove(resource.data.teamId);
       allow delete: if isTeamAdmin(resource.data.teamId);
+    }
+
+    match /teamAvailabilityPolls/{pollId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId) ||
+        (
+          request.auth != null &&
+          isActiveMember(resource.data.teamId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['responses', 'lastEditedAt', 'lastEditedBy'])
+        );
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
     }
 
     match /posts/{postId} {

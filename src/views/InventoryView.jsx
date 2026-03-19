@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { t } from '../strings.js';
+import PickerField from '../components/ui/PickerField.jsx';
 
 const ITEM_TYPES = [
   { id: 'tool', label: 'Herramienta' },
@@ -58,18 +59,6 @@ export default function InventoryView({
   const [areaFilter, setAreaFilter] = useState('all');
   const [loanModalItem, setLoanModalItem] = useState(null);
   const [loanDraft, setLoanDraft] = useState({ membershipId: '', quantity: '1', dueDate: '', notes: '' });
-  const dueDateInputRef = useRef(null);
-  const openDueDatePicker = () => {
-    const input = dueDateInputRef.current;
-    if (!input) return;
-    if (typeof input.showPicker === 'function') {
-      input.showPicker();
-      return;
-    }
-    input.focus();
-    input.click();
-  };
-
   const activeLoans = useMemo(
     () => loans.filter((loan) => !loan.returnedAt),
     [loans],
@@ -564,22 +553,13 @@ export default function InventoryView({
                   <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                     {t('inventory_due_date') || 'Vence'}
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      ref={dueDateInputRef}
-                      type="date"
-                      value={loanDraft.dueDate}
-                      onChange={(e) => setLoanDraft((prev) => ({ ...prev, dueDate: e.target.value }))}
-                      className="w-full rounded border border-slate-600 bg-slate-950 px-3 py-2 text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={openDueDatePicker}
-                      className="rounded border border-slate-600 bg-slate-950 px-3 py-2 text-xs text-slate-300"
-                    >
-                      {t('inventory_open_calendar') || 'Calendario'}
-                    </button>
-                  </div>
+                  <PickerField
+                    type="date"
+                    value={loanDraft.dueDate}
+                    onChange={(value) => setLoanDraft((prev) => ({ ...prev, dueDate: value }))}
+                    placeholder={t('inventory_open_calendar') || 'Seleccionar fecha'}
+                    className="w-full rounded border border-slate-600 bg-slate-950 px-3 py-2 text-sm"
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">

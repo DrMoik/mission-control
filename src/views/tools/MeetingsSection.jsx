@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { t, lang } from '../../strings.js';
+import PickerField from '../../components/ui/PickerField.jsx';
 import { ensureString } from '../../utils.js';
 
 const createActionItem = () => ({
@@ -129,10 +130,11 @@ function ActionItemsEditor({ items, onChange }) {
             placeholder="Persona responsable"
             className={inputClass}
           />
-          <input
+          <PickerField
             type="date"
             value={item.deadline}
-            onChange={(e) => updateItem(item.id, 'deadline', e.target.value)}
+            onChange={(value) => updateItem(item.id, 'deadline', value)}
+            placeholder="Seleccionar fecha"
             className={inputClass}
           />
           <button
@@ -205,6 +207,7 @@ export default function MeetingsSection({
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
 }) {
   const [form, setForm] = useState(emptyForm());
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editDraft, setEditDraft] = useState(null);
@@ -236,6 +239,7 @@ export default function MeetingsSection({
     });
 
     setForm(emptyForm());
+    setShowCreateForm(false);
   };
 
   const toggleAction = async (meeting, itemId) => {
@@ -287,110 +291,135 @@ export default function MeetingsSection({
   return (
     <div className="space-y-4">
       {canCreate && (
-        <form onSubmit={handleCreate} className="space-y-4 rounded-xl border border-slate-700 bg-slate-800 p-4">
-          <div className="border-b border-slate-700 pb-3 text-center">
-            <div className="text-lg font-semibold text-slate-100">Registro de Minutas del Equipo</div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_180px]">
-            <div>
-              <FieldLabel>Organizacion / equipo</FieldLabel>
-              <input
-                value={form.organization}
-                onChange={(e) => setForm((current) => ({ ...current, organization: e.target.value }))}
-                placeholder="Nombre del equipo u organizacion"
-                className={`${inputClass} mt-1`}
-              />
+        <div className="space-y-3">
+          {!showCreateForm && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(true)}
+                className="rounded bg-emerald-500 px-4 py-2 text-sm font-semibold text-black"
+              >
+                {t('new_meeting_btn')}
+              </button>
             </div>
-            <div>
-              <FieldLabel>Fecha</FieldLabel>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm((current) => ({ ...current, date: e.target.value }))}
-                className={`${inputClass} mt-1`}
-              />
-            </div>
-          </div>
+          )}
 
-          <Section title="Agenda">
-            <textarea
-              value={form.agenda}
-              onChange={(e) => setForm((current) => ({ ...current, agenda: e.target.value }))}
-              placeholder={'1. Tema principal\n2. Seguimiento\n3. Riesgos o bloqueos'}
-              className={textareaClass}
-            />
-          </Section>
+          {showCreateForm && (
+            <form onSubmit={handleCreate} className="space-y-4 rounded-xl border border-slate-700 bg-slate-800 p-4">
+              <div className="border-b border-slate-700 pb-3 text-center">
+                <div className="text-lg font-semibold text-slate-100">Registro de Minutas del Equipo</div>
+              </div>
 
-          <Section title="Discusion">
-            <textarea
-              value={form.discussion}
-              onChange={(e) => setForm((current) => ({ ...current, discussion: e.target.value }))}
-              placeholder="Resumen de la conversacion y puntos tratados"
-              className={textareaClass}
-            />
-          </Section>
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_180px]">
+                <div>
+                  <FieldLabel>Organizacion / equipo</FieldLabel>
+                  <input
+                    value={form.organization}
+                    onChange={(e) => setForm((current) => ({ ...current, organization: e.target.value }))}
+                    placeholder="Nombre del equipo u organizacion"
+                    className={`${inputClass} mt-1`}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Fecha</FieldLabel>
+                  <PickerField
+                    type="date"
+                    value={form.date}
+                    onChange={(value) => setForm((current) => ({ ...current, date: value }))}
+                    placeholder="Seleccionar fecha"
+                    className={`${inputClass} mt-1`}
+                  />
+                </div>
+              </div>
 
-          <Section title="Decisiones tomadas">
-            <textarea
-              value={form.decisions}
-              onChange={(e) => setForm((current) => ({ ...current, decisions: e.target.value }))}
-              placeholder="Decisiones acordadas durante la reunion"
-              className={textareaClass}
-            />
-          </Section>
-
-          <Section title="Puntos de accion">
-            <ActionItemsEditor
-              items={form.actionItems}
-              onChange={(actionItems) => setForm((current) => ({ ...current, actionItems }))}
-            />
-          </Section>
-
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_180px]">
-            <div>
-              <FieldLabel>Integrantes del equipo</FieldLabel>
-              <textarea
-                value={form.teamMembersText}
-                onChange={(e) => setForm((current) => ({ ...current, teamMembersText: e.target.value }))}
-                placeholder={'Un integrante por linea\nTambien puedes separar por comas'}
-                className={`${textareaClass} mt-1 min-h-[110px]`}
-              />
-            </div>
-            <div className="space-y-3">
-              <div>
-                <FieldLabel>Next meeting date</FieldLabel>
-                <input
-                  type="date"
-                  value={form.nextMeetingDate}
-                  onChange={(e) => setForm((current) => ({ ...current, nextMeetingDate: e.target.value }))}
-                  className={`${inputClass} mt-1`}
+              <Section title="Agenda">
+                <textarea
+                  value={form.agenda}
+                  onChange={(e) => setForm((current) => ({ ...current, agenda: e.target.value }))}
+                  placeholder={'1. Tema principal\n2. Seguimiento\n3. Riesgos o bloqueos'}
+                  className={textareaClass}
                 />
-              </div>
-              <div>
-                <FieldLabel>{t('scope_label')}</FieldLabel>
-                <select
-                  value={form.categoryId}
-                  onChange={(e) => setForm((current) => ({ ...current, categoryId: e.target.value }))}
-                  className={`${inputClass} mt-1 text-sm`}
-                >
-                  <option value="">{t('scope_global')}</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {t('scope_category')} {ensureString(category.name, lang)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
+              </Section>
 
-          <div className="flex justify-end">
-            <button type="submit" className="rounded bg-emerald-500 px-4 py-2 text-sm font-semibold text-black">
-              Guardar minuta
-            </button>
-          </div>
-        </form>
+              <Section title="Discusion">
+                <textarea
+                  value={form.discussion}
+                  onChange={(e) => setForm((current) => ({ ...current, discussion: e.target.value }))}
+                  placeholder="Resumen de la conversacion y puntos tratados"
+                  className={textareaClass}
+                />
+              </Section>
+
+              <Section title="Decisiones tomadas">
+                <textarea
+                  value={form.decisions}
+                  onChange={(e) => setForm((current) => ({ ...current, decisions: e.target.value }))}
+                  placeholder="Decisiones acordadas durante la reunion"
+                  className={textareaClass}
+                />
+              </Section>
+
+              <Section title="Puntos de accion">
+                <ActionItemsEditor
+                  items={form.actionItems}
+                  onChange={(actionItems) => setForm((current) => ({ ...current, actionItems }))}
+                />
+              </Section>
+
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_180px]">
+                <div>
+                  <FieldLabel>Integrantes del equipo</FieldLabel>
+                  <textarea
+                    value={form.teamMembersText}
+                    onChange={(e) => setForm((current) => ({ ...current, teamMembersText: e.target.value }))}
+                    placeholder={'Un integrante por linea\nTambien puedes separar por comas'}
+                    className={`${textareaClass} mt-1 min-h-[110px]`}
+                  />
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <FieldLabel>Fecha de la siguiente reunion</FieldLabel>
+                    <PickerField
+                      type="date"
+                      value={form.nextMeetingDate}
+                      onChange={(value) => setForm((current) => ({ ...current, nextMeetingDate: value }))}
+                      placeholder="Seleccionar fecha"
+                      className={`${inputClass} mt-1`}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel>{t('scope_label')}</FieldLabel>
+                    <select
+                      value={form.categoryId}
+                      onChange={(e) => setForm((current) => ({ ...current, categoryId: e.target.value }))}
+                      className={`${inputClass} mt-1 text-sm`}
+                    >
+                      <option value="">{t('scope_global')}</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {t('scope_category')} {ensureString(category.name, lang)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateForm(false); setForm(emptyForm()); }}
+                  className="text-xs text-slate-400 underline"
+                >
+                  {t('cancel')}
+                </button>
+                <button type="submit" className="rounded bg-emerald-500 px-4 py-2 text-sm font-semibold text-black">
+                  Guardar minuta
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       )}
 
       {meetings.length === 0 && (
@@ -555,10 +584,11 @@ export default function MeetingsSection({
                   </div>
                   <div>
                     <FieldLabel>Fecha</FieldLabel>
-                    <input
+                    <PickerField
                       type="date"
                       value={editDraft.date}
-                      onChange={(e) => setEditDraft((current) => ({ ...current, date: e.target.value }))}
+                      onChange={(value) => setEditDraft((current) => ({ ...current, date: value }))}
+                      placeholder="Seleccionar fecha"
                       className={`${inputClass} mt-1`}
                     />
                   </div>
@@ -607,10 +637,11 @@ export default function MeetingsSection({
                   <div className="space-y-3">
                     <div>
                       <FieldLabel>Fecha de la siguiente reunion</FieldLabel>
-                      <input
+                      <PickerField
                         type="date"
                         value={editDraft.nextMeetingDate}
-                        onChange={(e) => setEditDraft((current) => ({ ...current, nextMeetingDate: e.target.value }))}
+                        onChange={(value) => setEditDraft((current) => ({ ...current, nextMeetingDate: value }))}
+                        placeholder="Seleccionar fecha"
                         className={`${inputClass} mt-1`}
                       />
                     </div>

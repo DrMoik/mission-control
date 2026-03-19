@@ -15,6 +15,8 @@ const TOOL_DESCRIPTIONS = {
     'Ejecuta Sprints ágiles: Product Backlog → Sprint Backlog → En Progreso → Hecho.\n\n• Cada tablero = un Sprint.\n• Asignar tarea: barra de búsqueda, escribe nombre, clic para asignar.\n• Los asignados ven la tarea en la pestaña Tareas y pueden solicitar revisión.',
   tool_desc_retro:
     'Retrospectiva tras cada Sprint.\n\n• Qué salió bien: celebra éxitos.\n• Qué mejorar: identifica problemas.\n• Acciones: tareas concretas para el siguiente ciclo.\n\nUsa el resultado para planear el siguiente Sprint.',
+  tool_desc_availability:
+    'Coordina horarios con una encuesta de disponibilidad estilo when2meet.\n\n• Define fechas y horas posibles.\n• Cada integrante marca en qué espacios puede asistir.\n• Cuando acuerden un horario final, la encuesta se elimina una semana después.',
   tool_desc_meetings:
     'Registra minutas con una estructura formal.\n\n• Captura organizacion, fecha, agenda, discusion y decisiones tomadas.\n• Usa la tabla de puntos de accion para responsable, fecha limite y seguimiento.\n• Alcance global o por area segun visibilidad.',
   tool_desc_goals:
@@ -29,6 +31,7 @@ const TOOL_EXAMPLES = {
   tool_desc_kanban_example: 'Escribe "María" en la barra de búsqueda, filtra por área si tienes varias, haz clic en el nombre para asignar. La tarea aparecerá en la pestaña Tareas del asignado.',
   tool_desc_scrum_example: 'Crea un Sprint "Q1 Semana 3", añade tarjetas al backlog, asigna con la búsqueda (ej. "Carlos"), mueve las tarjetas entre columnas según avance.',
   tool_desc_retro_example: 'Tras un Sprint, añade puntos en "Qué salió bien" y "Qué mejorar", luego crea acciones concretas en la tercera columna.',
+  tool_desc_availability_example: 'Crea una encuesta con varias fechas y horarios, pide al equipo marcar disponibilidad y fija como acuerdo el bloque con más coincidencias.',
   tool_desc_swot_example: 'Fortalezas: "Equipo con experiencia en Python". Debilidades: "Falta documentación". Oportunidades: "Nuevo cliente potencial". Amenazas: "Competencia fuerte".',
   tool_desc_eisenhower_example: 'Urgente e importante: bug en producción. Importante no urgente: refactorizar módulo. Urgente no importante: reunión que puede delegar. Ninguna: tarea obsoleta.',
   tool_desc_pugh_example: 'Referencia: "Sistema actual". Alternativas: A (Cloud), B (On-premise). Criterios: costo, escalabilidad, mantenimiento. Puntúa +1/-1 y suma.',
@@ -41,6 +44,7 @@ const TOOL_LINKS = {
   tool_desc_kanban_link: 'https://es.wikipedia.org/wiki/Kanban',
   tool_desc_scrum_link: 'https://www.scrum.org/resources/what-is-scrum',
   tool_desc_retro_link: 'https://www.atlassian.com/team-playbook/plays/retrospective',
+  tool_desc_availability_link: 'https://when2meet.com/',
   tool_desc_swot_link: 'https://es.wikipedia.org/wiki/An%C3%A1lisis_DAFO',
   tool_desc_eisenhower_link: 'https://es.wikipedia.org/wiki/Matriz_de_Eisenhower',
   tool_desc_pugh_link: 'https://en.wikipedia.org/wiki/Pugh_control',
