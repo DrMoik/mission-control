@@ -16,7 +16,7 @@ const TOOL_DESCRIPTIONS = {
   tool_desc_retro:
     'Retrospectiva tras cada Sprint.\n\n• Qué salió bien: celebra éxitos.\n• Qué mejorar: identifica problemas.\n• Acciones: tareas concretas para el siguiente ciclo.\n\nUsa el resultado para planear el siguiente Sprint.',
   tool_desc_meetings:
-    'Registra reuniones con agenda, asistentes y notas.\n\n• Lista de puntos de acción: cada uno se puede marcar completado.\n• Alcance global o por área según visibilidad.',
+    'Registra minutas con una estructura formal.\n\n• Captura organizacion, fecha, agenda, discusion y decisiones tomadas.\n• Usa la tabla de puntos de accion para responsable, fecha limite y seguimiento.\n• Alcance global o por area segun visibilidad.',
   tool_desc_goals:
     'Objetivos y Resultados Clave (OKRs).\n\n• Objetivo: meta cualitativa (ej. "Lanzar MVP").\n• Resultados clave: métricas medibles con barra de progreso.\n• Ajusta la barra según avance real.',
   tool_desc_eisenhower:
@@ -34,7 +34,7 @@ const TOOL_EXAMPLES = {
   tool_desc_pugh_example: 'Referencia: "Sistema actual". Alternativas: A (Cloud), B (On-premise). Criterios: costo, escalabilidad, mantenimiento. Puntúa +1/-1 y suma.',
   tool_desc_goals_example: 'Objetivo: "Lanzar MVP en Q1". Resultados clave: "Completar 10 user stories", "Tests al 80%". Ajusta la barra de progreso según avance.',
   tool_desc_calendar_example: 'Evento global: "Competencia regional - 15 Mar". Evento por área: "Revisión de diseño Mecánica - 20 Mar" con alcance Mecánica.',
-  tool_desc_meetings_example: 'Registra agenda, asistentes y notas. Marca los puntos de acción como completados cuando se cumplan.',
+  tool_desc_meetings_example: 'Registra la agenda, resume la discusion, anota decisiones tomadas y asigna puntos de accion con responsable y fecha limite.',
 };
 
 const TOOL_LINKS = {
