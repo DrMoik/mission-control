@@ -3,6 +3,7 @@
 // or all-time.  Medal colours for top 3 positions.
 
 import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { t, lang } from '../strings.js';
 import { ensureString } from '../utils.js';
 import { RoleBadge, MemberAvatar } from '../components/ui/index.js';
@@ -25,6 +26,29 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
   const [sortDir, setSortDir] = useState('desc'); // desc = high first (default for rankings)
 
   const pointsRowsRaw = (tab === 'season' ? leaderboard?.season : leaderboard?.allTime) ?? [];
+  const pointsByMember = React.useMemo(
+    () => Object.fromEntries(pointsRowsRaw.map((row) => [row.membershipId, row.points ?? 0])),
+    [pointsRowsRaw],
+  );
+  const pointsRankByMember = React.useMemo(() => {
+    const ranked = memberships
+      .filter((membership) => membership.status === 'active')
+      .map((membership) => ({
+        membershipId: membership.id,
+        points: pointsByMember[membership.id] ?? 0,
+        name: membership.displayName || 'Member',
+      }))
+      .sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+
+    return Object.fromEntries(ranked.map((row, index) => [row.membershipId, index + 1]));
+  }, [memberships, pointsByMember]);
+  const pointsRows = React.useMemo(
+    () => pointsRowsRaw.map((row) => ({ ...row, pointsRank: pointsRankByMember[row.membershipId] ?? null })),
+    [pointsRowsRaw, pointsRankByMember],
+  );
 
   const effortRows = React.useMemo(() => {
     const weeklyByMember = {};
@@ -47,16 +71,17 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
           name: m.displayName || 'Member',
           role: m.role,
           categoryName: ensureString(cat?.name, lang) || 'Unassigned',
+          pointsRank: pointsRankByMember[m.id] ?? null,
           weeklyCount: weeklyByMember[m.id] || 0,
           tasksDone: tasksByMember[m.id] || 0,
           effort: (weeklyByMember[m.id] || 0) + (tasksByMember[m.id] || 0) * 2,
         };
       })
       .sort((a, b) => b.effort - a.effort);
-  }, [memberships, weeklyStatuses, tasks, categories]);
+  }, [memberships, weeklyStatuses, tasks, categories, pointsRankByMember]);
 
   const sortedRows = React.useMemo(() => {
-    const arr = mode === 'effort' ? [...effortRows] : [...pointsRowsRaw];
+    const arr = mode === 'effort' ? [...effortRows] : [...pointsRows];
     if (sortBy === 'score') {
       arr.sort((a, b) => {
         const va = mode === 'effort' ? (a.effort ?? 0) : (a.points ?? 0);
@@ -75,7 +100,7 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
       });
     }
     return arr;
-  }, [mode, pointsRowsRaw, effortRows, sortBy, sortDir]);
+  }, [mode, pointsRows, effortRows, sortBy, sortDir]);
 
   const rows = sortedRows;
   const toggleSort = (col) => {
@@ -84,45 +109,43 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
   };
   const SortTh = ({ col, label, className = '' }) => (
     <th className={className}>
-      <button type="button" onClick={() => toggleSort(col)} className="text-left hover:text-slate-200 transition-colors flex items-center gap-0.5">
+      <button type="button" onClick={() => toggleSort(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
         {label}
-        {sortBy === col && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+        {sortBy === col && <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${sortDir === 'asc' ? 'rotate-180' : ''}`} />}
       </button>
     </th>
   );
   const showEffortCols = mode === 'effort';
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-base font-semibold">Leaderboard</h2>
+    <div className="space-y-4 max-w-2xl">
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-bold text-gradient tracking-tight">Leaderboard</h2>
+      </div>
 
       {/* Points / Effort mode toggle */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setMode('points')}
-          className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
-            mode === 'points' ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-          }`}
-        >
-          {t('leaderboard_by_points')}
-        </button>
-        <button
-          onClick={() => setMode('effort')}
-          className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
-            mode === 'effort' ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-          }`}
-        >
-          {t('leaderboard_by_effort')}
-        </button>
+      <div className="flex flex-wrap gap-2 animate-slide-up animate-delay-1">
+        {[['points', t('leaderboard_by_points')], ['effort', t('leaderboard_by_effort')]].map(([id, label]) => (
+          <button key={id} onClick={() => setMode(id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 ${
+              mode === id
+                ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm'
+                : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'
+            }`}>
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Season / All-time (only for points mode) */}
       {mode === 'points' && (
-        <div className="flex gap-2">
+        <div className="flex gap-2 animate-slide-up animate-delay-1">
           {[['season', t('this_season')], ['allTime', t('all_time_tab')]].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)}
-              className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
-                tab === id ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 ${
+                tab === id
+                  ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm'
+                  : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'
               }`}>
               {label}
             </button>
@@ -130,57 +153,56 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
         </div>
       )}
 
-      <div className="bg-slate-800 rounded-lg overflow-hidden">
+      <div className="rounded-xl border border-slate-700/40 bg-surface-raised overflow-hidden shadow-surface-sm animate-slide-up animate-delay-2">
         {rows.length === 0 ? (
-          <div className="p-6 text-xs text-slate-500 text-center">{t('no_merit_data')}</div>
+          <div className="p-8 text-xs text-content-tertiary text-center italic">{t('no_merit_data')}</div>
         ) : (
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="text-left text-xs text-slate-400 border-b border-slate-700">
-                <th className="px-3 py-2 w-10">#</th>
-                <SortTh col="name" label={t('th_member')} className="px-3 py-2" />
-                <th className="px-3 py-2">{t('th_role')}</th>
-                <SortTh col="category" label={t('th_category')} className="px-3 py-2" />
+              <tr className="text-left text-xs text-content-tertiary border-b border-slate-700/40 bg-surface-sunken/30">
+                <th className="px-3 py-2.5 w-10">#</th>
+                <SortTh col="name" label={t('th_member')} className="px-3 py-2.5" />
+                <th className="px-3 py-2.5">{t('th_role')}</th>
+                <SortTh col="category" label={t('th_category')} className="px-3 py-2.5" />
                 {showEffortCols ? (
                   <>
-                    <th className="px-3 py-2 text-right">{t('leaderboard_weekly_count')}</th>
-                    <th className="px-3 py-2 text-right">{t('leaderboard_tasks_done')}</th>
-                    <SortTh col="score" label={t('leaderboard_effort') || 'Esfuerzo'} className="px-3 py-2 text-right" />
+                    <th className="px-3 py-2.5 text-right">{t('leaderboard_weekly_count')}</th>
+                    <th className="px-3 py-2.5 text-right">{t('leaderboard_tasks_done')}</th>
+                    <SortTh col="score" label={t('leaderboard_effort') || 'Esfuerzo'} className="px-3 py-2.5 text-right" />
                   </>
                 ) : (
-                  <SortTh col="score" label={t('points')} className="px-3 py-2 text-right" />
+                  <SortTh col="score" label={t('points')} className="px-3 py-2.5 text-right" />
                 )}
               </tr>
             </thead>
             <tbody>
               {rows.map((row, i) => (
-                <tr key={row.membershipId} className="border-b border-slate-700 hover:bg-slate-700/30">
-                  <td className="px-3 py-2">
-                    {/* Medal colours: gold / silver / bronze */}
+                <tr key={row.membershipId} className="border-b border-slate-700/40 hover:bg-slate-700/20 transition-colors animate-slide-up" style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}>
+                  <td className="px-3 py-2.5">
                     <span className={`font-bold text-base ${
-                      i === 0 ? 'text-yellow-400' :
-                      i === 1 ? 'text-slate-300'  :
-                      i === 2 ? 'text-amber-600'  : 'text-slate-600'
+                      row.pointsRank === 1 ? 'text-yellow-400' :
+                      row.pointsRank === 2 ? 'text-slate-300'  :
+                      row.pointsRank === 3 ? 'text-amber-600'  : 'text-content-tertiary'
                     }`}>
-                      {i + 1}
+                      {row.pointsRank ?? '—'}
                     </span>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2.5">
                     <MemberAvatar
                       membership={memberships.find((m) => m.id === row.membershipId) || { displayName: row.name, photoURL: null }}
                       onViewProfile={onViewProfile}
                     />
                   </td>
-                  <td className="px-3 py-2"><RoleBadge role={row.role} /></td>
-                  <td className="px-3 py-2 text-slate-400 text-xs">{row.categoryName}</td>
+                  <td className="px-3 py-2.5"><RoleBadge role={row.role} /></td>
+                  <td className="px-3 py-2.5 text-content-tertiary text-xs">{row.categoryName}</td>
                   {showEffortCols ? (
                     <>
-                      <td className="px-3 py-2 text-right font-mono text-slate-300">{row.weeklyCount ?? 0}</td>
-                      <td className="px-3 py-2 text-right font-mono text-slate-300">{row.tasksDone ?? 0}</td>
-                      <td className="px-3 py-2 text-right font-mono font-bold text-emerald-400">{row.effort ?? 0}</td>
+                      <td className="px-3 py-2.5 text-right font-mono text-content-secondary">{row.weeklyCount ?? 0}</td>
+                      <td className="px-3 py-2.5 text-right font-mono text-content-secondary">{row.tasksDone ?? 0}</td>
+                      <td className="px-3 py-2.5 text-right font-mono font-bold text-primary">{row.effort ?? 0}</td>
                     </>
                   ) : (
-                    <td className="px-3 py-2 text-right font-mono font-bold text-emerald-400">{row.points}</td>
+                    <td className="px-3 py-2.5 text-right font-mono font-bold text-primary">{row.points}</td>
                   )}
                 </tr>
               ))}

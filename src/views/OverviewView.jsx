@@ -8,9 +8,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Trophy, FileText, X, CalendarDays } from 'lucide-react';
+import { Trophy, FileText, X, CalendarDays, Zap } from 'lucide-react';
 import { t, lang } from '../strings.js';
-import { BilingualField }      from '../components/ui/index.js';
+import { BilingualField, Button, Input } from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString, tsToDate } from '../utils.js';
 import { ROLE_LABELS } from '../constants.js';
 
@@ -29,6 +29,12 @@ function PointsHistogram({ distribution }) {
   return (
     <div className="w-full max-w-full overflow-x-auto">
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgb(20 184 166)" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="rgb(13 148 136)" stopOpacity="0.5" />
+          </linearGradient>
+        </defs>
         {/* Grid lines */}
         {[0.25, 0.5, 0.75, 1].map((frac) => (
           <line
@@ -56,7 +62,7 @@ function PointsHistogram({ distribution }) {
                 height={Math.max(barH, count > 0 ? 2 : 0)}
                 rx={2}
                 ry={2}
-                fill="rgb(16 185 129 / 0.6)"
+                fill="url(#barGradient)"
                 className="transition-all"
               />
             </g>
@@ -260,10 +266,10 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
     return (
       <div className="space-y-5 max-w-3xl">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold">{t('edit_overview')}</h2>
+          <h2 className="text-lg font-semibold text-content-primary">{t('edit_overview')}</h2>
           <div className="flex gap-2">
-            <button onClick={() => setEditing(false)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
-            <button onClick={handleSave} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded">{t('save')}</button>
+            <Button variant="secondary" size="sm" onClick={() => setEditing(false)}>{t('cancel')}</Button>
+            <Button variant="primary" size="sm" onClick={handleSave}>{t('save')}</Button>
           </div>
         </div>
 
@@ -292,11 +298,11 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
         {/* KPIs */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-xs text-slate-400">{t('kpis')}</label>
-            <button onClick={addKpi} className="text-xs text-emerald-400 underline">{t('add_kpi')}</button>
+            <label className="text-xs text-content-tertiary uppercase tracking-wider">{t('kpis')}</label>
+            <Button variant="ghost" size="sm" onClick={addKpi}>{t('add_kpi')}</Button>
           </div>
           {draft.kpis.map((kpi, i) => (
-            <div key={i} className="mb-3 bg-slate-800/60 rounded-lg p-3 space-y-2">
+            <div key={i} className="mb-3 rounded-xl border border-slate-700/40 bg-surface-overlay/60 p-3 space-y-2">
               <BilingualField
                 label={t('kpi_label')}
                 value={kpi.label}
@@ -304,11 +310,10 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                 placeholder={{ en: 'e.g. Competition wins', es: 'p.ej. Victorias en competencia' }}
               />
               <div className="flex items-center gap-2">
-                <label className="text-xs text-slate-400 w-20 shrink-0">{t('kpi_value')}</label>
-                <input value={kpi.value} onChange={(e) => updateKpiValue(i, e.target.value)}
-                  placeholder="e.g. 3 / 42%"
-                  className="flex-1 px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs" />
-                <button onClick={() => removeKpi(i)} className="text-red-400 text-xs p-1 hover:text-red-300 shrink-0" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
+                <label className="text-xs text-content-tertiary w-20 shrink-0">{t('kpi_value')}</label>
+                <Input value={kpi.value} onChange={(e) => updateKpiValue(i, e.target.value)}
+                  placeholder="e.g. 3 / 42%" className="flex-1 text-xs" />
+                <button onClick={() => removeKpi(i)} className="text-error hover:text-red-400 p-1 shrink-0 transition-colors" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
               </div>
             </div>
           ))}
@@ -325,42 +330,41 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 animate-fade-in">
         <div>
-          <h2 className="text-2xl font-bold text-slate-100">{ensureString(team?.name, lang)}</h2>
-          {tagline && <p className="text-slate-300 italic mt-1 text-lg">"{tagline}"</p>}
+          <h2 className="text-2xl font-bold text-gradient tracking-tight">{ensureString(team?.name, lang)}</h2>
+          {tagline && <p className="text-gradient-primary font-medium italic mt-1 text-base">"{tagline}"</p>}
         </div>
         {canEdit && (
-          <button onClick={startEdit}
-            className="shrink-0 text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-slate-300 transition-colors">
+          <Button variant="secondary" size="sm" onClick={startEdit} className="shrink-0">
             {t('edit_overview')}
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Live stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-sm hover:border-slate-600/50 transition-colors">
-          <div className="text-[11px] text-slate-400 uppercase tracking-wide">{t('total_members')}</div>
-          <div className="text-2xl font-bold mt-1 text-slate-100">{activeMembers}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up animate-delay-1">
+        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200">
+          <div className="text-[11px] text-content-tertiary uppercase tracking-wide">{t('total_members')}</div>
+          <div className="text-2xl font-bold mt-1 text-content-primary">{activeMembers}</div>
         </div>
         <button
           type="button"
           onClick={() => setShowPointsDetail(true)}
-          className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-sm hover:border-slate-600/50 hover:border-emerald-600/50 transition-colors text-left w-full cursor-pointer group"
+          className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm hover:border-primary/30 hover:shadow-glow-sm transition-all duration-200 text-left w-full cursor-pointer group"
         >
-          <div className="text-[11px] text-slate-400 uppercase tracking-wide">{t('avg_points_per_member')}</div>
-          <div className="text-2xl font-bold mt-1 text-emerald-400">{avgPointsPerMember}</div>
-          <div className="text-[10px] text-slate-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">{t('click_for_details')}</div>
+          <div className="text-[11px] text-content-tertiary uppercase tracking-wide">{t('avg_points_per_member')}</div>
+          <div className="text-2xl font-bold mt-1 text-primary">{avgPointsPerMember}</div>
+          <div className="text-[10px] text-content-tertiary mt-1 opacity-0 group-hover:opacity-100 transition-opacity">{t('click_for_details')}</div>
         </button>
-        <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-sm hover:border-slate-600/50 transition-colors">
-          <div className="text-[11px] text-slate-400 uppercase tracking-wide">{t('nav_academy')}</div>
-          <div className="text-2xl font-bold mt-1 text-slate-100">{teamModules.length}</div>
+        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200">
+          <div className="text-[11px] text-content-tertiary uppercase tracking-wide">{t('nav_academy')}</div>
+          <div className="text-2xl font-bold mt-1 text-content-primary">{teamModules.length}</div>
         </div>
         {(ov.kpis || []).map((kpi, i) => (
-          <div key={i} className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/50 shadow-sm hover:border-slate-600/50 transition-colors">
-            <div className="text-[11px] text-slate-400 uppercase tracking-wide truncate">{getL(kpi.label, lang)}</div>
-            <div className="text-2xl font-bold mt-1 text-slate-100">{ensureString(kpi.value)}</div>
+          <div key={i} className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200">
+            <div className="text-[11px] text-content-tertiary uppercase tracking-wide truncate">{getL(kpi.label, lang)}</div>
+            <div className="text-2xl font-bold mt-1 text-content-primary">{ensureString(kpi.value)}</div>
           </div>
         ))}
       </div>
@@ -396,8 +400,13 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
         ].sort((a, b) => b.date - a.date).slice(0, 10);
         const hasTeam = awards.length > 0 || posts.length > 0 || sessions.length > 0;
         return (
-          <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/30 to-slate-800/80 p-4">
-            <h3 className="text-xs font-semibold text-emerald-400/90 uppercase tracking-wide mb-3">{t('inicio_team')} · {t('inicio_summary_7d')}</h3>
+          <div className="rounded-xl border border-primary/25 bg-surface-raised shadow-glow-sm overflow-hidden animate-slide-up animate-delay-2 relative">
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-primary/6 blur-3xl pointer-events-none" />
+            <div className="px-4 py-3 border-b border-slate-700/40 flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-amber-400" strokeWidth={2.5} />
+              <span className="text-xs font-semibold text-amber-400/90 uppercase tracking-wider">{t('inicio_team')} · {t('inicio_summary_7d')}</span>
+            </div>
+            <div className="p-4">
             {hasTeam ? (
               <>
                 <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm mb-3">
@@ -497,8 +506,9 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                 )}
               </>
             ) : (
-              <p className="text-xs text-slate-500 italic">{t('inicio_no_activity')}</p>
+              <p className="text-xs text-content-tertiary italic">{t('inicio_no_activity')}</p>
             )}
+            </div>
           </div>
         );
       })()}
@@ -506,9 +516,9 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
       {/* Text sections */}
       {[[t('about'), about], [t('history'), history], [t('objectives'), objectives]].map(([label, text]) =>
         text ? (
-          <div key={label}>
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{label}</h3>
-            <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{text}</p>
+          <div key={label} className="animate-slide-up">
+            <h3 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-2">{label}</h3>
+            <p className="text-sm text-content-secondary leading-relaxed whitespace-pre-wrap">{text}</p>
           </div>
         ) : null,
       )}
@@ -516,13 +526,11 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
       {!about && !history && !objectives && !tagline && (
         canEdit ? (
           <>
-            <p className="text-slate-400 text-sm mb-4">{t('no_overview')}</p>
-            <button onClick={startEdit} className="text-xs bg-emerald-500 text-black font-semibold px-4 py-2 rounded">
-              {t('edit_overview')}
-            </button>
+            <p className="text-content-secondary text-sm mb-4">{t('no_overview')}</p>
+            <Button variant="primary" size="sm" onClick={startEdit}>{t('edit_overview')}</Button>
           </>
         ) : (
-          <p className="text-slate-500 text-sm">{t('no_overview')}</p>
+          <p className="text-content-tertiary text-sm">{t('no_overview')}</p>
         )
       )}
 
@@ -533,10 +541,10 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
           onClick={() => { setShowPointsDetail(false); setStatsViewMode('global'); setStatsSubFilter(''); }}
         >
           <div
-            className="bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden text-slate-200"
+            className="rounded-2xl border border-slate-700/60 bg-surface-raised w-full max-w-lg shadow-surface-xl overflow-hidden text-content-primary"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-5 border-b border-slate-700">
+            <div className="p-5 border-b border-slate-700/40">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <h3 className="font-bold text-lg text-slate-100">{t('avg_points_per_member')}</h3>
                 <div className="flex gap-2 flex-wrap">
@@ -546,7 +554,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                       setStatsViewMode(e.target.value);
                       setStatsSubFilter('');
                     }}
-                    className="text-xs bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-slate-200"
+                    className="text-xs bg-surface-overlay border border-slate-600/60 rounded-lg px-2 py-1.5 text-content-primary"
                   >
                     <option value="global">{t('stats_view_global')}</option>
                     <option value="area">{t('stats_view_area')}</option>
@@ -556,7 +564,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                     <select
                       value={statsSubFilter}
                       onChange={(e) => setStatsSubFilter(e.target.value)}
-                      className="text-xs bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-slate-200"
+                      className="text-xs bg-surface-overlay border border-slate-600/60 rounded-lg px-2 py-1.5 text-content-primary"
                     >
                       <option value="">{t('stats_select_area')}</option>
                       {avgByArea.map(({ categoryId, count }) => {
@@ -573,7 +581,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                     <select
                       value={statsSubFilter}
                       onChange={(e) => setStatsSubFilter(e.target.value)}
-                      className="text-xs bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-slate-200"
+                      className="text-xs bg-surface-overlay border border-slate-600/60 rounded-lg px-2 py-1.5 text-content-primary"
                     >
                       <option value="">{t('stats_select_status')}</option>
                       {avgByLevel.map(({ role, count }) => (
@@ -587,32 +595,32 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
               </div>
               {filteredMembers.length > 0 ? (
                 <>
-                  <p className="text-2xl font-bold text-emerald-400">{avgFiltered} pts</p>
-                  <div className="flex gap-4 mt-2 text-sm text-slate-400">
-                    <span>{t('std_deviation')}: <span className="font-mono text-slate-300">{stdDev}</span></span>
-                    <span className="text-slate-500">({filteredMembers.length})</span>
+                  <p className="text-2xl font-bold text-primary">{avgFiltered} pts</p>
+                  <div className="flex gap-4 mt-2 text-sm text-content-tertiary">
+                    <span>{t('std_deviation')}: <span className="font-mono text-content-secondary">{stdDev}</span></span>
+                    <span>({filteredMembers.length})</span>
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-slate-500 py-2">
+                <p className="text-sm text-content-tertiary py-2">
                   {statsViewMode === 'global' ? t('stats_no_members') : (statsViewMode === 'area' ? t('stats_select_area') : t('stats_select_status'))}
                 </p>
               )}
             </div>
             {filteredMembers.length > 0 && (
-              <div className="p-5">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{t('points_distribution')}</h4>
+              <div className="p-5 border-t border-slate-700/40">
+                <h4 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-2">{t('points_distribution')}</h4>
                 <PointsHistogram distribution={distribution} />
               </div>
             )}
-            <div className="p-5 border-t border-slate-700">
-              <button
-                type="button"
+            <div className="p-5 border-t border-slate-700/40">
+              <Button
+                variant="secondary"
                 onClick={() => { setShowPointsDetail(false); setStatsViewMode('global'); setStatsSubFilter(''); }}
-                className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors"
+                className="w-full"
               >
                 {t('merit_detail_close')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>,

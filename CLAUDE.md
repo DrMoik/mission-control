@@ -69,3 +69,175 @@ Derived in `App.jsx` from `userProfile.platformRole` and `currentMembership.role
 - Views are full-page screens in `src/views/`; shared UI primitives are in `src/components/`.
 - `src/components/layout/` — Card, Section, PageContainer.
 - `src/components/ui/` — Buttons, inputs, avatars, badges, modals.
+
+
+## UI System (Critical)
+
+All UI must follow a premium, minimal, high-consistency design system.
+
+Claude must not directly generate or modify UI without first evaluating structure, hierarchy, and proportions.
+
+---
+
+### Philosophy
+
+- Premium = restraint, not decoration
+- Structure before styling
+- Hierarchy before color
+- Composition before components
+- Motion must clarify, not decorate
+- Avoid clutter and visual noise
+- Components must feel cohesive across the entire app
+- No emoji-based design
+- No generic dashboard templates
+
+---
+
+### UI Enforcement Protocol (Mandatory)
+
+For any UI-related task, Claude MUST follow:
+
+1. DIAGNOSE  
+2. CRITIQUE  
+3. REDESIGN  
+4. IMPLEMENT  
+
+Skipping steps is not allowed.
+
+---
+
+### 1. DIAGNOSE
+
+Briefly identify:
+
+- Primary focal element (or absence of one)
+- Hierarchy clarity (what is seen first, second, third)
+- Layout and proportion issues (uniform cards, weak dominance, poor spacing)
+- Typography hierarchy issues
+- Surface inconsistency (too many styles, borders, shadows)
+- Motion gaps (missing or meaningless transitions)
+
+---
+
+### 2. CRITIQUE
+
+If issues exist:
+
+- State them explicitly
+- Explain why they reduce perceived quality
+- Identify whether the issue is structural (layout/hierarchy) or cosmetic
+
+Do not accept weak UI silently.
+
+---
+
+### 3. REDESIGN
+
+Before coding:
+
+- Define primary vs secondary sections
+- Adjust layout proportions (introduce dominance and contrast in size/spacing)
+- Reduce or merge unnecessary components
+- Introduce visual rhythm (contrast between dense and sparse areas)
+- Decide where motion is needed and where it is not
+
+Structural fixes take priority over styling.
+
+---
+
+### 4. IMPLEMENT
+
+- Use PageContainer → Section → Card hierarchy
+- Reuse primitives from `src/components/layout/` and `src/components/ui/`
+- Do not introduce new UI patterns without justification
+- Keep components modular and reusable
+- Maintain consistent spacing scale: 4 / 8 / 12 / 16 / 24 / 32
+
+---
+
+### FINAL CHECK (Required)
+
+Reject output if:
+
+- No clear focal point exists
+- Layout feels flat or overly uniform
+- Spacing is inconsistent
+- Components compete equally for attention
+- UI looks generic or template-like
+- Motion is absent where state changes occur
+
+Revise before returning.
+
+---
+
+### Layout Rules
+
+- Avoid grids where all elements have equal weight
+- Introduce dominant sections (size, spacing, or position)
+- Ensure clear reading flow across the screen
+- Use negative space intentionally to create breathing room
+
+---
+
+### Components
+
+- Reuse primitives; do not duplicate patterns
+- Badges must feel like achievements, not labels
+- Leaderboards must emphasize rank and hierarchy clearly
+- Profiles must balance identity richness with structure
+- Avoid component inflation (too many cards, panels, or nested elements)
+
+---
+
+### Styling (Tailwind)
+
+- Prefer subtle borders over heavy shadows
+- Shadows only for elevation, not decoration
+- Use rounded-2xl for primary containers, rounded-xl for secondary
+- Avoid excessive colors; rely on contrast and typography
+- Avoid gradients unless structurally justified
+
+---
+
+### Interaction and Motion
+
+- Motion must communicate state change, focus, or hierarchy
+- Hover: subtle elevation or scale only
+- Transitions: 150–200ms, ease-out
+- Avoid exaggerated or decorative animation
+- Do not animate everything — only meaningful elements
+
+---
+
+### Anti-patterns (Forbidden)
+
+Do not attempt to improve UI by:
+
+- Adding gradients without structural changes
+- Adding more colors instead of fixing hierarchy
+- Increasing shadows arbitrarily
+- Adding more components instead of simplifying
+- Making all cards visually similar
+- Overusing borders, badges, or icons
+
+Fix structure first, styling second.
+
+---
+
+### Critical Behavior
+
+If a requested UI is:
+
+- cluttered  
+- inconsistent  
+- visually noisy  
+- structurally weak  
+- lacking hierarchy  
+
+Claude MUST:
+
+1. Explain the problem clearly  
+2. Propose a stronger layout/composition  
+3. Implement the improved version  
+
+Do not comply passively with poor design decisions.

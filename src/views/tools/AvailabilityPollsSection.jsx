@@ -1,9 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { t, lang } from '../../strings.js';
 import { ensureString } from '../../utils.js';
 import ModalOverlay from '../../components/ModalOverlay.jsx';
 import PickerField from '../../components/ui/PickerField.jsx';
+import Card from '../../components/layout/Card.jsx';
+import Button from '../../components/ui/Button.jsx';
+import Input from '../../components/ui/Input.jsx';
+import Textarea from '../../components/ui/Textarea.jsx';
 
 const SLOT_STEP_OPTIONS = [15, 30, 60];
 const todayLocal = () => {
@@ -23,7 +27,6 @@ const createPollForm = () => ({
   startTime: '09:00',
   endTime: '18:00',
   slotMinutes: 30,
-  proposedSlots: {},
 });
 
 const makeSlotKey = (date, time) => `${date}__${time}`;
@@ -51,12 +54,6 @@ const normalizeSlotList = (items = []) => {
   if (!Array.isArray(items)) return [];
   return [...new Set(items.map((item) => String(item || '').trim()).filter(Boolean))].sort();
 };
-
-const collectSelectedKeys = (selectedMap = {}) =>
-  Object.entries(selectedMap)
-    .filter(([, selected]) => Boolean(selected))
-    .map(([key]) => key)
-    .sort();
 
 const addMinutes = (time, minutesToAdd) => {
   const [hours, minutes] = String(time || '00:00').split(':').map(Number);
@@ -143,11 +140,11 @@ function SelectionMatrix({
               Hora
             </th>
             {dates.map((date) => (
-              <th key={date} className="min-w-[92px] border-b border-slate-700 bg-slate-900 px-2 py-1.5 text-center sm:min-w-[104px]">
+              <th key={date} className="min-w-[72px] border-b border-slate-700 bg-slate-900 px-1.5 py-1 text-center sm:min-w-[84px]">
                 <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400 sm:text-[10px]">
                   {new Date(`${date}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'short' })}
                 </div>
-                <div className="mt-0.5 text-[11px] font-semibold text-slate-100 sm:text-xs">{formatDate(date)}</div>
+                <div className="mt-0.5 text-[10px] font-semibold text-slate-100 sm:text-[11px]">{formatDate(date)}</div>
               </th>
             ))}
           </tr>
@@ -155,7 +152,7 @@ function SelectionMatrix({
         <tbody>
           {times.map((time) => (
             <tr key={time}>
-              <th className="sticky left-0 z-10 border-r border-t border-slate-700 bg-slate-900 px-2 py-2 text-left text-[11px] font-medium text-slate-300 sm:text-xs">
+              <th className="sticky left-0 z-10 border-r border-t border-slate-700 bg-slate-900 px-1.5 py-1.5 text-left text-[10px] font-medium text-slate-300 sm:text-[11px]">
                 {time}
               </th>
               {dates.map((date) => {
@@ -168,35 +165,46 @@ function SelectionMatrix({
                 const baseClass = !enabled
                   ? 'bg-slate-950/30 text-slate-700'
                   : isAgreed
-                    ? 'bg-emerald-400 text-slate-950 border-emerald-300'
-                    : selected
-                      ? 'bg-emerald-500/80 text-slate-950 border-emerald-300'
-                      : intensity >= 0.75
-                        ? 'bg-emerald-900/70 text-emerald-100 border-emerald-700/80'
-                        : intensity >= 0.4
-                          ? 'bg-emerald-950/60 text-emerald-200 border-emerald-900/70'
-                          : 'bg-slate-900/90 text-slate-300 border-slate-800';
+                    ? 'bg-emerald-300 border-emerald-200 text-slate-950'
+                    : intensity >= 0.9
+                      ? 'bg-emerald-300/95 border-emerald-200/90 text-slate-950'
+                      : intensity >= 0.7
+                        ? 'bg-emerald-400/70 border-emerald-300/80 text-slate-950'
+                        : intensity >= 0.45
+                          ? 'bg-emerald-500/45 border-emerald-400/65 text-slate-100'
+                          : intensity > 0
+                            ? 'bg-emerald-700/28 border-emerald-600/45 text-slate-200'
+                            : 'bg-slate-900/90 border-slate-800 text-slate-300';
 
                 return (
-                  <td key={slotKey} className="border-t border-slate-800 p-1">
+                  <td key={slotKey} className="border-t border-slate-800 p-0.5">
                     {enabled ? (
                       <button
                         type="button"
                         disabled={readOnly}
                         onClick={() => onToggleSlot?.(date, time)}
-                        className={`group flex h-14 w-full min-w-[84px] flex-col items-center justify-center rounded-lg border px-1.5 py-1 text-center transition-all sm:h-16 sm:min-w-[96px] ${
-                          readOnly ? 'cursor-default' : 'hover:-translate-y-[1px] hover:border-emerald-400/60'
+                        className={`group relative flex h-9 w-full min-w-[64px] items-center justify-center rounded-md border px-1 py-0.5 text-center transition-all sm:h-10 sm:min-w-[72px] ${
+                          readOnly ? 'cursor-default' : 'hover:-translate-y-[1px] hover:border-emerald-200/80'
                         } ${baseClass}`}
+                        title={
+                          isAgreed
+                            ? `Acordado: ${formatDate(date)} ${time}`
+                            : count > 0
+                              ? `${count} disponible${count === 1 ? '' : 's'}`
+                              : selected
+                                ? 'Seleccionado'
+                                : 'Disponible'
+                        }
                       >
-                        <span className="text-[10px] font-semibold leading-tight sm:text-[11px]">
-                          {isAgreed ? 'Acordado' : selected ? 'Seleccionado' : count > 0 ? `${count} disponible${count === 1 ? '' : 's'}` : 'Disponible'}
-                        </span>
-                        <span className={`mt-0.5 text-[9px] leading-tight sm:text-[10px] ${selected || isAgreed ? 'text-slate-950/80' : 'text-slate-400 group-hover:text-slate-200'}`}>
-                          {selected || isAgreed ? 'Click para ajustar' : 'Click para marcar'}
-                        </span>
+                        {selected ? (
+                          <span className="pointer-events-none absolute inset-0 rounded-md border-4 border-red-300 shadow-[0_0_0_2px_rgba(217,70,239,0.35)]" />
+                        ) : null}
+                        {isAgreed ? (
+                          <span className="pointer-events-none absolute inset-0 rounded-md border-4 border-amber-200 shadow-[0_0_0_2px_rgba(251,191,36,0.3)]" />
+                        ) : null}
                       </button>
                     ) : (
-                      <div className="h-14 min-w-[84px] rounded-lg border border-dashed border-slate-800 bg-slate-950/20 sm:h-16 sm:min-w-[96px]" />
+                      <div className="h-9 min-w-[64px] rounded-md border border-dashed border-slate-800 bg-slate-950/20 sm:h-10 sm:min-w-[72px]" />
                     )}
                   </td>
                 );
@@ -237,33 +245,13 @@ export default function AvailabilityPollsSection({
     () => new Set(draftDates.flatMap((date) => draftTimes.map((time) => makeSlotKey(date, time)))),
     [draftDates, draftTimes],
   );
-
-  const toggleDraftSlot = (date, time) => {
-    const slotKey = makeSlotKey(date, time);
-    setForm((current) => ({
-      ...current,
-      proposedSlots: {
-        ...current.proposedSlots,
-        [slotKey]: !current.proposedSlots[slotKey],
-      },
-    }));
-  };
-
-  const clearUnavailableDraftSlots = () => {
-    setForm((current) => {
-      const nextSlots = {};
-      Object.entries(current.proposedSlots).forEach(([key, selected]) => {
-        if (!selected || !draftEnabledSlots.has(key)) return;
-        nextSlots[key] = true;
-      });
-      return { ...current, proposedSlots: nextSlots };
-    });
-  };
+  const toggleDraftSlot = () => {};
+  const clearUnavailableDraftSlots = () => {};
 
   const handleCreate = async (e) => {
     e.preventDefault();
     const title = form.title.trim();
-    const proposedSlots = collectSelectedKeys(form.proposedSlots).filter((key) => draftEnabledSlots.has(key));
+    const proposedSlots = [...draftEnabledSlots].sort();
     if (!title || proposedSlots.length === 0) return;
 
     const dateOptions = [...new Set(proposedSlots.map((key) => parseSlotKey(key).date))].sort();
@@ -297,177 +285,157 @@ export default function AvailabilityPollsSection({
   return (
     <div className="space-y-4">
       {canCreate && (
-        <div className="space-y-3">
+        <div className="flex justify-end">
           {!showCreateForm && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(true)}
-                className="rounded bg-emerald-500 px-4 py-2 text-sm font-semibold text-black"
-              >
-                Nueva encuesta
-              </button>
-            </div>
+            <Button size="sm" onClick={() => setShowCreateForm(true)}>
+              Nueva encuesta
+            </Button>
           )}
 
           {showCreateForm && (
             <ModalOverlay onClickBackdrop={() => { setShowCreateForm(false); setForm(createPollForm()); }}>
-              <form onSubmit={handleCreate} className="w-[min(96vw,1200px)] space-y-5 rounded-2xl border border-slate-700 bg-slate-800 p-4 shadow-2xl">
-              <div className="border-b border-slate-700 pb-3 text-center">
-                <div className="text-lg font-semibold text-slate-100">Coordinar horario</div>
-                <div className="mt-1 text-xs text-slate-400">Elige un rango y marca con clics exactamente los horarios que quieres proponer.</div>
-              </div>
+              <form onSubmit={handleCreate} className="space-y-4 rounded-xl border border-slate-700 bg-slate-800 p-4">
+                <div className="border-b border-slate-700 pb-3 text-center">
+                  <div className="text-lg font-semibold text-slate-100">Coordinar horario</div>
+                  <div className="mt-1 text-xs text-slate-500">Define solo el marco temporal. Despues, la comunidad vota directamente en la cuadrícula.</div>
+                </div>
 
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_220px]">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Titulo</label>
-                  <input
-                    value={form.title}
-                    onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))}
-                    placeholder="Ej. Reunion de integracion del sistema"
-                    className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">{t('scope_label')}</label>
-                  <select
-                    value={form.categoryId}
-                    onChange={(e) => setForm((current) => ({ ...current, categoryId: e.target.value }))}
-                    className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-                  >
-                    <option value="">{t('scope_global')}</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {t('scope_category')} {ensureString(category.name, lang)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Descripcion</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))}
-                  placeholder="Que se va a coordinar y que criterios importa considerar"
-                  className="mt-1 min-h-[90px] w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-                />
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Fecha inicial</label>
-                  <PickerField
-                    type="date"
-                    value={form.startDate}
-                    onChange={(value) => setForm((current) => ({ ...current, startDate: value }))}
-                    min={minDate}
-                    placeholder="Seleccionar fecha"
-                    className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Fecha final</label>
-                  <PickerField
-                    type="date"
-                    value={form.endDate}
-                    onChange={(value) => setForm((current) => ({ ...current, endDate: value }))}
-                    min={form.startDate || minDate}
-                    placeholder="Seleccionar fecha"
-                    className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Hora inicial</label>
-                  <PickerField
-                    type="time"
-                    value={form.startTime}
-                    onChange={(value) => setForm((current) => ({ ...current, startTime: value }))}
-                    placeholder="Seleccionar hora"
-                    className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Hora final</label>
-                  <PickerField
-                    type="time"
-                    value={form.endTime}
-                    onChange={(value) => setForm((current) => ({ ...current, endTime: value }))}
-                    placeholder="Seleccionar hora"
-                    className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Intervalo</label>
-                  <select
-                    value={form.slotMinutes}
-                    onChange={(e) => setForm((current) => ({ ...current, slotMinutes: Number(e.target.value) || 30 }))}
-                    className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
-                  >
-                    {SLOT_STEP_OPTIONS.map((option) => (
-                      <option key={option} value={option}>{option} min</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-700 bg-slate-900/40 p-3">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_220px]">
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Horarios propuestos</div>
+                    <label className="block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Titulo</label>
+                    <Input
+                      value={form.title}
+                      onChange={(e) => setForm((current) => ({ ...current, title: e.target.value }))}
+                      placeholder="Ej. Reunion de integracion del sistema"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">{t('scope_label')}</label>
+                    <select
+                      value={form.categoryId}
+                      onChange={(e) => setForm((current) => ({ ...current, categoryId: e.target.value }))}
+                      className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                    >
+                      <option value="">{t('scope_global')}</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {t('scope_category')} {ensureString(category.name, lang)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Descripcion</label>
+                  <Textarea
+                    value={form.description}
+                    onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))}
+                    placeholder="Que se va a coordinar y que criterios importa considerar"
+                    className="mt-1 min-h-[80px]"
+                  />
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                  <div>
+                    <label className="block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Fecha inicial</label>
+                    <PickerField
+                      type="date"
+                      value={form.startDate}
+                      onChange={(value) => setForm((current) => ({ ...current, startDate: value }))}
+                      min={minDate}
+                      placeholder="Seleccionar fecha"
+                      className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Fecha final</label>
+                    <PickerField
+                      type="date"
+                      value={form.endDate}
+                      onChange={(value) => setForm((current) => ({ ...current, endDate: value }))}
+                      min={form.startDate || minDate}
+                      placeholder="Seleccionar fecha"
+                      className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Hora inicial</label>
+                    <PickerField
+                      type="time"
+                      value={form.startTime}
+                      onChange={(value) => setForm((current) => ({ ...current, startTime: value }))}
+                      placeholder="Seleccionar hora"
+                      className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Hora final</label>
+                    <PickerField
+                      type="time"
+                      value={form.endTime}
+                      onChange={(value) => setForm((current) => ({ ...current, endTime: value }))}
+                      placeholder="Seleccionar hora"
+                      className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Intervalo</label>
+                    <select
+                      value={form.slotMinutes}
+                      onChange={(e) => setForm((current) => ({ ...current, slotMinutes: Number(e.target.value) || 30 }))}
+                      className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+                    >
+                      {SLOT_STEP_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option} min</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                  <div className="mb-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Vista previa del marco temporal</div>
                     <div className="mt-1 text-xs text-slate-500">
-                      Marca solo las celdas que quieras habilitar para la encuesta.
+                      La encuesta se crea con todos los bloques del rango. La votacion ocurre despues en la cuadrícula.
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={clearUnavailableDraftSlots}
-                      className="rounded border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-200"
-                    >
-                      Limpiar fuera del rango
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm((current) => ({ ...current, proposedSlots: {} }))}
-                      className="rounded border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-red-500/50 hover:text-red-300"
-                    >
-                      Borrar selección
-                    </button>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-3">
+                      <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Dias</div>
+                      <div className="mt-1 text-lg font-semibold text-slate-100">{draftDates.length}</div>
+                    </div>
+                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-3">
+                      <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Horarios por dia</div>
+                      <div className="mt-1 text-lg font-semibold text-slate-100">{draftTimes.length}</div>
+                    </div>
+                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-3">
+                      <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Bloques totales</div>
+                      <div className="mt-1 text-lg font-semibold text-slate-100">{draftEnabledSlots.size}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-xs text-slate-500">
+                    {draftDates.length > 0 && draftTimes.length > 0
+                      ? `Desde ${formatDate(draftDates[0])} hasta ${formatDate(draftDates[draftDates.length - 1])}`
+                      : 'Selecciona un rango valido para crear la encuesta'}
                   </div>
                 </div>
 
-                <SelectionMatrix
-                  dates={draftDates}
-                  times={draftTimes}
-                  enabledSlots={draftEnabledSlots}
-                  selectedSlots={form.proposedSlots}
-                  onToggleSlot={toggleDraftSlot}
-                />
-
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="text-slate-400">
-                    {collectSelectedKeys(form.proposedSlots).filter((key) => draftEnabledSlots.has(key)).length} horarios seleccionados
-                  </span>
-                  <span className="text-slate-500">
-                    Consejo: puedes proponer solo algunos bloques y dejar otros fuera.
-                  </span>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => { setShowCreateForm(false); setForm(createPollForm()); }}
+                  >
+                    {t('cancel')}
+                  </Button>
+                  <Button type="submit" size="sm">
+                    Crear encuesta
+                  </Button>
                 </div>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setShowCreateForm(false); setForm(createPollForm()); }}
-                  className="text-xs text-slate-400 underline"
-                >
-                  {t('cancel')}
-                </button>
-                <button type="submit" className="rounded bg-emerald-500 px-4 py-2 text-sm font-semibold text-black">
-                  Crear encuesta
-                </button>
-              </div>
               </form>
             </ModalOverlay>
           )}
@@ -540,43 +508,65 @@ export default function AvailabilityPollsSection({
         };
 
         return (
-          <div key={poll.id} className="overflow-hidden rounded-xl border border-slate-700 bg-slate-800">
-            <div className="flex items-start gap-3 px-4 py-3">
-              <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : poll.id)}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-sm font-semibold text-slate-100">{ensureString(poll.title, lang)}</div>
-                  {poll.categoryId ? (
-                    <span className="rounded-full bg-blue-900/40 px-1.5 py-0.5 text-[9px] text-blue-300">
-                      {t('scope_category')} {ensureString(categories.find((category) => category.id === poll.categoryId)?.name, lang) || poll.categoryId}
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-slate-700 px-1.5 py-0.5 text-[9px] text-slate-500">{t('scope_global')}</span>
-                  )}
+          <Card
+            key={poll.id}
+            padding={false}
+            className={`overflow-hidden${poll.agreedSlot ? ' border-l-2 border-l-emerald-400' : ''}`}
+          >
+            <button
+              type="button"
+              onClick={() => setExpandedId(isExpanded ? null : poll.id)}
+              className="w-full px-4 py-3 text-left"
+            >
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-semibold text-slate-100">{ensureString(poll.title, lang)}</div>
+                    {poll.categoryId ? (
+                      <span className="rounded-full bg-blue-900/40 px-1.5 py-0.5 text-[9px] text-blue-300">
+                        {t('scope_category')} {ensureString(categories.find((category) => category.id === poll.categoryId)?.name, lang) || poll.categoryId}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-700 px-1.5 py-0.5 text-[9px] text-slate-500">{t('scope_global')}</span>
+                    )}
+                  </div>
+                  {poll.description && <div className="mt-1 text-xs text-slate-500">{poll.description}</div>}
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
+                    <span>{totalResponses} respuesta{totalResponses === 1 ? '' : 's'}</span>
+                    <span>{proposedSlotKeys.length} horario{proposedSlotKeys.length === 1 ? '' : 's'} propuesto{proposedSlotKeys.length === 1 ? '' : 's'}</span>
+                    {bestSlot && !poll.agreedSlot && <span>Mejor opcion actual: {formatDate(bestSlot.date)} a las {bestSlot.time}</span>}
+                    {poll.agreedSlot && (
+                      <span className="font-semibold text-emerald-300">
+                        Acordado: {formatDate(poll.agreedSlot.date)} a las {poll.agreedSlot.time}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {poll.description && <div className="mt-1 text-xs text-slate-400">{poll.description}</div>}
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
-                  <span>{totalResponses} respuesta{totalResponses === 1 ? '' : 's'}</span>
-                  <span>{proposedSlotKeys.length} horario{proposedSlotKeys.length === 1 ? '' : 's'} propuesto{proposedSlotKeys.length === 1 ? '' : 's'}</span>
-                  {bestSlot && !poll.agreedSlot && <span>Mejor opcion actual: {formatDate(bestSlot.date)} a las {bestSlot.time}</span>}
-                  {poll.agreedSlot && <span className="text-emerald-300">Acordado: {formatDate(poll.agreedSlot.date)} a las {poll.agreedSlot.time}</span>}
-                </div>
-              </div>
 
-              <div className="flex shrink-0 items-center gap-2">
-                {canEditThis && (
-                  <button type="button" onClick={() => onDeletePoll(poll.id)} className="text-[11px] text-red-400 underline">
-                    {t('delete')}
-                  </button>
-                )}
-                <button type="button" onClick={() => setExpandedId(isExpanded ? null : poll.id)} className="text-slate-400">
-                  {isExpanded ? '▲' : '▼'}
-                </button>
+                <div
+                  className="flex shrink-0 items-center gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {canEditThis && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="text-red-400"
+                      onClick={() => onDeletePoll(poll.id)}
+                    >
+                      {t('delete')}
+                    </Button>
+                  )}
+                  <ChevronDown
+                    className={`h-4 w-4 text-slate-400 transition-transform duration-150 ease-out-smooth${isExpanded ? ' rotate-180' : ''}`}
+                  />
+                </div>
               </div>
-            </div>
+            </button>
 
             {isExpanded && (
               <div className="space-y-4 border-t border-slate-700 px-4 py-4">
-                <div className="rounded-xl border border-slate-700 bg-slate-900/50 p-3">
+                <Card>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Disponibilidad por horario</div>
@@ -589,11 +579,11 @@ export default function AvailabilityPollsSection({
                     {!poll.agreedSlot && (
                       <div className="flex flex-wrap gap-2 text-[11px] text-slate-400">
                         <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2 py-1">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500/80" />
+                          <span className="h-2.5 w-4 rounded-full border border-emerald-50/95 bg-transparent" />
                           Tu selección
                         </span>
                         <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2 py-1">
-                          <span className="h-2 w-2 rounded-full bg-emerald-900/80" />
+                          <span className="h-1.5 w-4 rounded-full bg-emerald-200" />
                           Más coincidencias
                         </span>
                       </div>
@@ -611,10 +601,10 @@ export default function AvailabilityPollsSection({
                     onToggleSlot={toggleSlot}
                     readOnly={!myMembershipId || Boolean(poll.agreedSlot)}
                   />
-                </div>
+                </Card>
 
                 <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_360px]">
-                  <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+                  <Card>
                     <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Participantes</div>
                     <div className="space-y-1 text-sm text-slate-300">
                       {Object.keys(responses).length > 0 ? Object.keys(responses).map((membershipId) => (
@@ -628,9 +618,10 @@ export default function AvailabilityPollsSection({
                         <div className="text-slate-500">Aun no hay respuestas.</div>
                       )}
                     </div>
-                  </div>
+                  </Card>
+
                   <div className="space-y-3">
-                    <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+                    <Card>
                       <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Mejores coincidencias</div>
                       <div className="space-y-2">
                         {sortedSuggestions.slice(0, 5).map(({ slotKey, count }) => {
@@ -643,13 +634,13 @@ export default function AvailabilityPollsSection({
                                 <div className="text-xs text-slate-500">{count} disponible{count === 1 ? '' : 's'}</div>
                               </div>
                               {canEditThis && !poll.agreedSlot ? (
-                                <button
-                                  type="button"
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
                                   onClick={() => finalizeSlot(slotKey)}
-                                  className="rounded bg-amber-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition-colors hover:bg-amber-300"
                                 >
                                   Acordar
-                                </button>
+                                </Button>
                               ) : isAgreed ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-[11px] font-semibold text-emerald-300">
                                   <Check className="h-3.5 w-3.5" />
@@ -663,13 +654,13 @@ export default function AvailabilityPollsSection({
                           <div className="text-sm text-slate-500">Todavia no hay horarios seleccionados en esta encuesta.</div>
                         )}
                       </div>
-                    </div>
+                    </Card>
 
-                    <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+                    <Card>
                       <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Estado del acuerdo</div>
                       {poll.agreedSlot ? (
                         <div className="space-y-2">
-                          <div className="text-sm text-emerald-300">
+                          <div className="text-sm font-semibold text-emerald-300">
                             {formatDate(poll.agreedSlot.date)} a las {poll.agreedSlot.time}
                           </div>
                           <div className="text-xs text-slate-500">
@@ -681,20 +672,20 @@ export default function AvailabilityPollsSection({
                             </div>
                           )}
                           {canEditThis && (
-                            <button type="button" onClick={clearAgreement} className="text-xs text-amber-300 underline">
+                            <Button variant="link" size="sm" onClick={clearAgreement}>
                               Quitar acuerdo
-                            </button>
+                            </Button>
                           )}
                         </div>
                       ) : (
-                        <div className="text-sm text-slate-400">Aun no se ha fijado un horario final.</div>
+                        <div className="text-sm text-slate-500">Aun no se ha fijado un horario final.</div>
                       )}
-                    </div>
+                    </Card>
                   </div>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         );
       })}
     </div>

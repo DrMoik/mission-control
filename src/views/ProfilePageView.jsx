@@ -35,7 +35,7 @@ function readAsDataUrl(file) {
 function SectionHeading({ label }) {
   return (
     <div className="flex items-center gap-2 mt-6 mb-2">
-      <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{label}</h4>
+      <h4 className="text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{label}</h4>
       <div className="flex-1 h-px bg-gradient-to-r from-slate-600 to-transparent" />
     </div>
   );
@@ -336,18 +336,18 @@ export default function ProfilePageView({
         </div>
       </div>
 
-      <div className="relative z-0 pt-28 px-4 sm:px-6 lg:px-8 pb-8 bg-slate-800/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-slate-700/50 w-full">
+      <div className="relative z-0 pt-28 px-4 sm:px-6 lg:px-8 pb-8 bg-surface-raised/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-slate-700/40 w-full">
 
         {/* Profile completion indicator */}
         {canEditThis && profileCompletion.percentage < 100 && (
-          <div className="mb-4 p-3 bg-slate-900/60 rounded-lg border border-slate-600/50">
+          <div className="mb-4 p-3 bg-surface-sunken/60 rounded-xl border border-slate-700/40">
             <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-xs text-slate-400">{t('profile_completion')}</span>
-              <span className="text-sm font-semibold text-slate-300">{profileCompletion.percentage}% {t('profile_complete_pct')}</span>
+              <span className="text-xs text-content-secondary">{t('profile_completion')}</span>
+              <span className="text-sm font-semibold text-content-primary">{profileCompletion.percentage}% {t('profile_complete_pct')}</span>
             </div>
-            <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface-overlay rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${profileCompletion.percentage >= 100 ? 'bg-emerald-500' : 'bg-amber-500/80'}`}
+                className={`h-full rounded-full transition-all ${profileCompletion.percentage >= 100 ? 'bg-primary' : 'bg-amber-500/80'}`}
                 style={{ width: `${profileCompletion.percentage}%` }}
               />
             </div>
@@ -356,28 +356,28 @@ export default function ProfilePageView({
 
         {editing ? (
           <div className="space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-700">
-              <span className="text-xs text-slate-400">{t('edit_profile')}</span>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-700/40">
+              <span className="text-xs text-content-secondary">{t('edit_profile')}</span>
               <div className="flex gap-2">
-                <button onClick={() => setEditing(false)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
-                <button onClick={handleSave} className="text-xs bg-emerald-500 text-black font-semibold px-4 py-1.5 rounded">{t('save_profile')}</button>
+                <button onClick={() => setEditing(false)} className="text-xs text-content-tertiary hover:text-content-secondary underline transition-colors">{t('cancel')}</button>
+                <button onClick={handleSave} className="text-xs bg-gradient-to-br from-primary-hover to-primary hover:shadow-glow-sm text-white font-semibold px-4 py-1.5 rounded-lg active:scale-[0.97] transition-all">{t('save_profile')}</button>
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] text-slate-500 block mb-0.5">{t('display_name')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-0.5">{t('display_name')}</label>
               <AutoGrowInput value={draft.displayName} onChange={(v) => set('displayName', v)}
-                className="w-full min-w-0 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                className="w-full min-w-0 px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-sm text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none" />
             </div>
             <div>
-              <label className="text-[11px] text-slate-500 block mb-0.5">{t('email')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-0.5">{t('email')}</label>
               <input type="email" value={draft.email} onChange={(e) => set('email', e.target.value)}
                 placeholder={t('email_placeholder')}
-                className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-sm text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none" />
             </div>
 
             <div>
-              <label className="text-[11px] text-slate-500 block mb-0.5">{t('profile_photo_url')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-0.5">{t('profile_photo_url')}</label>
               <div className="flex gap-2 items-center flex-wrap">
                 {draft.photoURL ? (
                   <SafeProfileImage
@@ -390,14 +390,14 @@ export default function ProfilePageView({
                   <div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>
                 )}
                 <input value={draft.photoURL} onChange={(e) => set('photoURL', e.target.value)}
-                  placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                  placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-sm text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none" />
                 <input type="file" accept="image/*" className="hidden" ref={photoFileRef}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) { readAsDataUrl(f).then((url) => { set('photoURL', url); setCropTarget('photoURL'); }); e.target.value = ''; }
                   }} />
                 <button type="button" onClick={() => photoFileRef.current?.click()}
-                  className="shrink-0 px-2 py-1.5 bg-slate-600 hover:bg-slate-500 text-slate-200 text-[11px] font-medium rounded">
+                  className="shrink-0 px-2 py-1.5 bg-surface-overlay hover:bg-slate-700/50 text-content-secondary text-[11px] font-medium rounded-lg transition-colors">
                   {t('image_select_file')}
                 </button>
                 <button type="button" disabled={!draft.photoURL} onClick={() => setCropTarget('photoURL')}
@@ -411,7 +411,7 @@ export default function ProfilePageView({
             </div>
 
             <div>
-              <label className="text-[11px] text-slate-500 block mb-0.5">{t('cover_photo_url')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-0.5">{t('cover_photo_url')}</label>
               <div className="flex gap-2 items-center flex-wrap">
                 {draft.coverPhotoURL ? (
                   <SafeProfileImage
@@ -424,14 +424,14 @@ export default function ProfilePageView({
                   <div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>
                 )}
                 <input value={draft.coverPhotoURL} onChange={(e) => set('coverPhotoURL', e.target.value)}
-                  placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
+                  placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-sm text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none" />
                 <input type="file" accept="image/*" className="hidden" ref={coverFileRef}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) { readAsDataUrl(f).then((url) => { set('coverPhotoURL', url); setCropTarget('coverPhotoURL'); }); e.target.value = ''; }
                   }} />
                 <button type="button" onClick={() => coverFileRef.current?.click()}
-                  className="shrink-0 px-2 py-1.5 bg-slate-600 hover:bg-slate-500 text-slate-200 text-[11px] font-medium rounded">
+                  className="shrink-0 px-2 py-1.5 bg-surface-overlay hover:bg-slate-700/50 text-content-secondary text-[11px] font-medium rounded-lg transition-colors">
                   {t('image_select_file')}
                 </button>
                 <button type="button" disabled={!draft.coverPhotoURL} onClick={() => setCropTarget('coverPhotoURL')}
@@ -446,43 +446,43 @@ export default function ProfilePageView({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               <div>
-                <label className="text-[11px] text-slate-500 block mb-0.5">Fecha de nacimiento</label>
+                <label className="text-[11px] text-content-tertiary block mb-0.5">Fecha de nacimiento</label>
                 <PickerField type="date" value={draft.birthdate || ''} onChange={(value) => set('birthdate', value)}
                   placeholder="Seleccionar fecha"
-                  className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
+                  className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none" />
               </div>
               <div>
-                <label className="text-[11px] text-slate-500 block mb-0.5">{t('university')}</label>
+                <label className="text-[11px] text-content-tertiary block mb-0.5">{t('university')}</label>
                 <AutoGrowInput value={draft.university} onChange={(v) => set('university', v)}
                   placeholder="e.g. Tec de Monterrey"
-                  className="w-full min-w-0 px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs" />
+                  className="w-full min-w-0 px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none" />
               </div>
               <div>
-                <label className="text-[11px] text-slate-500 block mb-0.5">{t('career')}</label>
+                <label className="text-[11px] text-content-tertiary block mb-0.5">{t('career')}</label>
                 <select value={draft.career} onChange={(e) => set('career', e.target.value)}
-                  className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs">
+                  className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none">
                   {(careerOptions.includes('') ? careerOptions : ['', ...careerOptions]).map((o) => <option key={o || '_blank'} value={o}>{o || t('select_placeholder')}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-[11px] text-slate-500 block mb-0.5">{t('semester')}</label>
+                <label className="text-[11px] text-content-tertiary block mb-0.5">{t('semester')}</label>
                 <select value={draft.semester} onChange={(e) => set('semester', e.target.value)}
-                  className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs">
+                  className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none">
                   {(semesterOptions.includes('') ? semesterOptions : ['', ...semesterOptions]).map((o) => <option key={o || '_blank'} value={o}>{o || t('select_placeholder')}</option>)}
                 </select>
               </div>
             </div>
 
-            <div className="border-t border-slate-700 pt-3 space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_mission')}</p>
+            <div className="border-t border-slate-700/40 pt-3 space-y-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('section_mission')}</p>
               <BilingualField label={t('current_objective')} value={draft.currentObjective}
                 onChange={(v) => set('currentObjective', v)} placeholder={{ en: t('objective_ph'), es: t('objective_ph') }} />
               <BilingualField label={t('current_challenge')} value={draft.currentChallenge}
                 onChange={(v) => set('currentChallenge', v)} placeholder={{ en: t('challenge_ph'), es: t('challenge_ph') }} />
             </div>
 
-            <div className="border-t border-slate-700 pt-3 space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_collaboration')}</p>
+            <div className="border-t border-slate-700/40 pt-3 space-y-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('section_collaboration')}</p>
               <p className="text-[10px] text-slate-500">{t('collab_skill_hint')}</p>
               <SkillPicker label={t('looking_for_help_in')} value={draft.helpNeedsAreas ?? []} onChange={(v) => set('helpNeedsAreas', v)} skills={skillDictionary} allowedTypes={['technical','learning','support','collaboration']} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
               {(draft.lookingForHelpIn || []).length > 0 && (
@@ -542,8 +542,8 @@ export default function ProfilePageView({
               )}
             </div>
 
-            <div className="border-t border-slate-700 pt-3 space-y-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('about_label')}</p>
+            <div className="border-t border-slate-700/40 pt-3 space-y-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('about_label')}</p>
               <BilingualField label={t('about_me')} value={draft.bio} onChange={(v) => set('bio', v)}
                 multiline rows={3} placeholder={{ en: t('tell_team_placeholder'), es: t('tell_team_placeholder') }} />
               <BilingualField label={t('hobbies')} value={draft.hobbies} onChange={(v) => set('hobbies', v)}
@@ -552,8 +552,8 @@ export default function ProfilePageView({
                 placeholder={{ en: t('fun_fact_ph'), es: t('fun_fact_ph') }} />
             </div>
 
-            <div className="border-t border-slate-700 pt-3 space-y-4">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_culture')}</p>
+            <div className="border-t border-slate-700/40 pt-3 space-y-4">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('section_culture')}</p>
               <CultureSongField label={t('culture_what_i_listen')} value={draft.whatIListenTo || []} onChange={(v) => set('whatIListenTo', v)}
                 titlePlaceholder={t('song_title_ph')} urlPlaceholder={t('song_url_ph')} addLabel={t('culture_add')} maxItems={3} />
               <CultureListField label={t('culture_book_that_marked')} value={draft.bookThatMarkedMe || []} onChange={(v) => set('bookThatMarkedMe', v)}
@@ -563,9 +563,9 @@ export default function ProfilePageView({
               <CultureListField label={t('culture_quote_that_moves')} value={draft.quoteThatMovesMe || []} onChange={(v) => set('quoteThatMovesMe', v)}
                 placeholder="e.g. The best time to plant a tree was 20 years ago" addLabel={t('culture_add')} maxItems={3} />
               <div>
-                <label className="text-[11px] text-slate-500 block mb-0.5">{t('personality_tag_label')}</label>
+                <label className="text-[11px] text-content-tertiary block mb-0.5">{t('personality_tag_label')}</label>
                 <select value={draft.personalityTag} onChange={(e) => set('personalityTag', e.target.value)}
-                  className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs">
+                  className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none">
                   <option value="">{t('select_placeholder')}</option>
                   {(() => {
                     const tags = typeof personalityTags === 'object' && !Array.isArray(personalityTags)
@@ -585,7 +585,7 @@ export default function ProfilePageView({
                 <h2 className="text-xl font-bold">{ensureString(membership.displayName, lang)}</h2>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <RoleBadge role={membership.role} />
-                  {cat && <span className="text-xs text-slate-400">· {ensureString(cat.name, lang)}</span>}
+                  {cat && <span className="text-xs text-content-tertiary">· {ensureString(cat.name, lang)}</span>}
                   {totalPoints > 0 && (
                     <span className="text-[10px] bg-amber-900/50 text-amber-200 px-2 py-0.5 rounded-full border border-amber-700/50">
                       {totalPoints} pts
@@ -601,7 +601,7 @@ export default function ProfilePageView({
                   )}
                 </div>
                 {(membership.birthdate || membership.university || membership.career || membership.semester || membership.email) && (
-                  <div className="flex flex-wrap gap-3 text-xs text-slate-400 mt-2">
+                  <div className="flex flex-wrap gap-3 text-xs text-content-tertiary mt-2">
                     {membership.birthdate && (
                       <span className="inline-flex items-center gap-1.5">
                         <Cake className="w-3.5 h-3.5 text-slate-500 shrink-0" strokeWidth={2} />
@@ -617,7 +617,7 @@ export default function ProfilePageView({
                         `${ensureString(membership.semester, lang)} ${t('semester_suffix')}`
                       }</span>
                     )}
-                    {membership.email      && <a href={`mailto:${membership.email}`} className="text-emerald-400 hover:text-emerald-300">{membership.email}</a>}
+                    {membership.email      && <a href={`mailto:${membership.email}`} className="text-primary hover:text-primary/80">{membership.email}</a>}
                   </div>
                 )}
               </div>
@@ -625,7 +625,7 @@ export default function ProfilePageView({
                 {canEditThis && (
                   <button onClick={startEdit} className="text-xs text-amber-400 underline">{t('edit_profile')}</button>
                 )}
-                <button onClick={handleExportRecord} className="text-xs text-slate-400 hover:text-slate-200 underline">
+                <button onClick={handleExportRecord} className="text-xs text-content-tertiary hover:text-content-primary underline transition-colors">
                   {t('export_my_record')}
                 </button>
               </div>
@@ -638,11 +638,11 @@ export default function ProfilePageView({
               <SectionHeading label={t('about_label')} />
               {(getL(membership.bio, lang) || getL(membership.hobbies, lang) || getL(membership.funFact, lang)) ? (
                 <>
-                  {getL(membership.bio, lang) && <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{getL(membership.bio, lang)}</p>}
+                  {getL(membership.bio, lang) && <p className="text-sm text-content-primary leading-relaxed whitespace-pre-wrap">{getL(membership.bio, lang)}</p>}
                   {getL(membership.hobbies, lang) && (
                     <div className="mt-3">
-                      <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1.5">{t('hobbies')}</p>
-                      <ul className="list-disc list-inside text-sm text-slate-200 leading-relaxed space-y-0.5">
+                      <p className="text-[10px] text-content-tertiary font-semibold uppercase tracking-wide mb-1.5">{t('hobbies')}</p>
+                      <ul className="list-disc list-inside text-sm text-content-primary leading-relaxed space-y-0.5">
                         {getL(membership.hobbies, lang)
                           .split(/\n+/)
                           .map((line) => line.trim())
@@ -655,8 +655,8 @@ export default function ProfilePageView({
                   )}
                   {getL(membership.funFact, lang) && (
                     <div className="mt-3 bg-yellow-950/20 border border-yellow-800/40 rounded-lg px-3 py-2.5">
-                      <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-0.5">{t('fun_fact_label')}</p>
-                      <p className="text-sm text-slate-200 italic">&quot;{getL(membership.funFact, lang)}&quot;</p>
+                      <p className="text-[10px] text-content-tertiary font-semibold uppercase tracking-wide mb-0.5">{t('fun_fact_label')}</p>
+                      <p className="text-sm text-content-primary italic">&quot;{getL(membership.funFact, lang)}&quot;</p>
                     </div>
                   )}
                 </>
@@ -677,7 +677,7 @@ export default function ProfilePageView({
                       if (nextIdx !== idx) setSelectedWeekOf(availableWeeks[nextIdx]);
                     }}
                     disabled={availableWeeks.indexOf(weekOf) >= availableWeeks.length - 1}
-                    className="text-slate-400 hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-1"
+                    className="text-content-tertiary hover:text-content-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm px-1 transition-colors"
                     aria-label={t('week_prev') || 'Semana anterior'}
                   >
                     ←
@@ -693,7 +693,7 @@ export default function ProfilePageView({
                       if (nextIdx !== idx) setSelectedWeekOf(availableWeeks[nextIdx]);
                     }}
                     disabled={availableWeeks.indexOf(weekOf) <= 0}
-                    className="text-slate-400 hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm px-1"
+                    className="text-content-tertiary hover:text-content-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm px-1 transition-colors"
                     aria-label={t('week_next') || 'Semana siguiente'}
                   >
                     →
@@ -701,24 +701,24 @@ export default function ProfilePageView({
                 </div>
               )}
               {editingWeekly ? (
-                <div className="bg-slate-800 rounded-lg p-4 space-y-3">
+                <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
                   {[['advanced', t('weekly_advanced'), t('weekly_ph_advanced')], ['failedAt', t('weekly_failed_at'), t('weekly_ph_failed')], ['learned', t('weekly_learned'), t('weekly_ph_learned')]].map(([key, label, ph]) => (
                     <div key={key}>
-                      <label className="text-[11px] text-slate-400 block mb-0.5">{label}</label>
+                      <label className="text-[11px] text-content-secondary block mb-0.5">{label}</label>
                       <AutoGrowTextarea value={weeklyDraft[key]} onChange={(v) => setWeeklyDraft((d) => ({ ...d, [key]: v }))}
                         placeholder={ph} rows={2}
-                        className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm resize-none min-h-[48px]" />
+                        className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-sm text-content-primary resize-none min-h-[48px] focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none" />
                     </div>
                   ))}
                   <div className="flex gap-2 justify-end">
-                    <button onClick={() => setEditingWeekly(false)} disabled={savingWeekly} className="text-xs text-slate-400 underline disabled:opacity-50">{t('cancel')}</button>
-                    <button onClick={handleSaveWeekly} disabled={savingWeekly} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded disabled:opacity-60">
+                    <button onClick={() => setEditingWeekly(false)} disabled={savingWeekly} className="text-xs text-content-tertiary hover:text-content-secondary underline disabled:opacity-50 transition-colors">{t('cancel')}</button>
+                    <button onClick={handleSaveWeekly} disabled={savingWeekly} className="text-xs bg-gradient-to-br from-primary-hover to-primary hover:shadow-glow-sm text-white font-semibold px-3 py-1.5 rounded-lg disabled:opacity-60 active:scale-[0.97] transition-all">
                       {savingWeekly ? '…' : t('save')}
                     </button>
                   </div>
                 </div>
               ) : thisWeek ? (
-                <div className="bg-slate-800/60 rounded-lg p-4 space-y-3 border border-slate-700/30">
+                <div className="bg-surface-raised/60 rounded-xl p-4 space-y-3 border border-slate-700/40">
                   <div className="flex items-center justify-between">
                     {availableWeeks.length <= 1 && (
                       <p className="text-[10px] text-slate-500">{weekOf === currentWeekOf ? t('weekly_this_week') : `Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`}</p>
@@ -730,21 +730,21 @@ export default function ProfilePageView({
                     const str = ensureString(text, lang);
                     return str ? (
                       <div key={label}>
-                        <p className="text-[10px] text-slate-500 font-semibold">{label}</p>
-                        <p className="text-sm text-slate-200 leading-relaxed mt-0.5">{str}</p>
+                        <p className="text-[10px] text-content-tertiary font-semibold">{label}</p>
+                        <p className="text-sm text-content-primary leading-relaxed mt-0.5">{str}</p>
                       </div>
                     ) : null;
                   })}
                 </div>
               ) : (
-                <div className="flex items-center justify-between bg-slate-800/40 rounded-lg px-3 py-2">
+                <div className="flex items-center justify-between bg-surface-raised/40 rounded-xl px-3 py-2">
                   <p className="text-xs text-slate-500 italic">
                     {availableWeeks.length > 1
                       ? `${weekOf === currentWeekOf ? t('weekly_this_week') : `Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`} — ${t('no_weekly_status')}`
                       : t('no_weekly_status')}
                   </p>
                   {canEditThis && (
-                    <button onClick={startWeeklyEdit} className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1 rounded">{t('post_weekly_status')}</button>
+                    <button onClick={startWeeklyEdit} className="text-xs bg-gradient-to-br from-primary-hover to-primary hover:shadow-glow-sm text-white font-semibold px-3 py-1 rounded-lg active:scale-[0.97] transition-all">{t('post_weekly_status')}</button>
                   )}
                 </div>
               )}
@@ -755,15 +755,15 @@ export default function ProfilePageView({
                 <SectionHeading label={t('section_mission')} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {getL(membership.currentObjective, lang) && (
-                    <div className="bg-slate-800/60 rounded-lg p-3">
-                      <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1">{t('current_objective')}</p>
-                      <p className="text-sm text-slate-200 leading-relaxed">{getL(membership.currentObjective, lang)}</p>
+                    <div className="bg-surface-raised/60 rounded-xl p-3">
+                      <p className="text-[10px] text-content-tertiary font-semibold uppercase tracking-wide mb-1">{t('current_objective')}</p>
+                      <p className="text-sm text-content-primary leading-relaxed">{getL(membership.currentObjective, lang)}</p>
                     </div>
                   )}
                   {getL(membership.currentChallenge, lang) && (
                     <div className="bg-red-950/20 border border-red-900/30 rounded-lg p-3">
-                      <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide mb-1">{t('current_challenge')}</p>
-                      <p className="text-sm text-slate-200 leading-relaxed">{getL(membership.currentChallenge, lang)}</p>
+                      <p className="text-[10px] text-content-tertiary font-semibold uppercase tracking-wide mb-1">{t('current_challenge')}</p>
+                      <p className="text-sm text-content-primary leading-relaxed">{getL(membership.currentChallenge, lang)}</p>
                     </div>
                   )}
                 </div>
@@ -778,7 +778,7 @@ export default function ProfilePageView({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                   {((membership.helpNeedsAreas?.length) || (membership.lookingForHelpIn?.length)) > 0 && (
                     <div>
-                      <p className="text-[10px] text-slate-500 font-semibold">{t('looking_for_help_in')}</p>
+                      <p className="text-[10px] text-content-tertiary font-semibold">{t('looking_for_help_in')}</p>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {(membership.helpNeedsAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
@@ -795,7 +795,7 @@ export default function ProfilePageView({
                   )}
                   {((membership.helpOfferAreas?.length) || (membership.iCanHelpWith?.length)) > 0 && (
                     <div>
-                      <p className="text-[10px] text-slate-500 font-semibold">{t('i_can_help_with')}</p>
+                      <p className="text-[10px] text-content-tertiary font-semibold">{t('i_can_help_with')}</p>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {(membership.helpOfferAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
@@ -812,7 +812,7 @@ export default function ProfilePageView({
                   )}
                   {((membership.learnAreas?.length) || (membership.skillsToLearnThisSemester?.length)) > 0 && (
                     <div>
-                      <p className="text-[10px] text-slate-500 font-semibold">{t('skills_to_learn')}</p>
+                      <p className="text-[10px] text-content-tertiary font-semibold">{t('skills_to_learn')}</p>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {(membership.learnAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
@@ -829,7 +829,7 @@ export default function ProfilePageView({
                   )}
                   {((membership.teachAreas?.length) || (membership.skillsICanTeach?.length)) > 0 && (
                     <div>
-                      <p className="text-[10px] text-slate-500 font-semibold">{t('skills_i_can_teach')}</p>
+                      <p className="text-[10px] text-content-tertiary font-semibold">{t('skills_i_can_teach')}</p>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {(membership.teachAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
@@ -853,15 +853,15 @@ export default function ProfilePageView({
                 <SectionHeading label={t('section_culture')} />
                 <div className="space-y-2">
                   {membership.whatIListenTo?.length > 0 && (
-                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-slate-700/40">
                       <p className="text-[10px] text-slate-500 mb-1">{t('culture_what_i_listen')}</p>
-                      <ul className="text-sm text-slate-200 space-y-0.5">
+                      <ul className="text-sm text-content-primary space-y-0.5">
                         {membership.whatIListenTo.map((s, i) => {
                           const title = typeof s === 'string' ? s : ensureString(s?.title ?? s?.text, lang);
                           const url = typeof s === 'object' && s ? (s.url || '') : '';
                           return (
                             <li key={i}>
-                              {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:text-emerald-200 underline">{title || t('song_on_repeat')}</a> : (title || '—')}
+                              {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline">{title || t('song_on_repeat')}</a> : (title || '—')}
                             </li>
                           );
                         })}
@@ -869,21 +869,21 @@ export default function ProfilePageView({
                     </div>
                   )}
                   {membership.bookThatMarkedMe?.length > 0 && (
-                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-slate-700/40">
                       <p className="text-[10px] text-slate-500 mb-1">{t('culture_book_that_marked')}</p>
-                      <ul className="text-sm text-slate-200 space-y-0.5">{membership.bookThatMarkedMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
+                      <ul className="text-sm text-content-primary space-y-0.5">{membership.bookThatMarkedMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
                     </div>
                   )}
                   {membership.ideaThatMotivatesMe?.length > 0 && (
-                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-slate-700/40">
                       <p className="text-[10px] text-slate-500 mb-1">{t('culture_idea_that_motivates')}</p>
-                      <ul className="text-sm text-slate-200 space-y-0.5">{membership.ideaThatMotivatesMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
+                      <ul className="text-sm text-content-primary space-y-0.5">{membership.ideaThatMotivatesMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
                     </div>
                   )}
                   {membership.quoteThatMovesMe?.length > 0 && (
-                    <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-slate-700/40">
                       <p className="text-[10px] text-slate-500 mb-1">{t('culture_quote_that_moves')}</p>
-                      <ul className="text-sm text-slate-200 space-y-0.5 italic">{membership.quoteThatMovesMe.map((s, i) => <li key={i}>&quot;{ensureString(s, lang)}&quot;</li>)}</ul>
+                      <ul className="text-sm text-content-primary space-y-0.5 italic">{membership.quoteThatMovesMe.map((s, i) => <li key={i}>&quot;{ensureString(s, lang)}&quot;</li>)}</ul>
                     </div>
                   )}
                 </div>
@@ -966,13 +966,13 @@ export default function ProfilePageView({
                     const taskObjs = (ev?.taskIds || []).map((id) => tasks.find((t) => t.id === id)).filter(Boolean);
                     const moduleObjs = (ev?.moduleIds || []).map((id) => modules.find((m) => m.id === id)).filter(Boolean);
                     return (
-                      <div key={tend.id} className="bg-slate-800/60 rounded-lg p-3 border border-slate-700/30">
+                      <div key={tend.id} className="bg-surface-raised/60 rounded-xl p-3 border border-slate-700/40">
                         <div className="font-medium text-slate-200">{t(tend.labelKey)}</div>
-                        <p className="text-xs text-slate-400 mt-1">{tend.phrase}</p>
+                        <p className="text-xs text-content-tertiary mt-1">{tend.phrase}</p>
                         <button
                           type="button"
                           onClick={() => setContributionExpanded((s) => ({ ...s, [tend.id]: !s[tend.id] }))}
-                          className="text-[11px] text-emerald-400 hover:text-emerald-300 mt-2 underline"
+                          className="text-[11px] text-primary hover:text-primary/80 mt-2 underline"
                         >
                           {isExpanded ? t('path_hide_evidence') : t('path_view_evidence')}
                         </button>
@@ -1078,7 +1078,7 @@ export default function ProfilePageView({
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <span className="font-mono text-emerald-400 font-bold text-sm">{detailMerit.points} {t('pts_label')}</span>
                   {detailMerit.categoryId && categories?.find((c) => c.id === detailMerit.categoryId) && (
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-content-tertiary">
                       · {ensureString(categories.find((c) => c.id === detailMerit.categoryId)?.name)}
                     </span>
                   )}
@@ -1090,8 +1090,8 @@ export default function ProfilePageView({
                 <p className="text-sm text-slate-300 italic">{getL(detailMerit.shortDescription, lang)}</p>
               )}
               <div>
-                <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">{t('how_to_obtain')}</div>
-                <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+                <div className="text-[11px] text-content-tertiary font-semibold uppercase tracking-wide mb-1">{t('how_to_obtain')}</div>
+                <p className="text-sm text-content-primary leading-relaxed whitespace-pre-wrap">
                   {getL(detailMerit.longDescription, lang) || getL(detailMerit.shortDescription, lang) || t('no_long_desc')}
                 </p>
               </div>

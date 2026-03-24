@@ -1,14 +1,22 @@
 // ─── InicioView ───────────────────────────────────────────────────────────────
-// Personal dashboard only: my commitments, my 7-day summary.
+// Personal dashboard: my summary, my commitments, quick links.
 
 import React, { useMemo, useEffect } from 'react';
-import { Trophy, Check } from 'lucide-react';
+import { Trophy, Check, ArrowRight, Zap } from 'lucide-react';
 import { t } from '../strings.js';
 import { ensureString } from '../utils.js';
 import MyCommitmentsCard from '../components/MyCommitmentsCard.jsx';
+import StatTile from '../components/ui/StatTile.jsx';
 import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
 
 const LAST_VISIT_KEY = (teamId) => `mission-control:lastVisit_${teamId}`;
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Buenos días';
+  if (h < 19) return 'Buenas tardes';
+  return 'Buenas noches';
+}
 
 export default function InicioView({
   team,
@@ -82,117 +90,128 @@ export default function InicioView({
   }, [teamId, teamMeritEvents, teamTasks, teamMemberships, currentMembership, tsToDate]);
 
   const hasPersonal = personalSummary.meritCount > 0 || personalSummary.myTaskCount > 0;
+  const displayName = ensureString(currentMembership?.displayName) || '';
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h2 className="text-xl font-semibold text-content-primary tracking-tight">{t('nav_inicio')}</h2>
-      <p className="text-sm text-content-secondary">{t('inicio_desc')}</p>
 
-      {/* Personal summary — your wins in last 7 days */}
+      {/* ── Greeting header ── */}
+      <div className="animate-fade-in">
+        {currentMembership && (
+          <p className="text-sm text-content-tertiary mb-0.5">{getGreeting()}{displayName ? ', ' : ''}<span className="text-gradient-primary font-semibold">{displayName}</span></p>
+        )}
+        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('nav_inicio')}</h2>
+        <p className="text-sm text-content-secondary mt-1">{t('inicio_desc')}</p>
+      </div>
+
+      {/* ── Personal summary ── */}
       {currentMembership && (
-        <div className="rounded-xl border border-primary/30 bg-surface-raised p-4 shadow-surface-sm">
-          <h3 className="text-xs font-semibold text-amber-400/90 uppercase tracking-wide mb-3">{t('inicio_personal')} · {t('inicio_summary_7d')}</h3>
-          {hasPersonal ? (
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm mb-3">
-              {personalSummary.meritCount > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <Trophy className="w-5 h-5 text-amber-400 shrink-0" strokeWidth={2} />
-                  <span className="text-slate-200">
-                    <strong className="text-amber-400">{personalSummary.meritCount}</strong>{' '}
-                    {personalSummary.meritCount === 1 ? t('inicio_my_merit') : t('inicio_my_merits')}
-                    {personalSummary.myPoints > 0 && (
-                      <span className="text-emerald-400/90 ml-1">(+{personalSummary.myPoints} {t('inicio_points_total')})</span>
-                    )}
-                  </span>
-                </div>
-              )}
-              {personalSummary.myTaskCount > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <Check className="w-5 h-5 text-amber-400 shrink-0" strokeWidth={2.5} />
-                  <span className="text-slate-300">
-                    <strong>{personalSummary.myTaskCount}</strong>{' '}
-                    {personalSummary.myTaskCount === 1 ? t('inicio_task_to_you') : t('inicio_tasks_to_you')}
-                  </span>
-                </div>
-              )}
+        <div className="rounded-xl border border-primary/25 bg-surface-raised shadow-glow-sm overflow-hidden animate-slide-up animate-delay-1 relative">
+          {/* Ambient glow blob */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary/8 blur-3xl pointer-events-none" />
+
+          <div className="px-4 py-3 border-b border-slate-700/40 flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5 text-amber-400" strokeWidth={2.5} />
+            <span className="text-xs font-semibold text-amber-400/90 uppercase tracking-wider">
+              {t('inicio_personal')} · {t('inicio_summary_7d')}
+            </span>
+          </div>
+
+          {/* Stat tiles */}
+          <div className="grid grid-cols-3 divide-x divide-slate-700/40">
+            <div className="px-4 py-3 text-center">
+              <div className="text-xl font-bold text-amber-400">{personalSummary.meritCount}</div>
+              <div className="text-[10px] text-content-tertiary uppercase tracking-wider mt-0.5">{t('inicio_my_merits')}</div>
+            </div>
+            <div className="px-4 py-3 text-center">
+              <div className="text-xl font-bold text-primary">{personalSummary.myPoints}</div>
+              <div className="text-[10px] text-content-tertiary uppercase tracking-wider mt-0.5">{t('inicio_points_total')}</div>
+            </div>
+            <div className="px-4 py-3 text-center">
+              <div className="text-xl font-bold text-content-primary">{personalSummary.myTaskCount}</div>
+              <div className="text-[10px] text-content-tertiary uppercase tracking-wider mt-0.5">{t('inicio_tasks_to_you')}</div>
+            </div>
+          </div>
+
+          {/* Activity timeline */}
+          {personalItems.length > 0 ? (
+            <div className="px-4 py-3 border-t border-slate-700/40">
+              <div className="border-l-2 border-primary/20 pl-4 ml-1 space-y-3 max-h-44 overflow-y-auto">
+                {personalItems.map((item, i) => {
+                  const d = item.date ? new Date(item.date) : null;
+                  const dateStr = d ? d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                  return (
+                    <div
+                      key={item.type === 'merit' ? `p-merit-${i}` : `p-task-${item.taskId}`}
+                      className="relative flex items-start gap-2.5 text-xs animate-slide-up"
+                      style={{ animationDelay: `${120 + i * 40}ms` }}
+                    >
+                      {/* Timeline dot */}
+                      <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-surface-raised bg-primary/60" />
+                      {item.type === 'merit' ? (
+                        <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" strokeWidth={2} />
+                      ) : (
+                        <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" strokeWidth={2.5} />
+                      )}
+                      <span className="text-content-secondary flex-1 min-w-0">
+                        {item.type === 'merit' ? (
+                          <>{t('inicio_you_received')} <span className="text-amber-400 font-semibold">+{item.points} pts</span> — {ensureString(item.meritName)}</>
+                        ) : (
+                          <>{t('inicio_task_assigned')}: <span className="text-content-primary font-medium">{item.title || '—'}</span></>
+                        )}
+                      </span>
+                      <span className="text-content-tertiary shrink-0 text-[10px]">{dateStr}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
-            <p className="text-xs text-slate-500 italic mb-3">{t('inicio_no_activity')}</p>
-          )}
-          {personalItems.length > 0 && (
-            <ul className="space-y-1.5 max-h-36 overflow-y-auto text-xs">
-              {personalItems.map((item, i) => {
-                const d = item.date ? new Date(item.date) : null;
-                const dateStr = d ? d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-                if (item.type === 'merit') {
-                  return (
-                    <li key={`p-merit-${i}`} className="text-slate-300 flex items-start gap-2">
-                      <Trophy className="w-4 h-4 text-emerald-400 shrink-0" strokeWidth={2} />
-                      <span>
-                        {t('inicio_you_received')} <span className="text-emerald-400">+{item.points} pts</span> — {ensureString(item.meritName)}
-                      </span>
-                      <span className="text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
-                    </li>
-                  );
-                }
-                if (item.type === 'task') {
-                  return (
-                    <li key={`p-task-${item.taskId}`} className="text-slate-300 flex items-start gap-2">
-                      <Check className="w-4 h-4 text-amber-400 shrink-0" strokeWidth={2.5} />
-                      <span>{t('inicio_task_assigned')}: <strong className="text-slate-200">{item.title || '—'}</strong></span>
-                      <span className="text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
-                    </li>
-                  );
-                }
-                return null;
-              })}
-            </ul>
+            <div className="px-4 py-4 border-t border-slate-700/40">
+              <p className="text-xs text-content-tertiary italic">{t('inicio_no_activity')}</p>
+            </div>
           )}
         </div>
       )}
 
-      {/* My commitments — personal responsibility dashboard */}
+      {/* ── My commitments ── */}
       {currentMembership && (
-        <MyCommitmentsCard
-          tasks={teamTasks}
-          weeklyStatuses={teamWeeklyStatuses}
-          currentMembership={currentMembership}
-          tsToDate={tsToDate}
-          onNavigateTasks={onNavigateTasks}
-          onNavigateProfile={onNavigateProfile}
-        />
+        <div className="animate-slide-up animate-delay-2">
+          <MyCommitmentsCard
+            tasks={teamTasks}
+            weeklyStatuses={teamWeeklyStatuses}
+            currentMembership={currentMembership}
+            tsToDate={tsToDate}
+            onNavigateTasks={onNavigateTasks}
+            onNavigateProfile={onNavigateProfile}
+          />
+        </div>
       )}
 
-      {/* Quick links */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <button
-          type="button"
-          onClick={onNavigateOverview}
-          className="p-3 rounded-xl border border-slate-600/60 bg-surface-raised hover:border-primary/40 hover:shadow-surface-sm text-left transition-all duration-200"
-        >
-          <span className="text-sm font-medium text-content-primary block">{t('nav_overview')}</span>
-          <span className="text-xs text-content-tertiary">{t('inicio_link_team_card')}</span>
-        </button>
-        <button
-          type="button"
-          onClick={onNavigateFeed}
-          className="p-3 rounded-xl border border-slate-600/60 bg-surface-raised hover:border-primary/40 hover:shadow-surface-sm text-left transition-all duration-200"
-        >
-          <span className="text-sm font-medium text-content-primary block">{t('nav_feed')}</span>
-          <span className="text-xs text-content-tertiary">{t('inicio_link_activity')}</span>
-        </button>
-        <button
-          type="button"
-          onClick={onNavigateTasks}
-          className="p-3 rounded-xl border border-slate-600/60 bg-surface-raised hover:border-primary/40 hover:shadow-surface-sm text-left transition-all duration-200"
-        >
-          <span className="text-sm font-medium text-content-primary block">{t('nav_tasks')}</span>
-          <span className="text-xs text-content-tertiary">{t('inicio_link_tasks')}</span>
-        </button>
+      {/* ── Quick links ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-slide-up animate-delay-3">
+        {[
+          { label: t('nav_overview'), sub: t('inicio_link_team_card'), onClick: onNavigateOverview },
+          { label: t('nav_feed'),     sub: t('inicio_link_activity'),   onClick: onNavigateFeed },
+          { label: t('nav_tasks'),    sub: t('inicio_link_tasks'),      onClick: onNavigateTasks },
+        ].map(({ label, sub, onClick }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={onClick}
+            className="group p-3.5 rounded-xl border border-slate-600/50 bg-surface-raised text-left transition-all duration-200 hover:border-primary/40 hover:shadow-glow-sm hover:-translate-y-0.5"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-sm font-semibold text-content-primary">{label}</span>
+              <ArrowRight className="w-3.5 h-3.5 text-content-tertiary group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-150" strokeWidth={2} />
+            </div>
+            <span className="text-xs text-content-tertiary">{sub}</span>
+          </button>
+        ))}
       </div>
 
       {!currentMembership && (
-        <p className="text-xs text-slate-500 italic">{t('inicio_no_membership')}</p>
+        <p className="text-xs text-content-tertiary italic">{t('inicio_no_membership')}</p>
       )}
     </div>
   );

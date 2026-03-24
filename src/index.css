@@ -181,6 +181,26 @@
     50% { opacity: 0.6; }
   }
 
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+
+  @keyframes slide-up-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes glow-breathe {
+    0%, 100% { box-shadow: 0 0 15px rgba(13, 148, 136, 0.15); }
+    50%       { box-shadow: 0 0 30px rgba(13, 148, 136, 0.35); }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
   .modal-overlay {
     animation: modal-overlay-in 0.2s var(--ease-out) forwards;
   }
@@ -201,10 +221,77 @@
     animation: pulse-soft 1.5s ease-in-out infinite;
   }
 
+  /* ─── Entrance animations ─────────────────────────────────────────────────── */
+
+  .animate-slide-up {
+    animation: slide-up-in 350ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 200ms ease-out both;
+  }
+
+  .animate-glow-breathe {
+    animation: glow-breathe 2.5s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  /* Stagger delay helpers */
+  .animate-delay-1 { animation-delay:  60ms; }
+  .animate-delay-2 { animation-delay: 120ms; }
+  .animate-delay-3 { animation-delay: 180ms; }
+  .animate-delay-4 { animation-delay: 240ms; }
+  .animate-delay-5 { animation-delay: 300ms; }
+
+  /* ─── Luxury utility classes ──────────────────────────────────────────────── */
+
+  /* Gradient text — content-primary fading to secondary */
+  .text-gradient {
+    background: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gradient text — primary accent */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 60%, #0f766e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass morphism — for modals, popovers, composers */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  /* Primary glow utilities */
+  .glow-primary-sm {
+    box-shadow: 0 0 15px rgba(13, 148, 136, 0.25);
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 30px rgba(13, 148, 136, 0.20), 0 0 60px rgba(13, 148, 136, 0.08);
+  }
+
   /* ─── Shell: accent bar & header ─────────────────────────────────────────── */
   .shell-accent-bar {
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-hover) 100%);
+    height: 2px;
+    background: linear-gradient(90deg,
+      var(--primary) 0%,
+      #14b8a6 35%,
+      #38bdf8 55%,
+      #818cf8 75%,
+      var(--primary) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 4s ease-in-out infinite;
   }
 
   .shell-header {
@@ -219,8 +306,13 @@
   }
 
   .shell-nav-active {
-    background: var(--primary) !important;
-    color: var(--content-inverse) !important;
+    box-shadow: inset 3px 0 0 var(--primary) !important;
+    background: linear-gradient(90deg, rgba(13, 148, 136, 0.18) 0%, rgba(13, 148, 136, 0.06) 60%, transparent 100%) !important;
+    color: var(--content-primary) !important;
+  }
+
+  .shell-nav-active svg {
+    color: var(--primary) !important;
   }
 
   .shell-nav-hover:hover {
@@ -229,6 +321,8 @@
   }
 
   .shell-content {
-    background: linear-gradient(180deg, var(--surface-base) 0%, var(--surface-sunken) 100%);
+    background:
+      radial-gradient(ellipse 80% 40% at 50% 0%, rgba(13, 148, 136, 0.07) 0%, transparent 65%),
+      var(--surface-base);
   }
 }

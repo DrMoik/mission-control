@@ -286,7 +286,7 @@ export default function MeritsView({
   };
   const SortTh = ({ col, label, currentSortBy, currentDir, onToggle }) => (
     <th className="px-3 py-2">
-      <button type="button" onClick={() => onToggle(col)} className="text-left hover:text-slate-200 transition-colors flex items-center gap-0.5">
+      <button type="button" onClick={() => onToggle(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
         {label}
         {currentSortBy === col && <span className="text-[10px]">{currentDir === 'asc' ? '▲' : '▼'}</span>}
       </button>
@@ -330,23 +330,25 @@ export default function MeritsView({
 
   return (
     <div className="space-y-5">
-      <h2 className="text-base font-semibold">{t('merits_title')}</h2>
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('merits_title')}</h2>
+      </div>
 
       {/* ── Recover deleted merits (prominent at top) ── */}
       {orphanedMerits.length > 0 && (
         <div className="bg-amber-950/30 border border-amber-800/50 rounded-lg p-4">
           <p className="text-xs text-amber-400 font-medium mb-2">{t('merit_recover_title') || 'Logros eliminados con premios existentes'}</p>
-          <p className="text-[11px] text-slate-400 mb-3">{t('merit_recover_hint') || 'Estos logros fueron eliminados pero aún tienen premios asignados. Puedes recuperarlos para que vuelvan a aparecer en las definiciones.'}</p>
+          <p className="text-[11px] text-content-tertiary mb-3">{t('merit_recover_hint') || 'Estos logros fueron eliminados pero aún tienen premios asignados. Puedes recuperarlos para que vuelvan a aparecer en las definiciones.'}</p>
           <div className="flex flex-wrap gap-2">
             {orphanedMerits.map(({ meritId, sampleEvent }) => (
-              <div key={meritId} className="flex items-center gap-2 px-3 py-2 bg-slate-800/60 rounded-lg border border-slate-600">
+              <div key={meritId} className="flex items-center gap-2 px-3 py-2 bg-surface-raised rounded-lg border border-slate-700/40">
                 <AchievementBadge icon={sampleEvent.meritLogo || 'trophy'} color={sampleEvent.meritLogoColor} unlocked size="sm" compact className="shrink-0" />
-                <span className="text-sm text-slate-200">{sampleEvent.meritName}</span>
-                <span className="text-xs text-emerald-400 font-mono">+{sampleEvent.points} pts</span>
+                <span className="text-sm text-content-primary">{sampleEvent.meritName}</span>
+                <span className="text-xs text-primary font-mono">+{sampleEvent.points} pts</span>
                 <button
                   type="button"
                   onClick={() => onRecoverMerit(meritId, sampleEvent)}
-                  className="text-[11px] px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-black font-semibold rounded"
+                  className="text-[11px] px-2 py-1 bg-gradient-to-br from-primary-hover to-primary hover:shadow-glow-sm text-white font-semibold rounded-lg active:scale-[0.97] transition-all"
                 >
                   {t('merit_recover_btn') || 'Recuperar'}
                 </button>
@@ -374,16 +376,16 @@ export default function MeritsView({
 
       {/* ── Define merit form (admin / leader for their area) ── */}
       {canCreateMerit && (
-        <div className="bg-slate-800 rounded-lg p-4 space-y-3">
-          <div className="text-xs text-slate-400">{t('define_merit')}</div>
+        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+          <div className="text-xs text-content-secondary font-medium">{t('define_merit')}</div>
 
           <div className="flex flex-wrap gap-2 items-end">
             {/* Logo picker */}
             <div className="shrink-0 min-w-[180px]">
-              <label className="text-[11px] text-slate-500 block mb-1">{t('logo')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-1">{t('logo')}</label>
               <div className="flex items-start gap-2">
                 {/* Preview square */}
-                <div className="w-12 h-12 bg-slate-900 border border-slate-700 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-12 h-12 bg-surface-sunken border border-slate-600/60 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
                   {meritForm.logo?.startsWith('http') || meritForm.logo?.startsWith('data:') ? (
                     <img src={meritForm.logo} className="w-full h-full object-cover" alt="" />
                   ) : (() => {
@@ -399,20 +401,20 @@ export default function MeritsView({
                   {/* Icon picker */}
                   <div className="relative">
                     <button type="button" onClick={() => setShowIconPicker((s) => !s)}
-                      className="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-[11px] text-slate-300 rounded transition-colors w-full text-left flex items-center gap-2">
+                      className="px-2 py-1.5 bg-surface-overlay hover:bg-slate-700/50 text-[11px] text-content-secondary rounded-lg transition-colors w-full text-left flex items-center gap-2">
                       <img src={getIconUrl('trophy')} alt="" className="w-4 h-4 object-contain opacity-80 [filter:brightness(0)_invert(1)]" />
                       {t('pick_icon') || t('pick_emoji') || 'Elegir icono'}
                       <span className="text-[10px] opacity-75 ml-auto">▾</span>
                     </button>
                     {showIconPicker && (
-                      <div className="absolute top-9 left-0 z-20 bg-slate-900 border border-slate-600 rounded-lg shadow-xl w-80 max-h-64 overflow-hidden flex flex-col">
-                        <div className="flex border-b border-slate-600 shrink-0">
+                      <div className="absolute top-9 left-0 z-20 bg-surface-sunken border border-slate-600/60 rounded-lg shadow-xl w-80 max-h-64 overflow-hidden flex flex-col">
+                        <div className="flex border-b border-slate-700/40/40 shrink-0">
                           <button type="button" onClick={() => setIconPickerTab('categories')}
-                            className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-colors ${iconPickerTab === 'categories' ? 'bg-slate-700 text-content-primary' : 'text-content-tertiary hover:text-content-secondary'}`}>
+                            className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-colors ${iconPickerTab === 'categories' ? 'bg-surface-overlay text-content-primary' : 'text-content-tertiary hover:text-content-secondary'}`}>
                             {t('merit_attr_families') || 'Categorías'}
                           </button>
                           <button type="button" onClick={() => setIconPickerTab('areas')}
-                            className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-colors ${iconPickerTab === 'areas' ? 'bg-slate-700 text-content-primary' : 'text-content-tertiary hover:text-content-secondary'}`}>
+                            className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-colors ${iconPickerTab === 'areas' ? 'bg-surface-overlay text-content-primary' : 'text-content-tertiary hover:text-content-secondary'}`}>
                             {t('merit_attr_domains') || 'Áreas'}
                           </button>
                         </div>
@@ -428,7 +430,7 @@ export default function MeritsView({
                                       <button key={key} type="button"
                                         onClick={() => { setMeritForm((f) => ({ ...f, logo: key })); setShowIconPicker(false); }}
                                         title={key}
-                                        className={`p-1.5 rounded hover:bg-slate-700 transition-colors flex items-center justify-center ${meritForm.logo === key ? 'ring-1 ring-primary bg-slate-700' : ''}`}>
+                                        className={`p-1.5 rounded hover:bg-slate-700/50 transition-colors flex items-center justify-center ${meritForm.logo === key ? 'ring-1 ring-primary bg-surface-overlay' : ''}`}>
                                         <img src={url} alt="" className="w-5 h-5 object-contain [filter:brightness(0)_invert(1)]" />
                                       </button>
                                     ) : null;
@@ -447,7 +449,7 @@ export default function MeritsView({
                                       <button key={key} type="button"
                                         onClick={() => { setMeritForm((f) => ({ ...f, logo: key })); setShowIconPicker(false); }}
                                         title={key}
-                                        className={`p-1.5 rounded hover:bg-slate-700 transition-colors flex items-center justify-center ${meritForm.logo === key ? 'ring-1 ring-primary bg-slate-700' : ''}`}>
+                                        className={`p-1.5 rounded hover:bg-slate-700/50 transition-colors flex items-center justify-center ${meritForm.logo === key ? 'ring-1 ring-primary bg-surface-overlay' : ''}`}>
                                         <img src={url} alt="" className="w-5 h-5 object-contain [filter:brightness(0)_invert(1)]" />
                                       </button>
                                     ) : null;
@@ -466,7 +468,7 @@ export default function MeritsView({
                     <input
                       placeholder={t('paste_image_url')}
                       value={meritForm.logo?.startsWith('http') ? meritForm.logo : ''}
-                      className="flex-1 min-w-0 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px]"
+                      className="flex-1 min-w-0 px-2 py-1 bg-surface-sunken border border-slate-600/60 rounded-lg text-[11px] text-content-primary focus:border-primary/60 focus:outline-none"
                       onChange={(e) => setMeritForm((f) => ({ ...f, logo: e.target.value || 'trophy' }))}
                     />
                     <button type="button"
@@ -480,7 +482,7 @@ export default function MeritsView({
                   {/* Color picker — only for icon keys, not custom URLs */}
                   {!(meritForm.logo?.startsWith('http') || meritForm.logo?.startsWith('data:')) && (
                     <div className="flex flex-wrap gap-1.5 items-center">
-                      <span className="text-[10px] text-slate-500">{t('color') || 'Color'}:</span>
+                      <span className="text-[10px] text-content-tertiary">{t('color') || 'Color'}:</span>
                       {ACHIEVEMENT_ICON_COLORS.map((c) => (
                         <button key={c.id || 'default'} type="button"
                           onClick={() => setMeritForm((f) => ({ ...f, logoColor: c.id || '' }))}
@@ -492,7 +494,7 @@ export default function MeritsView({
                       <input type="text" placeholder="#hex" maxLength={9}
                         value={meritForm.logoColor?.startsWith('#') ? meritForm.logoColor : ''}
                         onChange={(e) => { const v = e.target.value.trim(); setMeritForm((f) => ({ ...f, logoColor: v || '' })); }}
-                        className="w-14 px-1.5 py-0.5 bg-slate-900 border border-slate-600 rounded text-[10px] font-mono"
+                        className="w-14 px-1.5 py-0.5 bg-surface-sunken border border-slate-600/60 rounded text-[10px] font-mono text-content-primary focus:outline-none"
                       />
                     </div>
                   )}
@@ -502,37 +504,37 @@ export default function MeritsView({
 
             {/* Name */}
             <div className="flex-1 min-w-[120px]">
-              <label className="text-[11px] text-slate-500 block mb-1">{t('name')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-1">{t('name')}</label>
               <input
                 value={meritForm.name}
                 onChange={(e) => setMeritForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="e.g. Build Champion"
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none"
               />
             </div>
 
             {/* Points */}
             <div className="w-20">
-              <label className="text-[11px] text-slate-500 block mb-1">{t('points')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-1">{t('points')}</label>
               <input type="number" min="1"
                 value={meritForm.points}
                 onChange={(e) => setMeritForm((f) => ({ ...f, points: e.target.value }))}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none"
               />
             </div>
 
             {/* Category — leaders restricted to their area only */}
             <div className="flex-1 min-w-[120px]">
-              <label className="text-[11px] text-slate-500 block mb-1">{t('category')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-1">{t('category')}</label>
               {leaderCategoryId ? (
-                <div className="px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs text-slate-300">
+                <div className="px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none">
                   {ensureString(categories.find((c) => c.id === leaderCategoryId)?.name) || t('category')}
                 </div>
               ) : (
                 <select
                   value={meritForm.categoryId}
                   onChange={(e) => setMeritForm((f) => ({ ...f, categoryId: e.target.value }))}
-                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                  className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none"
                 >
                   <option value="">{t('global_category')}</option>
                   {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
@@ -541,11 +543,11 @@ export default function MeritsView({
             </div>
             {/* Assignable by — who can award this logro */}
             <div className="flex-1 min-w-[120px]">
-              <label className="text-[11px] text-slate-500 block mb-1">{t('assignable_by')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-1">{t('assignable_by')}</label>
               <select
                 value={meritForm.assignableBy}
                 onChange={(e) => setMeritForm((f) => ({ ...f, assignableBy: e.target.value }))}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none"
               >
                 {ASSIGNABLE_BY_OPTIONS.map((r) => (
                   <option key={r} value={r}>{t('assignable_by_' + r)}</option>
@@ -560,20 +562,20 @@ export default function MeritsView({
                 id="merit-repeatable"
                 checked={meritForm.repeatable !== false}
                 onChange={(e) => setMeritForm((f) => ({ ...f, repeatable: e.target.checked }))}
-                className="rounded border-slate-600 bg-slate-900 text-emerald-500"
+                className="rounded border-slate-600/60 bg-surface-sunken text-primary"
               />
-              <label htmlFor="merit-repeatable" className="text-[11px] text-slate-400">{t('merit_repeatable')}</label>
+              <label htmlFor="merit-repeatable" className="text-[11px] text-content-secondary">{t('merit_repeatable')}</label>
             </div>
 
             <button onClick={handleCreate}
-              className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded whitespace-nowrap self-end">
+              className="px-3 py-1.5 bg-gradient-to-br from-primary-hover to-primary hover:shadow-glow-sm text-white text-xs font-semibold rounded-lg whitespace-nowrap self-end active:scale-[0.97] transition-all">
               {t('add_merit')}
             </button>
           </div>
 
           {/* Attributes for search/filter (500+ logros) */}
           <div className="space-y-2">
-            <label className="text-[11px] text-slate-500 block">{t('merit_attr_domains')}</label>
+            <label className="text-[11px] text-content-tertiary block">{t('merit_attr_domains')}</label>
             <div className="flex flex-wrap gap-1">
               {domains.map((d) => {
                 const sel = (meritForm.domains || []).includes(d);
@@ -582,17 +584,17 @@ export default function MeritsView({
                     onClick={() => setMeritForm((f) => ({
                       ...f, domains: sel ? (f.domains || []).filter((x) => x !== d) : [...(f.domains || []), d],
                     }))}
-                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>
                     {domainToLabel(d)}
                   </button>
                 );
               })}
             </div>
-            <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_tier')}</label>
+            <label className="text-[11px] text-content-tertiary block mt-2">{t('merit_attr_tier')}</label>
             <div className="flex flex-wrap gap-1">
               <button type="button"
                 onClick={() => setMeritForm((f) => ({ ...f, tier: '' }))}
-                className={`text-[10px] px-2 py-0.5 rounded ${!meritForm.tier ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                className={`text-[10px] px-2 py-0.5 rounded ${!meritForm.tier ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>
                 —
               </button>
               {meritTiers.map((tier) => {
@@ -600,7 +602,7 @@ export default function MeritsView({
                 return (
                   <button key={tier} type="button"
                     onClick={() => setMeritForm((f) => ({ ...f, tier: sel ? '' : tier }))}
-                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                    className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>
                     {t('merit_tier_' + tier)}
                   </button>
                 );
@@ -608,7 +610,7 @@ export default function MeritsView({
             </div>
             {meritFamilies.length > 0 && (
               <>
-                <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_families') || 'Familias'}</label>
+                <label className="text-[11px] text-content-tertiary block mt-2">{t('merit_attr_families') || 'Familias'}</label>
                 <div className="flex flex-wrap gap-1">
                   {meritFamilies.map((f) => {
                     const sel = (meritForm.familyIds || []).includes(f.id);
@@ -617,7 +619,7 @@ export default function MeritsView({
                         onClick={() => setMeritForm((fm) => ({
                           ...fm, familyIds: sel ? (fm.familyIds || []).filter((x) => x !== f.id) : [...(fm.familyIds || []), f.id],
                         }))}
-                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>
                         {f.name}
                       </button>
                     );
@@ -627,7 +629,7 @@ export default function MeritsView({
             )}
             {knowledgeAreas.length > 0 && (
               <>
-                <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_knowledge_areas') || 'Áreas de conocimiento'}</label>
+                <label className="text-[11px] text-content-tertiary block mt-2">{t('merit_attr_knowledge_areas') || 'Áreas de conocimiento'}</label>
                 <div className="flex flex-wrap gap-1">
                   {knowledgeAreas.map((a) => {
                     const sel = (meritForm.knowledgeAreaIds || []).includes(a.id);
@@ -636,7 +638,7 @@ export default function MeritsView({
                         onClick={() => setMeritForm((fm) => ({
                           ...fm, knowledgeAreaIds: sel ? (fm.knowledgeAreaIds || []).filter((x) => x !== a.id) : [...(fm.knowledgeAreaIds || []), a.id],
                         }))}
-                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}>
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>
                         {a.name}
                       </button>
                     );
@@ -672,10 +674,10 @@ export default function MeritsView({
           onClick={() => setDetailMerit(null)}
         >
           <div
-            className="bg-slate-900 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden"
+            className="rounded-2xl border border-slate-700/40 bg-surface-raised w-full max-w-sm shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-5 flex items-center gap-4">
+            <div className="bg-gradient-to-r from-surface-overlay to-surface-raised p-5 flex items-center gap-4 border-b border-slate-700/40">
               <AchievementBadge
                 icon={detailMerit.logo || 'trophy'}
                 color={detailMerit.logoColor}
@@ -688,9 +690,9 @@ export default function MeritsView({
               <div className="min-w-0">
                 <h2 className="font-bold text-lg leading-tight">{detailMerit.name}</h2>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="font-mono text-emerald-400 font-bold text-sm">{detailMerit.points} {t('pts_label')}</span>
+                  <span className="font-mono text-primary font-bold text-sm">{detailMerit.points} {t('pts_label')}</span>
                   {detailMerit.categoryId && (
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-content-tertiary">
                       · {ensureString(categories.find((c) => c.id === detailMerit.categoryId)?.name)}
                     </span>
                   )}
@@ -699,17 +701,17 @@ export default function MeritsView({
             </div>
             <div className="p-5 space-y-4">
               {getL(detailMerit.shortDescription, lang) && (
-                <p className="text-sm text-slate-300 italic">{getL(detailMerit.shortDescription, lang)}</p>
+                <p className="text-sm text-content-secondary italic">{getL(detailMerit.shortDescription, lang)}</p>
               )}
               <div>
-                <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wide mb-1">{t('how_to_obtain')}</div>
-                <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+                <div className="text-[11px] text-content-tertiary font-semibold uppercase tracking-wide mb-1">{t('how_to_obtain')}</div>
+                <p className="text-sm text-content-primary leading-relaxed whitespace-pre-wrap">
                   {getL(detailMerit.longDescription, lang) || t('no_long_desc')}
                 </p>
               </div>
               <button
                 onClick={() => setDetailMerit(null)}
-                className="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors"
+                className="w-full py-2 bg-surface-overlay hover:bg-slate-700/50 text-content-secondary text-sm rounded-lg transition-colors"
               >
                 {t('merit_detail_close')}
               </button>
@@ -725,19 +727,19 @@ export default function MeritsView({
           onClick={() => setEditingMerit(null)}
         >
           <div
-            className="bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-8"
+            className="rounded-2xl border border-slate-700/40 bg-surface-raised w-full max-w-lg shadow-2xl overflow-hidden my-8"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-5 border-b border-slate-700">
+            <div className="p-5 border-b border-slate-700/40">
               <h2 className="font-bold text-lg">{t('edit')} — {editingMerit.name}</h2>
             </div>
             <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="flex flex-wrap gap-3 items-end">
                 <div className="shrink-0 min-w-[180px]">
-                  <label className="text-[11px] text-slate-500 block mb-1">{t('logo')}</label>
+                  <label className="text-[11px] text-content-tertiary block mb-1">{t('logo')}</label>
                   <div className="flex items-start gap-2">
                     {/* Preview */}
-                    <div className="w-12 h-12 bg-slate-900 border border-slate-700 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-12 h-12 bg-surface-sunken border border-slate-600/60 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
                       {editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:') ? (
                         <img src={editForm.logo} className="w-full h-full object-cover" alt="" />
                       ) : (() => {
@@ -752,20 +754,20 @@ export default function MeritsView({
                       {/* Choose icon button — same as create form */}
                       <div className="relative">
                         <button type="button" onClick={() => setEditIconPickerOpen((s) => !s)}
-                          className="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-[11px] text-slate-300 rounded transition-colors w-full text-left flex items-center gap-2">
+                          className="px-2 py-1.5 bg-surface-overlay hover:bg-slate-700/50 text-[11px] text-content-secondary rounded-lg transition-colors w-full text-left flex items-center gap-2">
                           <img src={getIconUrl('trophy')} alt="" className="w-4 h-4 object-contain opacity-80 [filter:brightness(0)_invert(1)]" />
                           {t('pick_icon') || t('pick_emoji') || 'Elegir icono'}
                           <span className="text-[10px] opacity-75 ml-auto">▾</span>
                         </button>
                         {editIconPickerOpen && (
-                          <div className="absolute top-9 left-0 z-30 bg-slate-900 border border-slate-600 rounded-lg shadow-xl w-80 max-h-64 overflow-hidden flex flex-col">
-                            <div className="flex border-b border-slate-600 shrink-0">
+                          <div className="absolute top-9 left-0 z-30 bg-surface-sunken border border-slate-600/60 rounded-lg shadow-xl w-80 max-h-64 overflow-hidden flex flex-col">
+                            <div className="flex border-b border-slate-700/40/40 shrink-0">
                               <button type="button" onClick={() => setIconPickerTab('categories')}
-                                className={`flex-1 px-2 py-1.5 text-[11px] font-medium ${iconPickerTab === 'categories' ? 'bg-slate-700 text-content-primary' : 'text-content-tertiary'}`}>
+                                className={`flex-1 px-2 py-1.5 text-[11px] font-medium ${iconPickerTab === 'categories' ? 'bg-surface-overlay text-content-primary' : 'text-content-tertiary'}`}>
                                 {t('merit_attr_families') || 'Categorías'}
                               </button>
                               <button type="button" onClick={() => setIconPickerTab('areas')}
-                                className={`flex-1 px-2 py-1.5 text-[11px] font-medium ${iconPickerTab === 'areas' ? 'bg-slate-700 text-content-primary' : 'text-content-tertiary'}`}>
+                                className={`flex-1 px-2 py-1.5 text-[11px] font-medium ${iconPickerTab === 'areas' ? 'bg-surface-overlay text-content-primary' : 'text-content-tertiary'}`}>
                                 {t('merit_attr_domains') || 'Áreas'}
                               </button>
                             </div>
@@ -780,7 +782,7 @@ export default function MeritsView({
                                         <button key={key} type="button"
                                           onClick={() => { setEditForm((f) => f ? { ...f, logo: key } : null); setEditIconPickerOpen(false); }}
                                           title={key}
-                                          className={`p-1.5 rounded hover:bg-slate-700 flex items-center justify-center ${editForm.logo === key ? 'ring-1 ring-primary bg-slate-700' : ''}`}>
+                                          className={`p-1.5 rounded hover:bg-slate-700/50 flex items-center justify-center ${editForm.logo === key ? 'ring-1 ring-primary bg-surface-overlay' : ''}`}>
                                           <img src={url} alt="" className="w-5 h-5 object-contain [filter:brightness(0)_invert(1)]" />
                                         </button>
                                       ) : null;
@@ -797,7 +799,7 @@ export default function MeritsView({
                         <input
                           placeholder={t('paste_image_url')}
                           value={editForm.logo?.startsWith('http') ? editForm.logo : ''}
-                          className="flex-1 min-w-0 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px]"
+                          className="flex-1 min-w-0 px-2 py-1 bg-surface-sunken border border-slate-600/60 rounded-lg text-[11px] text-content-primary focus:border-primary/60 focus:outline-none"
                           onChange={(e) => setEditForm((f) => ({ ...f, logo: e.target.value || 'trophy' }))}
                         />
                         <button type="button"
@@ -809,7 +811,7 @@ export default function MeritsView({
                       {/* Color picker */}
                       {!(editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:')) && (
                         <div className="flex flex-wrap gap-1.5 items-center">
-                          <span className="text-[10px] text-slate-500">{t('color') || 'Color'}:</span>
+                          <span className="text-[10px] text-content-tertiary">{t('color') || 'Color'}:</span>
                           {ACHIEVEMENT_ICON_COLORS.map((c) => (
                             <button key={c.id || 'default'} type="button"
                               onClick={() => setEditForm((f) => f ? { ...f, logoColor: c.id || '' } : null)}
@@ -821,7 +823,7 @@ export default function MeritsView({
                           <input type="text" placeholder="#hex" maxLength={9}
                             value={editForm.logoColor?.startsWith('#') ? editForm.logoColor : ''}
                             onChange={(e) => { const v = e.target.value.trim(); setEditForm((f) => f ? { ...f, logoColor: v || '' } : null); }}
-                            className="w-14 px-1.5 py-0.5 bg-slate-900 border border-slate-600 rounded text-[10px] font-mono"
+                            className="w-14 px-1.5 py-0.5 bg-surface-sunken border border-slate-600/60 rounded text-[10px] font-mono text-content-primary focus:outline-none"
                           />
                         </div>
                       )}
@@ -829,38 +831,38 @@ export default function MeritsView({
                   </div>
                 </div>
                 <div className="flex-1 min-w-[120px]">
-                  <label className="text-[11px] text-slate-500 block mb-1">{t('name')}</label>
+                  <label className="text-[11px] text-content-tertiary block mb-1">{t('name')}</label>
                   <input
                     value={editForm.name}
                     onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                    className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
+                    className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none"
                   />
                 </div>
                 <div className="w-20">
-                  <label className="text-[11px] text-slate-500 block mb-1">{t('points')}</label>
+                  <label className="text-[11px] text-content-tertiary block mb-1">{t('points')}</label>
                   <input type="number" min="1"
                     value={editForm.points}
                     onChange={(e) => setEditForm((f) => ({ ...f, points: e.target.value }))}
-                    className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
+                    className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none"
                   />
                 </div>
                 <div className="flex-1 min-w-[120px]">
-                  <label className="text-[11px] text-slate-500 block mb-1">{t('category')}</label>
+                  <label className="text-[11px] text-content-tertiary block mb-1">{t('category')}</label>
                   <select
                     value={editForm.categoryId || ''}
                     onChange={(e) => setEditForm((f) => ({ ...f, categoryId: e.target.value || null }))}
-                    className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
+                    className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none"
                   >
                     <option value="">{t('global_category')}</option>
                     {categories.map((c) => <option key={c.id} value={c.id}>{ensureString(c.name)}</option>)}
                   </select>
                 </div>
                 <div className="flex-1 min-w-[100px]">
-                  <label className="text-[11px] text-slate-500 block mb-1">{t('assignable_by')}</label>
+                  <label className="text-[11px] text-content-tertiary block mb-1">{t('assignable_by')}</label>
                   <select
                     value={editForm.assignableBy || 'leader'}
                     onChange={(e) => setEditForm((f) => ({ ...f, assignableBy: e.target.value }))}
-                    className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-xs"
+                    className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none"
                   >
                     {ASSIGNABLE_BY_OPTIONS.map((r) => (
                       <option key={r} value={r}>{t('assignable_by_' + r)}</option>
@@ -873,13 +875,13 @@ export default function MeritsView({
                     id="edit-repeatable"
                     checked={editForm.repeatable !== false}
                     onChange={(e) => setEditForm((f) => ({ ...f, repeatable: e.target.checked }))}
-                    className="rounded border-slate-600 bg-slate-800 text-emerald-500"
+                    className="rounded border-slate-600/60 bg-surface-sunken text-primary"
                   />
-                  <label htmlFor="edit-repeatable" className="text-[11px] text-slate-400">{t('merit_repeatable')}</label>
+                  <label htmlFor="edit-repeatable" className="text-[11px] text-content-secondary">{t('merit_repeatable')}</label>
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] text-slate-500 block">{t('merit_attr_domains')}</label>
+                <label className="text-[11px] text-content-tertiary block">{t('merit_attr_domains')}</label>
                 <div className="flex flex-wrap gap-1">
                   {domains.map((d) => {
                     const sel = (editForm.domains || []).includes(d);
@@ -888,27 +890,27 @@ export default function MeritsView({
                         onClick={() => setEditForm((f) => ({
                           ...f, domains: sel ? (f.domains || []).filter((x) => x !== d) : [...(f.domains || []), d],
                         }))}
-                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{domainToLabel(d)}</button>
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{domainToLabel(d)}</button>
                     );
                   })}
                 </div>
-                <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_tier')}</label>
+                <label className="text-[11px] text-content-tertiary block mt-2">{t('merit_attr_tier')}</label>
                 <div className="flex flex-wrap gap-1">
                   <button type="button"
                     onClick={() => setEditForm((f) => ({ ...f, tier: '' }))}
-                    className={`text-[10px] px-2 py-0.5 rounded ${!editForm.tier ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>—</button>
+                    className={`text-[10px] px-2 py-0.5 rounded ${!editForm.tier ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>—</button>
                   {meritTiers.map((tier) => {
                     const sel = editForm.tier === tier;
                     return (
                       <button key={tier} type="button"
                         onClick={() => setEditForm((f) => ({ ...f, tier: sel ? '' : tier }))}
-                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{t('merit_tier_' + tier)}</button>
+                        className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{t('merit_tier_' + tier)}</button>
                     );
                   })}
                 </div>
                 {meritFamilies.length > 0 && (
                   <>
-                    <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_families') || 'Familias'}</label>
+                    <label className="text-[11px] text-content-tertiary block mt-2">{t('merit_attr_families') || 'Familias'}</label>
                     <div className="flex flex-wrap gap-1">
                       {meritFamilies.map((f) => {
                         const sel = (editForm.familyIds || []).includes(f.id);
@@ -917,7 +919,7 @@ export default function MeritsView({
                             onClick={() => setEditForm((fm) => ({
                               ...fm, familyIds: sel ? (fm.familyIds || []).filter((x) => x !== f.id) : [...(fm.familyIds || []), f.id],
                             }))}
-                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{f.name}</button>
+                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{f.name}</button>
                         );
                       })}
                     </div>
@@ -925,7 +927,7 @@ export default function MeritsView({
                 )}
                 {knowledgeAreas.length > 0 && (
                   <>
-                    <label className="text-[11px] text-slate-500 block mt-2">{t('merit_attr_knowledge_areas') || 'Áreas de conocimiento'}</label>
+                    <label className="text-[11px] text-content-tertiary block mt-2">{t('merit_attr_knowledge_areas') || 'Áreas de conocimiento'}</label>
                     <div className="flex flex-wrap gap-1">
                       {knowledgeAreas.map((a) => {
                         const sel = (editForm.knowledgeAreaIds || []).includes(a.id);
@@ -934,7 +936,7 @@ export default function MeritsView({
                             onClick={() => setEditForm((fm) => ({
                               ...fm, knowledgeAreaIds: sel ? (fm.knowledgeAreaIds || []).filter((x) => x !== a.id) : [...(fm.knowledgeAreaIds || []), a.id],
                             }))}
-                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 border border-slate-600'}`}>{a.name}</button>
+                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{a.name}</button>
                         );
                       })}
                     </div>
@@ -957,10 +959,10 @@ export default function MeritsView({
                 placeholder={{ en: t('long_desc_placeholder'), es: t('long_desc_placeholder') }}
               />
             </div>
-            <div className="p-5 border-t border-slate-700 flex gap-2 justify-end">
+            <div className="p-5 border-t border-slate-700/40 flex gap-2 justify-end">
               <button
                 onClick={() => setEditingMerit(null)}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg"
+                className="px-4 py-2 bg-surface-overlay hover:bg-slate-700/50 text-content-secondary text-sm rounded-lg transition-colors"
               >
                 {t('cancel')}
               </button>
@@ -986,7 +988,7 @@ export default function MeritsView({
                   });
                   setEditingMerit(null);
                 }}
-                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold rounded-lg"
+                className="px-4 py-2 bg-gradient-to-br from-primary-hover to-primary hover:shadow-glow-sm text-white text-sm font-semibold rounded-lg active:scale-[0.97] transition-all"
               >
                 {t('save')}
               </button>
@@ -996,16 +998,16 @@ export default function MeritsView({
       )}
 
       {/* ── Merit definitions grid ── */}
-      <div className="bg-slate-800 rounded-lg p-4">
+      <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
         <div className="space-y-2 mb-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-400">{t('merit_definitions')}</span>
+            <span className="text-xs text-content-secondary font-medium">{t('merit_definitions')}</span>
             <input
               type="search"
               value={gridSearch}
               onChange={(e) => setGridSearch(e.target.value)}
               placeholder={t('merit_search_placeholder')}
-              className="flex-1 min-w-[140px] px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px]"
+              className="flex-1 min-w-[140px] px-2 py-1 bg-surface-sunken border border-slate-600/60 rounded-lg text-[11px] text-content-primary focus:border-primary/60 focus:outline-none"
             />
             {filteredGridMerits.length > 1 && (
               <select
@@ -1015,7 +1017,7 @@ export default function MeritsView({
                   setGridSortBy(col);
                   setGridSortDir(dir);
                 }}
-                className="px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px] text-slate-300"
+                className="px-2 py-1 bg-surface-overlay border border-slate-600/60 rounded-lg text-[11px] text-content-secondary focus:border-primary/60 focus:outline-none"
               >
                 <option value="name-asc">{t('name')} ▲</option>
                 <option value="name-desc">{t('name')} ▼</option>
@@ -1029,43 +1031,43 @@ export default function MeritsView({
           {merits.length > 5 && (
             <div className="flex flex-wrap gap-2">
               {meritFamilies.length > 0 && (
-              <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 w-full max-w-xs">
+              <div className="border border-slate-700/40 rounded overflow-hidden bg-surface-sunken/60 w-full max-w-xs">
                 <button type="button" onClick={() => setGridFilterOpenTipo((v) => !v)}
-                  className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
+                  className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-content-secondary flex items-center justify-between">
                   {t('merit_attr_families') || 'Familia'} {gridFamilyFilters.length > 0 && `(${gridFamilyFilters.length})`}
-                  <span className={`inline-block text-slate-500 transition-transform ${gridFilterOpenTipo ? '' : '-rotate-90'}`}>▼</span>
+                  <span className={`inline-block text-content-tertiary transition-transform ${gridFilterOpenTipo ? '' : '-rotate-90'}`}>▼</span>
                 </button>
                 {gridFilterOpenTipo && (
-                  <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">
+                  <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700/40 bg-surface-sunken/30">
                     {meritFamilies.map((f) => {
                       const sel = gridFamilyFilters.includes(f.id);
                       return (
                         <button key={f.id} type="button"
                           onClick={() => setGridFamilyFilters(sel ? gridFamilyFilters.filter((x) => x !== f.id) : [...gridFamilyFilters, f.id])}
-                          className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{f.name}</button>
+                          className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{f.name}</button>
                       );
                     })}
                   </div>
                 )}
               </div>
               )}
-              <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 w-full max-w-xs">
+              <div className="border border-slate-700/40 rounded overflow-hidden bg-surface-sunken/60 w-full max-w-xs">
                 <button type="button" onClick={() => setGridFilterOpenCategoria((v) => !v)}
-                  className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
+                  className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-content-secondary flex items-center justify-between">
                   {t('merit_filter_scope')} / {t('merit_filter_domain')}
                   {(gridScopeFilter || gridDomainFilters.length > 0) && ` (${(gridScopeFilter ? 1 : 0) + gridDomainFilters.length})`}
-                  <span className={`inline-block text-slate-500 transition-transform ${gridFilterOpenCategoria ? '' : '-rotate-90'}`}>▼</span>
+                  <span className={`inline-block text-content-tertiary transition-transform ${gridFilterOpenCategoria ? '' : '-rotate-90'}`}>▼</span>
                 </button>
                 {gridFilterOpenCategoria && (
-                  <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700 space-y-2">
+                  <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700/40 bg-surface-sunken/30 space-y-2">
                     <div className="w-full flex flex-wrap gap-1">
                       <button type="button" onClick={() => setGridScopeFilter('')}
-                        className={`text-[10px] px-2 py-0.5 rounded ${!gridScopeFilter ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_scope_all')}</button>
+                        className={`text-[10px] px-2 py-0.5 rounded ${!gridScopeFilter ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{t('merit_scope_all')}</button>
                       <button type="button" onClick={() => setGridScopeFilter('global')}
-                        className={`text-[10px] px-2 py-0.5 rounded ${gridScopeFilter === 'global' ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('global_category')}</button>
+                        className={`text-[10px] px-2 py-0.5 rounded ${gridScopeFilter === 'global' ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{t('global_category')}</button>
                       {categories.map((c) => (
                         <button key={c.id} type="button" onClick={() => setGridScopeFilter(gridScopeFilter === c.id ? '' : c.id)}
-                          className={`text-[10px] px-2 py-0.5 rounded ${gridScopeFilter === c.id ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{ensureString(c.name)}</button>
+                          className={`text-[10px] px-2 py-0.5 rounded ${gridScopeFilter === c.id ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{ensureString(c.name)}</button>
                       ))}
                     </div>
                     <div className="w-full flex flex-wrap gap-1">
@@ -1074,29 +1076,29 @@ export default function MeritsView({
                         return (
                           <button key={d} type="button"
                             onClick={() => setGridDomainFilters(sel ? gridDomainFilters.filter((x) => x !== d) : [...gridDomainFilters, d])}
-                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{domainToLabel(d)}</button>
+                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{domainToLabel(d)}</button>
                         );
                       })}
                     </div>
                   </div>
                 )}
               </div>
-              <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 w-full max-w-xs">
+              <div className="border border-slate-700/40 rounded overflow-hidden bg-surface-sunken/60 w-full max-w-xs">
                 <button type="button" onClick={() => setGridFilterOpenNivel((v) => !v)}
-                  className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
+                  className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-content-secondary flex items-center justify-between">
                   {t('merit_filter_tier')} {gridTierFilter && `(${t('merit_tier_' + gridTierFilter)})`}
-                  <span className={`inline-block text-slate-500 transition-transform ${gridFilterOpenNivel ? '' : '-rotate-90'}`}>▼</span>
+                  <span className={`inline-block text-content-tertiary transition-transform ${gridFilterOpenNivel ? '' : '-rotate-90'}`}>▼</span>
                 </button>
                 {gridFilterOpenNivel && (
-                  <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">
+                  <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700/40 bg-surface-sunken/30">
                     <button type="button" onClick={() => setGridTierFilter('')}
-                      className={`text-[10px] px-2 py-0.5 rounded ${!gridTierFilter ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>—</button>
+                      className={`text-[10px] px-2 py-0.5 rounded ${!gridTierFilter ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>—</button>
                     {meritTiers.map((tier) => {
                       const sel = gridTierFilter === tier;
                       return (
                         <button key={tier} type="button"
                           onClick={() => setGridTierFilter(sel ? '' : tier)}
-                          className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_tier_' + tier)}</button>
+                          className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{t('merit_tier_' + tier)}</button>
                       );
                     })}
                   </div>
@@ -1106,9 +1108,9 @@ export default function MeritsView({
           )}
         </div>
         {merits.length === 0 ? (
-          <div className="text-xs text-slate-500">{t('no_merits')}</div>
+          <div className="text-xs text-content-tertiary">{t('no_merits')}</div>
         ) : sortedGridMerits.length === 0 ? (
-          <div className="text-xs text-slate-500">{t('no_merits_match')}</div>
+          <div className="text-xs text-content-tertiary">{t('no_merits_match')}</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {sortedGridMerits.map((m) => (
@@ -1118,7 +1120,7 @@ export default function MeritsView({
                 tabIndex={0}
                 onClick={() => setDetailMerit(m)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailMerit(m); } }}
-                className="flex items-center gap-3 p-3 bg-slate-700/40 hover:bg-slate-700/70 rounded-xl transition-colors text-left w-full group cursor-pointer"
+                className="flex items-center gap-3 p-3 bg-surface-overlay border border-slate-700/40 hover:border-primary/25 hover:shadow-glow-sm hover:bg-slate-700/50 rounded-xl transition-all duration-150 text-left w-full group cursor-pointer"
               >
                 <AchievementBadge
                   icon={m.logo || 'trophy'}
@@ -1130,15 +1132,15 @@ export default function MeritsView({
                   className="shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate group-hover:text-emerald-300 transition-colors">{m.name}</div>
-                  <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="font-mono text-emerald-400 font-bold">{m.points} {t('pts_label')}</span>
+                  <div className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{m.name}</div>
+                  <div className="text-xs text-content-tertiary flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="font-mono text-primary font-bold">{m.points} {t('pts_label')}</span>
                     {m.categoryId ? <span className="truncate">· {ensureString(categories.find((c) => c.id === m.categoryId)?.name)}</span> : <span>· {t('global_category')}</span>}
                     {(m.familyIds || []).length > 0 && <span>· {(m.familyIds || []).map((fid) => meritFamilies.find((f) => f.id === fid)?.name).filter(Boolean).join(', ') || '—'}</span>}
                     {m.tier && <span>· {t('merit_tier_' + m.tier)}</span>}
                   </div>
                   {getL(m.shortDescription, lang) && (
-                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{getL(m.shortDescription, lang)}</p>
+                    <p className="text-[11px] text-content-tertiary mt-0.5 line-clamp-1">{getL(m.shortDescription, lang)}</p>
                   )}
                 </div>
                 {(canEditMerit ? canEditMerit(m) : canEdit) && (
@@ -1147,7 +1149,7 @@ export default function MeritsView({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setDetailMerit(null); setEditingMerit(m); }}
-                        className="text-[11px] text-emerald-400 hover:text-emerald-300 underline"
+                        className="text-[11px] text-primary/90 hover:text-primary underline transition-colors"
                       >
                         {t('edit')}
                       </button>
@@ -1176,18 +1178,18 @@ export default function MeritsView({
 
       {/* ── Award form ── */}
       {canAward && (
-        <div className="bg-slate-800 rounded-lg p-4">
-          <div className="text-xs text-slate-400 mb-3">{t('award_merit')}</div>
+        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+          <div className="text-xs text-content-secondary font-medium mb-3">{t('award_merit')}</div>
           {assignableMerits.length === 0 && (
             <p className="text-xs text-amber-400/90 mb-3">{t('no_assignable_logros')}</p>
           )}
           <div className="space-y-3">
             {/* Member selector with search */}
             <div>
-              <label className="text-[11px] text-slate-500 block mb-1">{t('member')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-1">{t('member')}</label>
               {selectedAwardMember && (
-                <div className="mb-2 rounded border border-emerald-700/50 bg-emerald-950/20 px-3 py-2 text-xs text-emerald-200">
-                  {ensureString(selectedAwardMember.displayName)} <span className="text-emerald-300/70">({t('role_' + selectedAwardMember.role) || selectedAwardMember.role})</span>
+                <div className="mb-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
+                  {ensureString(selectedAwardMember.displayName)} <span className="text-primary/70">({t('role_' + selectedAwardMember.role) || selectedAwardMember.role})</span>
                 </div>
               )}
               <input
@@ -1195,11 +1197,11 @@ export default function MeritsView({
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
                 placeholder={t('member_search_placeholder')}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs mb-2"
+                className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none mb-2"
               />
-              <div className="max-h-28 overflow-y-auto border border-slate-600 rounded bg-slate-900/60 mb-3">
+              <div className="max-h-28 overflow-y-auto border border-slate-700/40 rounded-lg bg-surface-sunken/60 mb-3">
                 {filteredMembersForAward.length === 0 ? (
-                  <p className="px-3 py-3 text-xs text-slate-500">{t('no_members_filter')}</p>
+                  <p className="px-3 py-3 text-xs text-content-tertiary">{t('no_members_filter')}</p>
                 ) : (
                   <div className="divide-y divide-slate-700/50">
                     {filteredMembersForAward.map((m) => (
@@ -1210,10 +1212,10 @@ export default function MeritsView({
                           setAwardForm((f) => ({ ...f, membershipId: m.id }));
                           setMemberSearch('');
                         }}
-                        className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-700/50 transition-colors ${awardForm.membershipId === m.id ? 'bg-emerald-900/40 border-l-2 border-emerald-500' : ''}`}
+                        className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-700/50 transition-colors ${awardForm.membershipId === m.id ? 'bg-primary/10 border-l-2 border-primary' : ''}`}
                       >
                         <span className="text-sm font-medium truncate">{ensureString(m.displayName)}</span>
-                        <span className="text-[10px] text-slate-500 shrink-0">({t('role_' + m.role) || m.role})</span>
+                        <span className="text-[10px] text-content-tertiary shrink-0">({t('role_' + m.role) || m.role})</span>
                       </button>
                     ))}
                   </div>
@@ -1222,26 +1224,26 @@ export default function MeritsView({
             </div>
             <div className="flex flex-wrap gap-2 items-end">
               <div className="flex-1 min-w-[140px]">
-                <label className="text-[11px] text-slate-500 block mb-1">{t('evidence_optional')}</label>
+                <label className="text-[11px] text-content-tertiary block mb-1">{t('evidence_optional')}</label>
                 <input
                   value={awardForm.evidence}
                   onChange={(e) => setAwardForm((f) => ({ ...f, evidence: e.target.value }))}
                   placeholder={t('evidence_optional')}
-                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                  className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none"
                 />
               </div>
               <button onClick={handleAward}
                 disabled={!awardForm.membershipId || !awardForm.meritId}
-                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-black text-xs font-semibold rounded">
+                className="px-3 py-1.5 bg-gradient-to-br from-primary-hover to-primary hover:shadow-glow-sm disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg active:scale-[0.97] transition-all">
                 {t('award')}
               </button>
             </div>
 
             {/* Merit selector: search + filter chips + list */}
             <div>
-              <label className="text-[11px] text-slate-500 block mb-1">{t('merit')}</label>
+              <label className="text-[11px] text-content-tertiary block mb-1">{t('merit')}</label>
               {selectedAwardMerit && (
-                <div className="mb-2 rounded border border-emerald-700/50 bg-emerald-950/20 px-3 py-2 text-xs text-emerald-200">
+                <div className="mb-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
                   {selectedAwardMerit.name}
                 </div>
               )}
@@ -1250,47 +1252,47 @@ export default function MeritsView({
                 value={meritSearch}
                 onChange={(e) => setMeritSearch(e.target.value)}
                 placeholder={t('merit_search_placeholder')}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs mb-2"
+                className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none mb-2"
               />
               <div className="flex flex-wrap gap-2 mb-2">
                 {meritFamilies.length > 0 && (
-                <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 max-w-xs">
+                <div className="border border-slate-700/40 rounded overflow-hidden bg-surface-sunken/60 max-w-xs">
                   <button type="button" onClick={() => setAwardFilterOpenTipo((v) => !v)}
-                    className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
+                    className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-content-secondary flex items-center justify-between">
                     {t('merit_attr_families') || 'Familia'} {meritFamilyFilters.length > 0 && `(${meritFamilyFilters.length})`}
-                    <span className={`inline-block text-slate-500 transition-transform ${awardFilterOpenTipo ? '' : '-rotate-90'}`}>▼</span>
+                    <span className={`inline-block text-content-tertiary transition-transform ${awardFilterOpenTipo ? '' : '-rotate-90'}`}>▼</span>
                   </button>
                   {awardFilterOpenTipo && (
-                    <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">
+                    <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700/40 bg-surface-sunken/30">
                       {meritFamilies.map((f) => {
                         const sel = meritFamilyFilters.includes(f.id);
                         return (
                           <button key={f.id} type="button"
                             onClick={() => setMeritFamilyFilters(sel ? meritFamilyFilters.filter((x) => x !== f.id) : [...meritFamilyFilters, f.id])}
-                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{f.name}</button>
+                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{f.name}</button>
                         );
                       })}
                     </div>
                   )}
                 </div>
                 )}
-                <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 max-w-xs">
+                <div className="border border-slate-700/40 rounded overflow-hidden bg-surface-sunken/60 max-w-xs">
                   <button type="button" onClick={() => setAwardFilterOpenCategoria((v) => !v)}
-                    className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
+                    className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-content-secondary flex items-center justify-between">
                     {t('merit_filter_scope')} / {t('merit_filter_domain')}
                     {(meritScopeFilter || meritDomainFilters.length > 0) && ` (${(meritScopeFilter ? 1 : 0) + meritDomainFilters.length})`}
-                    <span className={`inline-block text-slate-500 transition-transform ${awardFilterOpenCategoria ? '' : '-rotate-90'}`}>▼</span>
+                    <span className={`inline-block text-content-tertiary transition-transform ${awardFilterOpenCategoria ? '' : '-rotate-90'}`}>▼</span>
                   </button>
                   {awardFilterOpenCategoria && (
-                    <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700 space-y-2">
+                    <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700/40 bg-surface-sunken/30 space-y-2">
                       <div className="w-full flex flex-wrap gap-1">
                         <button type="button" onClick={() => setMeritScopeFilter('')}
-                          className={`text-[10px] px-2 py-0.5 rounded ${!meritScopeFilter ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_scope_all')}</button>
+                          className={`text-[10px] px-2 py-0.5 rounded ${!meritScopeFilter ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{t('merit_scope_all')}</button>
                         <button type="button" onClick={() => setMeritScopeFilter('global')}
-                          className={`text-[10px] px-2 py-0.5 rounded ${meritScopeFilter === 'global' ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('global_category')}</button>
+                          className={`text-[10px] px-2 py-0.5 rounded ${meritScopeFilter === 'global' ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{t('global_category')}</button>
                         {categories.map((c) => (
                           <button key={c.id} type="button" onClick={() => setMeritScopeFilter(meritScopeFilter === c.id ? '' : c.id)}
-                            className={`text-[10px] px-2 py-0.5 rounded ${meritScopeFilter === c.id ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{ensureString(c.name)}</button>
+                            className={`text-[10px] px-2 py-0.5 rounded ${meritScopeFilter === c.id ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{ensureString(c.name)}</button>
                         ))}
                       </div>
                       <div className="w-full flex flex-wrap gap-1">
@@ -1299,38 +1301,38 @@ export default function MeritsView({
                           return (
                             <button key={d} type="button"
                               onClick={() => setMeritDomainFilters(sel ? meritDomainFilters.filter((x) => x !== d) : [...meritDomainFilters, d])}
-                              className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{domainToLabel(d)}</button>
+                              className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{domainToLabel(d)}</button>
                           );
                         })}
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="border border-slate-600 rounded overflow-hidden bg-slate-900/50 max-w-xs">
+                <div className="border border-slate-700/40 rounded overflow-hidden bg-surface-sunken/60 max-w-xs">
                   <button type="button" onClick={() => setAwardFilterOpenNivel((v) => !v)}
-                    className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-slate-300 flex items-center justify-between">
+                    className="w-full text-left px-2 py-1.5 text-[11px] font-medium text-content-secondary flex items-center justify-between">
                     {t('merit_filter_tier')} {meritTierFilter && `(${t('merit_tier_' + meritTierFilter)})`}
-                    <span className={`inline-block text-slate-500 transition-transform ${awardFilterOpenNivel ? '' : '-rotate-90'}`}>▼</span>
+                    <span className={`inline-block text-content-tertiary transition-transform ${awardFilterOpenNivel ? '' : '-rotate-90'}`}>▼</span>
                   </button>
                   {awardFilterOpenNivel && (
-                    <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700">
+                    <div className="px-2 pb-2 pt-0 flex flex-wrap gap-1 border-t border-slate-700/40 bg-surface-sunken/30">
                       <button type="button" onClick={() => setMeritTierFilter('')}
-                        className={`text-[10px] px-2 py-0.5 rounded ${!meritTierFilter ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>—</button>
+                        className={`text-[10px] px-2 py-0.5 rounded ${!meritTierFilter ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>—</button>
                       {meritTiers.map((tier) => {
                         const sel = meritTierFilter === tier;
                         return (
                           <button key={tier} type="button"
                             onClick={() => setMeritTierFilter(sel ? '' : tier)}
-                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-emerald-600/50 border border-emerald-500' : 'bg-slate-700 hover:bg-slate-600 border border-slate-600'}`}>{t('merit_tier_' + tier)}</button>
+                            className={`text-[10px] px-2 py-0.5 rounded ${sel ? 'bg-primary/20 border border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-secondary border border-slate-700/40'}`}>{t('merit_tier_' + tier)}</button>
                         );
                       })}
                     </div>
                   )}
                 </div>
               </div>
-              <div className="max-h-40 overflow-y-auto border border-slate-600 rounded bg-slate-900/60">
+              <div className="max-h-40 overflow-y-auto border border-slate-700/40 rounded-lg bg-surface-sunken/60">
                 {filteredAwardMerits.length === 0 ? (
-                  <p className="px-3 py-4 text-xs text-slate-500">{t('no_merits_match')}</p>
+                  <p className="px-3 py-4 text-xs text-content-tertiary">{t('no_merits_match')}</p>
                 ) : (
                   <div className="divide-y divide-slate-700/50">
                     {filteredAwardMerits.map((m) => (
@@ -1338,12 +1340,12 @@ export default function MeritsView({
                         key={m.id}
                         type="button"
                         onClick={() => setAwardForm((f) => ({ ...f, meritId: m.id }))}
-                        className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-700/50 transition-colors ${awardForm.meritId === m.id ? 'bg-emerald-900/40 border-l-2 border-emerald-500' : ''}`}
+                        className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-700/50 transition-colors ${awardForm.meritId === m.id ? 'bg-primary/10 border-l-2 border-primary' : ''}`}
                       >
                         <AchievementBadge icon={m.logo || 'trophy'} color={m.logoColor} tier={m.tier} unlocked size="sm" compact className="shrink-0" />
                         <div className="min-w-0 flex-1">
                           <span className="text-sm font-medium truncate block">{m.name}</span>
-                          <span className="text-[10px] text-slate-500">
+                          <span className="text-[10px] text-content-tertiary">
                             {m.points} {t('pts_label')}
                             {m.categoryId ? ` · ${ensureString(categories.find((c) => c.id === m.categoryId)?.name)}` : ` · ${t('global_category')}`}
                             {(m.familyIds || []).length > 0 && ` · ${(m.familyIds || []).map((fid) => meritFamilies.find((f) => f.id === fid)?.name).filter(Boolean).join(', ') || '—'}`}
@@ -1361,18 +1363,18 @@ export default function MeritsView({
       )}
 
       {/* ── Audit log ── */}
-      <div className="bg-slate-800 rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700 text-xs text-slate-400 flex items-center justify-between flex-wrap gap-2">
+      <div className="rounded-xl border border-slate-700/40 bg-surface-raised overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-700/40 bg-surface-sunken/30 text-xs text-content-secondary flex items-center justify-between flex-wrap gap-2">
           <span>{t('merit_audit_log')}</span>
           {isPlatformAdmin && <span className="text-amber-400">{t('platform_admin_editable')}</span>}
         </div>
         {sortedAuditEvents.length === 0 ? (
-          <div className="p-4 text-xs text-slate-500">{t('no_events_yet')}</div>
+          <div className="p-4 text-xs text-content-tertiary">{t('no_events_yet')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="text-left text-slate-400 border-b border-slate-700">
+                <tr className="text-left text-content-tertiary border-b border-slate-700/40 bg-surface-sunken/30">
                   <SortTh col="date" label={t('th_when')} currentSortBy={auditSortBy} currentDir={auditSortDir} onToggle={toggleAuditSort} />
                   <SortTh col="member" label={t('th_member')} currentSortBy={auditSortBy} currentDir={auditSortDir} onToggle={toggleAuditSort} />
                   <SortTh col="merit" label={t('merit')} currentSortBy={auditSortBy} currentDir={auditSortDir} onToggle={toggleAuditSort} />
@@ -1389,8 +1391,8 @@ export default function MeritsView({
                   const ts      = tsToDate(evt.createdAt);
                   const isEditing = editingEventId === evt.id;
                   return (
-                    <tr key={evt.id} className="border-b border-slate-700 hover:bg-slate-700/20">
-                      <td className="px-3 py-2 text-[10px] text-slate-400 whitespace-nowrap">{ts.toLocaleString()}</td>
+                    <tr key={evt.id} className="border-b border-slate-700/40 hover:bg-slate-700/20 transition-colors">
+                      <td className="px-3 py-2 text-[10px] text-content-tertiary whitespace-nowrap">{ts.toLocaleString()}</td>
                       <td className="px-3 py-2">
                         {m ? (
                           <button onClick={() => onViewProfile?.(m)} className="hover:underline text-left">{ensureString(m.displayName)}</button>
@@ -1407,32 +1409,32 @@ export default function MeritsView({
                           <input type="number"
                             value={editEventDraft.points}
                             onChange={(e) => setEditEventDraft((d) => ({ ...d, points: e.target.value }))}
-                            className="w-16 px-1.5 py-0.5 bg-slate-900 border border-amber-500 rounded text-xs font-mono text-center" />
+                            className="w-16 px-1.5 py-0.5 bg-surface-sunken border border-amber-500 rounded text-xs font-mono text-center" />
                         ) : (
-                          <span className={`font-mono font-bold ${evt.points > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          <span className={`font-mono font-bold ${evt.points > 0 ? 'text-primary' : 'text-red-400'}`}>
                             {evt.points > 0 ? '+' : ''}{evt.points}
                           </span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-slate-400 text-[11px]">
+                      <td className="px-3 py-2 text-content-tertiary text-[11px]">
                         {evt.autoAward ? t('merit_awarded_by_system') : (evt.awardedByName || (() => {
                           const uid = evt.awardedByUserId || evt.createdByUserId;
                           const memb = memberships.find((mm) => mm.userId === uid);
                           return memb ? ensureString(memb.displayName) : '—';
                         })())}
                       </td>
-                      <td className="px-3 py-2 text-slate-400 max-w-[160px] truncate">
+                      <td className="px-3 py-2 text-content-tertiary max-w-[160px] truncate">
                         {isEditing ? (
                           <input
                             value={editEventDraft.evidence}
                             onChange={(e) => setEditEventDraft((d) => ({ ...d, evidence: e.target.value }))}
                             placeholder={t('note_ph')}
-                            className="w-full px-1.5 py-0.5 bg-slate-900 border border-amber-500 rounded text-xs" />
+                            className="w-full px-1.5 py-0.5 bg-surface-sunken border border-amber-500 rounded text-xs text-content-primary" />
                         ) : (
                           <span title={evt.evidence}>{evt.evidence || '—'}</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 capitalize text-slate-400">{evt.type}</td>
+                      <td className="px-3 py-2 capitalize text-content-tertiary">{evt.type}</td>
                       {(canEdit || isPlatformAdmin) && (
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-2">
@@ -1444,16 +1446,16 @@ export default function MeritsView({
                                       onEditMeritEvent(evt.id, { points: Number(editEventDraft.points), evidence: editEventDraft.evidence });
                                       setEditingEventId(null);
                                     }}
-                                    className="text-[11px] text-amber-400 underline">
+                                    className="text-[11px] text-amber-400 hover:text-amber-300 underline transition-colors">
                                     {t('save')}
                                   </button>
                                   <button onClick={() => setEditingEventId(null)}
-                                    className="text-[11px] text-slate-500 underline">{t('cancel')}</button>
+                                    className="text-[11px] text-content-tertiary hover:text-content-secondary underline transition-colors">{t('cancel')}</button>
                                 </>
                               ) : (
                                 <button
                                   onClick={() => { setEditingEventId(evt.id); setEditEventDraft({ points: evt.points, evidence: evt.evidence || '' }); }}
-                                  className="text-[11px] text-amber-400 underline">{t('edit')}</button>
+                                  className="text-[11px] text-amber-400 hover:text-amber-300 underline transition-colors">{t('edit')}</button>
                               )
                             )}
                             {canEdit && !isEditing && evt.type === 'award' && (

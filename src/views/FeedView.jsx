@@ -3,12 +3,12 @@
 // per-post comments.  Authors and admins may delete their own content.
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { t } from '../strings.js';
 import { toEmbedUrl, tsToDate } from '../utils.js';
 import ModalOverlay from '../components/ModalOverlay.jsx';
 import SafeImage from '../components/ui/SafeImage.jsx';
-import { SafeProfileImage, Button, Textarea } from '../components/ui/index.js';
+import { SafeProfileImage, Button, Input, Textarea } from '../components/ui/index.js';
 import { Card } from '../components/layout/index.js';
 
 const MAX_VISIBLE_POST_IMAGES = 5;
@@ -436,10 +436,13 @@ export default function FeedView({
 
   return (
     <div className="w-full max-w-none space-y-6 lg:max-w-2xl">
-      <h2 className="text-lg font-semibold text-content-primary">Feed</h2>
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-bold text-gradient tracking-tight">Feed</h2>
+        <p className="text-sm text-content-secondary mt-1">{t('feed_desc') || 'Actividad del equipo'}</p>
+      </div>
 
       {/* Post composer */}
-      <Card className="space-y-3">
+      <Card variant="glass" className="space-y-3 animate-slide-up animate-delay-1">
         <Textarea rows={3} value={newContent} onChange={(e) => setNewContent(e.target.value)}
           placeholder={t('share_ph')} />
         {showImageField && (
@@ -463,7 +466,7 @@ export default function FeedView({
       )}
 
       {/* Post list */}
-      {posts.map((post) => {
+      {posts.map((post, postIndex) => {
         const postComments = comments
           .filter((c) => c.postId === post.id)
           .sort((a, b) => tsToDate(a.createdAt) - tsToDate(b.createdAt));
@@ -486,18 +489,22 @@ export default function FeedView({
         }, {});
 
         return (
-          <Card key={post.id} hover className="overflow-hidden">
+          <Card
+            key={post.id}
+            className="overflow-hidden hover:border-primary/25 hover:shadow-glow-sm hover:-translate-y-0.5 animate-slide-up"
+            style={{ animationDelay: `${Math.min(postIndex * 60, 360)}ms` }}
+          >
             {/* Post body */}
             <div className="flex items-start gap-3 p-4">
               {authorPhoto ? (
                 <SafeProfileImage
                   src={authorPhoto}
-                  fallback={<div className="w-9 h-9 rounded-full bg-slate-600 shrink-0 flex items-center justify-center text-sm font-bold">{(authorName || '?')[0].toUpperCase()}</div>}
-                  className="w-9 h-9 rounded-full shrink-0"
+                  fallback={<div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 shrink-0 flex items-center justify-center text-sm font-bold text-primary">{(authorName || '?')[0].toUpperCase()}</div>}
+                  className="w-9 h-9 rounded-full shrink-0 ring-2 ring-primary/30 ring-offset-1 ring-offset-surface-raised"
                   alt=""
                 />
               ) : (
-                <div className="w-9 h-9 rounded-full bg-slate-600 shrink-0 flex items-center justify-center text-sm font-bold">
+                <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 shrink-0 flex items-center justify-center text-sm font-bold text-primary ring-2 ring-primary/20 ring-offset-1 ring-offset-surface-raised">
                   {(authorName || '?')[0].toUpperCase()}
                 </div>
               )}
@@ -522,11 +529,11 @@ export default function FeedView({
                         type="button"
                         onClick={() => onToggleReaction?.(post.id, id)}
                         className={[
-                          'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs transition-colors',
+                          'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs transition-all duration-150 hover:scale-110 active:scale-95',
                           index > 0 ? 'border-l border-slate-700' : '',
                           isActive
-                            ? 'bg-sky-500/15 text-sky-200'
-                            : 'text-slate-300 hover:bg-slate-800 hover:text-slate-100',
+                            ? 'bg-primary/15 text-primary'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-slate-100',
                         ].join(' ')}
                         title={label}
                         aria-label={label}
@@ -547,37 +554,40 @@ export default function FeedView({
             </div>
 
             {/* Comment toggle */}
-            <div className="border-t border-slate-700 px-4 py-2">
+            <div className="border-t border-slate-700/60 px-4 py-2">
               <button onClick={() => setExpandedPostId(isExpanded ? null : post.id)}
-                className="text-xs text-slate-400 hover:text-slate-200 transition-colors">
-                {postComments.length > 0
-                  ? `${postComments.length} comentario${postComments.length !== 1 ? 's' : ''}`
-                  : t('add_a_comment_btn')
-                } {isExpanded ? '▲' : '▼'}
+                className="inline-flex items-center gap-1.5 text-xs text-content-tertiary hover:text-content-primary transition-colors">
+                <span>
+                  {postComments.length > 0
+                    ? `${postComments.length} comentario${postComments.length !== 1 ? 's' : ''}`
+                    : t('add_a_comment_btn')
+                  }
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
               </button>
             </div>
 
             {/* Comment thread */}
             {isExpanded && (
-              <div className="border-t border-slate-700 px-4 pb-4 pt-3 space-y-3">
+              <div className="border-t border-slate-700/60 bg-surface-sunken/30 px-4 pb-4 pt-3 space-y-3">
                 {postComments.map((c) => (
-                  <div key={c.id} className="flex items-start gap-2">
+                  <div key={c.id} className="flex items-start gap-2 animate-slide-up">
                     {(() => {
                       const commentAuthorName = getLiveMemberName(memberships, { userId: c.authorId, fallback: c.authorName || 'Member' });
                       return (
                         <>
-                    <div className="w-7 h-7 rounded-full bg-slate-600 shrink-0 flex items-center justify-center text-xs font-bold">
+                    <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 shrink-0 flex items-center justify-center text-xs font-bold text-primary">
                       {(commentAuthorName || '?')[0].toUpperCase()}
                     </div>
-                    <div className="flex-1 bg-slate-700/60 rounded-lg px-3 py-2">
+                    <div className="flex-1 bg-surface-overlay/60 border border-slate-700/40 rounded-lg px-3 py-2">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xs font-semibold">{commentAuthorName}</span>
-                        <span className="text-[10px] text-slate-500">{tsToDate(c.createdAt).toLocaleString()}</span>
+                        <span className="text-xs font-semibold text-content-primary">{commentAuthorName}</span>
+                        <span className="text-[10px] text-content-tertiary">{tsToDate(c.createdAt).toLocaleString()}</span>
                       </div>
-                      <p className="text-xs text-slate-200 mt-0.5">{c.content}</p>
+                      <p className="text-xs text-content-secondary mt-0.5">{c.content}</p>
                     </div>
                     {(canEdit || c.authorId === authUser?.uid) && (
-                      <button onClick={() => onDeleteComment(c.id)} className="text-red-400 hover:text-red-300 shrink-0 mt-1 p-0.5" title={t('delete')} aria-label={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
+                      <button onClick={() => onDeleteComment(c.id)} className="text-error hover:text-red-400 shrink-0 mt-1 p-0.5 transition-colors" title={t('delete')} aria-label={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
                     )}
                         </>
                       );
@@ -585,15 +595,16 @@ export default function FeedView({
                   </div>
                 ))}
                 <div className="flex gap-2 mt-1">
-                  <input value={commentDrafts[post.id] || ''}
+                  <Input
+                    value={commentDrafts[post.id] || ''}
                     onChange={(e) => setCommentDrafts((d) => ({ ...d, [post.id]: e.target.value }))}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleComment(post.id); }}
                     placeholder={t('write_comment_ph')}
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs" />
-                  <button onClick={() => handleComment(post.id)}
-                    className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded transition-colors">
+                    className="flex-1 text-xs py-1.5"
+                  />
+                  <Button variant="secondary" size="sm" onClick={() => handleComment(post.id)}>
                     {t('reply_btn')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}

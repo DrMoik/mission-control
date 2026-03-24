@@ -26,6 +26,10 @@ service cloud.firestore {
       return get(membershipPath(teamId));
     }
 
+    function myMembershipId(teamId) {
+      return request.auth.uid + '_' + teamId;
+    }
+
     function isActiveMember(teamId) {
       return request.auth != null && (
         isPlatformAdmin() || (
@@ -466,7 +470,9 @@ service cloud.firestore {
         (
           request.auth != null &&
           isActiveMember(resource.data.teamId) &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['responses', 'lastEditedAt', 'lastEditedBy'])
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['responses', 'lastEditedAt', 'lastEditedBy', 'lastEditedByUserId']) &&
+          request.resource.data.responses.diff(resource.data.responses).affectedKeys().hasOnly([myMembershipId(resource.data.teamId)]) &&
+          request.resource.data.lastEditedByUserId == request.auth.uid
         );
       allow delete: if isLeaderOrAbove(resource.data.teamId);
     }

@@ -74,6 +74,37 @@ export default {
         'surface-lg': '0 10px 15px -3px rgb(0 0 0 / 0.25), 0 4px 6px -4px rgb(0 0 0 / 0.2)',
         'surface-xl': '0 20px 25px -5px rgb(0 0 0 / 0.25), 0 8px 10px -6px rgb(0 0 0 / 0.2)',
         'inner-subtle': 'inset 0 1px 0 0 rgb(255 255 255 / 0.03)',
+        'glow-sm': '0 0 15px rgba(13, 148, 136, 0.25)',
+        'glow-md': '0 0 30px rgba(13, 148, 136, 0.22), 0 0 60px rgba(13, 148, 136, 0.10)',
+        'glow-lg': '0 0 50px rgba(13, 148, 136, 0.28), 0 0 100px rgba(13, 148, 136, 0.12)',
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+      },
+      animation: {
+        'slide-up': 'slide-up-in 350ms cubic-bezier(0.33, 1, 0.68, 1) both',
+        'fade-in':  'fade-in 200ms ease-out both',
+        'glow-breathe': 'glow-breathe 2.5s ease-in-out infinite',
+        'shimmer': 'shimmer 4s ease-in-out infinite',
+      },
+      keyframes: {
+        'slide-up-in': {
+          from: { opacity: '0', transform: 'translateY(12px)' },
+          to:   { opacity: '1', transform: 'translateY(0)' },
+        },
+        'fade-in': {
+          from: { opacity: '0' },
+          to:   { opacity: '1' },
+        },
+        'glow-breathe': {
+          '0%, 100%': { boxShadow: '0 0 15px rgba(13, 148, 136, 0.15)' },
+          '50%':       { boxShadow: '0 0 30px rgba(13, 148, 136, 0.35)' },
+        },
+        'shimmer': {
+          '0%':   { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition:  '200% center' },
+        },
       },
       transitionDuration: {
         '150': '150ms',

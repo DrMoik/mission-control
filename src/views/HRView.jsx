@@ -6,6 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { t } from '../strings.js';
 import { ensureString, tsToDate } from '../utils.js';
 import EvidenceInput from '../components/EvidenceInput.jsx';
+import { Button, Textarea } from '../components/ui/index.js';
 
 /**
  * @param {{
@@ -141,95 +142,59 @@ export default function HRView({
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h2 className="text-base font-semibold text-slate-200">{t('hr_page_title')}</h2>
-      <div className="flex gap-2 border-b border-slate-700 pb-2">
-        <button
-          onClick={() => setTab('suggestions')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors ${
-            tab === 'suggestions' ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-          }`}
-        >
-          {t('hr_suggestions')}
-        </button>
-        <button
-          onClick={() => setTab('complaints')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors ${
-            tab === 'complaints' ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-          }`}
-        >
-          {t('hr_complaints')}
-        </button>
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('hr_page_title')}</h2>
+      </div>
+      <div className="flex gap-2 border-b border-slate-700/40 pb-2 animate-slide-up animate-delay-1">
+        {[['suggestions', t('hr_suggestions')], ['complaints', t('hr_complaints')]].map(([id, label]) => (
+          <button key={id} onClick={() => setTab(id)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-150 ${tab === id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}>
+            {label}
+          </button>
+        ))}
       </div>
 
       {tab === 'suggestions' && (
         <div className="space-y-4">
           {authUserId && (
-            <div className="flex gap-4 p-3 bg-slate-800/60 rounded-lg border border-slate-700/60">
-              <span className="text-xs text-slate-400">
-                {t('hr_my_suggestions_posted')}: <strong className="text-slate-200">{mySuggestionsCount}</strong>
+            <div className="flex gap-4 p-3 rounded-xl border border-slate-700/40 bg-surface-raised">
+              <span className="text-xs text-content-tertiary">
+                {t('hr_my_suggestions_posted')}: <strong className="text-content-primary">{mySuggestionsCount}</strong>
               </span>
-              <span className="text-xs text-slate-400">
-                {t('hr_my_suggestions_implemented')}: <strong className="text-emerald-400">{myImplementedCount}</strong>
+              <span className="text-xs text-content-tertiary">
+                {t('hr_my_suggestions_implemented')}: <strong className="text-primary">{myImplementedCount}</strong>
               </span>
             </div>
           )}
 
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-200 mb-2">{t('hr_suggestions_submit')}</h3>
+          <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+            <h3 className="text-sm font-semibold text-content-primary mb-2">{t('hr_suggestions_submit')}</h3>
             <form onSubmit={handleSubmitSuggestion} className="space-y-3">
-              <textarea
-                value={suggestionContent}
-                onChange={(e) => setSuggestionContent(e.target.value)}
-                placeholder={t('hr_suggestion_placeholder')}
-                rows={4}
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
-                required
-              />
-              <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={suggestionAnonymous}
-                  onChange={(e) => setSuggestionAnonymous(e.target.checked)}
-                />
+              <Textarea value={suggestionContent} onChange={(e) => setSuggestionContent(e.target.value)} placeholder={t('hr_suggestion_placeholder')} rows={4} required />
+              <label className="flex items-center gap-2 text-xs text-content-tertiary cursor-pointer">
+                <input type="checkbox" checked={suggestionAnonymous} onChange={(e) => setSuggestionAnonymous(e.target.checked)} />
                 {t('hr_suggestion_anonymous')}
               </label>
-              <button
-                type="submit"
-                disabled={suggestionSaving}
-                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black text-xs font-semibold rounded"
-              >
+              <Button type="submit" variant="primary" size="sm" disabled={suggestionSaving}>
                 {suggestionSaving ? t('saving') : t('hr_suggestion_submit')}
-              </button>
+              </Button>
             </form>
           </div>
 
           {canViewHr && suggestions.length > 0 && (
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setSuggestionStatusFilter('pending')}
-                  className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'pending' ? 'bg-amber-500 text-black' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
-                >
-                  {t('hr_suggestions_pending')} ({suggestions.filter((s) => (s.status || 'pending') === 'pending').length})
-                </button>
-                <button
-                  onClick={() => setSuggestionStatusFilter('accepted')}
-                  className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'accepted' ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
-                >
-                  {t('hr_suggestions_accepted')} ({suggestions.filter((s) => s.status === 'accepted').length})
-                </button>
-                <button
-                  onClick={() => setSuggestionStatusFilter('dismissed')}
-                  className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'dismissed' ? 'bg-slate-500 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
-                >
-                  {t('hr_suggestions_dismissed')} ({suggestions.filter((s) => s.status === 'dismissed').length})
-                </button>
-                <button
-                  onClick={() => setSuggestionStatusFilter('all')}
-                  className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${suggestionStatusFilter === 'all' ? 'bg-slate-500 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}
-                >
-                  {t('hr_suggestions_all')} ({suggestions.length})
-                </button>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  ['pending', `${t('hr_suggestions_pending')} (${suggestions.filter((s) => (s.status || 'pending') === 'pending').length})`],
+                  ['accepted', `${t('hr_suggestions_accepted')} (${suggestions.filter((s) => s.status === 'accepted').length})`],
+                  ['dismissed', `${t('hr_suggestions_dismissed')} (${suggestions.filter((s) => s.status === 'dismissed').length})`],
+                  ['all', `${t('hr_suggestions_all')} (${suggestions.length})`],
+                ].map(([id, label]) => (
+                  <button key={id} onClick={() => setSuggestionStatusFilter(id)}
+                    className={`px-2 py-1 text-xs font-semibold rounded-lg border transition-all duration-150 ${suggestionStatusFilter === id ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-surface-overlay border-slate-700/40 text-content-tertiary hover:bg-slate-700/50 hover:text-content-secondary'}`}>
+                    {label}
+                  </button>
+                ))}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto">
                 {filteredSuggestions.map((s) => {
@@ -243,23 +208,23 @@ export default function HRView({
                         setViewModalSuggestion(s);
                         setShowAcceptPoints(false);
                       }}
-                      className="text-left p-4 rounded-xl border border-slate-600 bg-slate-800/80 hover:border-slate-500 hover:bg-slate-800 transition-colors"
+                      className="text-left p-4 rounded-xl border border-slate-700/40 bg-surface-raised hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200"
                     >
-                      <p className="text-slate-200 text-xs line-clamp-3">{preview}{preview.length >= 80 ? '…' : ''}</p>
+                      <p className="text-content-primary text-xs line-clamp-3">{preview}{preview.length >= 80 ? '…' : ''}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] text-slate-500">
+                          <span className="text-[10px] text-content-tertiary">
                             {s.isAnonymous ? t('hr_anonymous') : getLiveAuthorName(s)}
                           </span>
-                        <span className="text-[10px] text-slate-500">{formatDate(s.createdAt)}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                          status === 'pending' ? 'bg-amber-900/50 text-amber-300' :
-                          status === 'accepted' ? 'bg-emerald-900/50 text-emerald-300' :
-                          'bg-slate-700 text-slate-400'
+                        <span className="text-[10px] text-content-tertiary">{formatDate(s.createdAt)}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
+                          status === 'pending' ? 'bg-amber-900/40 text-amber-300 border border-amber-700/40' :
+                          status === 'accepted' ? 'bg-primary/15 text-primary border border-primary/30' :
+                          'bg-surface-overlay text-content-tertiary border border-slate-700/40'
                         }`}>
                           {status === 'pending' ? t('hr_suggestions_pending') : status === 'accepted' ? t('hr_suggestions_accepted') : t('hr_suggestions_dismissed')}
                         </span>
                         {s.status === 'accepted' && s.meritPoints && (
-                          <span className="text-[10px] text-emerald-400">+{s.meritPoints} pts</span>
+                          <span className="text-[10px] text-primary">+{s.meritPoints} pts</span>
                         )}
                       </div>
                     </button>
@@ -269,7 +234,7 @@ export default function HRView({
             </div>
           )}
           {canViewHr && suggestions.length === 0 && (
-            <p className="text-slate-500 text-xs">{t('hr_no_suggestions')}</p>
+            <p className="text-content-tertiary text-xs italic">{t('hr_no_suggestions')}</p>
           )}
         </div>
       )}
@@ -280,26 +245,25 @@ export default function HRView({
           onClick={() => !acceptSaving && (setViewModalSuggestion(null), setShowAcceptPoints(false))}
         >
           <div
-            className="bg-slate-800 rounded-xl p-5 border border-slate-600 max-w-lg w-full max-h-[85vh] overflow-y-auto"
+            className="rounded-xl border border-slate-700/40 bg-surface-raised p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-surface-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-sm font-semibold text-slate-200 mb-2">{t('hr_suggestions_list')}</h3>
-              <p className="text-sm text-slate-200 whitespace-pre-wrap mb-4">{ensureString(viewModalSuggestion.content)}</p>
-              <p className="text-xs text-slate-500 mb-4">
+            <h3 className="text-sm font-semibold text-content-primary mb-2">{t('hr_suggestions_list')}</h3>
+              <p className="text-sm text-content-primary whitespace-pre-wrap mb-4">{ensureString(viewModalSuggestion.content)}</p>
+              <p className="text-xs text-content-tertiary mb-4">
                 {viewModalSuggestion.isAnonymous ? t('hr_anonymous') : getLiveAuthorName(viewModalSuggestion)}
                 {' · '}{formatDate(viewModalSuggestion.createdAt)}
               {viewModalSuggestion.status === 'accepted' && viewModalSuggestion.meritPoints && (
-                <span className="ml-2 text-emerald-400">+{viewModalSuggestion.meritPoints} pts</span>
+                <span className="ml-2 text-primary">+{viewModalSuggestion.meritPoints} pts</span>
               )}
             </p>
 
             {showAcceptPoints ? (
               <div>
-                <p className="text-xs text-slate-400 mb-2">{t('hr_suggestions_accept_points')}</p>
+                <p className="text-xs text-content-tertiary mb-2">{t('hr_suggestions_accept_points')}</p>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {suggestionMeritPoints.map((pts) => (
-                    <button
-                      key={pts}
+                    <Button key={pts} variant="primary" size="sm" disabled={acceptSaving}
                       onClick={async () => {
                         setAcceptSaving(true);
                         try {
@@ -313,33 +277,21 @@ export default function HRView({
                           setAcceptSaving(false);
                         }
                       }}
-                      disabled={acceptSaving}
-                      className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black text-xs font-semibold rounded"
                     >
                       {pts} pts
-                    </button>
+                    </Button>
                   ))}
                 </div>
-                <button
-                  onClick={() => !acceptSaving && setShowAcceptPoints(false)}
-                  className="text-xs text-slate-400 hover:text-white underline"
-                >
-                  {t('cancel')}
-                </button>
+                <Button variant="ghost" size="sm" onClick={() => !acceptSaving && setShowAcceptPoints(false)}>{t('cancel')}</Button>
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {(viewModalSuggestion.status || 'pending') === 'pending' && (
                   <>
-                    <button
-                      onClick={() => setShowAcceptPoints(true)}
-                      disabled={!!viewModalSuggestion.isAnonymous}
-                      title={viewModalSuggestion.isAnonymous ? t('hr_suggestion_anonymous_no_merit') : t('hr_suggestions_consider')}
-                      className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-black text-xs font-semibold rounded"
-                    >
+                    <Button variant="primary" size="sm" disabled={!!viewModalSuggestion.isAnonymous} title={viewModalSuggestion.isAnonymous ? t('hr_suggestion_anonymous_no_merit') : t('hr_suggestions_consider')} onClick={() => setShowAcceptPoints(true)}>
                       {t('hr_suggestions_consider')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button variant="secondary" size="sm" disabled={acceptSaving}
                       onClick={async () => {
                         setAcceptSaving(true);
                         try {
@@ -352,11 +304,9 @@ export default function HRView({
                           setAcceptSaving(false);
                         }
                       }}
-                      disabled={acceptSaving}
-                      className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-slate-200 text-xs font-semibold rounded"
                     >
                       {t('hr_suggestions_dismiss')}
-                    </button>
+                    </Button>
                   </>
                 )}
                 {viewModalSuggestion.status === 'dismissed' && (
@@ -374,17 +324,14 @@ export default function HRView({
                       }
                     }}
                     disabled={acceptSaving}
-                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-black text-xs font-semibold rounded"
+                    className="inline-flex items-center justify-center gap-2 font-semibold transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-amber-600/90 text-white hover:bg-amber-500 active:scale-[0.96] disabled:opacity-40"
                   >
                     {t('hr_suggestions_reconsider')}
                   </button>
                 )}
-                <button
-                  onClick={() => !acceptSaving && (setViewModalSuggestion(null), setShowAcceptPoints(false))}
-                  className="px-3 py-1.5 text-slate-400 hover:text-white text-xs font-semibold"
-                >
+                <Button variant="ghost" size="sm" onClick={() => !acceptSaving && (setViewModalSuggestion(null), setShowAcceptPoints(false))}>
                   {t('close')}
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -393,16 +340,16 @@ export default function HRView({
 
       {tab === 'complaints' && (
         <div className="space-y-4">
-          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-200 mb-2">{t('hr_complaints_submit')}</h3>
-            <p className="text-[11px] text-slate-500 mb-3">{t('hr_complaint_non_anonymous')}</p>
+          <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+            <h3 className="text-sm font-semibold text-content-primary mb-2">{t('hr_complaints_submit')}</h3>
+            <p className="text-[11px] text-content-tertiary mb-3">{t('hr_complaint_non_anonymous')}</p>
             <form onSubmit={handleSubmitComplaint} className="space-y-3">
               <div>
-                <label className="text-[11px] text-slate-500 block mb-1">{t('hr_complaint_type')}</label>
+                <label className="text-[11px] text-content-tertiary block mb-1">{t('hr_complaint_type')}</label>
                 <select
                   value={complaintType}
                   onChange={(e) => setComplaintType(e.target.value)}
-                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                  className="w-full px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary"
                 >
                   <option value="team">{t('hr_complaint_type_team')}</option>
                   <option value="area">{t('hr_complaint_type_area')}</option>
@@ -411,11 +358,11 @@ export default function HRView({
               </div>
               {complaintType === 'area' && (
                 <div>
-                  <label className="text-[11px] text-slate-500 block mb-1">{t('hr_complaint_target_area')}</label>
+                  <label className="text-[11px] text-content-tertiary block mb-1">{t('hr_complaint_target_area')}</label>
                   <select
                     value={complaintTargetCat}
                     onChange={(e) => setComplaintTargetCat(e.target.value)}
-                    className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                    className="w-full px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary"
                     required
                   >
                     <option value="">—</option>
@@ -427,11 +374,11 @@ export default function HRView({
               )}
               {complaintType === 'person' && (
                 <div>
-                  <label className="text-[11px] text-slate-500 block mb-1">{t('hr_complaint_target_person')}</label>
+                  <label className="text-[11px] text-content-tertiary block mb-1">{t('hr_complaint_target_person')}</label>
                   <select
                     value={complaintTargetMember}
                     onChange={(e) => setComplaintTargetMember(e.target.value)}
-                    className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
+                    className="w-full px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary"
                     required
                   >
                     <option value="">—</option>
@@ -442,36 +389,26 @@ export default function HRView({
                 </div>
               )}
               <div>
-                <label className="text-[11px] text-slate-500 block mb-1">{t('hr_complaint_content')}</label>
-                <textarea
-                  value={complaintContent}
-                  onChange={(e) => setComplaintContent(e.target.value)}
-                  placeholder={t('hr_complaint_content_ph')}
-                  rows={3}
-                  className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs"
-                  required
-                />
+                <label className="text-[11px] text-content-tertiary block mb-1">{t('hr_complaint_content')}</label>
+                <Textarea value={complaintContent} onChange={(e) => setComplaintContent(e.target.value)} placeholder={t('hr_complaint_content_ph')} rows={3} required />
               </div>
               <div>
-                <label className="text-[11px] text-slate-500 block mb-1">{t('hr_complaint_evidence')}</label>
+                <label className="text-[11px] text-content-tertiary block mb-1">{t('hr_complaint_evidence')}</label>
                 <EvidenceInput value={complaintEvidence} onChange={setComplaintEvidence} required />
               </div>
-              <button
-                type="submit"
-                disabled={complaintSaving}
-                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black text-xs font-semibold rounded"
-              >
+              <button type="submit" disabled={complaintSaving}
+                className="inline-flex items-center justify-center gap-2 font-semibold transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-amber-600/90 text-white hover:bg-amber-500 active:scale-[0.96] disabled:opacity-40">
                 {complaintSaving ? t('saving') : t('hr_complaint_submit')}
               </button>
             </form>
           </div>
 
           {canViewHr && complaints.length > 0 && (
-            <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700">
-              <div className="px-4 py-3 border-b border-slate-700 text-xs font-semibold text-slate-400">
+            <div className="rounded-xl border border-slate-700/40 bg-surface-raised overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-700/40 bg-surface-sunken/30 text-xs font-semibold text-content-tertiary uppercase tracking-wider">
                 {t('hr_complaints_list')} ({complaints.length})
               </div>
-              <div className="divide-y divide-slate-700 max-h-96 overflow-y-auto">
+              <div className="divide-y divide-slate-700/40 max-h-96 overflow-y-auto">
                 {complaints.map((c) => {
                   const targetLabel =
                     c.type === 'area'
@@ -480,27 +417,27 @@ export default function HRView({
                         ? ensureString(memberships.find((m) => m.id === c.targetMembershipId)?.displayName)
                         : null;
                   return (
-                    <div key={c.id} className="px-4 py-3 text-xs">
+                    <div key={c.id} className="px-4 py-3 text-xs hover:bg-slate-700/20 transition-colors">
                       <div className="flex flex-wrap gap-2 mb-1">
-                        <span className="bg-amber-900/50 text-amber-300 px-1.5 py-0.5 rounded">
+                        <span className="bg-amber-900/40 text-amber-300 border border-amber-700/40 px-1.5 py-0.5 rounded-md">
                           {t('hr_complaint_type_' + c.type)}
                         </span>
                         {targetLabel && (
-                          <span className="text-slate-400">→ {targetLabel}</span>
+                          <span className="text-content-tertiary">→ {targetLabel}</span>
                         )}
                       </div>
-                      <p className="text-slate-200 whitespace-pre-wrap">{ensureString(c.content)}</p>
+                      <p className="text-content-primary whitespace-pre-wrap">{ensureString(c.content)}</p>
                       {(c.evidence?.text || c.evidence?.link) && (
-                        <div className="mt-2 text-slate-500">
+                        <div className="mt-2 text-content-tertiary">
                           {c.evidence.text && <p className="line-clamp-2">{c.evidence.text}</p>}
                           {c.evidence.link && (
-                            <a href={c.evidence.link} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline truncate block">
+                            <a href={c.evidence.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline truncate block">
                               {c.evidence.link}
                             </a>
                           )}
                         </div>
                       )}
-                        <p className="text-slate-500 mt-1">
+                        <p className="text-content-tertiary mt-1">
                           {isFaculty ? `${getLiveAuthorName(c)} — ` : ''}
                           {formatDate(c.createdAt)}
                         </p>
@@ -511,7 +448,7 @@ export default function HRView({
             </div>
           )}
           {canViewHr && complaints.length === 0 && (
-            <p className="text-slate-500 text-xs">{t('hr_no_complaints')}</p>
+            <p className="text-content-tertiary text-xs italic">{t('hr_no_complaints')}</p>
           )}
         </div>
       )}

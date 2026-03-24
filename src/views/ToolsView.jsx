@@ -25,7 +25,7 @@ import BoardTypeSection        from './tools/BoardTypeSection.jsx';
 import AvailabilityPollsSection from './tools/AvailabilityPollsSection.jsx';
 import MeetingsSection         from './tools/MeetingsSection.jsx';
 import GoalsSection            from './tools/GoalsSection.jsx';
-import { BilingualField, HowToUse, ScopeFilter } from '../components/ui/index.js';
+import { BilingualField, Button, Input, HowToUse, ScopeFilter } from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString, tsToDate, parseCalendarDate } from '../utils.js';
 
 // SWOT quadrant metadata (colours are language-independent)
@@ -206,12 +206,14 @@ export default function ToolsView({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold">{t('team_tools_title')}</h2>
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('team_tools_title')}</h2>
+      </div>
 
       {/* Tool tab bar — grouped by function: Identify & plan vs Execute */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mr-1">{t('tools_group_identify_plan')}</span>
+      <div className="space-y-2 animate-slide-up animate-delay-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-semibold text-content-tertiary uppercase tracking-wider mr-1">{t('tools_group_identify_plan')}</span>
           {[
             ['swot', t('tab_swot')],
             ['eisenhower', t('tab_eisenhower')],
@@ -219,14 +221,16 @@ export default function ToolsView({
             ['goals', t('tab_goals')],
           ].map(([id, label]) => (
             <button key={id} onClick={() => { setToolTab(id); setScopeFilter('all'); }}
-              className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors
-                ${toolTab === id ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150
+                ${toolTab === id
+                  ? 'bg-primary/20 border border-primary/40 text-primary shadow-glow-sm'
+                  : 'bg-surface-overlay border border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary border'}`}>
               {label}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mr-1">{t('tools_group_execute')}</span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-semibold text-content-tertiary uppercase tracking-wider mr-1">{t('tools_group_execute')}</span>
           {[
             ['boards', t('tab_kanban')],
             ['scrum', t('tab_scrum')],
@@ -235,8 +239,10 @@ export default function ToolsView({
             ['meetings', t('tab_meetings')],
           ].map(([id, label]) => (
             <button key={id} onClick={() => { setToolTab(id); setScopeFilter('all'); }}
-              className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors
-                ${toolTab === id ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150
+                ${toolTab === id
+                  ? 'bg-primary/20 border border-primary/40 text-primary shadow-glow-sm'
+                  : 'bg-surface-overlay border border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}>
               {label}
             </button>
           ))}
@@ -253,28 +259,26 @@ export default function ToolsView({
 
           {/* New SWOT form — only shown when user can create */}
           {canEditTools && (
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-600/60">
-              <div className="text-xs font-medium text-slate-300 mb-3">{t('create_new')} FODA / SWOT</div>
+            <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+              <div className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-3">{t('create_new')} FODA / SWOT</div>
               <form onSubmit={handleCreateSwotSubmit} className="flex flex-wrap gap-2 items-end">
-                <input
+                <Input
                   value={newSwotName}
                   onChange={(e) => setNewSwotName(e.target.value)}
                   placeholder={t('swot_name_ph')}
-                  className="flex-1 min-w-[160px] px-3 py-1.5 bg-slate-900 border border-slate-600 rounded text-sm text-slate-200"
+                  className="flex-1 min-w-[160px]"
                 />
                 <select
                   value={newSwotCategoryId}
                   onChange={(e) => setNewSwotCategoryId(e.target.value)}
-                  className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300"
+                  className="px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary"
                 >
                   <option value="">{t('scope_global')}</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
                   ))}
                 </select>
-                <button type="submit" className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold rounded">
-                  {t('new_swot_btn')}
-                </button>
+                <Button type="submit" variant="primary" size="sm">{t('new_swot_btn')}</Button>
               </form>
             </div>
           )}
@@ -287,7 +291,10 @@ export default function ToolsView({
                   <button
                     type="button"
                     onClick={() => { setSelectedSwotId(s.id); setEditingSwot(false); }}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${selectedSwotId === s.id ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 border
+                      ${selectedSwotId === s.id
+                        ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm'
+                        : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}
                   >
                     {ensureString(s.name, lang) || t('swot_new_entry')}
                   </button>
@@ -295,7 +302,7 @@ export default function ToolsView({
                     <button
                       type="button"
                       onClick={() => { if (window.confirm(t('delete_matrix_confirm'))) onDeleteSwot(s.id); setSelectedSwotId((id) => (id === s.id ? null : id)); }}
-                      className="text-[11px] text-red-400 hover:underline"
+                      className="text-[11px] text-error hover:text-red-400 transition-colors"
                     >
                       {t('delete')}
                     </button>
@@ -311,14 +318,14 @@ export default function ToolsView({
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="text-sm font-medium text-slate-300">{ensureString(selectedSwot.name, lang)}</span>
                 {canEditTools && resolveCanEdit(selectedSwot) && !editingSwot && (
-                  <button onClick={() => startEditSwot(selectedSwot)} className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-slate-300">
+                  <Button variant="secondary" size="sm" onClick={() => startEditSwot(selectedSwot)}>
                     {t('edit_swot_btn')}
-                  </button>
+                  </Button>
                 )}
                 {editingSwot && (
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setEditingSwot(false)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
-                    <button type="button" onClick={handleSaveSwot} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded">{t('save')}</button>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingSwot(false)}>{t('cancel')}</Button>
+                    <Button variant="primary" size="sm" onClick={handleSaveSwot}>{t('save')}</Button>
                   </div>
                 )}
               </div>
@@ -380,8 +387,8 @@ export default function ToolsView({
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
           {canCreate && (
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-600/60">
-              <div className="text-xs font-medium text-slate-300 mb-3">{t('create_new')} Eisenhower</div>
+            <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+              <div className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-3">{t('create_new')} Eisenhower</div>
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
@@ -393,25 +400,23 @@ export default function ToolsView({
                 }}
                 className="flex flex-wrap gap-2 items-end"
               >
-                <input
+                <Input
                   value={newEisenhowerName}
                   onChange={(e) => setNewEisenhowerName(e.target.value)}
                   placeholder={t('eisenhower_matrix_name_ph')}
-                  className="min-w-[140px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200"
+                  className="min-w-[140px] text-xs"
                 />
                 <select
                   value={newEisenhowerCategoryId}
                   onChange={(e) => setNewEisenhowerCategoryId(e.target.value)}
-                  className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300"
+                  className="px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary"
                 >
                   <option value="">{t('scope_global')}</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
                   ))}
                 </select>
-                <button type="submit" className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold rounded">
-                  {t('eisenhower_new_matrix')}
-                </button>
+                <Button type="submit" variant="primary" size="sm">{t('eisenhower_new_matrix')}</Button>
               </form>
             </div>
           )}
@@ -422,7 +427,7 @@ export default function ToolsView({
                   <button
                     type="button"
                     onClick={() => setSelectedEisenhowerId(m.id)}
-                    className={`px-2.5 py-1 rounded text-[11px] font-medium ${selectedEisenhowerId === m.id ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all duration-150 ${selectedEisenhowerId === m.id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}
                   >
                     {ensureString(m.name, lang) || m.id}
                   </button>
@@ -557,8 +562,8 @@ export default function ToolsView({
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
           {canCreate && (
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-600/60">
-              <div className="text-xs font-medium text-slate-300 mb-3">{t('create_new')} Pugh</div>
+            <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+              <div className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-3">{t('create_new')} Pugh</div>
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
@@ -570,25 +575,23 @@ export default function ToolsView({
                 }}
                 className="flex flex-wrap gap-2 items-end"
               >
-                <input
+                <Input
                   value={newPughName}
                   onChange={(e) => setNewPughName(e.target.value)}
                   placeholder={t('pugh_matrix_name_ph')}
-                  className="min-w-[140px] px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200"
+                  className="min-w-[140px] text-xs"
                 />
                 <select
                   value={newPughCategoryId}
                   onChange={(e) => setNewPughCategoryId(e.target.value)}
-                  className="px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-300"
+                  className="px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary"
                 >
                   <option value="">{t('scope_global')}</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
                   ))}
                 </select>
-                <button type="submit" className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black text-sm font-semibold rounded">
-                  {t('pugh_new_matrix')}
-                </button>
+                <Button type="submit" variant="primary" size="sm">{t('pugh_new_matrix')}</Button>
               </form>
             </div>
           )}
@@ -599,7 +602,7 @@ export default function ToolsView({
                   <button
                     type="button"
                     onClick={() => setSelectedPughId(m.id)}
-                    className={`px-2.5 py-1 rounded text-[11px] font-medium ${selectedPughId === m.id ? 'bg-emerald-500 text-black' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all duration-150 ${selectedPughId === m.id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}
                   >
                     {ensureString(m.name, lang) || m.id}
                   </button>

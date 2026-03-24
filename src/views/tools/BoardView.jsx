@@ -214,7 +214,7 @@ export default function BoardView({
                                   setAssignAreaFilter('');
                                 }}
                                 disabled={selectedAssigneeIds.size === 0}
-                                className="text-[10px] bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-2 py-1 rounded">
+                                className="text-[10px] bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-black px-2 py-1 rounded">
                                 {t('task_assign')}
                               </button>
                               <button type="button" onClick={() => { setAssigningCardId(null); setSelectedAssigneeIds(new Set()); setAssignSearchQuery(''); setAssignAreaFilter(''); }}

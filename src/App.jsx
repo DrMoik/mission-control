@@ -1436,7 +1436,7 @@ export default function App() {
     });
   };
 
-  const handleCreateEvent = async ({ title, date, description, categoryId }) => {
+  const handleCreateEvent = async ({ title, date, description, categoryId, startAt = null, endAt = null, allDay = true }) => {
     if (!currentTeam) return;
     // Resolve permission: global events need canEditTools, category events need canEditToolItem
     const fakeItem = { categoryId: categoryId || null };
@@ -1445,6 +1445,9 @@ export default function App() {
       teamId:      currentTeam.id,
       title,
       date:        new Date(date),
+      startAt:     startAt ? new Date(startAt) : null,
+      endAt:       endAt ? new Date(endAt) : null,
+      allDay:      allDay !== false,
       description: description || '',
       categoryId:  categoryId  || null,
       createdBy:   authUser?.uid,
@@ -1453,12 +1456,15 @@ export default function App() {
     });
   };
 
-  const handleUpdateEvent = async (eventId, { title, date, description, categoryId }) => {
+  const handleUpdateEvent = async (eventId, { title, date, description, categoryId, startAt, endAt, allDay }) => {
     const evt = teamEvents.find((e) => e.id === eventId);
     if (!evt || !canEditToolItem(evt)) return;
     await updateDoc(doc(db, 'teamEvents', eventId), {
       title:       title ?? evt.title,
       date:        date != null ? new Date(date) : evt.date,
+      startAt:     startAt !== undefined ? (startAt ? new Date(startAt) : null) : (evt.startAt ?? null),
+      endAt:       endAt !== undefined ? (endAt ? new Date(endAt) : null) : (evt.endAt ?? null),
+      allDay:      allDay ?? evt.allDay ?? true,
       description: description ?? evt.description ?? '',
       categoryId:  categoryId ?? evt.categoryId ?? null,
       ...lastEditedStamp(),
@@ -1577,6 +1583,9 @@ export default function App() {
       teamId:     currentTeam.id,
       name,
       boardType,
+      archived: false,
+      archivedAt: null,
+      archivedBy: null,
       categoryId: categoryId || null,
       columns: defaultColumns || [
         { id: 'todo',       name: 'To Do',      cards: [] },
@@ -1591,7 +1600,21 @@ export default function App() {
   const handleUpdateBoard = async (boardId, updates) => {
     const board = teamBoards.find((b) => b.id === boardId);
     if (!canEditToolItem(board)) return;
-    await updateDoc(doc(db, 'teamBoards', boardId), { ...updates, ...lastEditedStamp() });
+    const nextColumns = updates?.columns ?? board.columns ?? [];
+    const doneColumn = (nextColumns || []).find((column) => String(column.id || '').toLowerCase() === 'done');
+    const doneCount = Array.isArray(doneColumn?.cards) ? doneColumn.cards.length : 0;
+    const totalCount = (nextColumns || []).reduce((sum, column) => sum + ((column.cards || []).length), 0);
+    const shouldArchive = totalCount > 0 && doneCount === totalCount;
+    const explicitArchived = updates?.archived;
+    const archived = typeof explicitArchived === 'boolean' ? explicitArchived : shouldArchive;
+
+    await updateDoc(doc(db, 'teamBoards', boardId), {
+      ...updates,
+      archived,
+      archivedAt: archived ? (board.archived && !('archived' in (updates || {})) ? (board.archivedAt ?? serverTimestamp()) : serverTimestamp()) : null,
+      archivedBy: archived ? (userProfile?.displayName || authUser?.email || 'Unknown') : null,
+      ...lastEditedStamp(),
+    });
   };
 
   const handleDeleteBoard = async (boardId) => {

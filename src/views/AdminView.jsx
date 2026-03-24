@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { t } from '../strings.js';
+import { Button, Textarea } from '../components/ui/index.js';
 import {
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT,
   MERIT_DOMAINS, MERIT_TIERS,
@@ -167,31 +168,31 @@ export default function AdminView({
 
   return (
     <div className="space-y-8 p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-lg font-semibold text-slate-200">{tFn('admin_tab_title') || 'Admin'}</h2>
-        <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-medium">
+      <div className="flex flex-wrap items-center gap-2 animate-fade-in">
+        <h2 className="text-2xl font-bold text-gradient tracking-tight">{tFn('admin_tab_title') || 'Admin'}</h2>
+        <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-medium">
           {tFn('admin_only') || 'Solo admin'}
         </span>
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-content-tertiary">
         {tFn('admin_tab_help') || 'Edita las opciones de los menús. Un valor por línea o separados por coma. Guarda en cada sección para aplicar. Los puntos de logros del sistema (Actualización semanal, Perfil completo, 50 actualizaciones) y de tareas revisadas se aplican retroactivamente a todos los eventos existentes.'}
       </p>
 
       {/* ═══════════ PERFIL — opciones del formulario de perfil de miembro ═══════════ */}
-      <div className="border-l-4 border-emerald-600/50 pl-4">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-1">{tFn('admin_section_profile') || 'Perfil'}</h3>
-        <p className="text-[11px] text-slate-500 mb-4">{tFn('admin_section_profile_hint') || 'Opciones del formulario de perfil: carreras, semestres, etiquetas de personalidad, diccionario de habilidades.'}</p>
+      <div className="border-l-4 border-primary/50 pl-4">
+        <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_profile') || 'Perfil'}</h3>
+        <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_profile_hint') || 'Opciones del formulario de perfil: carreras, semestres, etiquetas de personalidad, diccionario de habilidades.'}</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_careers_majors') || 'Carreras / Majors'}</h4>
-            <p className="text-[10px] text-slate-500">{tFn('admin_empty_ok') || 'Línea vacía = opción "no definido".'}</p>
+          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-primary">{tFn('admin_careers_majors') || 'Carreras / Majors'}</h4>
+            <p className="text-[10px] text-content-tertiary">{tFn('admin_empty_ok') || 'Línea vacía = opción "no definido".'}</p>
             <textarea
               key="careers"
               defaultValue={(careerOptions || []).join(', ')}
               id="admin-careers"
               rows={3}
               placeholder={ADMIN_PLACEHOLDERS.careers}
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+              className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary placeholder-slate-500 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
             />
             <button
               onClick={() => {
@@ -199,21 +200,21 @@ export default function AdminView({
                 save('careers', onSaveCareers, parseList(el?.value || '', true));
               }}
               disabled={saving === 'careers'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
             >
               {saving === 'careers' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
 
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_semesters') || 'Semestres'}</h4>
+          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-primary">{tFn('admin_semesters') || 'Semestres'}</h4>
             <textarea
               key="semesters"
               defaultValue={(semesterOptions || []).join(', ')}
               id="admin-semesters"
               rows={3}
               placeholder={ADMIN_PLACEHOLDERS.semesters}
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+              className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary placeholder-slate-500 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
             />
             <button
               onClick={() => {
@@ -221,22 +222,22 @@ export default function AdminView({
                 save('semesters', onSaveSemesters, parseList(el?.value || '', true));
               }}
               disabled={saving === 'semesters'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
             >
               {saving === 'semesters' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
 
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_personality_tags') || 'Etiquetas de personalidad'}</h4>
-            <p className="text-[10px] text-slate-500">{tFn('admin_personality_hint') || 'Diccionario: etiqueta : texto mostrado. Una por línea. Ej: ptag_creative: Creativo/a. El tag se guarda; el texto es cómo se renderiza.'}</p>
+          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-primary">{tFn('admin_personality_tags') || 'Etiquetas de personalidad'}</h4>
+            <p className="text-[10px] text-content-tertiary">{tFn('admin_personality_hint') || 'Diccionario: etiqueta : texto mostrado. Una por línea. Ej: ptag_creative: Creativo/a. El tag se guarda; el texto es cómo se renderiza.'}</p>
             <textarea
               key="personality"
               defaultValue={serializePersonalityDict(personalityTags)}
               id="admin-personality"
               rows={5}
               placeholder={ADMIN_PLACEHOLDERS.personality}
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500 font-mono"
+              className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary placeholder-slate-500 font-mono focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
             />
             <button
               onClick={() => {
@@ -244,23 +245,23 @@ export default function AdminView({
                 save('personality', onSavePersonalityTags, parsePersonalityDict(el?.value || ''));
               }}
               disabled={saving === 'personality'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
             >
               {saving === 'personality' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
 
           {onSaveSkillDictionary && (
-            <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
-              <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_skill_dictionary') || 'Diccionario de habilidades'}</h4>
-              <p className="text-[10px] text-slate-500">{tFn('admin_skill_dictionary_hint') || 'Una por línea: id: etiqueta: tipo. Tipos: technical, learning, support, collaboration. Para perfil de colaboración.'}</p>
+            <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3 lg:col-span-2">
+              <h4 className="text-sm font-semibold text-primary">{tFn('admin_skill_dictionary') || 'Diccionario de habilidades'}</h4>
+              <p className="text-[10px] text-content-tertiary">{tFn('admin_skill_dictionary_hint') || 'Una por línea: id: etiqueta: tipo. Tipos: technical, learning, support, collaboration. Para perfil de colaboración.'}</p>
               <textarea
                 key="skillDictionary"
                 defaultValue={serializeSkillDictionary(skillDictionary)}
                 id="admin-skill-dictionary"
                 rows={8}
                 placeholder="ros: ROS: technical\nstress_management: Manejo del estrés: support"
-                className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+                className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary placeholder-slate-500 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
               />
               <button
                 onClick={() => {
@@ -268,7 +269,7 @@ export default function AdminView({
                   save('skillDictionary', onSaveSkillDictionary, parseSkillDictionary(el?.value || ''));
                 }}
                 disabled={saving === 'skillDictionary'}
-                className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+                className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
               >
                 {saving === 'skillDictionary' ? tFn('saving') || 'Guardando…' : tFn('save')}
               </button>
@@ -276,9 +277,9 @@ export default function AdminView({
           )}
 
           {skillProposals.filter((p) => (p.status || 'pending') === 'pending').length > 0 && (
-            <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
+            <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3 lg:col-span-2">
               <h4 className="text-sm font-semibold text-amber-400">{tFn('admin_skill_proposals') || 'Propuestas de habilidades'}</h4>
-              <p className="text-[10px] text-slate-500">{tFn('admin_skill_proposals_hint') || 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas al diccionario.'}</p>
+              <p className="text-[10px] text-content-tertiary">{tFn('admin_skill_proposals_hint') || 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas al diccionario.'}</p>
               <div className="space-y-2">
                 {skillProposals.filter((p) => (p.status || 'pending') === 'pending').map((p) => {
                   const proposer = memberships.find((m) => m.id === p.proposedByMembershipId);
@@ -293,7 +294,7 @@ export default function AdminView({
                         <button
                           type="button"
                           onClick={() => onApproveSkillProposal?.(p.id)}
-                          className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-2 py-1 rounded"
+                          className="text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-2 py-1 rounded"
                         >
                           {tFn('approve') || 'Aprobar'}
                         </button>
@@ -316,19 +317,19 @@ export default function AdminView({
 
       {/* ═══════════ LOGROS Y MÉRITOS — dominios, niveles, familias, puntos automáticos ═══════════ */}
       <div className="border-l-4 border-amber-600/50 pl-4">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-1">{tFn('admin_section_merits') || 'Logros y méritos'}</h3>
-        <p className="text-[11px] text-slate-500 mb-4">{tFn('admin_section_merits_hint') || 'Dominios, niveles, familias de mérito y puntos de logros automáticos (Actualización semanal, Perfil completo, 50 actualizaciones). Al guardar los puntos del sistema se aplican retroactivamente a todos los eventos existentes.'}</p>
+        <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_merits') || 'Logros y méritos'}</h3>
+        <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_merits_hint') || 'Dominios, niveles, familias de mérito y puntos de logros automáticos (Actualización semanal, Perfil completo, 50 actualizaciones). Al guardar los puntos del sistema se aplican retroactivamente a todos los eventos existentes.'}</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-emerald-400">{tFn('merit_attr_domains') || 'Áreas / dominios'}</h4>
-            <p className="text-[10px] text-slate-500">{tFn('admin_domains_hint') || 'Una por línea. Formato id: etiqueta (ej. physical: Componente físico) o texto plano.'}</p>
+          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-primary">{tFn('merit_attr_domains') || 'Áreas / dominios'}</h4>
+            <p className="text-[10px] text-content-tertiary">{tFn('admin_domains_hint') || 'Una por línea. Formato id: etiqueta (ej. physical: Componente físico) o texto plano.'}</p>
             <textarea
               key="domains"
               defaultValue={(domains || []).join(', ')}
               id="admin-domains"
               rows={2}
               placeholder={ADMIN_PLACEHOLDERS.domains}
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+              className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary placeholder-slate-500 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
             />
             <button
               onClick={() => {
@@ -338,21 +339,21 @@ export default function AdminView({
                 save('domains', () => onSaveMeritTags(arr), arr);
               }}
               disabled={saving === 'domains'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
             >
               {saving === 'domains' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
 
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_merit_tiers') || 'Niveles de mérito'}</h4>
+          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-primary">{tFn('admin_merit_tiers') || 'Niveles de mérito'}</h4>
             <textarea
               key="tiers"
               defaultValue={(meritTiers || []).join(', ')}
               id="admin-tiers"
               rows={1}
               placeholder={ADMIN_PLACEHOLDERS.tiers}
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+              className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary placeholder-slate-500 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
             />
             <button
               onClick={() => {
@@ -360,22 +361,22 @@ export default function AdminView({
                 save('tiers', onSaveMeritTiers, parseList(el?.value || ''));
               }}
               disabled={saving === 'tiers'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
             >
               {saving === 'tiers' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
 
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_merit_families') || 'Familias de mérito'}</h4>
-            <p className="text-[10px] text-slate-500">{tFn('admin_merit_families_hint') || 'Una por línea: id: nombre o id: nombre — descripción. Para inferencia de trayectorias.'}</p>
+          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-primary">{tFn('admin_merit_families') || 'Familias de mérito'}</h4>
+            <p className="text-[10px] text-content-tertiary">{tFn('admin_merit_families_hint') || 'Una por línea: id: nombre o id: nombre — descripción. Para inferencia de trayectorias.'}</p>
             <textarea
               key="families"
               defaultValue={serializeFamilies(meritFamilies)}
               id="admin-families"
               rows={5}
               placeholder="technical: Técnico — Agrupa logros técnicos"
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+              className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary placeholder-slate-500 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
             />
             <button
               onClick={() => {
@@ -383,22 +384,22 @@ export default function AdminView({
                 save('families', onSaveMeritFamilies, parseFamiliesOrAreas(el?.value || '', true));
               }}
               disabled={saving === 'families'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
             >
               {saving === 'families' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
 
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3">
-            <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_knowledge_areas') || 'Áreas de conocimiento'}</h4>
-            <p className="text-[10px] text-slate-500">{tFn('admin_knowledge_areas_hint') || 'Una por línea: id: nombre. Para el mapa de conocimientos.'}</p>
+          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+            <h4 className="text-sm font-semibold text-primary">{tFn('admin_knowledge_areas') || 'Áreas de conocimiento'}</h4>
+            <p className="text-[10px] text-content-tertiary">{tFn('admin_knowledge_areas_hint') || 'Una por línea: id: nombre. Para el mapa de conocimientos.'}</p>
             <textarea
               key="knowledgeAreas"
               defaultValue={serializeKnowledgeAreas(knowledgeAreas)}
               id="admin-knowledge-areas"
               rows={4}
               placeholder="ros: ROS\ncontrol: Teoría de control"
-              className="w-full px-2 py-1.5 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200 placeholder-slate-500"
+              className="w-full px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-xs text-content-primary placeholder-slate-500 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
             />
             <button
               onClick={() => {
@@ -406,15 +407,15 @@ export default function AdminView({
                 save('knowledgeAreas', onSaveKnowledgeAreas, parseFamiliesOrAreas(el?.value || '', false));
               }}
               disabled={saving === 'knowledgeAreas'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
             >
               {saving === 'knowledgeAreas' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
           </section>
 
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
+          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3 lg:col-span-2">
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_system_merit_points') || 'Puntos de logros del sistema'}</h4>
+              <h4 className="text-sm font-semibold text-primary">{tFn('admin_system_merit_points') || 'Puntos de logros del sistema'}</h4>
               <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-medium">{tFn('admin_retroactive') || 'Retroactivo'}</span>
             </div>
             <p className="text-[11px] text-slate-500">{tFn('admin_system_merit_hint') || 'Actualización semanal, Perfil completo, 50 actualizaciones. Al guardar se actualizan el equipo y todos los meritEvents existentes con los nuevos puntos.'}</p>
@@ -459,7 +460,7 @@ export default function AdminView({
                 save('systemMerit', onSaveSystemMeritPoints, { weeklyUpdate: weekly, profileComplete: profile, milestone50: milestone });
               }}
               disabled={saving === 'systemMerit'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
             >
               {saving === 'systemMerit' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
@@ -470,12 +471,12 @@ export default function AdminView({
 
       {/* ═══════════ TAREAS — flujo Solicitar Revisión ═══════════ */}
       <div className="border-l-4 border-pink-600/50 pl-4">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-1">{tFn('admin_section_tasks') || 'Tareas'}</h3>
-        <p className="text-[11px] text-slate-500 mb-4">{tFn('admin_section_tasks_hint') || 'Puntos por calificación en el flujo "Solicitar Revisión". Al guardar se aplican retroactivamente a todos los eventos existentes.'}</p>
+        <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_tasks') || 'Tareas'}</h3>
+        <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_tasks_hint') || 'Puntos por calificación en el flujo "Solicitar Revisión". Al guardar se aplican retroactivamente a todos los eventos existentes.'}</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="bg-slate-800 rounded-xl p-4 space-y-3 lg:col-span-2">
+          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3 lg:col-span-2">
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-semibold text-emerald-400">{tFn('admin_task_grade_points') || 'Puntos por tarea revisada'}</h4>
+              <h4 className="text-sm font-semibold text-primary">{tFn('admin_task_grade_points') || 'Puntos por tarea revisada'}</h4>
               <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-medium">{tFn('admin_retroactive') || 'Retroactivo'}</span>
             </div>
             <p className="text-[11px] text-slate-500">{tFn('admin_task_grade_points_hint') || 'Individual = 1 asignado. Equipo = 2+ asignados. Se aplican retroactivamente.'}</p>
@@ -528,7 +529,7 @@ export default function AdminView({
                 save('taskGrade', onSaveTaskGradePoints, { individual, team });
               }}
               disabled={saving === 'taskGrade'}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded"
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
             >
               {saving === 'taskGrade' ? tFn('saving') || 'Guardando…' : tFn('save')}
             </button>
