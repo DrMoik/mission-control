@@ -12,6 +12,7 @@ const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
 const pad = (value) => String(value).padStart(2, '0');
 const toDateKey = (value) => `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
 const startOfDay = (value) => new Date(value.getFullYear(), value.getMonth(), value.getDate());
+const endOfDay = (value) => new Date(value.getFullYear(), value.getMonth(), value.getDate(), 23, 59, 59, 999);
 const isSameDay = (a, b) => toDateKey(a) === toDateKey(b);
 const monthLabel = (value) => value.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
 
@@ -74,6 +75,7 @@ export default function CalendarView({
 
   const [scopeFilter, setScopeFilter] = useState('all');
   const [viewMode, setViewMode] = useState('calendar');
+  const [listRange, setListRange] = useState('upcoming');
   const [showBirthdays, setShowBirthdays] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDateKey, setSelectedDateKey] = useState(toDateKey(today));
@@ -191,6 +193,11 @@ export default function CalendarView({
   const selectedDate = parseCalendarDate(selectedDateKey);
   const selectedDayEvents = eventsByDate.get(selectedDateKey) || [];
   const upcomingCount = visibleEvents.filter((event) => startOfDay(event.startAt) >= today).length;
+  const listEvents = useMemo(() => {
+    if (listRange === 'all') return visibleEvents;
+    if (listRange === 'past') return visibleEvents.filter((event) => endOfDay(event.endAt) < today);
+    return visibleEvents.filter((event) => endOfDay(event.endAt) >= today);
+  }, [listRange, today, visibleEvents]);
 
   const closeForm = () => {
     setShowForm(false);
@@ -483,19 +490,39 @@ export default function CalendarView({
           <div className="flex items-center justify-between gap-3 border-b border-slate-700/40 px-4 py-3">
             <div>
               <div className="text-xs uppercase tracking-[0.18em] text-content-tertiary">Vista de lista</div>
-              <div className="text-lg font-semibold text-content-primary">{visibleEvents.length} eventos visibles</div>
+              <div className="text-lg font-semibold text-content-primary">{listEvents.length} eventos visibles</div>
             </div>
-            <Button variant="secondary" size="sm" onClick={jumpToToday}>Hoy</Button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {[
+                { id: 'upcoming', label: 'Proximos' },
+                { id: 'past', label: 'Pasados' },
+                { id: 'all', label: 'Todo' },
+              ].map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setListRange(option.id)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition ${
+                    listRange === option.id
+                      ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-100'
+                      : 'border-slate-700/60 bg-slate-900/50 text-slate-300 hover:border-slate-500/80 hover:text-slate-100'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+              <Button variant="secondary" size="sm" onClick={jumpToToday}>Hoy</Button>
+            </div>
           </div>
 
-          {visibleEvents.length === 0 ? (
+          {listEvents.length === 0 ? (
             <div className="px-4 py-12 text-center text-content-tertiary">
               <Calendar className="mx-auto mb-3 h-8 w-8" strokeWidth={1.5} />
-              <div className="text-sm">No hay eventos para mostrar con estos filtros.</div>
+              <div className="text-sm">No hay eventos para mostrar en este periodo.</div>
             </div>
           ) : (
             <div className="divide-y divide-slate-700/40">
-              {visibleEvents.map((event) => {
+              {listEvents.map((event) => {
                 const canManage = !event.isBirthday && !event.isSession && resolveCanEdit(event);
                 const isPastEvent = endOfDay(event.endAt) < today;
                 const monthLabel = event.startAt.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '').toUpperCase();

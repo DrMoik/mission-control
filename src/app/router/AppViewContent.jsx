@@ -32,7 +32,7 @@ export default function AppViewContent({
   handlers,
   nav,
 }) {
-  const { authUser, userProfile, currentMembership, memberRole, isPlatformAdmin } = authState;
+  const { authUser, userProfile, currentMembership, memberRole, isPlatformAdmin, notificationState } = authState;
   const {
     currentTeam,
     teamTasks,
@@ -564,6 +564,7 @@ export default function AppViewContent({
             semesterOptions={semesterOptions}
             personalityTags={personalityTags}
             onNavigate={goToView}
+            notificationSettings={notificationState}
           />
         ) : (
           <div className="py-12 text-center text-slate-400 text-sm">{t('loading')}</div>

@@ -914,6 +914,17 @@ export const STRINGS = {
 
     // ── Profile ───────────────────────────────────────────────────────────────
     my_profile_title:   'Mi Perfil',
+    notifications_title: 'Notificaciones',
+    notifications_description: 'Controla que avisos recibe este dispositivo Android para mantenerte al tanto del equipo.',
+    notifications_assignments: 'Nuevas tareas asignadas',
+    notifications_assignments_hint: 'Te avisa cuando te asignan una tarea nueva.',
+    notifications_sessions: 'Nuevas sesiones',
+    notifications_sessions_hint: 'Te avisa cuando se programa una sesion nueva para tu equipo.',
+    notifications_android_only: 'Estas notificaciones se administran desde la app Android nativa.',
+    notifications_enable_title: 'Activa las notificaciones push',
+    notifications_enable_hint: 'Android pedira permiso una sola vez para este dispositivo.',
+    notifications_enable_cta: 'Activar',
+    notifications_error: 'No se pudieron activar las notificaciones.',
     profile_visible:    'Este perfil es visible para todos los miembros. Haz clic en un campo para actualizarlo.',
     about_me:           'Acerca de mí',
     hobbies:            'Pasatiempos e Intereses',

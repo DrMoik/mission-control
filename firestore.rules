@@ -138,6 +138,16 @@ service cloud.firestore {
           !('platformRole' in request.resource.data.diff(resource.data).affectedKeys())
         ) || isPlatformAdmin();
       allow delete: if isPlatformAdmin();
+
+      match /devices/{deviceId} {
+        allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /notificationPreferences/{teamId} {
+        allow read, create, update, delete: if request.auth != null &&
+          request.auth.uid == userId &&
+          membershipExists(teamId);
+      }
     }
 
     match /teams/{teamId} {

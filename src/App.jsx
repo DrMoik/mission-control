@@ -27,6 +27,7 @@ import { useFirebaseSubscriptions } from './hooks/useFirebaseSubscriptions.js';
 import { useTaskHandlers } from './hooks/useTaskHandlers.js';
 import { useMeritHandlers } from './hooks/useMeritHandlers.js';
 import { useSessionHandlers } from './hooks/useSessionHandlers.js';
+import { usePushNotifications } from './hooks/usePushNotifications.js';
 import AppViewContent from './app/router/AppViewContent.jsx';
 import { getRouteState } from './app/router/routeState.js';
 import { t, lang, STRINGS }         from './strings.js';
@@ -190,6 +191,12 @@ export default function App() {
     () => allTeams.find((t) => t.id === selectedTeamId) || null,
     [allTeams, selectedTeamId],
   );
+
+  const notificationState = usePushNotifications({
+    authUser,
+    currentTeam,
+    navigate,
+  });
 
   // Admin tab is only for team admins; redirect others to inicio (must be after canEdit is defined)
   useEffect(() => {
@@ -1308,23 +1315,30 @@ export default function App() {
     await deleteDoc(doc(db, 'academyBooks', bookId));
   };
 
-  const handleSaveAcademyBookProgress = async (bookId, progress) => {
+  const handleSaveAcademyBookProgress = React.useCallback(async (bookId, progress) => {
     if (!currentTeam || !currentMembership || !authUser) return;
     const book = academyBooks.find((item) => item.id === bookId);
     if (!book) return;
     const canViewBook = !book.categoryId || canEdit || currentMembership.categoryId === book.categoryId;
     if (!canViewBook) return;
+    const nextPage = Math.max(1, Number(progress.lastPage) || 1);
+    const touchOpenedAt = Boolean(progress.touchOpenedAt);
+    const existingProgress = academyBookProgress.find(
+      (item) => item.bookId === bookId && item.membershipId === currentMembership.id,
+    );
+    const currentPage = Number(existingProgress?.lastPage) || 1;
+    if (!touchOpenedAt && currentPage === nextPage) return;
     const progressId = `${bookId}_${currentMembership.id}`;
     await setDoc(doc(db, 'academyBookProgress', progressId), {
       teamId: currentTeam.id,
       bookId,
       membershipId: currentMembership.id,
       userId: authUser.uid,
-      lastPage: Math.max(1, Number(progress.lastPage) || 1),
-      lastOpenedAt: serverTimestamp(),
+      lastPage: nextPage,
+      ...(touchOpenedAt ? { lastOpenedAt: serverTimestamp() } : {}),
       updatedAt: serverTimestamp(),
     }, { merge: true });
-  };
+  }, [currentTeam, currentMembership, authUser, academyBooks, canEdit, academyBookProgress]);
 
   const canEditToolItem = React.useCallback((item) => {
     if (!item) return false;
@@ -2563,6 +2577,40 @@ export default function App() {
         )}
 
         {/* ── App body: sidebar + main ── */}
+        {notificationState.banner && (
+          <div className="mx-4 mt-3 rounded-xl border border-emerald-700/40 bg-emerald-950/70 px-4 py-3 text-sm text-emerald-50 shadow-lg">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold">{notificationState.banner.title}</p>
+                {notificationState.banner.body && (
+                  <p className="mt-1 text-xs text-emerald-100/85">{notificationState.banner.body}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {notificationState.banner.route && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate(notificationState.banner.route);
+                      notificationState.clearBanner();
+                    }}
+                    className="text-xs font-semibold text-emerald-200 underline"
+                  >
+                    Abrir
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={notificationState.clearBanner}
+                  className="text-xs text-emerald-200/80 hover:text-emerald-50"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-1 min-h-0 overflow-hidden">
 
           {/* Desktop sidebar (domain groups) */}
@@ -2628,6 +2676,7 @@ export default function App() {
                   currentMembership,
                   memberRole,
                   isPlatformAdmin,
+                  notificationState,
                 }}
                 teamState={{
                   currentTeam,

@@ -110,12 +110,25 @@ export default function AcademyView({
   }, [readerBook, readerBookProgress]);
 
   useEffect(() => {
+    if (!readerBook) return undefined;
+    const timeout = window.setTimeout(() => {
+      onSaveBookProgress(readerBook.id, {
+        lastPage: Math.max(1, Number(readerBookProgress?.lastPage) || 1),
+        touchOpenedAt: true,
+      });
+    }, 400);
+    return () => window.clearTimeout(timeout);
+  }, [readerBook?.id, readerBookProgress?.lastPage, onSaveBookProgress]);
+
+  useEffect(() => {
     if (!readerBook || !readerPage) return undefined;
+    const savedPage = Math.max(1, Number(readerBookProgress?.lastPage) || 1);
+    if (savedPage === readerPage) return undefined;
     const timeout = window.setTimeout(() => {
       onSaveBookProgress(readerBook.id, { lastPage: readerPage });
-    }, 500);
+    }, 1200);
     return () => window.clearTimeout(timeout);
-  }, [readerBook, readerPage, onSaveBookProgress]);
+  }, [readerBook, readerBookProgress?.lastPage, readerPage, onSaveBookProgress]);
 
   const getTopics = (mod) => {
     if (mod?.topics?.length) return mod.topics;

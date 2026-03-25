@@ -22,3 +22,40 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Firebase / Google credentials
+google-services.json
+android/app/google-services.json
+GoogleService-Info.plist
+.firebaserc.local
+firebase-debug.log*
+serviceAccountKey*.json
+*-firebase-adminsdk-*.json
+
+# Env / secret files
+.env
+.env.*
+!.env.example
+
+# Android local machine config
+android/local.properties
+android/.gradle/
+android/captures/
+android/app/debug/
+android/app/release/
+android/build/
+
+# Android signing
+*.jks
+*.keystore
+*.pem
+*.p12
+key.properties
+android/key.properties
+
+# Local Firebase cache
+.firebase/
+
+# Keep only the main deployment-facing doc in git
+*.md
+!README.md

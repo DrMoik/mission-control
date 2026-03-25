@@ -12,6 +12,7 @@ import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT, SYSTEM_MERI
 import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongField } from '../components/ui/index.js';
 import PickerField from '../components/ui/PickerField.jsx';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
+import NotificationPreferencesCard from '../components/NotificationPreferencesCard.jsx';
 import SafeProfileImage         from '../components/ui/SafeProfileImage.jsx';
 import AchievementBadge         from '../components/AchievementBadge.jsx';
 import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
@@ -98,6 +99,7 @@ export default function ProfilePageView({
   tasks = [], modules = [], moduleAttempts = [], meritFamilies = [], knowledgeAreas = [], skillDictionary = [],
   allMeritEvents = [], onNavigate, onProposeSkill,
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp, personalityTags: personalityTagsProp,
+  notificationSettings = null,
 }) {
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
   const semesterOptions = semesterOptionsProp ?? SEMESTER_OPTIONS;
@@ -352,6 +354,19 @@ export default function ProfilePageView({
               />
             </div>
           </div>
+        )}
+
+        {notificationSettings && (
+          <NotificationPreferencesCard
+            isSupported={notificationSettings.isSupported}
+            statusLabel={notificationSettings.statusLabel}
+            permissionState={notificationSettings.permissionState}
+            registrationState={notificationSettings.registrationState}
+            lastError={notificationSettings.lastError}
+            preferences={notificationSettings.preferences}
+            onRequestPermission={notificationSettings.requestPermission}
+            onTogglePreference={notificationSettings.updatePreference}
+          />
         )}
 
         {editing ? (
