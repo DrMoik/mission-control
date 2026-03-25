@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { t, lang } from '../strings.js';
 import { toEmbedUrl, tsToDate, getL, toL, fillL, ensureString, toGoogleDriveDownloadUrl } from '../utils.js';
 import { BilingualField } from '../components/ui/index.js';
@@ -30,14 +30,12 @@ const emptyBook = () => ({
   categoryId: '',
 });
 
-const emptyProgress = () => ({ lastPage: 1 });
 const isGoogleDriveUrl = (url) => String(url || '').includes('drive.google.com');
 
 export default function AcademyView({
   modules,
   moduleAttempts,
   books = [],
-  bookProgress = [],
   teamMemberships = [],
   categories = [],
   currentMembership = null,
@@ -50,7 +48,6 @@ export default function AcademyView({
   onCreateBook,
   onUpdateBook,
   onDeleteBook,
-  onSaveBookProgress,
   onRequestModuleReview,
   onApproveModuleAttempt,
 }) {
@@ -66,8 +63,9 @@ export default function AcademyView({
   const [editingBookId, setEditingBookId] = useState(null);
   const [editBookDraft, setEditBookDraft] = useState(emptyBook());
   const [readerBookId, setReaderBookId] = useState(null);
-  const [readerPage, setReaderPage] = useState(null);
   const [readerMode, setReaderMode] = useState('pdf');
+  const [readerInternalFailed, setReaderInternalFailed] = useState(false);
+  const previousReaderBookIdRef = useRef(null);
 
   const selected = modules.find((m) => m.id === selectedId) || null;
   const attempt = selected ? moduleAttempts.find((a) => a.moduleId === selectedId) : null;
@@ -79,12 +77,6 @@ export default function AcademyView({
 
   const selectedBook = visibleBooks.find((book) => book.id === selectedBookId) || null;
   const readerBook = visibleBooks.find((book) => book.id === readerBookId) || null;
-  const selectedBookProgress = selectedBook
-    ? bookProgress.find((item) => item.bookId === selectedBook.id) || null
-    : null;
-  const readerBookProgress = readerBook
-    ? bookProgress.find((item) => item.bookId === readerBook.id) || null
-    : null;
 
   useEffect(() => {
     if (selectedBookId && !visibleBooks.some((book) => book.id === selectedBookId)) {
@@ -101,34 +93,17 @@ export default function AcademyView({
 
   useEffect(() => {
     if (!readerBook) {
-      setReaderPage(null);
       setReaderMode('pdf');
+      setReaderInternalFailed(false);
+      previousReaderBookIdRef.current = null;
       return;
     }
-    setReaderPage(Math.max(1, Number(readerBookProgress?.lastPage) || 1));
-    setReaderMode(isGoogleDriveUrl(readerBook.driveUrl) ? 'iframe' : 'pdf');
-  }, [readerBook, readerBookProgress]);
-
-  useEffect(() => {
-    if (!readerBook) return undefined;
-    const timeout = window.setTimeout(() => {
-      onSaveBookProgress(readerBook.id, {
-        lastPage: Math.max(1, Number(readerBookProgress?.lastPage) || 1),
-        touchOpenedAt: true,
-      });
-    }, 400);
-    return () => window.clearTimeout(timeout);
-  }, [readerBook?.id, readerBookProgress?.lastPage, onSaveBookProgress]);
-
-  useEffect(() => {
-    if (!readerBook || !readerPage) return undefined;
-    const savedPage = Math.max(1, Number(readerBookProgress?.lastPage) || 1);
-    if (savedPage === readerPage) return undefined;
-    const timeout = window.setTimeout(() => {
-      onSaveBookProgress(readerBook.id, { lastPage: readerPage });
-    }, 1200);
-    return () => window.clearTimeout(timeout);
-  }, [readerBook, readerBookProgress?.lastPage, readerPage, onSaveBookProgress]);
+    if (previousReaderBookIdRef.current !== readerBook.id) {
+      setReaderInternalFailed(false);
+      setReaderMode(readerBook.driveUrl ? 'pdf' : 'iframe');
+      previousReaderBookIdRef.current = readerBook.id;
+    }
+  }, [readerBook]);
 
   const getTopics = (mod) => {
     if (mod?.topics?.length) return mod.topics;
@@ -546,31 +521,27 @@ export default function AcademyView({
             )}
 
             {visibleBooks.length === 0 && <div className="text-xs text-slate-500">{t('academy_no_books')}</div>}
-            {visibleBooks.map((book) => {
-              const progress = bookProgress.find((item) => item.bookId === book.id);
-              return (
-                <button
-                  key={book.id}
-                  type="button"
-                  onClick={() => { setSelectedBookId(book.id); setEditingBookId(null); }}
-                  className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedBookId === book.id ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-700 bg-slate-900/40 hover:border-slate-500'}`}
-                >
-                  <div className="flex gap-3">
-                    <SafeImage
-                      src={book.coverUrl}
-                      alt={ensureString(book.title, lang)}
-                      className="h-16 w-12 rounded object-cover bg-slate-700"
-                      fallback={<div className="h-16 w-12 rounded bg-slate-700" />}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold text-slate-100">{ensureString(book.title, lang)}</div>
-                      <div className="text-xs text-slate-400">{ensureString(book.author, lang)}</div>
-                      {progress?.lastPage ? <div className="mt-2 text-[11px] text-emerald-300">Pagina {progress.lastPage}</div> : null}
-                    </div>
+            {visibleBooks.map((book) => (
+              <button
+                key={book.id}
+                type="button"
+                onClick={() => { setSelectedBookId(book.id); setEditingBookId(null); }}
+                className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedBookId === book.id ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-700 bg-slate-900/40 hover:border-slate-500'}`}
+              >
+                <div className="flex gap-3">
+                  <SafeImage
+                    src={book.coverUrl}
+                    alt={ensureString(book.title, lang)}
+                    className="h-16 w-12 rounded object-cover bg-slate-700"
+                    fallback={<div className="h-16 w-12 rounded bg-slate-700" />}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold text-slate-100">{ensureString(book.title, lang)}</div>
+                    <div className="text-xs text-slate-400">{ensureString(book.author, lang)}</div>
                   </div>
-                </button>
-              );
-            })}
+                </div>
+              </button>
+            ))}
           </div>
 
           <div className="md:col-span-2 bg-slate-800 rounded-lg p-4 space-y-4 min-h-[320px]">
@@ -597,20 +568,15 @@ export default function AcademyView({
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button
                           type="button"
-                          onClick={() => setReaderBookId(selectedBook.id)}
+                          onClick={() => {
+                            setReaderInternalFailed(false);
+                            setReaderMode(selectedBook.driveUrl ? 'pdf' : 'iframe');
+                            setReaderBookId(selectedBook.id);
+                          }}
                           className="rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-black"
                         >
                           {t('academy_book_open')}
                         </button>
-                        {selectedBookProgress?.lastPage ? (
-                          <button
-                            type="button"
-                            onClick={() => setReaderBookId(selectedBook.id)}
-                            className="rounded border border-emerald-500/50 px-3 py-1.5 text-xs font-semibold text-emerald-300"
-                          >
-                            {t('academy_book_resume')}
-                          </button>
-                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -624,18 +590,6 @@ export default function AcademyView({
 
                 <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-4 text-sm text-slate-400">
                   El libro se abre dentro del lector de la biblioteca para mantener el acceso en la app.
-                </div>
-
-                <div className="border-t border-slate-700 pt-4 space-y-3">
-                  <div className="text-xs font-semibold text-slate-300 uppercase tracking-wide">{t('academy_book_progress')}</div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-3">
-                    <div className="text-sm text-slate-200">
-                      {selectedBookProgress?.lastPage ? `Ultima pagina detectada: ${selectedBookProgress.lastPage}` : 'Aun no hay una pagina registrada.'}
-                    </div>
-                    <p className="mt-2 text-[11px] text-slate-500">
-                      La pagina automatica solo funciona con PDFs compatibles con el lector interno. Los archivos de Google Drive usan el visor embebido.
-                    </p>
-                  </div>
                 </div>
               </>
             )}
@@ -674,16 +628,14 @@ export default function AcademyView({
             <div className="flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/95 px-4 py-3">
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold text-slate-100">{ensureString(readerBook.title, lang)}</div>
-                <div className="mt-1 text-xs text-slate-400">
-                  {ensureString(readerBook.author, lang)}
-                  {readerBookProgress?.lastPage ? ` · Pagina ${readerBookProgress.lastPage}` : ''}
-                </div>
+                <div className="mt-1 text-xs text-slate-400">{ensureString(readerBook.author, lang)}</div>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     if (selectedBookId !== readerBook.id) setSelectedBookId(readerBook.id);
+                    setReaderInternalFailed(false);
                     setReaderBookId(null);
                   }}
                   className="rounded border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-200"
@@ -692,7 +644,10 @@ export default function AcademyView({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setReaderBookId(null)}
+                  onClick={() => {
+                    setReaderInternalFailed(false);
+                    setReaderBookId(null);
+                  }}
                   className="rounded bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-950 transition-colors hover:bg-emerald-400"
                 >
                   Cerrar lector
@@ -701,19 +656,20 @@ export default function AcademyView({
             </div>
 
             <div className="flex-1 bg-slate-950">
-              {readerBook.driveUrl && readerMode === 'pdf' ? (
+              {readerBook.driveUrl && readerMode === 'pdf' && !readerInternalFailed ? (
                 <PdfReader
                   src={toGoogleDriveDownloadUrl(readerBook.driveUrl)}
-                  initialPage={readerBookProgress?.lastPage || 1}
                   title={ensureString(readerBook.title, lang)}
-                  onPageChange={setReaderPage}
-                  onLoadError={() => setReaderMode('iframe')}
+                  onLoadError={() => {
+                    setReaderInternalFailed(true);
+                    setReaderMode('iframe');
+                  }}
                 />
               ) : readerBook.embedUrl ? (
                 <div className="flex h-full flex-col">
                   <div className="border-b border-slate-800 bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
                     {isGoogleDriveUrl(readerBook.driveUrl)
-                      ? 'Este libro usa el visor embebido de Google Drive. La pagina actual no se puede detectar automaticamente desde la app.'
+                      ? 'No se pudo abrir este archivo en el lector interno. Se uso el visor embebido de Google Drive y la pagina actual ya no se puede detectar automaticamente.'
                       : 'No se pudo cargar el PDF en modo interno. Se abrio el visor embebido de respaldo y la pagina ya no se puede detectar automaticamente para este archivo.'}
                   </div>
                   <iframe

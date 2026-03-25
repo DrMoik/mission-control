@@ -38,6 +38,7 @@ serviceAccountKey*.json
 !.env.example
 
 # Android local machine config
+android/
 android/local.properties
 android/.gradle/
 android/captures/

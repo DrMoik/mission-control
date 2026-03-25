@@ -1315,31 +1315,6 @@ export default function App() {
     await deleteDoc(doc(db, 'academyBooks', bookId));
   };
 
-  const handleSaveAcademyBookProgress = React.useCallback(async (bookId, progress) => {
-    if (!currentTeam || !currentMembership || !authUser) return;
-    const book = academyBooks.find((item) => item.id === bookId);
-    if (!book) return;
-    const canViewBook = !book.categoryId || canEdit || currentMembership.categoryId === book.categoryId;
-    if (!canViewBook) return;
-    const nextPage = Math.max(1, Number(progress.lastPage) || 1);
-    const touchOpenedAt = Boolean(progress.touchOpenedAt);
-    const existingProgress = academyBookProgress.find(
-      (item) => item.bookId === bookId && item.membershipId === currentMembership.id,
-    );
-    const currentPage = Number(existingProgress?.lastPage) || 1;
-    if (!touchOpenedAt && currentPage === nextPage) return;
-    const progressId = `${bookId}_${currentMembership.id}`;
-    await setDoc(doc(db, 'academyBookProgress', progressId), {
-      teamId: currentTeam.id,
-      bookId,
-      membershipId: currentMembership.id,
-      userId: authUser.uid,
-      lastPage: nextPage,
-      ...(touchOpenedAt ? { lastOpenedAt: serverTimestamp() } : {}),
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-  }, [currentTeam, currentMembership, authUser, academyBooks, canEdit, academyBookProgress]);
-
   const canEditToolItem = React.useCallback((item) => {
     if (!item) return false;
     if (canEdit) return true;                                    // admin always can
@@ -2705,7 +2680,6 @@ export default function App() {
                   teamModules,
                   teamModuleAttempts,
                   academyBooks,
-                  academyBookProgress,
                   teamInventoryItems,
                   teamInventoryLoans,
                   teamFundingAccounts,
@@ -2807,7 +2781,6 @@ export default function App() {
                   handleCreateAcademyBook,
                   handleUpdateAcademyBook,
                   handleDeleteAcademyBook,
-                  handleSaveAcademyBookProgress,
                   handleRequestModuleReview,
                   handleApproveModuleAttempt,
                   canEditInventoryItem,

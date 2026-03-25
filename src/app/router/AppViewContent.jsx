@@ -60,7 +60,6 @@ export default function AppViewContent({
     teamModules,
     teamModuleAttempts,
     academyBooks,
-    academyBookProgress,
     teamInventoryItems,
     teamInventoryLoans,
     teamFundingAccounts,
@@ -162,7 +161,6 @@ export default function AppViewContent({
     handleCreateAcademyBook,
     handleUpdateAcademyBook,
     handleDeleteAcademyBook,
-    handleSaveAcademyBookProgress,
     handleRequestModuleReview,
     handleApproveModuleAttempt,
     canEditInventoryItem,
@@ -416,7 +414,6 @@ export default function AppViewContent({
           modules={teamModules}
           moduleAttempts={teamModuleAttempts}
           books={academyBooks}
-          bookProgress={academyBookProgress}
           teamMemberships={teamMemberships}
           categories={teamCategories}
           currentMembership={currentMembership}
@@ -429,7 +426,6 @@ export default function AppViewContent({
           onCreateBook={handleCreateAcademyBook}
           onUpdateBook={handleUpdateAcademyBook}
           onDeleteBook={handleDeleteAcademyBook}
-          onSaveBookProgress={handleSaveAcademyBookProgress}
           onRequestModuleReview={handleRequestModuleReview}
           onApproveModuleAttempt={handleApproveModuleAttempt}
         />
