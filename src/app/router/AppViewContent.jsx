@@ -64,6 +64,8 @@ export default function AppViewContent({
     teamInventoryLoans,
     teamFundingAccounts,
     teamFundingEntries,
+    teamSaleItems,
+    teamSales,
     teamHrSuggestions,
     teamSkillProposals,
     meritFamilies,
@@ -174,6 +176,12 @@ export default function AppViewContent({
     handleDeleteFundingAccount,
     handleCreateFundingEntry,
     handleDeleteFundingEntry,
+    handleCreateSaleItem,
+    handleUpdateSaleItem,
+    handleDeleteSaleItem,
+    handleRegisterSale,
+    handleConfirmSale,
+    handleDeleteSale,
     handleCreateSession,
     handleUpdateSession,
     handleDeleteSession,
@@ -456,6 +464,17 @@ export default function AppViewContent({
           onDeleteAccount={handleDeleteFundingAccount}
           onCreateEntry={handleCreateFundingEntry}
           onDeleteEntry={handleDeleteFundingEntry}
+          saleItems={teamSaleItems}
+          sales={teamSales}
+          memberships={teamMemberships}
+          currentMembership={currentMembership}
+          canRegisterSale={isAtLeastRookie}
+          onCreateSaleItem={handleCreateSaleItem}
+          onUpdateSaleItem={handleUpdateSaleItem}
+          onDeleteSaleItem={handleDeleteSaleItem}
+          onRegisterSale={handleRegisterSale}
+          onConfirmSale={handleConfirmSale}
+          onDeleteSale={handleDeleteSale}
         />
       )}
       {view === 'sessions' && isAtLeastRookie && (

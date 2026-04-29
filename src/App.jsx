@@ -110,6 +110,8 @@ export default function App() {
     teamHrSuggestions,
     teamHrComplaints,
     teamSkillProposals,
+    teamSaleItems,
+    teamSales,
     userMembershipsReady,
   } = useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile });
 
@@ -1229,6 +1231,94 @@ export default function App() {
       currentBalance: newBalance,
       updatedAt: serverTimestamp(),
     });
+  };
+
+  // ── Sales ──────────────────────────────────────────────────────────────────
+
+  const handleCreateSaleItem = async (payload) => {
+    if (!currentTeam || !canEditTools) return;
+    await addDoc(collection(db, 'teamSaleItems'), {
+      teamId: currentTeam.id,
+      name: String(payload.name || '').trim(),
+      description: String(payload.description || '').trim(),
+      price: parseFloat(payload.price) || 0,
+      stock: Math.max(0, parseInt(payload.stock, 10) || 0),
+      active: payload.active !== false,
+      createdAt: serverTimestamp(),
+    });
+  };
+
+  const handleUpdateSaleItem = async (itemId, payload) => {
+    if (!currentTeam || !canEditTools) return;
+    await updateDoc(doc(db, 'teamSaleItems', itemId), {
+      name: String(payload.name || '').trim(),
+      description: String(payload.description || '').trim(),
+      price: parseFloat(payload.price) || 0,
+      stock: Math.max(0, parseInt(payload.stock, 10) || 0),
+      active: payload.active !== false,
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  const handleDeleteSaleItem = async (itemId) => {
+    if (!currentTeam || !canEditTools) return;
+    await deleteDoc(doc(db, 'teamSaleItems', itemId));
+  };
+
+  const handleRegisterSale = async (payload) => {
+    if (!currentTeam || !currentMembership) return;
+    const items = (payload.items || []).filter((li) => li.itemId && Number(li.quantity) > 0);
+    if (!items.length) return;
+    const totalAmount = items.reduce((s, li) => s + (Number(li.quantity) * Number(li.unitPrice)), 0);
+    await addDoc(collection(db, 'teamSales'), {
+      teamId: currentTeam.id,
+      date: payload.date || new Date().toISOString().slice(0, 10),
+      sellerMembershipId: currentMembership.id,
+      sellerName: currentMembership.displayName || '',
+      buyerName: String(payload.buyerName || '').trim(),
+      items: items.map((li) => ({
+        itemId: li.itemId,
+        itemName: String(li.itemName || '').trim(),
+        quantity: Number(li.quantity),
+        unitPrice: Number(li.unitPrice),
+      })),
+      totalAmount,
+      notes: String(payload.notes || '').trim(),
+      status: 'pending',
+      confirmedByMembershipId: null,
+      confirmedByName: null,
+      confirmedAt: null,
+      createdAt: serverTimestamp(),
+    });
+  };
+
+  const handleConfirmSale = async (saleId) => {
+    if (!currentTeam || !canEditTools) return;
+    const sale = teamSales.find((s) => s.id === saleId);
+    if (!sale || sale.status === 'confirmed') return;
+    // Decrement stock for each item in the sale
+    const batch = writeBatch(db);
+    for (const li of (sale.items || [])) {
+      if (!li.itemId) continue;
+      const itemRef = doc(db, 'teamSaleItems', li.itemId);
+      const itemDoc = teamSaleItems.find((i) => i.id === li.itemId);
+      if (itemDoc) {
+        const newStock = Math.max(0, (Number(itemDoc.stock) || 0) - Number(li.quantity));
+        batch.update(itemRef, { stock: newStock, updatedAt: serverTimestamp() });
+      }
+    }
+    batch.update(doc(db, 'teamSales', saleId), {
+      status: 'confirmed',
+      confirmedByMembershipId: currentMembership.id,
+      confirmedByName: currentMembership.displayName || '',
+      confirmedAt: serverTimestamp(),
+    });
+    await batch.commit();
+  };
+
+  const handleDeleteSale = async (saleId) => {
+    if (!currentTeam || !canEditTools) return;
+    await deleteDoc(doc(db, 'teamSales', saleId));
   };
 
   // ── Academy ────────────────────────────────────────────────────────────────
@@ -2684,6 +2774,8 @@ export default function App() {
                   teamInventoryLoans,
                   teamFundingAccounts,
                   teamFundingEntries,
+                  teamSaleItems,
+                  teamSales,
                   teamHrSuggestions,
                   teamSkillProposals,
                   meritFamilies,
@@ -2794,6 +2886,12 @@ export default function App() {
                   handleDeleteFundingAccount,
                   handleCreateFundingEntry,
                   handleDeleteFundingEntry,
+                  handleCreateSaleItem,
+                  handleUpdateSaleItem,
+                  handleDeleteSaleItem,
+                  handleRegisterSale,
+                  handleConfirmSale,
+                  handleDeleteSale,
                   handleCreateSession,
                   handleUpdateSession,
                   handleDeleteSession,

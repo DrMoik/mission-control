@@ -54,6 +54,8 @@ import { SYSTEM_MERIT_NAMES } from '../constants.js';
  *   crossTeamChannels: object[],
  *   crossTeamChannelInvitations: object[],
  *   teamTasks: object[],
+ *   teamSaleItems: object[],
+ *   teamSales: object[],
  *   userMembershipsReady: boolean,
  * }}
  */
@@ -92,6 +94,8 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
   const [teamHrSuggestions, setTeamHrSuggestions] = useState([]);
   const [teamHrComplaints, setTeamHrComplaints] = useState([]);
   const [teamSkillProposals, setTeamSkillProposals] = useState([]);
+  const [teamSaleItems, setTeamSaleItems] = useState([]);
+  const [teamSales, setTeamSales] = useState([]);
   const [userMembershipsReady, setUserMembershipsReady] = useState(false);
 
   // All teams (public — needed for the unauthenticated team browser)
@@ -324,6 +328,16 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       setTeamSkillProposals,
       (rows) => [...rows].sort((a, b) => tsToDate(b.createdAt) - tsToDate(a.createdAt)),
     );
+    sub(
+      query(collection(db, 'teamSaleItems'), where('teamId', '==', selectedTeamId)),
+      setTeamSaleItems,
+      (rows) => [...rows].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''))),
+    );
+    sub(
+      query(collection(db, 'teamSales'), where('teamId', '==', selectedTeamId)),
+      setTeamSales,
+      (rows) => [...rows].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
+    );
 
     // Module attempts: team admins see all (for approval); others see only their own
     if (authUser) {
@@ -423,6 +437,8 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
     teamHrSuggestions,
     teamHrComplaints,
     teamSkillProposals,
+    teamSaleItems,
+    teamSales,
     userMembershipsReady,
   };
 }
