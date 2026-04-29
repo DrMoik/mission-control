@@ -578,6 +578,20 @@ service cloud.firestore {
       allow delete: if isLeaderOrAbove(resource.data.teamId);
     }
 
+    match /teamSaleItems/{itemId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamSales/{saleId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isActiveMember(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
     match /teamInventoryItems/{itemId} {
       allow read: if isActiveMember(resource.data.teamId);
       allow create: if isTeamAdmin(request.resource.data.teamId) ||
