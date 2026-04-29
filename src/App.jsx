@@ -1270,11 +1270,15 @@ export default function App() {
     const items = (payload.items || []).filter((li) => li.itemId && Number(li.quantity) > 0);
     if (!items.length) return;
     const totalAmount = items.reduce((s, li) => s + (Number(li.quantity) * Number(li.unitPrice)), 0);
+    // Admin can register on behalf of another member
+    const sellerMembership = payload.sellerMembershipId
+      ? (teamMemberships.find((m) => m.id === payload.sellerMembershipId) || currentMembership)
+      : currentMembership;
     await addDoc(collection(db, 'teamSales'), {
       teamId: currentTeam.id,
       date: payload.date || new Date().toISOString().slice(0, 10),
-      sellerMembershipId: currentMembership.id,
-      sellerName: currentMembership.displayName || '',
+      sellerMembershipId: sellerMembership.id,
+      sellerName: sellerMembership.displayName || '',
       buyerName: String(payload.buyerName || '').trim(),
       items: items.map((li) => ({
         itemId: li.itemId,

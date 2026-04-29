@@ -337,6 +337,7 @@ function EmptySaleLineItem() {
 function VentasTab({
   saleItems,
   sales,
+  memberships,
   canEdit,
   canRegisterSale,
   onCreateSaleItem,
@@ -357,8 +358,13 @@ function VentasTab({
     date: new Date().toISOString().slice(0, 10),
     buyerName: '',
     notes: '',
+    sellerMembershipId: '',
     lines: [EmptySaleLineItem()],
   });
+
+  const activeMembers = (memberships || [])
+    .filter((m) => m.status === 'active')
+    .sort((a, b) => String(a.displayName || '').localeCompare(String(b.displayName || '')));
 
   const activeItems = saleItems.filter((i) => i.active !== false);
 
@@ -437,9 +443,10 @@ function VentasTab({
       buyerName: saleDraft.buyerName,
       notes: saleDraft.notes,
       items: validLines,
+      sellerMembershipId: saleDraft.sellerMembershipId || null,
     });
     setRegisteringOpen(false);
-    setSaleDraft({ date: new Date().toISOString().slice(0, 10), buyerName: '', notes: '', lines: [EmptySaleLineItem()] });
+    setSaleDraft({ date: new Date().toISOString().slice(0, 10), buyerName: '', notes: '', sellerMembershipId: '', lines: [EmptySaleLineItem()] });
   };
 
   // ── Summary stats ──
@@ -636,6 +643,19 @@ function VentasTab({
               <label className="text-xs text-content-tertiary block mb-1">{t('sales_buyer_name')}</label>
               <Input value={saleDraft.buyerName} onChange={(e) => setSaleDraft((d) => ({ ...d, buyerName: e.target.value }))} placeholder="Comprador" />
             </div>
+            {canEdit && (
+              <div className="sm:col-span-2">
+                <label className="text-xs text-content-tertiary block mb-1">{t('sales_seller')} <span className="text-amber-400">(registrar en nombre de…)</span></label>
+                <select value={saleDraft.sellerMembershipId}
+                  onChange={(e) => setSaleDraft((d) => ({ ...d, sellerMembershipId: e.target.value }))}
+                  className={selectCls}>
+                  <option value="">— Mi cuenta (yo realicé la venta) —</option>
+                  {activeMembers.map((m) => (
+                    <option key={m.id} value={m.id}>{m.displayName || m.id}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Line items */}
@@ -844,6 +864,7 @@ export default function FundingView({
         <VentasTab
           saleItems={saleItems}
           sales={sales}
+          memberships={memberships}
           canEdit={canEdit}
           canRegisterSale={canRegisterSale}
           onCreateSaleItem={onCreateSaleItem}
