@@ -112,6 +112,7 @@ export default function App() {
     teamSkillProposals,
     teamSaleItems,
     teamSales,
+    teamBomParts,
     userMembershipsReady,
   } = useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile });
 
@@ -186,6 +187,8 @@ export default function App() {
   const canViewInventory = isMember;
   const canViewFunding = isMember;
   const canManageInventory = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
+  const canViewBom = isMember;
+  const canManageBom = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
   const canUseCrossTeamChannels = effectiveAdmin || atLeast(effectiveRole, 'leader');
   const canManageCrossTeamChannels = isPlatformAdmin || atLeast(memberRole, 'leader');
 
@@ -207,6 +210,9 @@ export default function App() {
   useEffect(() => {
     if (selectedTeamId && view === 'inventory' && !canViewInventory) navigate('/inicio', { replace: true });
   }, [selectedTeamId, view, canViewInventory, navigate]);
+  useEffect(() => {
+    if (selectedTeamId && view === 'bom' && !canViewBom) navigate('/inicio', { replace: true });
+  }, [selectedTeamId, view, canViewBom, navigate]);
   useEffect(() => {
     if (selectedTeamId && view === 'funding' && !canViewFunding) navigate('/inicio', { replace: true });
   }, [selectedTeamId, view, canViewFunding, navigate]);
@@ -1270,15 +1276,24 @@ export default function App() {
     const items = (payload.items || []).filter((li) => li.itemId && Number(li.quantity) > 0);
     if (!items.length) return;
     const totalAmount = items.reduce((s, li) => s + (Number(li.quantity) * Number(li.unitPrice)), 0);
-    // Admin can register on behalf of another member
-    const sellerMembership = payload.sellerMembershipId
-      ? (teamMemberships.find((m) => m.id === payload.sellerMembershipId) || currentMembership)
-      : currentMembership;
+    // Determine seller: external, override member, or self
+    let sellerMembershipId = null;
+    let sellerName = '';
+    if (payload.sellerType === 'external') {
+      sellerName = String(payload.externalSellerName || '').trim() || 'Vendedor externo';
+    } else if (payload.sellerMembershipId) {
+      const found = teamMemberships.find((m) => m.id === payload.sellerMembershipId);
+      sellerMembershipId = found?.id || currentMembership.id;
+      sellerName = found?.displayName || currentMembership.displayName || '';
+    } else {
+      sellerMembershipId = currentMembership.id;
+      sellerName = currentMembership.displayName || '';
+    }
     await addDoc(collection(db, 'teamSales'), {
       teamId: currentTeam.id,
       date: payload.date || new Date().toISOString().slice(0, 10),
-      sellerMembershipId: sellerMembership.id,
-      sellerName: sellerMembership.displayName || '',
+      sellerMembershipId,
+      sellerName,
       buyerName: String(payload.buyerName || '').trim(),
       items: items.map((li) => ({
         itemId: li.itemId,
@@ -1506,6 +1521,46 @@ export default function App() {
       returnedByMembershipId: null,
       returnedByName: '',
     });
+  };
+
+  // ── BOM ────────────────────────────────────────────────────────────────────
+
+  const handleCreateBomPart = async (data) => {
+    if (!currentTeam || !canManageBom) return;
+    const payload = {
+      subsystem: String(data?.subsystem || '').trim(),
+      name: String(data?.name || '').trim(),
+      quantity: Math.max(0, Number(data?.quantity) || 0),
+      version: String(data?.version || '').trim(),
+      material: String(data?.material || '').trim(),
+      manufacturing: String(data?.manufacturing || '').trim(),
+      notes: String(data?.notes || '').trim(),
+    };
+    if (!payload.name) return;
+    await addDoc(collection(db, 'teamBomParts'), {
+      teamId: currentTeam.id,
+      createdAt: serverTimestamp(),
+      ...payload,
+    });
+  };
+
+  const handleUpdateBomPart = async (partId, updates) => {
+    if (!currentTeam || !canManageBom) return;
+    await updateDoc(doc(db, 'teamBomParts', partId), {
+      subsystem: String(updates?.subsystem || '').trim(),
+      name: String(updates?.name || '').trim(),
+      quantity: Math.max(0, Number(updates?.quantity) || 0),
+      version: String(updates?.version || '').trim(),
+      material: String(updates?.material || '').trim(),
+      manufacturing: String(updates?.manufacturing || '').trim(),
+      notes: String(updates?.notes || '').trim(),
+      updatedAt: serverTimestamp(),
+    });
+  };
+
+  const handleDeleteBomPart = async (partId) => {
+    if (!currentTeam || !canManageBom) return;
+    await deleteDoc(doc(db, 'teamBomParts', partId));
   };
 
   const handleReturnInventoryLoan = async (loanId) => {
@@ -2776,6 +2831,7 @@ export default function App() {
                   academyBooks,
                   teamInventoryItems,
                   teamInventoryLoans,
+                  teamBomParts,
                   teamFundingAccounts,
                   teamFundingEntries,
                   teamSaleItems,
@@ -2797,6 +2853,8 @@ export default function App() {
                   canAward,
                   canViewInventory,
                   canManageInventory,
+                  canViewBom,
+                  canManageBom,
                   canViewFunding,
                   canEditTools,
                   canManageSessions,
@@ -2885,6 +2943,9 @@ export default function App() {
                   handleDeleteInventoryItem,
                   handleCreateInventoryLoan,
                   handleReturnInventoryLoan,
+                  handleCreateBomPart,
+                  handleUpdateBomPart,
+                  handleDeleteBomPart,
                   handleCreateFundingAccount,
                   handleUpdateFundingAccount,
                   handleDeleteFundingAccount,

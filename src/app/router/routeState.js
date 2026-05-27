@@ -12,6 +12,7 @@ export const VALID_VIEWS = new Set([
   'academy',
   'funding',
   'inventory',
+  'bom',
   'tasks',
   'sessions',
   'mapa',

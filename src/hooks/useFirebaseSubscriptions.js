@@ -96,6 +96,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
   const [teamSkillProposals, setTeamSkillProposals] = useState([]);
   const [teamSaleItems, setTeamSaleItems] = useState([]);
   const [teamSales, setTeamSales] = useState([]);
+  const [teamBomParts, setTeamBomParts] = useState([]);
   const [userMembershipsReady, setUserMembershipsReady] = useState(false);
 
   // All teams (public — needed for the unauthenticated team browser)
@@ -338,6 +339,15 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       setTeamSales,
       (rows) => [...rows].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
     );
+    sub(
+      query(collection(db, 'teamBomParts'), where('teamId', '==', selectedTeamId)),
+      setTeamBomParts,
+      (rows) => [...rows].sort((a, b) => {
+        const subCmp = String(a.subsystem || '').localeCompare(String(b.subsystem || ''));
+        if (subCmp !== 0) return subCmp;
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      }),
+    );
 
     // Module attempts: team admins see all (for approval); others see only their own
     if (authUser) {
@@ -439,6 +449,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
     teamSkillProposals,
     teamSaleItems,
     teamSales,
+    teamBomParts,
     userMembershipsReady,
   };
 }

@@ -20,6 +20,7 @@ const MembersView = lazy(() => import('../../views/MembersView.jsx'));
 const MeritsView = lazy(() => import('../../views/MeritsView.jsx'));
 const HRView = lazy(() => import('../../views/HRView.jsx'));
 const AdminView = lazy(() => import('../../views/AdminView.jsx'));
+const BomView = lazy(() => import('../../views/BomView.jsx'));
 
 export default function AppViewContent({
   view,
@@ -62,6 +63,7 @@ export default function AppViewContent({
     academyBooks,
     teamInventoryItems,
     teamInventoryLoans,
+    teamBomParts,
     teamFundingAccounts,
     teamFundingEntries,
     teamSaleItems,
@@ -83,6 +85,8 @@ export default function AppViewContent({
     canAward,
     canViewInventory,
     canManageInventory,
+    canViewBom,
+    canManageBom,
     canViewFunding,
     canEditTools,
     canManageSessions,
@@ -171,6 +175,9 @@ export default function AppViewContent({
     handleDeleteInventoryItem,
     handleCreateInventoryLoan,
     handleReturnInventoryLoan,
+    handleCreateBomPart,
+    handleUpdateBomPart,
+    handleDeleteBomPart,
     handleCreateFundingAccount,
     handleUpdateFundingAccount,
     handleDeleteFundingAccount,
@@ -452,6 +459,15 @@ export default function AppViewContent({
           onDeleteItem={handleDeleteInventoryItem}
           onCreateLoan={handleCreateInventoryLoan}
           onReturnLoan={handleReturnInventoryLoan}
+        />
+      )}
+      {view === 'bom' && canViewBom && (
+        <BomView
+          parts={teamBomParts}
+          canManage={canManageBom}
+          onCreatePart={handleCreateBomPart}
+          onUpdatePart={handleUpdateBomPart}
+          onDeletePart={handleDeleteBomPart}
         />
       )}
       {view === 'funding' && canViewFunding && (

@@ -3,7 +3,7 @@
 
 import {
   LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, CalendarDays, Wrench,
-  GraduationCap, Wallet, CheckSquare, Settings, MessagesSquare, Map, Package,
+  GraduationCap, Wallet, CheckSquare, Settings, MessagesSquare, Map, Package, ClipboardList,
 } from 'lucide-react';
 
 /** Navigation domain structure (two levels only). */
@@ -56,6 +56,7 @@ export const NAV_DOMAINS = [
     Icon: Settings,
     items: [
       { id: 'inventory', labelKey: 'nav_inventory', Icon: Package, access: 'member' },
+      { id: 'bom', labelKey: 'nav_bom', Icon: ClipboardList, access: 'member' },
       { id: 'funding', labelKey: 'nav_funding', Icon: Wallet, access: 'member' },
       { id: 'admin', labelKey: 'nav_admin', Icon: Settings, access: 'admin' },
     ],
