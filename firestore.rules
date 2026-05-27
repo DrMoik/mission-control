@@ -91,12 +91,11 @@ service cloud.firestore {
 
     // BOM: editable only by team admins or the leader assigned to the "Mechanics" category
     function isMechanicsLeader(teamId) {
-      let catId = membershipDoc(teamId).data.get('categoryId', null);
       return isActiveMember(teamId)
         && myRole(teamId) == 'leader'
-        && catId != null
-        && exists(/databases/$(database)/documents/categories/$(catId))
-        && get(/databases/$(database)/documents/categories/$(catId)).data.name.lower() == 'mechanics';
+        && membershipDoc(teamId).data.get('categoryId', null) != null
+        && exists(/databases/$(database)/documents/categories/$(membershipDoc(teamId).data.categoryId))
+        && get(/databases/$(database)/documents/categories/$(membershipDoc(teamId).data.categoryId)).data.name.lower() == 'mechanics';
     }
 
     function isLeaderOrAboveInTeamList(teamIds) {
