@@ -195,16 +195,17 @@ export default function App() {
     !!mechanicsCategory &&
     currentMembership.categoryId === mechanicsCategory.id
   );
-  const bomSubsystems = useMemo(
-    () => (currentTeam?.bomSubsystems?.length ? currentTeam.bomSubsystems : ['Chasis', 'Tracción', 'Brazo', 'Laboratorio', 'Antenas']),
-    [currentTeam?.bomSubsystems],
-  );
   const canUseCrossTeamChannels = effectiveAdmin || atLeast(effectiveRole, 'leader');
   const canManageCrossTeamChannels = isPlatformAdmin || atLeast(memberRole, 'leader');
 
   const currentTeam = useMemo(
     () => allTeams.find((t) => t.id === selectedTeamId) || null,
     [allTeams, selectedTeamId],
+  );
+
+  const bomSubsystems = useMemo(
+    () => (currentTeam?.bomSubsystems?.length ? currentTeam.bomSubsystems : ['Chasis', 'Tracción', 'Brazo', 'Laboratorio', 'Antenas']),
+    [currentTeam?.bomSubsystems],
   );
 
   const notificationState = usePushNotifications({
