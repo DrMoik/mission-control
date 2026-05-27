@@ -89,6 +89,16 @@ service cloud.firestore {
         && meritCategoryId == membershipDoc(teamId).data.get('categoryId', null);
     }
 
+    // BOM: editable only by team admins or the leader assigned to the "Mechanics" category
+    function isMechanicsLeader(teamId) {
+      let catId = membershipDoc(teamId).data.get('categoryId', null);
+      return isActiveMember(teamId)
+        && myRole(teamId) == 'leader'
+        && catId != null
+        && exists(/databases/$(database)/documents/categories/$(catId))
+        && get(/databases/$(database)/documents/categories/$(catId)).data.name.lower() == 'mechanics';
+    }
+
     function isLeaderOrAboveInTeamList(teamIds) {
       return isPlatformAdmin() || (
         (teamIds.size() > 0 && isLeaderOrAbove(teamIds[0])) ||
@@ -609,6 +619,13 @@ service cloud.firestore {
       allow create: if isLeaderOrAbove(request.resource.data.teamId);
       allow update: if isLeaderOrAbove(resource.data.teamId);
       allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamBomParts/{partId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isTeamAdmin(request.resource.data.teamId) || isMechanicsLeader(request.resource.data.teamId);
+      allow update: if isTeamAdmin(resource.data.teamId) || isMechanicsLeader(resource.data.teamId);
+      allow delete: if isTeamAdmin(resource.data.teamId) || isMechanicsLeader(resource.data.teamId);
     }
 
     match /crossTeamChannels/{channelId} {

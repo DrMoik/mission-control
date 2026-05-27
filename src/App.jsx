@@ -188,7 +188,13 @@ export default function App() {
   const canViewFunding = isMember;
   const canManageInventory = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
   const canViewBom = isMember;
-  const canManageBom = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
+  const mechanicsCategory = teamCategories.find((c) => c.name.toLowerCase() === 'mechanics');
+  const canManageBom = canEdit || (
+    memberRole === 'leader' &&
+    !!currentMembership?.categoryId &&
+    !!mechanicsCategory &&
+    currentMembership.categoryId === mechanicsCategory.id
+  );
   const canUseCrossTeamChannels = effectiveAdmin || atLeast(effectiveRole, 'leader');
   const canManageCrossTeamChannels = isPlatformAdmin || atLeast(memberRole, 'leader');
 
