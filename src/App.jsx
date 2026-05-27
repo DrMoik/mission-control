@@ -195,6 +195,10 @@ export default function App() {
     !!mechanicsCategory &&
     currentMembership.categoryId === mechanicsCategory.id
   );
+  const bomSubsystems = useMemo(
+    () => (currentTeam?.bomSubsystems?.length ? currentTeam.bomSubsystems : ['Chasis', 'Tracción', 'Brazo', 'Laboratorio', 'Antenas']),
+    [currentTeam?.bomSubsystems],
+  );
   const canUseCrossTeamChannels = effectiveAdmin || atLeast(effectiveRole, 'leader');
   const canManageCrossTeamChannels = isPlatformAdmin || atLeast(memberRole, 'leader');
 
@@ -1569,6 +1573,13 @@ export default function App() {
     await deleteDoc(doc(db, 'teamBomParts', partId));
   };
 
+  const handleSaveBomSubsystems = async (subsystems) => {
+    if (!currentTeam || !canManageBom) return;
+    await updateDoc(doc(db, 'teams', currentTeam.id), {
+      bomSubsystems: Array.isArray(subsystems) ? subsystems.filter(Boolean) : [],
+    });
+  };
+
   const handleReturnInventoryLoan = async (loanId) => {
     if (!currentTeam || !canManageInventory || !currentMembership) return;
     const loan = teamInventoryLoans.find((entry) => entry.id === loanId);
@@ -2838,6 +2849,7 @@ export default function App() {
                   teamInventoryItems,
                   teamInventoryLoans,
                   teamBomParts,
+                  bomSubsystems,
                   teamFundingAccounts,
                   teamFundingEntries,
                   teamSaleItems,
@@ -2952,6 +2964,7 @@ export default function App() {
                   handleCreateBomPart,
                   handleUpdateBomPart,
                   handleDeleteBomPart,
+                  handleSaveBomSubsystems,
                   handleCreateFundingAccount,
                   handleUpdateFundingAccount,
                   handleDeleteFundingAccount,

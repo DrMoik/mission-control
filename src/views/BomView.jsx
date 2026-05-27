@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 
-const DEFAULT_SUBSYSTEMS = ['Chasis', 'Tracción', 'Brazo', 'Laboratorio', 'Antenas'];
+export const DEFAULT_SUBSYSTEMS = ['Chasis', 'Tracción', 'Brazo', 'Laboratorio', 'Antenas'];
 
 const MATERIAL_OPTIONS = [
   'Aluminio', 'Acero', 'PETG', 'TPU', 'Compuesto',
@@ -38,12 +38,13 @@ function SelectInput({ value, onChange, options, placeholder = '—', className 
   );
 }
 
-function TextInput({ value, onChange, type = 'text', placeholder = '', className = '' }) {
+function TextInput({ value, onChange, type = 'text', placeholder = '', className = '', onKeyDown }) {
   return (
     <input
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onKeyDown={onKeyDown}
       placeholder={placeholder}
       className={`bg-surface-raised border border-border rounded px-1.5 py-1 text-sm text-content-primary focus:outline-none focus:ring-1 focus:ring-primary ${className}`}
     />
@@ -57,6 +58,7 @@ export default function BomView({
   onCreatePart,
   onUpdatePart,
   onDeletePart,
+  onSaveSubsystems,
 }) {
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -64,6 +66,42 @@ export default function BomView({
   const [editingDraft, setEditingDraft] = useState(EMPTY_DRAFT);
   const [subsystemFilter, setSubsystemFilter] = useState('all');
   const [saving, setSaving] = useState(false);
+
+  // Subsystem management
+  const [managingSubsystems, setManagingSubsystems] = useState(false);
+  const [newSubsystem, setNewSubsystem] = useState('');
+  const [savingSubsystems, setSavingSubsystems] = useState(false);
+  const newSubsystemInputRef = useRef(null);
+
+  const handleAddSubsystem = async () => {
+    const name = newSubsystem.trim();
+    if (!name || subsystems.includes(name)) return;
+    setSavingSubsystems(true);
+    try {
+      await onSaveSubsystems?.([...subsystems, name]);
+      setNewSubsystem('');
+      newSubsystemInputRef.current?.focus();
+    } finally {
+      setSavingSubsystems(false);
+    }
+  };
+
+  const handleRemoveSubsystem = async (sub) => {
+    const partsInSub = parts.filter((p) => p.subsystem === sub);
+    if (partsInSub.length > 0) {
+      const ok = window.confirm(
+        `"${sub}" tiene ${partsInSub.length} ${partsInSub.length === 1 ? 'pieza' : 'piezas'} registradas. ¿Eliminar el subsistema de todas formas? Las piezas existentes no se borran.`,
+      );
+      if (!ok) return;
+    }
+    setSavingSubsystems(true);
+    try {
+      await onSaveSubsystems?.(subsystems.filter((s) => s !== sub));
+      if (subsystemFilter === sub) setSubsystemFilter('all');
+    } finally {
+      setSavingSubsystems(false);
+    }
+  };
 
   const filteredParts = useMemo(() => {
     if (subsystemFilter === 'all') return parts;
@@ -173,25 +211,86 @@ export default function BomView({
         </div>
       </div>
 
-      {/* Subsystem filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-content-tertiary font-medium uppercase tracking-wide">Subsistema:</span>
-        {['all', ...subsystems].map((sub) => (
-          <button
-            key={sub}
-            onClick={() => setSubsystemFilter(sub)}
-            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-              subsystemFilter === sub
-                ? 'border-primary text-primary bg-primary/10 font-semibold'
-                : 'border-border text-content-tertiary hover:text-content-primary hover:border-content-tertiary'
-            }`}
-          >
-            {sub === 'all' ? 'Todos' : sub}
-          </button>
-        ))}
+      {/* Subsystem filter + manage */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-content-tertiary font-medium uppercase tracking-wide">Subsistema:</span>
+          {['all', ...subsystems].map((sub) => (
+            <button
+              key={sub}
+              onClick={() => setSubsystemFilter(sub)}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                subsystemFilter === sub
+                  ? 'border-primary text-primary bg-primary/10 font-semibold'
+                  : 'border-border text-content-tertiary hover:text-content-primary hover:border-content-tertiary'
+              }`}
+            >
+              {sub === 'all' ? 'Todos' : sub}
+            </button>
+          ))}
+          {canManage && (
+            <button
+              onClick={() => setManagingSubsystems((v) => !v)}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                managingSubsystems
+                  ? 'border-amber-500 text-amber-400 bg-amber-500/10'
+                  : 'border-border text-content-tertiary hover:text-content-primary'
+              }`}
+            >
+              {managingSubsystems ? 'Cerrar' : '⚙ Subsistemas'}
+            </button>
+          )}
+        </div>
+
+        {/* Subsystem manager panel */}
+        {managingSubsystems && canManage && (
+          <div className="card p-4 space-y-3">
+            <p className="text-xs font-semibold text-content-secondary uppercase tracking-wide">Administrar subsistemas</p>
+            <div className="flex flex-wrap gap-2">
+              {subsystems.map((sub) => (
+                <span
+                  key={sub}
+                  className="inline-flex items-center gap-1.5 text-sm bg-surface-raised border border-border rounded-full px-3 py-1"
+                >
+                  {sub}
+                  <button
+                    onClick={() => handleRemoveSubsystem(sub)}
+                    disabled={savingSubsystems}
+                    className="text-content-tertiary hover:text-red-400 transition-colors disabled:opacity-40 leading-none"
+                    aria-label={`Eliminar ${sub}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {subsystems.length === 0 && (
+                <span className="text-xs text-content-tertiary italic">Sin subsistemas definidos.</span>
+              )}
+            </div>
+            <div className="flex gap-2 items-center">
+              <TextInput
+                value={newSubsystem}
+                onChange={setNewSubsystem}
+                placeholder="Nuevo subsistema…"
+                className="w-48"
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubsystem(); }}
+              />
+              <button
+                onClick={handleAddSubsystem}
+                disabled={savingSubsystems || !newSubsystem.trim() || subsystems.includes(newSubsystem.trim())}
+                className="btn btn-primary text-sm disabled:opacity-50"
+              >
+                + Agregar
+              </button>
+              {newSubsystem.trim() && subsystems.includes(newSubsystem.trim()) && (
+                <span className="text-xs text-amber-400">Ya existe</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Add form */}
+      {/* Add part form */}
       {showAddForm && canManage && (
         <div className="card p-4 space-y-4">
           <h3 className="text-sm font-semibold text-content-primary">Nueva Pieza</h3>

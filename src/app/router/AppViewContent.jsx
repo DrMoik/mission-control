@@ -64,6 +64,7 @@ export default function AppViewContent({
     teamInventoryItems,
     teamInventoryLoans,
     teamBomParts,
+    bomSubsystems,
     teamFundingAccounts,
     teamFundingEntries,
     teamSaleItems,
@@ -178,6 +179,7 @@ export default function AppViewContent({
     handleCreateBomPart,
     handleUpdateBomPart,
     handleDeleteBomPart,
+    handleSaveBomSubsystems,
     handleCreateFundingAccount,
     handleUpdateFundingAccount,
     handleDeleteFundingAccount,
@@ -464,10 +466,12 @@ export default function AppViewContent({
       {view === 'bom' && canViewBom && (
         <BomView
           parts={teamBomParts}
+          subsystems={bomSubsystems}
           canManage={canManageBom}
           onCreatePart={handleCreateBomPart}
           onUpdatePart={handleUpdateBomPart}
           onDeletePart={handleDeleteBomPart}
+          onSaveSubsystems={handleSaveBomSubsystems}
         />
       )}
       {view === 'funding' && canViewFunding && (
