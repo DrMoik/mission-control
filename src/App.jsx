@@ -38,7 +38,7 @@ import {
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES, SELECTED_TEAM_STORAGE_KEY,
 } from './constants.js';
-import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels, isWeekEligibleForPoints, toGoogleDrivePreviewUrl, toGoogleDriveOpenUrl } from './utils.js';
+import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels, isWeekEligibleForPoints, toGoogleDrivePreviewUrl, toGoogleDriveOpenUrl, isMechanicsCategoryName } from './utils.js';
 import { NAV_DOMAINS, VIEW_TO_DOMAIN } from './config/navigation.js';
 import RoleBadge  from './components/ui/RoleBadge.jsx';
 import GoogleIcon from './components/ui/GoogleIcon.jsx';
@@ -188,7 +188,7 @@ export default function App() {
   const canViewFunding = isMember;
   const canManageInventory = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
   const canViewBom = isMember;
-  const mechanicsCategory = teamCategories.find((c) => c.name.toLowerCase() === 'mechanics');
+  const mechanicsCategory = teamCategories.find((c) => isMechanicsCategoryName(c.name));
   const canManageBom = canEdit || (
     memberRole === 'leader' &&
     !!currentMembership?.categoryId &&

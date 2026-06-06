@@ -13,7 +13,22 @@ import {
   fillL,
   ensureString,
   toEmbedUrl,
+  isMechanicsCategoryName,
 } from './utils.js';
+
+describe('isMechanicsCategoryName', () => {
+  it('matches mechanics area names in English and Spanish', () => {
+    expect(isMechanicsCategoryName('Mechanics')).toBe(true);
+    expect(isMechanicsCategoryName('Mecánica')).toBe(true);
+    expect(isMechanicsCategoryName('mecanica')).toBe(true);
+    expect(isMechanicsCategoryName(' mechanical ')).toBe(true);
+  });
+
+  it('rejects other category names', () => {
+    expect(isMechanicsCategoryName('Software')).toBe(false);
+    expect(isMechanicsCategoryName('')).toBe(false);
+  });
+});
 
 describe('rankOf', () => {
   it('returns rank for valid roles', () => {

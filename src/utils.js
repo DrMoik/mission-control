@@ -14,6 +14,12 @@ export const rankOf = (r) => ROLE_RANK[r] ?? -1;
  */
 export const atLeast = (role, min) => rankOf(role) >= rankOf(min);
 
+/** True when a team category name is the mechanics / mecánica area. */
+export const isMechanicsCategoryName = (name) => {
+  const n = String(name || '').trim().toLowerCase();
+  return n === 'mechanics' || n === 'mecánica' || n === 'mecanica' || n === 'mechanical';
+};
+
 // ── Firestore timestamp helpers ───────────────────────────────────────────────
 
 /**

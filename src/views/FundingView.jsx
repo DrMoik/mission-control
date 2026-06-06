@@ -350,7 +350,7 @@ function VentasTab({
   // Catalog state
   const [addingItem, setAddingItem] = useState(false);
   const [editingItemId, setEditingItemId] = useState(null);
-  const [itemDraft, setItemDraft] = useState({ name: '', description: '', price: '', stock: '', active: true });
+  const [itemDraft, setItemDraft] = useState({ category: '', name: '', description: '', price: '', stock: '', active: true });
 
   // Register sale form
   const [registeringOpen, setRegisteringOpen] = useState(false);
@@ -358,7 +358,9 @@ function VentasTab({
     date: new Date().toISOString().slice(0, 10),
     buyerName: '',
     notes: '',
+    sellerType: 'member',
     sellerMembershipId: '',
+    externalSellerName: '',
     lines: [EmptySaleLineItem()],
   });
 
@@ -370,13 +372,14 @@ function VentasTab({
 
   // ── Catalog CRUD ──
   const startAddItem = () => {
-    setItemDraft({ name: '', description: '', price: '', stock: '', active: true });
+    setItemDraft({ category: '', name: '', description: '', price: '', stock: '', active: true });
     setAddingItem(true);
     setEditingItemId(null);
   };
 
   const startEditItem = (item) => {
     setItemDraft({
+      category: item.category || '',
       name: item.name || '',
       description: item.description || '',
       price: item.price ?? '',
@@ -390,6 +393,7 @@ function VentasTab({
   const handleSaveItem = async () => {
     if (!itemDraft.name.trim()) return;
     const payload = {
+      category: itemDraft.category.trim(),
       name: itemDraft.name,
       description: itemDraft.description,
       price: itemDraft.price,
@@ -403,13 +407,13 @@ function VentasTab({
       await onCreateSaleItem?.(payload);
       setAddingItem(false);
     }
-    setItemDraft({ name: '', description: '', price: '', stock: '', active: true });
+    setItemDraft({ category: '', name: '', description: '', price: '', stock: '', active: true });
   };
 
   const cancelItemForm = () => {
     setAddingItem(false);
     setEditingItemId(null);
-    setItemDraft({ name: '', description: '', price: '', stock: '', active: true });
+    setItemDraft({ category: '', name: '', description: '', price: '', stock: '', active: true });
   };
 
   // ── Sale line helpers ──
@@ -443,10 +447,12 @@ function VentasTab({
       buyerName: saleDraft.buyerName,
       notes: saleDraft.notes,
       items: validLines,
-      sellerMembershipId: saleDraft.sellerMembershipId || null,
+      sellerType: saleDraft.sellerType,
+      sellerMembershipId: saleDraft.sellerType === 'member' ? (saleDraft.sellerMembershipId || null) : null,
+      externalSellerName: saleDraft.sellerType === 'external' ? saleDraft.externalSellerName : '',
     });
     setRegisteringOpen(false);
-    setSaleDraft({ date: new Date().toISOString().slice(0, 10), buyerName: '', notes: '', sellerMembershipId: '', lines: [EmptySaleLineItem()] });
+    setSaleDraft({ date: new Date().toISOString().slice(0, 10), buyerName: '', notes: '', sellerType: 'member', sellerMembershipId: '', externalSellerName: '', lines: [EmptySaleLineItem()] });
   };
 
   // ── Summary stats ──
@@ -537,6 +543,20 @@ function VentasTab({
           <div className="border-b border-slate-700/40 bg-surface-sunken/30 px-4 py-4 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
+                <label className="text-xs text-content-tertiary block mb-1">{t('sales_item_category')}</label>
+                <input
+                  list="item-categories"
+                  value={itemDraft.category}
+                  onChange={(e) => setItemDraft((d) => ({ ...d, category: e.target.value }))}
+                  placeholder="Ej. Merch 2026, Gameday, General…"
+                  className="w-full bg-surface-sunken border border-slate-600 rounded-lg px-3 py-2 text-sm text-content-primary placeholder-content-tertiary focus:outline-none focus:ring-1 focus:ring-primary" />
+                <datalist id="item-categories">
+                  {[...new Set(saleItems.map((i) => i.category).filter(Boolean))].map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+              </div>
+              <div className="sm:col-span-2">
                 <label className="text-xs text-content-tertiary block mb-1">{t('sales_item_name')}</label>
                 <Input value={itemDraft.name} onChange={(e) => setItemDraft((d) => ({ ...d, name: e.target.value }))} placeholder="Ej. Playera M" />
               </div>
@@ -573,45 +593,69 @@ function VentasTab({
             <Package className="w-7 h-7 text-content-tertiary mx-auto mb-2" strokeWidth={1.5} />
             <p className="text-xs text-content-tertiary italic">{t('sales_no_items')}</p>
           </div>
-        ) : (
-          <div className="divide-y divide-slate-700/40">
-            {saleItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/20 transition-colors">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-content-primary truncate">{item.name}</span>
-                      {!item.active && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-content-tertiary">inactivo</span>
-                      )}
-                    </div>
-                    {item.description && (
-                      <span className="text-[11px] text-content-tertiary">{item.description}</span>
+        ) : (() => {
+          // Group items by category; uncategorized goes under ''
+          const groups = {};
+          for (const item of saleItems) {
+            const key = item.category?.trim() || '';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(item);
+          }
+          const sortedKeys = Object.keys(groups).sort((a, b) => {
+            if (!a) return 1; // uncategorized last
+            if (!b) return -1;
+            return a.localeCompare(b);
+          });
+          const renderItem = (item) => (
+            <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/20 transition-colors">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-content-primary truncate">{item.name}</span>
+                    {!item.active && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-content-tertiary">inactivo</span>
                     )}
                   </div>
-                </div>
-                <div className="flex items-center gap-4 shrink-0">
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-primary">{formatMoney(item.price)}</div>
-                    <div className={`text-[11px] ${(item.stock ?? 0) === 0 ? 'text-red-400' : (item.stock ?? 0) <= 3 ? 'text-amber-400' : 'text-content-tertiary'}`}>
-                      {(item.stock ?? 0) === 0 ? t('sales_out_of_stock') : (item.stock ?? 0) <= 3 ? `${t('sales_low_stock')}: ${item.stock}` : `Stock: ${item.stock}`}
-                    </div>
-                  </div>
-                  {canEdit && (
-                    <div className="flex gap-2">
-                      <button onClick={() => startEditItem(item)} className="text-amber-400 hover:text-amber-300 p-0.5 transition-colors" title={t('edit')}>
-                        <Pencil className="w-3.5 h-3.5" strokeWidth={2} />
-                      </button>
-                      <button onClick={() => onDeleteSaleItem?.(item.id)} className="text-red-400 hover:text-red-300 p-0.5 transition-colors" title={t('delete')}>
-                        <X className="w-3.5 h-3.5" strokeWidth={2} />
-                      </button>
-                    </div>
+                  {item.description && (
+                    <span className="text-[11px] text-content-tertiary">{item.description}</span>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-primary">{formatMoney(item.price)}</div>
+                  <div className={`text-[11px] ${(item.stock ?? 0) === 0 ? 'text-red-400' : (item.stock ?? 0) <= 3 ? 'text-amber-400' : 'text-content-tertiary'}`}>
+                    {(item.stock ?? 0) === 0 ? t('sales_out_of_stock') : (item.stock ?? 0) <= 3 ? `${t('sales_low_stock')}: ${item.stock}` : `Stock: ${item.stock}`}
+                  </div>
+                </div>
+                {canEdit && (
+                  <div className="flex gap-2">
+                    <button onClick={() => startEditItem(item)} className="text-amber-400 hover:text-amber-300 p-0.5 transition-colors" title={t('edit')}>
+                      <Pencil className="w-3.5 h-3.5" strokeWidth={2} />
+                    </button>
+                    <button onClick={() => onDeleteSaleItem?.(item.id)} className="text-red-400 hover:text-red-300 p-0.5 transition-colors" title={t('delete')}>
+                      <X className="w-3.5 h-3.5" strokeWidth={2} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+          return (
+            <div className="divide-y divide-slate-700/40">
+              {sortedKeys.map((key) => (
+                <div key={key}>
+                  {key && (
+                    <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700/30">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-content-tertiary">{key}</span>
+                    </div>
+                  )}
+                  {groups[key].map(renderItem)}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Register sale button / form ── */}
@@ -644,16 +688,34 @@ function VentasTab({
               <Input value={saleDraft.buyerName} onChange={(e) => setSaleDraft((d) => ({ ...d, buyerName: e.target.value }))} placeholder="Comprador" />
             </div>
             {canEdit && (
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 space-y-2">
                 <label className="text-xs text-content-tertiary block mb-1">{t('sales_seller')} <span className="text-amber-400">(registrar en nombre de…)</span></label>
-                <select value={saleDraft.sellerMembershipId}
-                  onChange={(e) => setSaleDraft((d) => ({ ...d, sellerMembershipId: e.target.value }))}
-                  className={selectCls}>
-                  <option value="">— Mi cuenta (yo realicé la venta) —</option>
-                  {activeMembers.map((m) => (
-                    <option key={m.id} value={m.id}>{m.displayName || m.id}</option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <button type="button"
+                    onClick={() => setSaleDraft((d) => ({ ...d, sellerType: 'member', externalSellerName: '' }))}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${saleDraft.sellerType === 'member' ? 'bg-primary/20 border-primary text-primary' : 'bg-transparent border-slate-600 text-content-tertiary hover:border-slate-500'}`}>
+                    Miembro del equipo
+                  </button>
+                  <button type="button"
+                    onClick={() => setSaleDraft((d) => ({ ...d, sellerType: 'external', sellerMembershipId: '' }))}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${saleDraft.sellerType === 'external' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-transparent border-slate-600 text-content-tertiary hover:border-slate-500'}`}>
+                    Vendedor externo
+                  </button>
+                </div>
+                {saleDraft.sellerType === 'member' ? (
+                  <select value={saleDraft.sellerMembershipId}
+                    onChange={(e) => setSaleDraft((d) => ({ ...d, sellerMembershipId: e.target.value }))}
+                    className={selectCls}>
+                    <option value="">— Mi cuenta (yo realicé la venta) —</option>
+                    {activeMembers.map((m) => (
+                      <option key={m.id} value={m.id}>{m.displayName || m.id}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <Input value={saleDraft.externalSellerName}
+                    onChange={(e) => setSaleDraft((d) => ({ ...d, externalSellerName: e.target.value }))}
+                    placeholder="Nombre del vendedor externo" />
+                )}
               </div>
             )}
           </div>
