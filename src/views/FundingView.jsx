@@ -64,7 +64,6 @@ function FondosTab({
 
   const withBalances = sortedEntries.map((e, i) => {
     const acc = accounts.find((a) => a.id === e.accountId);
-    const amt = Number(e.amount) || 0;
     let balanceAfter = acc?.currentBalance ?? 0;
     for (let j = 0; j < i; j++) {
       const d = sortedEntries[j];
@@ -867,7 +866,6 @@ export default function FundingView({
   saleItems = [],
   sales = [],
   memberships = [],
-  currentMembership,
   canRegisterSale,
   onCreateSaleItem,
   onUpdateSaleItem,
@@ -893,18 +891,18 @@ export default function FundingView({
 
       {/* ── Tab bar ── */}
       <div className="flex gap-1 border-b border-slate-700/40">
-        {tabs.map(({ id, label, Icon }) => (
+        {tabs.map((tab) => (
           <button
-            key={id}
-            onClick={() => setActiveTab(id)}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              activeTab === id
+              activeTab === tab.id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-content-tertiary hover:text-content-secondary hover:border-slate-500'
             }`}
           >
-            <Icon className="w-4 h-4" strokeWidth={1.75} />
-            {label}
+            <tab.Icon className="w-4 h-4" strokeWidth={1.75} />
+            {tab.label}
           </button>
         ))}
       </div>

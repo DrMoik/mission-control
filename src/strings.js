@@ -77,8 +77,6 @@ export const STRINGS = {
     admin_domains_hint:       'Una por línea. Formato id: etiqueta (ej. physical: Componente físico) o texto plano.',
     admin_skill_proposals: 'Propuestas de habilidades',
     admin_skill_proposals_hint: 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas al diccionario.',
-    approve: 'Aprobar',
-    reject: 'Rechazar',
     admin_retroactive: 'Retroactivo',
 
     // ── Funding ────────────────────────────────────────────────────────────────
@@ -200,6 +198,8 @@ export const STRINGS = {
     close:        'Cerrar',
     back:         'Volver',
     view_profile: 'Ver perfil',
+    session_delete_confirm: '¿Eliminar esta sesión? Esta acción no se puede deshacer.',
+    task_delete_confirm:    '¿Eliminar esta tarea? Esta acción no se puede deshacer.',
     click_to_edit:'Ver y editar mi perfil →',
 
     // ── Overview ──────────────────────────────────────────────────────────────
@@ -245,7 +245,6 @@ export const STRINGS = {
     profile_completion:    'Perfil',
     profile_complete_pct:  'completo',
     view_tasks:            'Ver tareas',
-    view_profile:          'Ver perfil',
     task_overdue_by:       'Vencida hace',
     task_overdue_days:     'días',
     task_status_assigned:  'Asignada',

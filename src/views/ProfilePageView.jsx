@@ -8,6 +8,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Cake } from 'lucide-react';
 import { t, lang } from '../strings.js';
+import { showToast } from '../services/feedback.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT, SYSTEM_MERIT_DESCRIPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongField } from '../components/ui/index.js';
 import PickerField from '../components/ui/PickerField.jsx';
@@ -18,11 +19,6 @@ import AchievementBadge         from '../components/AchievementBadge.jsx';
 import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
 import { useContributionPath } from '../hooks/useContributionPath.js';
 import { getL, toL, fillL, ensureString, getSundayOfWeekLocal, normalizeWeekOfToSunday, formatBirthdateDisplay, isBlockedImageHost, computeProfileCompletion, tsToDate, formatMissingFieldsList } from '../utils.js';
-
-function isValidSongUrl(url) {
-  if (!url) return true;
-  return /spotify\.com|youtube\.com|youtu\.be|soundcloud\.com/.test(url);
-}
 
 function readAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -95,7 +91,7 @@ function AutoGrowInput({ value, onChange, placeholder, className, ...rest }) {
 
 export default function ProfilePageView({
   membership, categories, merits = [], meritEvents = [], canEditThis, onSave,
-  weeklyStatuses = [], onSaveWeeklyStatus, suggestedTags = [],
+  weeklyStatuses = [], onSaveWeeklyStatus,
   tasks = [], modules = [], moduleAttempts = [], meritFamilies = [], knowledgeAreas = [], skillDictionary = [],
   allMeritEvents = [], onNavigate, onProposeSkill,
   careerOptions: careerOptionsProp, semesterOptions: semesterOptionsProp, personalityTags: personalityTagsProp,
@@ -116,8 +112,6 @@ export default function ProfilePageView({
   const [savingWeekly,  setSavingWeekly]  = useState(false);
   const currentWeekOf = getSundayOfWeekLocal();
   const [selectedWeekOf, setSelectedWeekOf] = useState(currentWeekOf);
-  const [reawarding,    setReawarding]   = useState(false);
-
   const { getEvidenceForMember } = useKnowledgeMap({
     teamMemberships: membership ? [membership] : [],
     teamMeritEvents: allMeritEvents,
@@ -140,8 +134,6 @@ export default function ProfilePageView({
     knowledgeEvidence: membership ? getEvidenceForMember(membership.id) : [],
   });
 
-  if (!membership) return null;
-
   useEffect(() => {
     if (!detailMerit) return;
     const onKey = (e) => { if (e.key === 'Escape') setDetailMerit(null); };
@@ -149,9 +141,6 @@ export default function ProfilePageView({
     return () => window.removeEventListener('keydown', onKey);
   }, [detailMerit]);
 
-  const cat     = categories.find((c) => c.id === membership.categoryId);
-  const weekOf  = selectedWeekOf || currentWeekOf; // Default to current week; user can browse previous
-  const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToSunday(s.weekOf) === weekOf);
   const availableWeeks = useMemo(() => {
     const set = new Set([currentWeekOf]);
     weeklyStatuses.forEach((s) => {
@@ -160,6 +149,12 @@ export default function ProfilePageView({
     });
     return [...set].sort((a, b) => b.localeCompare(a));
   }, [currentWeekOf, weeklyStatuses]);
+
+  if (!membership) return null;
+
+  const cat     = categories.find((c) => c.id === membership.categoryId);
+  const weekOf  = selectedWeekOf || currentWeekOf; // Default to current week; user can browse previous
+  const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToSunday(s.weekOf) === weekOf);
   const totalPoints = meritEvents
     .filter((e) => e.type === 'award')
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
@@ -225,19 +220,19 @@ export default function ProfilePageView({
       quoteThatMovesMe:          (draft.quoteThatMovesMe || []).filter(Boolean),
       });
       setEditing(false);
-      if (result?.meritAwarded) alert(t('profile_saved_merit_awarded'));
+      if (result?.meritAwarded) showToast(t('profile_saved_merit_awarded'), 'success');
       else if (result?.profileComplete === false) {
         const missing = result?.missingFields ?? [];
         if (missing.length > 0) {
           const list = formatMissingFieldsList(missing);
-          alert(`Perfil guardado. Para el logro Perfil completo aún faltan: ${list}.`);
+          showToast(`Perfil guardado. Para el logro Perfil completo aún faltan: ${list}.`, 'info');
         }
       }
     } catch (err) {
       console.error('Profile save failed:', err);
       const msg = (err?.message || '').toLowerCase();
       const isImage = msg.includes('image') || msg.includes('size') || msg.includes('quota') || msg.includes('too large');
-      alert(isImage ? `${t('save_failed')} ${t('save_failed_image')}` : `${t('save_failed')} ${err?.message || ''}`);
+      showToast(isImage ? `${t('save_failed')} ${t('save_failed_image')}` : `${t('save_failed')} ${err?.message || ''}`, 'error');
     }
   };
 
@@ -252,7 +247,7 @@ export default function ProfilePageView({
 
   const handleSaveWeekly = async () => {
     if (!onSaveWeeklyStatus) {
-      alert(t('save_weekly_failed') || 'No se puede guardar el estatus semanal.');
+      showToast(t('save_weekly_failed') || 'No se puede guardar el estatus semanal.', 'error');
       return;
     }
     setSavingWeekly(true);
@@ -265,11 +260,11 @@ export default function ProfilePageView({
       setEditingWeekly(false);
       if (result?.weeklyMeritAwarded) {
         const pts = result.weeklyMeritPoints ?? 25;
-        alert(t('weekly_merit_awarded').replace('{pts}', pts));
+        showToast(t('weekly_merit_awarded').replace('{pts}', pts), 'success');
       }
     } catch (err) {
       console.error('Weekly status save failed:', err);
-      alert(t('save_weekly_failed') || `Error: ${err?.message || ''}`);
+      showToast(t('save_weekly_failed') || `Error: ${err?.message || ''}`, 'error');
     } finally {
       setSavingWeekly(false);
     }
@@ -741,7 +736,7 @@ export default function ProfilePageView({
                     {availableWeeks.length > 1 && <span />}
                     {canEditThis && <button onClick={startWeeklyEdit} className="text-[11px] text-amber-400 underline">{t('edit')}</button>}
                   </div>
-                  {[['advanced', t('weekly_advanced'), thisWeek.advanced], ['failedAt', t('weekly_failed_at'), thisWeek.failedAt], ['learned', t('weekly_learned'), thisWeek.learned]].map(([key, label, text]) => {
+                  {[[t('weekly_advanced'), thisWeek.advanced], [t('weekly_failed_at'), thisWeek.failedAt], [t('weekly_learned'), thisWeek.learned]].map(([label, text]) => {
                     const str = ensureString(text, lang);
                     return str ? (
                       <div key={label}>

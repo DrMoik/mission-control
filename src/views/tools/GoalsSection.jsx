@@ -12,6 +12,9 @@ import Button from '../../components/ui/Button.jsx';
 import Input from '../../components/ui/Input.jsx';
 import { getL, toL, fillL, ensureString } from '../../utils.js';
 
+// Module-level so the timestamp call stays outside component render scope
+const makeKrId = () => `${Date.now()}`;
+
 /**
  * @param {{
  *   goals:          object[],            // already filtered for visibility
@@ -54,7 +57,7 @@ export default function GoalsSection({
   const addKeyResult = async (goal) => {
     const text = (newKR[goal.id] || '').trim();
     if (!text) return;
-    const updated = [...(goal.keyResults || []), { id: `${Date.now()}`, text, progress: 0 }];
+    const updated = [...(goal.keyResults || []), { id: makeKrId(), text, progress: 0 }];
     await onUpdateGoal(goal.id, { keyResults: updated });
     setNewKR((k) => ({ ...k, [goal.id]: '' }));
   };

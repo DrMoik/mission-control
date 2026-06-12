@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { auth, db, googleProvider } from '../firebase.js';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { showToast } from '../services/feedback.js';
 
 /**
  * @param {{ onSignOut?: () => void }} options
@@ -55,7 +56,7 @@ export function useAuth(options = {}) {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (e) {
-      if (e.code !== 'auth/popup-closed-by-user') alert(e.message);
+      if (e.code !== 'auth/popup-closed-by-user') showToast(e.message, 'error');
     }
   };
 

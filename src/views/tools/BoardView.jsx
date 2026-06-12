@@ -25,7 +25,7 @@ import { ensureString } from '../../utils.js';
  */
 export default function BoardView({
   board, canEditThis, onUpdateBoard, onDeleteBoard,
-  onCreateTask, canAssignTask, memberships = [], categories = [],
+  canAssignTask, memberships = [], categories = [],
   onAssignCard, currentMembership = null,
   memberRole = null,
 }) {

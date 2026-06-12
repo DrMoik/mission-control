@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef } from 'react';
+import { confirmDialog } from '../services/feedback.js';
 
-export const DEFAULT_SUBSYSTEMS = ['Chasis', 'Tracción', 'Brazo', 'Laboratorio', 'Antenas'];
+const DEFAULT_SUBSYSTEMS = ['Chasis', 'Tracción', 'Brazo', 'Laboratorio', 'Antenas'];
 
 const MATERIAL_OPTIONS = [
   'Aluminio', 'Acero', 'PETG', 'TPU', 'Compuesto',
@@ -89,9 +90,10 @@ export default function BomView({
   const handleRemoveSubsystem = async (sub) => {
     const partsInSub = parts.filter((p) => p.subsystem === sub);
     if (partsInSub.length > 0) {
-      const ok = window.confirm(
-        `"${sub}" tiene ${partsInSub.length} ${partsInSub.length === 1 ? 'pieza' : 'piezas'} registradas. ¿Eliminar el subsistema de todas formas? Las piezas existentes no se borran.`,
-      );
+      const ok = await confirmDialog({
+        message: `"${sub}" tiene ${partsInSub.length} ${partsInSub.length === 1 ? 'pieza' : 'piezas'} registradas. ¿Eliminar el subsistema de todas formas? Las piezas existentes no se borran.`,
+        danger: true,
+      });
       if (!ok) return;
     }
     setSavingSubsystems(true);
@@ -159,7 +161,7 @@ export default function BomView({
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Eliminar esta pieza del BOM?')) return;
+    if (!(await confirmDialog({ message: '¿Eliminar esta pieza del BOM?', danger: true }))) return;
     await onDeletePart?.(id);
   };
 

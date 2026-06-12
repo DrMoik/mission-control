@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { t, lang } from '../strings.js';
+import { confirmDialog } from '../services/feedback.js';
 import PickerField from '../components/ui/PickerField.jsx';
 import { Button, Input, Textarea } from '../components/ui/index.js';
 import { ensureString } from '../utils.js';
@@ -335,7 +336,7 @@ export default function SessionsView({
                     {canManageSessions && (
                       <div className="flex gap-3 pt-2 border-t border-slate-700/40">
                         <button type="button" onClick={() => setEditingId(session.id)} className="text-xs text-content-tertiary hover:text-content-primary transition-colors underline">{t('session_edit')}</button>
-                        <button type="button" onClick={() => { if (window.confirm(t('delete') + '?')) onDeleteSession(session.id); }} className="text-xs text-error hover:text-red-400 transition-colors underline">{t('delete')}</button>
+                        <button type="button" onClick={async () => { if (await confirmDialog({ message: t('session_delete_confirm') || '¿Eliminar esta sesión?', confirmLabel: t('delete'), danger: true })) onDeleteSession(session.id); }} className="text-xs text-error hover:text-red-400 transition-colors underline">{t('delete')}</button>
                       </div>
                     )}
                   </div>
@@ -371,7 +372,7 @@ export default function SessionsView({
   );
 }
 
-function EditSessionModal({ session, categories, onCancel, onSave, getClassLabel, getTypeLabel, toDatetimeLocal }) {
+function EditSessionModal({ session, onCancel, onSave, getClassLabel, getTypeLabel, toDatetimeLocal }) {
   const [title, setTitle] = useState(session.title || '');
   const [sessionClass, setSessionClass] = useState(session.sessionClass || 'work');
   const [sessionType, setSessionType] = useState(session.sessionType || 'other');
@@ -380,7 +381,7 @@ function EditSessionModal({ session, categories, onCancel, onSave, getClassLabel
   const [place, setPlace] = useState(session.place || '');
   const [shortDescription, setShortDescription] = useState(session.shortDescription || session.description || '');
   const [longDescription, setLongDescription] = useState(session.longDescription || session.description || '');
-  const [categoryId, setCategoryId] = useState(session.categoryId || '');
+  const [categoryId] = useState(session.categoryId || '');
   const [grantsPoints, setGrantsPoints] = useState(Boolean(session.grantsPoints));
   const [meritPoints, setMeritPoints] = useState(String(session.meritPoints || SESSION_ATTENDANCE_POINTS_DEFAULT));
 

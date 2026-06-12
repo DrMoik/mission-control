@@ -15,6 +15,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { X, Cake } from 'lucide-react';
 import { t, lang } from '../strings.js';
+import { showToast } from '../services/feedback.js';
 import { CAREER_OPTIONS, SEMESTER_OPTIONS } from '../constants.js';
 import { RoleBadge, BilingualField, SkillPicker, CultureListField, CultureSongField } from './ui/index.js';
 import PickerField from './ui/PickerField.jsx';
@@ -111,11 +112,6 @@ export default function ProfileModal({
   const currentWeekOf = getSundayOfWeekLocal();
   const [selectedWeekOf, setSelectedWeekOf] = useState(currentWeekOf);
 
-  if (!membership) return null;
-
-  const cat     = categories.find((c) => c.id === membership.categoryId);
-  const weekOf  = selectedWeekOf || currentWeekOf;
-  const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToSunday(s.weekOf) === weekOf);
   const availableWeeks = useMemo(() => {
     const set = new Set([currentWeekOf]);
     weeklyStatuses.forEach((s) => {
@@ -124,6 +120,12 @@ export default function ProfileModal({
     });
     return [...set].sort((a, b) => b.localeCompare(a));
   }, [currentWeekOf, weeklyStatuses]);
+
+  if (!membership) return null;
+
+  const cat     = categories.find((c) => c.id === membership.categoryId);
+  const weekOf  = selectedWeekOf || currentWeekOf;
+  const thisWeek = weeklyStatuses.find((s) => s.weekOf && normalizeWeekOfToSunday(s.weekOf) === weekOf);
 
   // ── Edit form helpers ──────────────────────────────────────────────────────
 
@@ -195,7 +197,7 @@ export default function ProfileModal({
       console.error('Profile save failed:', err);
       const msg = (err?.message || '').toLowerCase();
       const isImage = msg.includes('image') || msg.includes('size') || msg.includes('quota') || msg.includes('too large');
-      alert(isImage ? `${t('save_failed')} ${t('save_failed_image')}` : `${t('save_failed')} ${err?.message || ''}`);
+      showToast(isImage ? `${t('save_failed')} ${t('save_failed_image')}` : `${t('save_failed')} ${err?.message || ''}`, 'error');
     }
   };
 
@@ -212,7 +214,7 @@ export default function ProfileModal({
 
   const handleSaveWeekly = async () => {
     if (!onSaveWeeklyStatus) {
-      alert(t('save_weekly_failed') || 'No se puede guardar el estatus semanal.');
+      showToast(t('save_weekly_failed') || 'No se puede guardar el estatus semanal.', 'error');
       return;
     }
     setSavingWeekly(true);
@@ -225,7 +227,7 @@ export default function ProfileModal({
       setEditingWeekly(false);
     } catch (err) {
       console.error('Weekly status save failed:', err);
-      alert(t('save_weekly_failed') || `Error: ${err?.message || ''}`);
+      showToast(t('save_weekly_failed') || `Error: ${err?.message || ''}`, 'error');
     } finally {
       setSavingWeekly(false);
     }
@@ -280,7 +282,6 @@ export default function ProfileModal({
                 {(membership.displayName || '?')[0].toUpperCase()}
               </div>
             )}
-          </div>
           </div>
         </div>
 

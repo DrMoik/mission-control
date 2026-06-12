@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { t } from '../strings.js';
+import { showToast } from '../services/feedback.js';
 import { Button, Textarea } from '../components/ui/index.js';
 import {
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS_DEFAULT,
@@ -335,7 +336,7 @@ export default function AdminView({
               onClick={() => {
                 const el = document.getElementById('admin-domains');
                 const arr = parseList(el?.value || '');
-                if (arr.length === 0) { alert(tFn('platform_config_min_one') || 'Se requiere al menos un valor.'); return; }
+                if (arr.length === 0) { showToast(tFn('platform_config_min_one') || 'Se requiere al menos un valor.', 'warning'); return; }
                 save('domains', () => onSaveMeritTags(arr), arr);
               }}
               disabled={saving === 'domains'}

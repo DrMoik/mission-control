@@ -16,10 +16,10 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { auth, db } from './firebase.js';
+import { db } from './firebase.js';
 import {
-  collection, doc, setDoc, getDoc, updateDoc, deleteDoc,
-  addDoc, query, where, onSnapshot, serverTimestamp, Timestamp, runTransaction,
+  collection, doc, setDoc, updateDoc, deleteDoc,
+  addDoc, query, where, serverTimestamp, Timestamp, runTransaction,
   getDocs, writeBatch, arrayUnion, arrayRemove,
 } from 'firebase/firestore';
 import { useAuth } from './hooks/useAuth.js';
@@ -31,8 +31,9 @@ import { usePushNotifications } from './hooks/usePushNotifications.js';
 import AppViewContent from './app/router/AppViewContent.jsx';
 import { getRouteState } from './app/router/routeState.js';
 import { t, lang, STRINGS }         from './strings.js';
+import { showToast, confirmDialog } from './services/feedback.js';
 import {
-  EMPTY_PROFILE, COLLAB_TAG_SUGGESTIONS, MERIT_DOMAINS,
+  EMPTY_PROFILE, MERIT_DOMAINS,
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, PERSONALITY_TAGS_DEFAULT, MERIT_TIERS,
   MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT, SKILL_DICTIONARY_DEFAULT, SKILL_TYPES,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
@@ -65,9 +66,9 @@ export default function App() {
   const setSelectedTeamId = useCallback((teamId) => {
     setSelectedTeamIdState(teamId);
     if (teamId) {
-      try { localStorage.setItem(SELECTED_TEAM_STORAGE_KEY, teamId); } catch (_) {}
+      try { localStorage.setItem(SELECTED_TEAM_STORAGE_KEY, teamId); } catch { /* storage unavailable */ }
     } else {
-      try { localStorage.removeItem(SELECTED_TEAM_STORAGE_KEY); } catch (_) {}
+      try { localStorage.removeItem(SELECTED_TEAM_STORAGE_KEY); } catch { /* storage unavailable */ }
     }
   }, []);
   const [joinTarget, setJoinTarget] = useState(null);
@@ -86,7 +87,6 @@ export default function App() {
     teamModules,
     teamModuleAttempts,
     academyBooks,
-    academyBookProgress,
     teamEvents,
     teamSessions,
     teamSwots,
@@ -126,7 +126,7 @@ export default function App() {
         (m) => m.teamId === saved && (m.status === 'active' || m.status === 'suspended')
       );
       if (hasAccess) setSelectedTeamId(saved);
-    } catch (_) {}
+    } catch { /* storage unavailable */ }
   }, [authUser, userMembershipsReady, selectedTeamId, userMemberships, setSelectedTeamId]);
 
   // ── UI state ───────────────────────────────────────────────────────────────
@@ -269,20 +269,6 @@ export default function App() {
     return allTeams.filter((t) => ids.has(t.id));
   }, [allTeams, userMemberships]);
 
-  // All collaboration tags: team-defined base (or constants) + tags from members
-  const collabTagSuggestions = useMemo(() => {
-    const base = (currentTeam?.collabTagSuggestions?.length ? currentTeam.collabTagSuggestions : COLLAB_TAG_SUGGESTIONS);
-    const set = new Set(base);
-    const add = (t) => { const s = typeof t === 'string' ? t : (t?.es || t?.en || ''); if (s.trim()) set.add(s.trim()); };
-    teamMemberships.forEach((m) => {
-      (m.lookingForHelpIn || []).forEach(add);
-      (m.iCanHelpWith || []).forEach(add);
-      (m.skillsToLearnThisSemester || []).forEach(add);
-      (m.skillsICanTeach || []).forEach(add);
-    });
-    return [...set].sort();
-  }, [currentTeam?.collabTagSuggestions, teamMemberships]);
-
   // Leaderboard — aggregated points per member for "this season" (last 3 months) and all-time
   const leaderboard = useMemo(() => {
     if (!selectedTeamId) return { allTime: [], season: [] };
@@ -362,7 +348,6 @@ export default function App() {
     handleCancelTaskReviewRequest,
     handleGradeTask,
     handleRejectTaskReview,
-    handleCompleteTask,
     handleDeleteTask,
     handleSetBlocked,
     handleUnblockTask,
@@ -473,10 +458,11 @@ export default function App() {
       setSelectedTeamId(teamRef.id);
       navigate('/inicio');
     } catch (err) {
-      alert(
-        `Could not create team.\n\nFirebase said: ${err.message}\n\n` +
-        `Most likely cause: your platformRole has a typo or leading space.\n` +
-        `Open Firestore → users → your document → set platformRole to exactly: platformAdmin`,
+      showToast(
+        `No se pudo crear el equipo.\n\nFirebase: ${err.message}\n\n` +
+        `Causa probable: tu platformRole tiene un error o espacio extra. ` +
+        `En Firestore → users → tu documento, usa exactamente: platformAdmin`,
+        'error',
       );
     }
   };
@@ -491,12 +477,15 @@ export default function App() {
   const handleDeleteTeam = async (teamId) => {
     if (!isPlatformAdmin) return;
     const team = allTeams.find((t) => t.id === teamId);
-    const confirmed = window.confirm(
-      `Delete team "${team?.name}"?\n\n` +
-      `This removes the team record. Member data, categories, merits, and other ` +
-      `team collections must be cleaned up in the Firestore console separately.\n\n` +
-      `This cannot be undone.`,
-    );
+    const confirmed = await confirmDialog({
+      title: `¿Eliminar el equipo "${team?.name}"?`,
+      message:
+        'Esto elimina el registro del equipo. Los datos de miembros, áreas, logros y demás ' +
+        'colecciones deben limpiarse por separado en la consola de Firestore.\n\n' +
+        'Esta acción no se puede deshacer.',
+      confirmLabel: t('delete'),
+      danger: true,
+    });
     if (!confirmed) return;
     await deleteDoc(doc(db, 'teams', teamId));
     // If we were inside the deleted team, return to the picker
@@ -517,10 +506,6 @@ export default function App() {
   const handleSaveTeamSemesters = async (arr) => {
     if (!currentTeam || !canEdit) return;
     await updateDoc(doc(db, 'teams', currentTeam.id), { semesterOptions: Array.isArray(arr) ? arr : [] });
-  };
-  const handleSaveTeamCollabSuggestions = async (arr) => {
-    if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), { collabTagSuggestions: Array.isArray(arr) ? arr : [] });
   };
   const handleSaveTeamMeritTiers = async (arr) => {
     if (!currentTeam || !canEdit) return;
@@ -1073,8 +1058,9 @@ export default function App() {
       }, { merge: true });
 
       // Only one system award per week: grant 25 pts only on first save when all three fields are filled
+      // Deterministic ID (enforced by security rules) — one award per member per week.
       if (!existed && doAward && allThreeFilled) {
-        const eventRef = doc(meritEventsRef);
+        const eventRef = doc(meritEventsRef, `auto_weekly_${membershipId}_${weekOf}`);
         tx.set(eventRef, {
           teamId:       currentTeam.id,
           membershipId,
@@ -1103,7 +1089,8 @@ export default function App() {
           (e) => e.membershipId === membershipId && e.evidence === 'milestone_50',
         );
         if (!alreadyAwarded) {
-          await addDoc(meritEventsRef, {
+          // Deterministic ID (enforced by security rules) — one milestone award per membership.
+          await setDoc(doc(meritEventsRef, `auto_milestone50_${membershipId}`), {
             teamId:       currentTeam.id,
             membershipId,
             meritId:      null,
@@ -1206,7 +1193,7 @@ export default function App() {
     if (!currentTeam || !canEditTools) return;
     const hasEntries = teamFundingEntries.some((e) => e.accountId === accountId);
     if (hasEntries) {
-      alert('No se puede eliminar una cuenta con movimientos. Elimina o reasigna los movimientos primero.');
+      showToast('No se puede eliminar una cuenta con movimientos. Elimina o reasigna los movimientos primero.', 'warning');
       return;
     }
     await deleteDoc(doc(db, 'teamFundingAccounts', accountId));
@@ -1945,7 +1932,7 @@ export default function App() {
       });
     } catch (error) {
       console.error('Failed to toggle post reaction:', error);
-      alert('No se pudo guardar la reaccion. Si acabas de agregar esta funcion, despliega las reglas de Firestore.');
+      showToast('No se pudo guardar la reacción.', 'error');
     }
   };
 
@@ -3040,7 +3027,7 @@ export default function App() {
             <span className="text-[9px] leading-none">{t('more_btn')}</span>
           </button>
         </nav>
-        {/* Spacer so content isn't hidden behind the mobile nav */}
+        {/* Spacer so content is not hidden behind the mobile nav */}
         <div className="md:hidden h-14 shrink-0" />
 
       </div>

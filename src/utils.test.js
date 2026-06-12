@@ -5,13 +5,11 @@ import {
   atLeast,
   parseCalendarDate,
   formatBirthdateDisplay,
-  dateToLocalYYYYMMDD,
   getMondayOfWeekLocal,
   normalizeWeekOfToMonday,
   getL,
   toL,
   fillL,
-  ensureString,
   toEmbedUrl,
   isMechanicsCategoryName,
 } from './utils.js';

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { t, lang } from '../strings.js';
+import { showToast } from '../services/feedback.js';
 import { toEmbedUrl, tsToDate, getL, toL, fillL, ensureString, toGoogleDriveDownloadUrl } from '../utils.js';
 import { BilingualField } from '../components/ui/index.js';
 import ModalOverlay from '../components/ModalOverlay.jsx';
@@ -120,7 +121,7 @@ export default function AcademyView({
 
   const handleCreate = async () => {
     if (!newMod.title.en?.trim() && !newMod.title.es?.trim()) {
-      alert(t('title_req') || 'Title is required.');
+      showToast(t('title_req') || 'El título es obligatorio.', 'warning');
       return;
     }
     const topics = (newMod.topics || [])
@@ -132,7 +133,7 @@ export default function AcademyView({
         videoUrl: (tp.videoUrl || '').trim(),
       }));
     if (topics.length === 0) {
-      alert(t('topic_label') + ': ' + (t('add_topic') || 'Add at least one topic.'));
+      showToast(t('topic_label') + ': ' + (t('add_topic') || 'Agrega al menos un tema.'), 'warning');
       return;
     }
     await onCreateModule({

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { t } from '../strings.js';
+import { confirmDialog } from '../services/feedback.js';
 import { tsToDate } from '../utils.js';
 import { Button, Input, Textarea } from '../components/ui/index.js';
 import { Card } from '../components/layout/index.js';
@@ -311,7 +312,7 @@ export default function ChannelsView({
 
   const submitInviteTeams = async () => {
     if (!selectedChannel || !inviteDraft.length) return;
-    if (!window.confirm(t('channels_confirm_invite'))) return;
+    if (!(await confirmDialog(t('channels_confirm_invite')))) return;
     await withBusy('invite', async () => {
       await onInviteTeams?.(selectedChannel.id, inviteDraft);
       closeInviteModal();
@@ -334,20 +335,20 @@ export default function ChannelsView({
         await onCreateMessage?.(selectedChannel.id, composer);
         setComposer('');
       });
-    } catch (_) {
+    } catch {
       setMessageError(t('channels_message_failed'));
     }
   };
 
   const acceptInvitation = async (inviteId) => {
-    if (!window.confirm(t('channels_confirm_accept'))) return;
+    if (!(await confirmDialog(t('channels_confirm_accept')))) return;
     await withBusy(`accept:${inviteId}`, async () => {
       await onAcceptInvitation?.(inviteId);
     });
   };
 
   const declineInvitation = async (inviteId) => {
-    if (!window.confirm(t('channels_confirm_decline'))) return;
+    if (!(await confirmDialog(t('channels_confirm_decline')))) return;
     await withBusy(`decline:${inviteId}`, async () => {
       await onDeclineInvitation?.(inviteId);
     });
@@ -355,7 +356,7 @@ export default function ChannelsView({
 
   const leaveSelectedChannel = async () => {
     if (!selectedChannel) return;
-    if (!window.confirm(t('channels_confirm_leave'))) return;
+    if (!(await confirmDialog(t('channels_confirm_leave')))) return;
     await withBusy('leave', async () => {
       await onLeaveChannel?.(selectedChannel.id);
     });
@@ -363,13 +364,13 @@ export default function ChannelsView({
 
   const deleteSelectedChannel = async () => {
     if (!selectedChannel) return;
-    if (!window.confirm(t('channels_confirm_delete'))) return;
+    if (!(await confirmDialog({ message: t('channels_confirm_delete'), confirmLabel: t('delete'), danger: true }))) return;
     setActionError('');
     try {
       await withBusy('delete', async () => {
         await onDeleteChannel?.(selectedChannel.id);
       });
-    } catch (_) {
+    } catch {
       setActionError(t('channels_delete_failed'));
     }
   };

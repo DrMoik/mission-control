@@ -1,7 +1,7 @@
 // ─── InicioView ───────────────────────────────────────────────────────────────
 // Personal dashboard: my summary, my commitments, quick links.
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Trophy, Check, ArrowRight, Zap } from 'lucide-react';
 import { t } from '../strings.js';
 import { ensureString } from '../utils.js';
@@ -23,7 +23,6 @@ export default function InicioView({
   teamTasks = [],
   teamWeeklyStatuses = [],
   teamMeritEvents = [],
-  teamMemberships = [],
   currentMembership,
   tsToDate,
   onNavigateTasks,
@@ -38,13 +37,15 @@ export default function InicioView({
     return () => {
       try {
         localStorage.setItem(LAST_VISIT_KEY(teamId), String(Date.now()));
-      } catch (_) {}
+      } catch { /* localStorage unavailable */ }
     };
   }, [teamId]);
 
+  // Snapshot "now" once per mount so the memo stays pure across re-renders
+  const [mountedAt] = useState(() => Date.now());
+
   const { personalItems, personalSummary } = useMemo(() => {
-    const now = Date.now();
-    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const sevenDaysAgo = mountedAt - 7 * 24 * 60 * 60 * 1000;
 
     const awards = (teamMeritEvents || [])
       .filter((e) => e.type === 'award')
@@ -87,9 +88,8 @@ export default function InicioView({
         myTaskCount: personalItemsList.filter((i) => i.type === 'task').length,
       },
     };
-  }, [teamId, teamMeritEvents, teamTasks, teamMemberships, currentMembership, tsToDate]);
+  }, [mountedAt, teamMeritEvents, teamTasks, currentMembership, tsToDate]);
 
-  const hasPersonal = personalSummary.meritCount > 0 || personalSummary.myTaskCount > 0;
   const displayName = ensureString(currentMembership?.displayName) || '';
 
   return (

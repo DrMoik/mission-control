@@ -9,6 +9,18 @@ import { ensureString } from '../utils.js';
 import { RoleBadge, MemberAvatar } from '../components/ui/index.js';
 import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
 
+// Sortable table header (top-level so React preserves identity across renders)
+function SortTh({ col, label, className = '', sortBy, sortDir, onToggle }) {
+  return (
+    <th className={className}>
+      <button type="button" onClick={() => onToggle(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
+        {label}
+        {sortBy === col && <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${sortDir === 'asc' ? 'rotate-180' : ''}`} />}
+      </button>
+    </th>
+  );
+}
+
 /**
  * @param {{
  *   leaderboard:  { allTime: object[], season: object[] },
@@ -107,14 +119,7 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
     setSortBy(col);
     setSortDir((d) => (sortBy === col ? (d === 'asc' ? 'desc' : 'asc') : (col === 'score' ? 'desc' : 'asc')));
   };
-  const SortTh = ({ col, label, className = '' }) => (
-    <th className={className}>
-      <button type="button" onClick={() => toggleSort(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
-        {label}
-        {sortBy === col && <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${sortDir === 'asc' ? 'rotate-180' : ''}`} />}
-      </button>
-    </th>
-  );
+  const sortThProps = { sortBy, sortDir, onToggle: toggleSort };
   const showEffortCols = mode === 'effort';
 
   return (
@@ -161,17 +166,17 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
             <thead>
               <tr className="text-left text-xs text-content-tertiary border-b border-slate-700/40 bg-surface-sunken/30">
                 <th className="px-3 py-2.5 w-10">#</th>
-                <SortTh col="name" label={t('th_member')} className="px-3 py-2.5" />
+                <SortTh col="name" label={t('th_member')} className="px-3 py-2.5" {...sortThProps} />
                 <th className="px-3 py-2.5">{t('th_role')}</th>
-                <SortTh col="category" label={t('th_category')} className="px-3 py-2.5" />
+                <SortTh col="category" label={t('th_category')} className="px-3 py-2.5" {...sortThProps} />
                 {showEffortCols ? (
                   <>
                     <th className="px-3 py-2.5 text-right">{t('leaderboard_weekly_count')}</th>
                     <th className="px-3 py-2.5 text-right">{t('leaderboard_tasks_done')}</th>
-                    <SortTh col="score" label={t('leaderboard_effort') || 'Esfuerzo'} className="px-3 py-2.5 text-right" />
+                    <SortTh col="score" label={t('leaderboard_effort') || 'Esfuerzo'} className="px-3 py-2.5 text-right" {...sortThProps} />
                   </>
                 ) : (
-                  <SortTh col="score" label={t('points')} className="px-3 py-2.5 text-right" />
+                  <SortTh col="score" label={t('points')} className="px-3 py-2.5 text-right" {...sortThProps} />
                 )}
               </tr>
             </thead>

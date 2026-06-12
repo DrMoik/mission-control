@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import './index.css'
 import { setupNativeRuntime } from './mobile/nativeRuntime.js'
+import FeedbackHost from './components/feedback/FeedbackHost.jsx'
 
 async function init() {
   await setupNativeRuntime()
@@ -13,6 +14,7 @@ async function init() {
     <StrictMode>
       <HashRouter>
         <App />
+        <FeedbackHost />
       </HashRouter>
     </StrictMode>,
   )

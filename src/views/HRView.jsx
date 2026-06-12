@@ -5,6 +5,7 @@
 import React, { useState, useMemo } from 'react';
 import { t } from '../strings.js';
 import { ensureString, tsToDate } from '../utils.js';
+import { showToast } from '../services/feedback.js';
 import EvidenceInput from '../components/EvidenceInput.jsx';
 import { Button, Textarea } from '../components/ui/index.js';
 
@@ -89,7 +90,7 @@ export default function HRView({
       setSuggestionAnonymous(false);
     } catch (err) {
       console.error(err);
-      alert(err?.message || t('save_failed'));
+      showToast(err?.message || t('save_failed'), 'error');
     } finally {
       setSuggestionSaving(false);
     }
@@ -102,15 +103,15 @@ export default function HRView({
       (complaintEvidence.text || '').trim() ||
       (complaintEvidence.link || '').trim();
     if (!content || !hasEvidence) {
-      alert(t('hr_complaint_evidence_required'));
+      showToast(t('hr_complaint_evidence_required'), 'warning');
       return;
     }
     if (complaintType === 'area' && !complaintTargetCat) {
-      alert(t('hr_complaint_select_area'));
+      showToast(t('hr_complaint_select_area'), 'warning');
       return;
     }
     if (complaintType === 'person' && !complaintTargetMember) {
-      alert(t('hr_complaint_select_person'));
+      showToast(t('hr_complaint_select_person'), 'warning');
       return;
     }
     setComplaintSaving(true);
@@ -128,7 +129,7 @@ export default function HRView({
       setComplaintTargetMember('');
     } catch (err) {
       console.error(err);
-      alert(err?.message || t('save_failed'));
+      showToast(err?.message || t('save_failed'), 'error');
     } finally {
       setComplaintSaving(false);
     }
@@ -272,7 +273,7 @@ export default function HRView({
                           setShowAcceptPoints(false);
                         } catch (err) {
                           console.error(err);
-                          alert(err?.message || t('save_failed'));
+                          showToast(err?.message || t('save_failed'), 'error');
                         } finally {
                           setAcceptSaving(false);
                         }
@@ -299,7 +300,7 @@ export default function HRView({
                           setViewModalSuggestion(null);
                         } catch (err) {
                           console.error(err);
-                          alert(err?.message || t('save_failed'));
+                          showToast(err?.message || t('save_failed'), 'error');
                         } finally {
                           setAcceptSaving(false);
                         }
@@ -318,7 +319,7 @@ export default function HRView({
                         setViewModalSuggestion(null);
                       } catch (err) {
                         console.error(err);
-                        alert(err?.message || t('save_failed'));
+                        showToast(err?.message || t('save_failed'), 'error');
                       } finally {
                         setAcceptSaving(false);
                       }

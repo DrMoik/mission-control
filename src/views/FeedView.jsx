@@ -82,18 +82,6 @@ function isEmbeddedVideoUrl(url) {
   );
 }
 
-function splitMediaUrls(urls) {
-  const images = [];
-  const videos = [];
-
-  urls.forEach((url) => {
-    if (isHostedVideoUrl(url) || isEmbeddedVideoUrl(url)) videos.push(url);
-    else images.push(url);
-  });
-
-  return { images, videos };
-}
-
 function getMediaItem(url) {
   return {
     url,

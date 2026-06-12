@@ -238,11 +238,7 @@ service cloud.firestore {
         membershipExists(request.resource.data.teamId) &&
         membershipDoc(request.resource.data.teamId).data.status == 'active';
       allow update: if false;
-      allow delete: if isPlatformAdmin() ||
-        (
-          channelExists(resource.data.channelId) &&
-          isLeaderOrAbove(channelDoc(resource.data.channelId).data.createdByTeamId)
-        );
+      allow delete: if isPlatformAdmin() || isTeamAdmin(resource.data.teamId);
     }
 
     match /skillProposals/{proposalId} {
@@ -267,27 +263,51 @@ service cloud.firestore {
         isLeaderCanEditMerit(resource.data.teamId, resource.data.get('categoryId', null));
     }
 
+    // Self auto-awards: only whitelisted system merits, capped points, and
+    // deterministic doc IDs so each award can only exist once.
+    function isValidSelfAutoAward(eventId) {
+      return request.resource.data.autoAward == true &&
+        request.resource.data.membershipId != null &&
+        request.resource.data.teamId != null &&
+        request.resource.data.type == 'award' &&
+        request.resource.data.points is number &&
+        request.resource.data.points > 0 &&
+        request.resource.data.points <= 500 &&
+        request.resource.data.get('awardedByUserId', '') == request.auth.uid &&
+        (request.resource.data.membershipId == request.auth.uid + '_' + request.resource.data.teamId ||
+         (exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
+          get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.get('userId', '') == request.auth.uid)) &&
+        (
+          (request.resource.data.meritName == 'Actualización semanal' &&
+           request.resource.data.get('evidence', '').matches('[0-9]{4}-[0-9]{2}-[0-9]{2}') &&
+           eventId == 'auto_weekly_' + request.resource.data.membershipId + '_' + request.resource.data.evidence) ||
+          (request.resource.data.meritName == 'Perfil completo' &&
+           eventId == 'auto_profile_complete_50_' + request.resource.data.teamId + '_' + request.resource.data.membershipId) ||
+          (request.resource.data.meritName == '50 actualizaciones' &&
+           eventId == 'auto_milestone50_' + request.resource.data.membershipId)
+        );
+    }
+
     match /meritEvents/{eventId} {
       // Allow read when doc doesn't exist (tx.get in profile-save) or when user is active member
       allow read: if resource == null || isActiveMember(resource.data.teamId);
       allow create: if isLeaderOrAbove(request.resource.data.teamId) ||
-        (request.resource.data.autoAward == true &&
-         request.resource.data.membershipId != null &&
-         request.resource.data.teamId != null &&
-         request.resource.data.get('awardedByUserId', '') == request.auth.uid &&
-         (request.resource.data.membershipId == request.auth.uid + '_' + request.resource.data.teamId ||
-          (exists(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)) &&
-           get(/databases/$(database)/documents/memberships/$(request.resource.data.membershipId)).data.get('userId', '') == request.auth.uid)));
+        isValidSelfAutoAward(eventId);
+      // Team admins may retroactively adjust points on system auto-awards
+      // (handleSaveSystemMeritPoints); nothing else is editable.
       allow update: if isPlatformAdmin() ||
-        (isActiveMember(resource.data.teamId) &&
+        (isTeamAdmin(resource.data.teamId) &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']) &&
-         resource.data.points == 5 &&
-         request.resource.data.points == 25);
+         resource.data.get('autoAward', false) == true &&
+         request.resource.data.points is number &&
+         request.resource.data.points > 0 &&
+         request.resource.data.points <= 500);
       allow delete: if isPlatformAdmin() || isLeaderOrAbove(resource.data.teamId);
     }
 
+    // Data migrations are run by admins (or server-side scripts) only.
     match /migrations/{migrationId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isPlatformAdmin();
     }
 
     match /profileCompleteLocks/{userId} {

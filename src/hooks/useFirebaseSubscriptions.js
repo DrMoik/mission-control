@@ -6,19 +6,12 @@ import { useState, useEffect } from 'react';
 import { db } from '../firebase.js';
 import {
   collection,
-  doc,
-  setDoc,
-  getDoc,
   query,
   where,
   onSnapshot,
-  serverTimestamp,
-  getDocs,
-  updateDoc,
   documentId,
 } from 'firebase/firestore';
 import { tsToDate } from '../utils.js';
-import { SYSTEM_MERIT_NAMES } from '../constants.js';
 
 /**
  * @param {{ authUser: object | null, selectedTeamId: string | null, userProfile?: object | null }} params
@@ -99,15 +92,28 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
   const [teamBomParts, setTeamBomParts] = useState([]);
   const [userMembershipsReady, setUserMembershipsReady] = useState(false);
 
-  // All teams (public — needed for the unauthenticated team browser)
+  // Stable primitives derived from objects/arrays, so the listener effects below
+  // don't tear down and resubscribe every time a snapshot produces new references.
+  const uid = authUser?.uid || null;
+  const isPlatformAdmin = userProfile?.platformRole?.trim() === 'platformAdmin';
+  const selectedMembership = userMemberships.find(
+    (m) => m.teamId === selectedTeamId && m.status === 'active',
+  );
+  const isTeamAdminForSelected =
+    isPlatformAdmin ||
+    (!!selectedMembership && ['teamAdmin', 'facultyAdvisor'].includes(selectedMembership.role));
+
+  // All teams (rules require a signed-in user)
   useEffect(() => {
+    if (!uid) { setAllTeams([]); return; }
     return onSnapshot(collection(db, 'teams'), (snap) => {
       setAllTeams(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
-  }, []);
+  }, [uid]);
 
   // Categories for every team (needed for the join-request form before a team is selected)
   useEffect(() => {
+    if (!uid) { setAllTeamCategories({}); return; }
     return onSnapshot(collection(db, 'categories'), (snap) => {
       const map = {};
       snap.docs.forEach((d) => {
@@ -117,7 +123,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       });
       setAllTeamCategories(map);
     });
-  }, []);
+  }, [uid]);
 
   // Current user's memberships across all teams
   useEffect(() => {
@@ -142,7 +148,6 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       return;
     }
     const unsubs = [];
-    const isPlatformAdmin = userProfile?.platformRole?.trim() === 'platformAdmin';
 
     const sub = (q, setter, transform) =>
       unsubs.push(
@@ -349,68 +354,43 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       }),
     );
 
-    // Module attempts: team admins see all (for approval); others see only their own
-    if (authUser) {
-      const isPlatformAdmin = userProfile?.platformRole?.trim() === 'platformAdmin';
-      const currentMem = userMemberships.find(
-        (m) => m.teamId === selectedTeamId && m.status === 'active',
-      );
-      const isTeamAdmin =
-        isPlatformAdmin ||
-        (currentMem && ['teamAdmin', 'facultyAdvisor'].includes(currentMem.role));
-      const q = isTeamAdmin
-        ? query(collection(db, 'moduleAttempts'), where('teamId', '==', selectedTeamId))
-        : query(
-            collection(db, 'moduleAttempts'),
-            where('teamId', '==', selectedTeamId),
-            where('userId', '==', authUser.uid),
-          );
-      unsubs.push(
-        onSnapshot(q, (snap) =>
-          setTeamModuleAttempts(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-        ),
-      );
-      const progressQuery = query(
-        collection(db, 'academyBookProgress'),
-        where('teamId', '==', selectedTeamId),
-        where('userId', '==', authUser.uid),
-      );
-      unsubs.push(
-        onSnapshot(progressQuery, (snap) =>
-          setAcademyBookProgress(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-        ),
-      );
-    }
-
     return () => unsubs.forEach((u) => u());
-  }, [selectedTeamId, authUser, userProfile, userMemberships]);
+  }, [selectedTeamId, isPlatformAdmin]);
 
-  // Retroactive migration: update "Actualización semanal" merits from 5 → 25 pts (runs once per team)
+  // Per-user queries, kept separate so role/membership changes only resubscribe
+  // these two listeners instead of every team collection above.
+  // Module attempts: team admins see all (for approval); others see only their own.
   useEffect(() => {
-    if (!selectedTeamId || !authUser) return;
-    const lockId = `weekly_25_${selectedTeamId}`;
-    const lockRef = doc(db, 'migrations', lockId);
-    const meritEventsRef = collection(db, 'meritEvents');
-    (async () => {
-      try {
-        const lockSnap = await getDoc(lockRef);
-        if (lockSnap.exists()) return;
-        const q = query(
-          meritEventsRef,
+    if (!selectedTeamId || !uid) {
+      setTeamModuleAttempts([]);
+      setAcademyBookProgress([]);
+      return;
+    }
+    const unsubs = [];
+    const attemptsQuery = isTeamAdminForSelected
+      ? query(collection(db, 'moduleAttempts'), where('teamId', '==', selectedTeamId))
+      : query(
+          collection(db, 'moduleAttempts'),
           where('teamId', '==', selectedTeamId),
-          where('meritName', '==', SYSTEM_MERIT_NAMES.weeklyUpdate),
-          where('points', '==', 5),
+          where('userId', '==', uid),
         );
-        const snap = await getDocs(q);
-        for (const d of snap.docs) {
-          await updateDoc(d.ref, { points: 25 });
-        }
-        await setDoc(lockRef, { doneAt: serverTimestamp(), updated: snap.size });
-      } catch (e) {
-        console.warn('Migration weekly_25:', e);
-      }
-    })();
-  }, [selectedTeamId, authUser]);
+    unsubs.push(
+      onSnapshot(attemptsQuery, (snap) =>
+        setTeamModuleAttempts(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      ),
+    );
+    const progressQuery = query(
+      collection(db, 'academyBookProgress'),
+      where('teamId', '==', selectedTeamId),
+      where('userId', '==', uid),
+    );
+    unsubs.push(
+      onSnapshot(progressQuery, (snap) =>
+        setAcademyBookProgress(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      ),
+    );
+    return () => unsubs.forEach((u) => u());
+  }, [selectedTeamId, uid, isTeamAdminForSelected]);
 
   return {
     allTeams,

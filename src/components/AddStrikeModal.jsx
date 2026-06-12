@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { t } from '../strings.js';
+import { showToast } from '../services/feedback.js';
 import ModalOverlay from './ModalOverlay.jsx';
 
 /**
@@ -37,7 +38,7 @@ export default function AddStrikeModal({ memberName, onConfirm, onCancel }) {
       onCancel();
     } catch (err) {
       console.error('Add strike failed:', err);
-      alert(err?.message || t('save_failed'));
+      showToast(err?.message || t('save_failed'), 'error');
     } finally {
       setSaving(false);
     }

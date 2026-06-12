@@ -37,7 +37,6 @@ import { SESSION_ATTENDANCE_POINTS_DEFAULT, SYSTEM_MERIT_NAMES } from '../consta
  */
 export function useSessionHandlers({
   currentTeam,
-  currentMembership,
   authUser,
   userProfile,
   canEdit,

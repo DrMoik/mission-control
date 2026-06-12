@@ -217,6 +217,10 @@
     animation: modal-panel-in 0.2s var(--ease-out) forwards;
   }
 
+  .feedback-toast {
+    animation: slide-up-in 0.2s var(--ease-out) forwards;
+  }
+
   .dropdown-in {
     animation: dropdown-in 0.15s var(--ease-out) forwards;
   }

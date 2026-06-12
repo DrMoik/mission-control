@@ -45,6 +45,16 @@ function StrikePipsWithEvidence({ member, canViewEvidence, onShowEvidence }) {
 
 const selectCls = 'bg-surface-sunken border border-slate-600 rounded-lg px-2 py-1 text-xs text-content-secondary focus:border-primary focus:outline-none';
 
+// Sortable column header (top-level so React preserves identity across renders)
+function SortHeader({ col, label, sortBy, sortDir, onToggle }) {
+  return (
+    <button type="button" onClick={() => onToggle(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
+      {label}
+      {sortBy === col && <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${sortDir === 'asc' ? 'rotate-180' : ''}`} />}
+    </button>
+  );
+}
+
 export default function MembersView({
   categories, memberships, complaintsAgainstMember = [],
   canEdit, canStrike, canStrikeMember, canRemoveStrikeMember,
@@ -161,12 +171,7 @@ export default function MembersView({
     setSortBy(col);
     setSortDir((d) => (sortBy === col ? (d === 'asc' ? 'desc' : 'asc') : 'asc'));
   };
-  const SortHeader = ({ col, label }) => (
-    <button type="button" onClick={() => toggleSort(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
-      {label}
-      {sortBy === col && <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${sortDir === 'asc' ? 'rotate-180' : ''}`} />}
-    </button>
-  );
+  const sortHeaderProps = { sortBy, sortDir, onToggle: toggleSort };
 
   const isMatch = (m) => {
     if (!skillFilter) return false;
@@ -363,10 +368,10 @@ export default function MembersView({
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="text-left text-content-tertiary border-b border-slate-700/40 bg-surface-sunken/30">
-                <th className="px-3 py-2.5"><SortHeader col="name" label={t('th_member')} /></th>
-                <th className="px-3 py-2.5"><SortHeader col="role" label={t('th_role')} /></th>
-                <th className="px-3 py-2.5"><SortHeader col="category" label={t('th_category')} /></th>
-                <th className="px-3 py-2.5"><SortHeader col="strikes" label={t('th_strikes')} /></th>
+                <th className="px-3 py-2.5"><SortHeader col="name" label={t('th_member')} {...sortHeaderProps} /></th>
+                <th className="px-3 py-2.5"><SortHeader col="role" label={t('th_role')} {...sortHeaderProps} /></th>
+                <th className="px-3 py-2.5"><SortHeader col="category" label={t('th_category')} {...sortHeaderProps} /></th>
+                <th className="px-3 py-2.5"><SortHeader col="strikes" label={t('th_strikes')} {...sortHeaderProps} /></th>
                 {canEdit && <th className="px-3 py-2.5">{t('hr_complaints_count')}</th>}
               </tr>
             </thead>

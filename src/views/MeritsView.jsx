@@ -7,12 +7,24 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { t, lang } from '../strings.js';
+import { showToast, confirmDialog } from '../services/feedback.js';
 import { ASSIGNABLE_BY_OPTIONS, MERIT_DOMAINS, MERIT_TIERS } from '../constants.js';
 import { ACHIEVEMENT_ICON_CATEGORIES, ACHIEVEMENT_ICON_AREAS, ACHIEVEMENT_ICON_COLORS, getIconUrl, resolveIconFilter } from '../config/achievementIcons.js';
 import { tsToDate, getL, fillL, ensureString, domainToLabel } from '../utils.js';
 import ImageCropModal           from '../components/ImageCropModal.jsx';
 import AchievementBadge         from '../components/AchievementBadge.jsx';
 import { BilingualField } from '../components/ui/index.js';
+
+function SortTh({ col, label, currentSortBy, currentDir, onToggle }) {
+  return (
+    <th className="px-3 py-2">
+      <button type="button" onClick={() => onToggle(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
+        {label}
+        {currentSortBy === col && <span className="text-[10px]">{currentDir === 'asc' ? '▲' : '▼'}</span>}
+      </button>
+    </th>
+  );
+}
 
 /**
  * @param {{
@@ -23,7 +35,7 @@ import { BilingualField } from '../components/ui/index.js';
  * }} props
  */
 export default function MeritsView({
-  merits, categories, memberships, meritEvents, userProfile,
+  merits, categories, memberships, meritEvents,
   canEdit, canCreateMerit, canAward, canEditMerit, currentMembership, memberRole, isPlatformAdmin,
   domains: domainsProp,
   meritTiers: meritTiersProp,
@@ -276,26 +288,14 @@ export default function MeritsView({
     return arr;
   }, [meritEvents, auditSortBy, auditSortDir, memberships]);
 
-  const toggleGridSort = (col) => {
-    setGridSortBy(col);
-    setGridSortDir((d) => (gridSortBy === col ? (d === 'asc' ? 'desc' : 'asc') : 'asc'));
-  };
   const toggleAuditSort = (col) => {
     setAuditSortBy(col);
     setAuditSortDir((d) => (auditSortBy === col ? (d === 'asc' ? 'desc' : 'asc') : 'desc'));
   };
-  const SortTh = ({ col, label, currentSortBy, currentDir, onToggle }) => (
-    <th className="px-3 py-2">
-      <button type="button" onClick={() => onToggle(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
-        {label}
-        {currentSortBy === col && <span className="text-[10px]">{currentDir === 'asc' ? '▲' : '▼'}</span>}
-      </button>
-    </th>
-  );
 
   const handleCreate = () => {
-    if (!meritForm.name.trim())                             { alert(t('name') + ' required.');    return; }
-    if (!meritForm.points || Number(meritForm.points) <= 0) { alert(t('points') + ' must be > 0.'); return; }
+    if (!meritForm.name.trim())                             { showToast(`${t('name')}: campo requerido.`, 'warning');    return; }
+    if (!meritForm.points || Number(meritForm.points) <= 0) { showToast(`${t('points')}: debe ser mayor a 0.`, 'warning'); return; }
     onCreateMerit(
       meritForm.name.trim(), meritForm.points, meritForm.categoryId,
       meritForm.logo,
@@ -968,8 +968,8 @@ export default function MeritsView({
               </button>
               <button
                 onClick={() => {
-                  if (!editForm.name?.trim()) { alert(t('name') + ' required.'); return; }
-                  if (!editForm.points || Number(editForm.points) <= 0) { alert(t('points') + ' must be > 0.'); return; }
+                  if (!editForm.name?.trim()) { showToast(`${t('name')}: campo requerido.`, 'warning'); return; }
+                  if (!editForm.points || Number(editForm.points) <= 0) { showToast(`${t('points')}: debe ser mayor a 0.`, 'warning'); return; }
                   onUpdateMerit(editingMerit.id, {
                     name: editForm.name.trim(),
                     points: Number(editForm.points),
@@ -1157,9 +1157,13 @@ export default function MeritsView({
                     {(canEditMerit ? canEditMerit(m) : canEdit) && (
                       <button
                         type="button"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          if (window.confirm(t('merit_delete_confirm') || '¿Eliminar este logro? Esta acción no se puede deshacer.')) {
+                          if (await confirmDialog({
+                            message: t('merit_delete_confirm') || '¿Eliminar este logro? Esta acción no se puede deshacer.',
+                            confirmLabel: t('delete'),
+                            danger: true,
+                          })) {
                             onDeleteMerit(m.id);
                           }
                         }}
@@ -1460,7 +1464,7 @@ export default function MeritsView({
                             )}
                             {canEdit && !isEditing && evt.type === 'award' && (
                               <button
-                                onClick={() => { if (window.confirm(t('revoke_confirm'))) onRevokeMerit(evt.id); }}
+                                onClick={async () => { if (await confirmDialog({ message: t('revoke_confirm'), confirmLabel: t('revoke'), danger: true })) onRevokeMerit(evt.id); }}
                                 className="text-[11px] text-red-400 underline">{t('revoke')}</button>
                             )}
                           </div>

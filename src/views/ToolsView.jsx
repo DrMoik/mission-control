@@ -21,12 +21,13 @@
 
 import React, { useState, useMemo } from 'react';
 import { t, lang } from '../strings.js';
+import { confirmDialog } from '../services/feedback.js';
 import BoardTypeSection        from './tools/BoardTypeSection.jsx';
 import AvailabilityPollsSection from './tools/AvailabilityPollsSection.jsx';
 import MeetingsSection         from './tools/MeetingsSection.jsx';
 import GoalsSection            from './tools/GoalsSection.jsx';
 import { BilingualField, Button, Input, HowToUse, ScopeFilter } from '../components/ui/index.js';
-import { getL, toL, fillL, ensureString, tsToDate, parseCalendarDate } from '../utils.js';
+import { getL, toL, ensureString } from '../utils.js';
 
 // SWOT quadrant metadata (colours are language-independent)
 const SWOT_META = [
@@ -62,11 +63,10 @@ const SWOT_META = [
  * }} props
  */
 export default function ToolsView({
-  team, teamEvents, teamSwots = [], teamEisenhowers = [], teamPughs = [], teamBoards, teamAvailabilityPolls = [], teamMeetings, teamGoals,
+  teamSwots = [], teamEisenhowers = [], teamPughs = [], teamBoards, teamAvailabilityPolls = [], teamMeetings, teamGoals,
   categories, memberships = [], currentMembership, memberRole, canEdit, canEditTools,
   resolveCanEdit,
   onCreateTask, canAssignTask,
-  onCreateEvent, onUpdateEvent, onDeleteEvent,
   onCreateSwot, onUpdateSwot, onDeleteSwot,
   onCreateEisenhower, onUpdateEisenhower, onDeleteEisenhower,
   onCreatePugh, onUpdatePugh, onDeletePugh,
@@ -301,7 +301,7 @@ export default function ToolsView({
                   {canEditTools && resolveCanEdit(s) && (
                     <button
                       type="button"
-                      onClick={() => { if (window.confirm(t('delete_matrix_confirm'))) onDeleteSwot(s.id); setSelectedSwotId((id) => (id === s.id ? null : id)); }}
+                      onClick={async () => { if (await confirmDialog({ message: t('delete_matrix_confirm'), confirmLabel: t('delete'), danger: true })) { onDeleteSwot(s.id); setSelectedSwotId((id) => (id === s.id ? null : id)); } }}
                       className="text-[11px] text-error hover:text-red-400 transition-colors"
                     >
                       {t('delete')}
@@ -336,7 +336,6 @@ export default function ToolsView({
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {SWOT_META.map((q) => {
-                  const items = editingSwot ? (swotDraft?.[q.key] || []) : (selectedSwot[q.key] || []).map((i) => ({ ...i, text: toL(i.text) }));
                   const displayItems = editingSwot ? (swotDraft?.[q.key] || []) : (selectedSwot[q.key] || []);
                   return (
                     <div key={q.key} className={`border-2 ${q.border} ${q.bg} rounded-lg p-4`}>
@@ -434,7 +433,7 @@ export default function ToolsView({
                   {canCreate && resolveCanEdit(m) && (
                     <button
                       type="button"
-                      onClick={() => { if (window.confirm(t('delete_matrix_confirm'))) onDeleteEisenhower(m.id); setSelectedEisenhowerId((id) => (id === m.id ? (visibleEisenhowerList.find((x) => x.id !== m.id)?.id ?? null) : id)); }}
+                      onClick={async () => { if (await confirmDialog({ message: t('delete_matrix_confirm'), confirmLabel: t('delete'), danger: true })) { onDeleteEisenhower(m.id); setSelectedEisenhowerId((id) => (id === m.id ? (visibleEisenhowerList.find((x) => x.id !== m.id)?.id ?? null) : id)); } }}
                       className="text-[11px] text-red-400 hover:underline"
                     >
                       {t('delete')}
@@ -609,7 +608,7 @@ export default function ToolsView({
                   {canCreate && resolveCanEdit(m) && (
                     <button
                       type="button"
-                      onClick={() => { if (window.confirm(t('delete_matrix_confirm'))) onDeletePugh(m.id); setSelectedPughId((id) => (id === m.id ? (visiblePughList.find((x) => x.id !== m.id)?.id ?? null) : id)); }}
+                      onClick={async () => { if (await confirmDialog({ message: t('delete_matrix_confirm'), confirmLabel: t('delete'), danger: true })) { onDeletePugh(m.id); setSelectedPughId((id) => (id === m.id ? (visiblePughList.find((x) => x.id !== m.id)?.id ?? null) : id)); } }}
                       className="text-[11px] text-red-400 hover:underline"
                     >
                       {t('delete')}

@@ -245,9 +245,6 @@ export default function AvailabilityPollsSection({
     () => new Set(draftDates.flatMap((date) => draftTimes.map((time) => makeSlotKey(date, time)))),
     [draftDates, draftTimes],
   );
-  const toggleDraftSlot = () => {};
-  const clearUnavailableDraftSlots = () => {};
-
   const handleCreate = async (e) => {
     e.preventDefault();
     const title = form.title.trim();

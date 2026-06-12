@@ -49,7 +49,7 @@ function PointsHistogram({ distribution }) {
           />
         ))}
         {/* Bars */}
-        {distribution.map(({ label, count }, i) => {
+        {distribution.map(({ count }, i) => {
           const barH = maxCount > 0 ? (count / maxCount) * chartH : 0;
           const x = pad.left + i * (barW + barGap);
           const y = pad.top + chartH - barH;

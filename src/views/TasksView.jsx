@@ -6,10 +6,24 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { t, lang } from '../strings.js';
+import { confirmDialog } from '../services/feedback.js';
 import { ensureString } from '../utils.js';
 import { TASK_GRADES } from '../constants.js';
 import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
 import { Button, Input } from '../components/ui/index.js';
+
+function SectionToggle({ label, count, open, onToggle }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-content-secondary hover:text-content-primary transition-colors"
+    >
+      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? '' : '-rotate-90'}`} strokeWidth={2} />
+      {label} <span className="text-content-tertiary text-xs">({count})</span>
+    </button>
+  );
+}
 
 export default function TasksView({
   tasks,
@@ -295,7 +309,7 @@ export default function TasksView({
             {canDelete && (
               <button
                 type="button"
-                onClick={() => { if (window.confirm(t('delete') + '?')) onDeleteTask(task.id); }}
+                onClick={async () => { if (await confirmDialog({ message: t('task_delete_confirm') || '¿Eliminar esta tarea?', confirmLabel: t('delete'), danger: true })) onDeleteTask(task.id); }}
                 className="text-xs text-error hover:text-red-400 transition-colors"
               >
                 {t('delete')}
@@ -323,17 +337,6 @@ export default function TasksView({
       </div>
     );
   };
-
-  const SectionToggle = ({ label, count, open, onToggle }) => (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="inline-flex items-center gap-1.5 text-sm font-medium text-content-secondary hover:text-content-primary transition-colors"
-    >
-      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? '' : '-rotate-90'}`} strokeWidth={2} />
-      {label} <span className="text-content-tertiary text-xs">({count})</span>
-    </button>
-  );
 
   return (
     <div className="space-y-6 max-w-2xl">

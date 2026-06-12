@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { t } from '../strings.js';
+import { showToast } from '../services/feedback.js';
 import { MERIT_ACHIEVEMENT_TYPES, MERIT_DOMAINS } from '../constants.js';
 
 export default function PlatformConfigSection({
@@ -45,7 +46,7 @@ export default function PlatformConfigSection({
     const achievementTypes = parseList(types);
     const domainsArr = parseList(domains);
     if (achievementTypes.length === 0 || domainsArr.length === 0) {
-      alert(tFn('platform_config_min_one') || 'Cada lista debe tener al menos un valor.');
+      showToast(tFn('platform_config_min_one') || 'Cada lista debe tener al menos un valor.', 'warning');
       setSaving(false);
       return;
     }

@@ -4,6 +4,7 @@
 import { useCallback } from 'react';
 import { collection, doc, addDoc, updateDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
+import { showToast } from '../services/feedback.js';
 
 /**
  * @param {{
@@ -56,11 +57,11 @@ export function useMeritHandlers({
   }, [canEdit, memberRole, currentMembership?.categoryId]);
 
   const handleCreateMerit = useCallback(async (name, points, categoryId, logo, shortDescription, longDescription, assignableBy = 'leader', tags = [], achievementTypes = [], domains = [], tier = null, repeatable = true, familyIds = [], knowledgeAreaIds = [], logoColor = '') => {
-    if (!currentTeam) { alert('No team selected.'); return; }
-    if (!canCreateMerit) { alert('No permission to create logros.'); return; }
+    if (!currentTeam) { showToast('No hay equipo seleccionado.', 'warning'); return; }
+    if (!canCreateMerit) { showToast('No tienes permiso para crear logros.', 'warning'); return; }
     if (memberRole === 'leader' && !isPlatformAdmin) {
       if (!categoryId || categoryId !== currentMembership?.categoryId) {
-        alert(t('leader_create_merit_category_only') || 'Como Líder, solo puedes crear logros para tu área asignada.');
+        showToast(t('leader_create_merit_category_only') || 'Como Líder, solo puedes crear logros para tu área asignada.', 'warning');
         return;
       }
     }
@@ -86,7 +87,7 @@ export function useMeritHandlers({
       });
     } catch (err) {
       console.error('[Logro] Firestore error:', err);
-      alert(`No se pudo guardar el logro: ${err.message}\n\nVerifica las reglas de Firestore en FIREBASE_SETUP.md.`);
+      showToast(`No se pudo guardar el logro: ${err.message}`, 'error');
     }
   }, [currentTeam, canCreateMerit, memberRole, currentMembership?.categoryId, isPlatformAdmin, t]);
 
@@ -99,7 +100,7 @@ export function useMeritHandlers({
   const handleRecoverMerit = useCallback(async (meritId, sampleEvent) => {
     if (!currentTeam || !canCreateMerit) return;
     if (!sampleEvent?.meritId || !sampleEvent?.meritName) {
-      alert(t('merit_recover_no_data') || 'No hay datos suficientes para recuperar este logro.');
+      showToast(t('merit_recover_no_data') || 'No hay datos suficientes para recuperar este logro.', 'warning');
       return;
     }
     try {
@@ -122,7 +123,7 @@ export function useMeritHandlers({
       });
     } catch (err) {
       console.error('[Logro] Recover error:', err);
-      alert(t('merit_recover_failed') || `No se pudo recuperar: ${err.message}`);
+      showToast(t('merit_recover_failed') || `No se pudo recuperar: ${err.message}`, 'error');
     }
   }, [currentTeam, canCreateMerit, t]);
 
@@ -149,7 +150,7 @@ export function useMeritHandlers({
       });
     } catch (err) {
       console.error('[Logro] Update Firestore error:', err);
-      alert(`No se pudo actualizar el logro: ${err.message}`);
+      showToast(`No se pudo actualizar el logro: ${err.message}`, 'error');
     }
   }, [teamMerits, canEditMerit]);
 
@@ -160,24 +161,24 @@ export function useMeritHandlers({
     const allowed = merit.assignableBy || 'leader';
     const canAssign = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || memberRole === allowed;
     if (!canAssign) {
-      alert(`Solo un ${allowed === 'leader' ? 'Líder' : allowed === 'teamAdmin' ? 'Team Admin' : 'Faculty Advisor'} puede otorgar este logro.`);
+      showToast(`Solo un ${allowed === 'leader' ? 'Líder' : allowed === 'teamAdmin' ? 'Team Admin' : 'Faculty Advisor'} puede otorgar este logro.`, 'warning');
       return;
     }
     if (!canEdit && memberRole === 'leader' && !isPlatformAdmin) {
       if (merit.categoryId && merit.categoryId !== currentMembership?.categoryId) {
-        alert('Como Líder, solo puedes otorgar logros dentro de tu categoría asignada.');
+        showToast('Como Líder, solo puedes otorgar logros dentro de tu categoría asignada.', 'warning');
         return;
       }
     }
     if (memberRole === 'leader' && !isPlatformAdmin) {
       const targetMember = teamMemberships.find((mm) => mm.id === membershipId);
       if (targetMember && currentMembership?.categoryId && targetMember.categoryId !== currentMembership.categoryId) {
-        alert(t('merit_leader_area_only') || 'Como Líder, solo puedes otorgar reconocimiento a miembros de tu área.');
+        showToast(t('merit_leader_area_only') || 'Como Líder, solo puedes otorgar reconocimiento a miembros de tu área.', 'warning');
         return;
       }
     }
     if (membershipId === currentMembership?.id && !isPlatformAdmin) {
-      alert(t('merit_self_award_error') || 'No puedes otorgarte logros a ti mismo.');
+      showToast(t('merit_self_award_error') || 'No puedes otorgarte logros a ti mismo.', 'warning');
       return;
     }
     if (merit.repeatable === false) {
@@ -185,7 +186,7 @@ export function useMeritHandlers({
         (e) => e.type === 'award' && e.meritId === meritId && e.membershipId === membershipId
       );
       if (alreadyAwarded) {
-        alert(t('merit_award_once_error') || 'Este logro solo se puede otorgar una vez por persona. Ya fue otorgado a este miembro.');
+        showToast(t('merit_award_once_error') || 'Este logro solo se puede otorgar una vez por persona. Ya fue otorgado a este miembro.', 'warning');
         return;
       }
     }
