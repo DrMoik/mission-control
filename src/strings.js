@@ -889,6 +889,7 @@ export const STRINGS = {
 
     // ── Feed ──────────────────────────────────────────────────────────────────
     feed_title:       'Feed del Equipo',
+    feed_desc:        'Comparte novedades, fotos y comentarios con el equipo.',
     reaction_like:    'Like',
     reaction_love:    'Love',
     reaction_fire:    'Fire',

@@ -425,8 +425,8 @@ export default function FeedView({
   return (
     <div className="w-full max-w-none space-y-6 lg:max-w-2xl">
       <div className="animate-fade-in">
-        <h2 className="text-2xl font-bold text-gradient tracking-tight">Feed</h2>
-        <p className="text-sm text-content-secondary mt-1">{t('feed_desc') || 'Actividad del equipo'}</p>
+        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('feed_title')}</h2>
+        <p className="text-sm text-content-secondary mt-1">{t('feed_desc')}</p>
       </div>
 
       {/* Post composer */}
