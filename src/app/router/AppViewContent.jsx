@@ -224,6 +224,7 @@ export default function AppViewContent({
     handleUpdateMemberProfile,
     handleSaveWeeklyStatus,
     handleProposeSkill,
+    handleSeasonReset,
   } = handlers;
   const { navigate, goToView } = nav;
 
@@ -574,6 +575,7 @@ export default function AppViewContent({
           onRejectSkillProposal={handleRejectSkillProposal}
           onSaveSystemMeritPoints={handleSaveSystemMeritPoints}
           onSaveTaskGradePoints={handleSaveTaskGradePoints}
+          onSeasonReset={handleSeasonReset}
         />
       )}
       {view === 'myprofile' && (
@@ -625,6 +627,8 @@ export default function AppViewContent({
           allMeritEvents={teamMeritEvents}
           canEditThis={isPlatformAdmin || (authUser && profileMember.userId === authUser.uid)}
           onSave={handleUpdateMemberProfile}
+          weeklyStatuses={teamWeeklyStatuses.filter((entry) => entry.membershipId === profileMember.id)}
+          onSaveWeeklyStatus={handleSaveWeeklyStatus}
           weeklyStatuses={teamWeeklyStatuses.filter((entry) => entry.membershipId === profileMember.id)}
           onSaveWeeklyStatus={handleSaveWeeklyStatus}
           onProposeSkill={handleProposeSkill}

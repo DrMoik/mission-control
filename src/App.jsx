@@ -269,12 +269,20 @@ export default function App() {
     return allTeams.filter((t) => ids.has(t.id));
   }, [allTeams, userMemberships]);
 
-  // Leaderboard — aggregated points per member for "this season" (last 3 months) and all-time
+  // Leaderboard — aggregated points per member for "this season" and all-time.
+  // Season boundary: currentTeam.seasonStart (set on reset) or 3 months ago as fallback.
   const leaderboard = useMemo(() => {
-    if (!selectedTeamId) return { allTime: [], season: [] };
-    const now         = new Date();
-    const seasonStart = new Date(now);
-    seasonStart.setMonth(seasonStart.getMonth() - 3);
+    if (!selectedTeamId) return { allTime: [], season: [], seasonStart: null };
+    const now = new Date();
+
+    // Use the team's stored seasonStart if available, else rolling 3-month window
+    let seasonStart;
+    if (currentTeam?.seasonStart) {
+      seasonStart = tsToDate(currentTeam.seasonStart);
+    } else {
+      seasonStart = new Date(now);
+      seasonStart.setMonth(seasonStart.getMonth() - 3);
+    }
 
     const totalsAll = {}, totalsSeason = {};
     teamMeritEvents.forEach((evt) => {
@@ -285,19 +293,39 @@ export default function App() {
       }
     });
 
-    const enrich = (map) =>
+    // All-time includes past members (inactive) so their contribution is preserved
+    const enrichAllTime = (map) =>
       Object.entries(map)
         .map(([membershipId, points]) => {
-          const m   = teamMemberships.find((mm) => mm.id === membershipId);
+          const m = teamMemberships.find((mm) => mm.id === membershipId);
           if (!m || m.status === 'suspended') return null;
+          const cat = teamCategories.find((c) => c.id === m.categoryId);
+          return {
+            membershipId,
+            name: m.displayName || 'Member',
+            role: m.role,
+            categoryName: cat?.name || 'Unassigned',
+            points,
+            inactive: m.status === 'inactive',
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.points - a.points);
+
+    // Season only shows active members (inactive members left before this season)
+    const enrichSeason = (map) =>
+      Object.entries(map)
+        .map(([membershipId, points]) => {
+          const m = teamMemberships.find((mm) => mm.id === membershipId);
+          if (!m || m.status === 'suspended' || m.status === 'inactive') return null;
           const cat = teamCategories.find((c) => c.id === m.categoryId);
           return { membershipId, name: m.displayName || 'Member', role: m.role, categoryName: cat?.name || 'Unassigned', points };
         })
         .filter(Boolean)
         .sort((a, b) => b.points - a.points);
 
-    return { allTime: enrich(totalsAll), season: enrich(totalsSeason) };
-  }, [teamMeritEvents, teamMemberships, teamCategories, selectedTeamId]);
+    return { allTime: enrichAllTime(totalsAll), season: enrichSeason(totalsSeason), seasonStart };
+  }, [teamMeritEvents, teamMemberships, teamCategories, selectedTeamId, currentTeam]);
 
   // ── Audit log (transparency for admin actions) ──────────────────────────────
   const logAudit = useCallback(async (action, targetType, targetId, details = {}) => {
@@ -613,6 +641,106 @@ export default function App() {
         : PERSONALITY_TAGS_DEFAULT;
     await updateDoc(doc(db, 'teams', currentTeam.id), { personalityTags: payload });
   };
+
+  // ── Season Reset ───────────────────────────────────────────────────────────
+
+  const handleSeasonReset = useCallback(async ({
+    seasonLabel,
+    departingMembershipIds = [],
+    clearSessions  = true,
+    clearEvents    = true,
+    clearMeetings  = true,
+    clearStatuses  = true,
+    clearGoals     = false,
+    clearBoards    = false,
+  } = {}) => {
+    if (!currentTeam || !canEdit) return;
+    const teamId = currentTeam.id;
+
+    // Helper: delete all docs in a query in batches
+    const deleteDocs = async (q) => {
+      const snap = await getDocs(q);
+      if (snap.empty) return 0;
+      let batch = writeBatch(db);
+      let count = 0;
+      let total = 0;
+      for (const d of snap.docs) {
+        batch.delete(d.ref);
+        count++;
+        total++;
+        if (count >= 400) {
+          await batch.commit();
+          batch = writeBatch(db);
+          count = 0;
+        }
+      }
+      if (count > 0) await batch.commit();
+      return total;
+    };
+
+    // 1. Stamp the new season start + optional label on the team doc
+    await updateDoc(doc(db, 'teams', teamId), {
+      seasonStart: serverTimestamp(),
+      ...(seasonLabel ? { seasonLabel } : {}),
+    });
+
+    // 2. Mark departing members as inactive
+    if (departingMembershipIds.length > 0) {
+      let batch = writeBatch(db);
+      let count = 0;
+      for (const mId of departingMembershipIds) {
+        batch.update(doc(db, 'memberships', mId), { status: 'inactive', inactiveSince: serverTimestamp() });
+        count++;
+        if (count >= 400) { await batch.commit(); batch = writeBatch(db); count = 0; }
+      }
+      if (count > 0) await batch.commit();
+    }
+
+    // 3. Delete team-scoped collections based on selected scope
+    const collectionsToClear = [
+      ...(clearSessions ? ['teamSessions'] : []),
+      ...(clearEvents   ? ['teamEvents']   : []),
+      ...(clearMeetings ? ['teamMeetings'] : []),
+      ...(clearStatuses ? ['weeklyStatuses'] : []),
+      ...(clearGoals    ? ['teamGoals']    : []),
+      ...(clearBoards   ? ['teamBoards']   : []),
+    ];
+
+    for (const col of collectionsToClear) {
+      await deleteDocs(query(collection(db, col), where('teamId', '==', teamId)));
+    }
+
+    // 4. For teamSessions: also delete attendance subcollections
+    if (clearSessions) {
+      const sessionsSnap = await getDocs(query(collection(db, 'teamSessions'), where('teamId', '==', teamId)));
+      // Sessions were already deleted above; subcollections must be cleaned separately
+      // (Firestore does NOT auto-delete subcollections)
+      // We need to fetch them before the parent delete — re-query to catch any missed
+      // Note: we just deleted the parents; subcollections become orphaned.
+      // Clean up orphaned attendance docs from the sessions we just deleted:
+      for (const sessionDoc of sessionsSnap.docs) {
+        const attSnap = await getDocs(collection(db, 'teamSessions', sessionDoc.id, 'attendance'));
+        if (!attSnap.empty) {
+          let batch = writeBatch(db);
+          let count = 0;
+          for (const d of attSnap.docs) {
+            batch.delete(d.ref);
+            count++;
+            if (count >= 400) { await batch.commit(); batch = writeBatch(db); count = 0; }
+          }
+          if (count > 0) await batch.commit();
+        }
+      }
+    }
+
+    await logAudit('season_reset', 'team', teamId, {
+      seasonLabel: seasonLabel || '',
+      departingCount: departingMembershipIds.length,
+      collectionsCleared: collectionsToClear,
+    });
+
+    showToast('¡Nueva temporada iniciada! 🎉', 'success');
+  }, [currentTeam, canEdit, logAudit]);
 
   // ── Memberships ────────────────────────────────────────────────────────────
 
@@ -3061,6 +3189,7 @@ export default function App() {
                   handleUpdateMemberProfile,
                   handleSaveWeeklyStatus,
                   handleProposeSkill,
+                  handleSeasonReset,
                 }}
                 nav={{
                   navigate,

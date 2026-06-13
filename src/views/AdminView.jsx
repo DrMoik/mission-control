@@ -5,6 +5,7 @@
 //   • TAREAS — Puntos por calificación (retroactivo)
 
 import React, { useState } from 'react';
+import SeasonResetSection from '../components/SeasonResetSection.jsx';
 import { t } from '../strings.js';
 import { showToast } from '../services/feedback.js';
 import { Button, Textarea } from '../components/ui/index.js';
@@ -124,6 +125,7 @@ export default function AdminView({
   onRejectSkillProposal,
   onSaveSystemMeritPoints,
   onSaveTaskGradePoints,
+  onSeasonReset,
   t: tProp,
 }) {
   const tFn = tProp || t;
@@ -536,6 +538,20 @@ export default function AdminView({
             </button>
           </section>
         </div>
+
+      {/* ─── TEMPORADA ─── */}
+      {onSeasonReset && (
+        <div className="mt-8">
+          <h2 className="text-xs font-bold text-content-tertiary uppercase tracking-widest mb-4 border-t border-slate-700/40 pt-6">
+            Temporada
+          </h2>
+          <SeasonResetSection
+            team={team}
+            memberships={memberships}
+            onSeasonReset={onSeasonReset}
+          />
+        </div>
+      )}
       </div>
     </div>
   );
