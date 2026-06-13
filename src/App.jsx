@@ -2543,63 +2543,88 @@ export default function App() {
         {/* ── Mobile nav overlay (accordion domains) ── */}
         {mobileNavOpen && (
           <div className="fixed inset-0 z-40 flex md:hidden">
-            <div className="absolute inset-0 bg-black/60" onClick={() => setMobileNavOpen(false)} />
-            <nav className="relative z-50 w-64 shell-sidebar p-3 overflow-y-auto">
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-bold text-sm">{currentTeam?.name}</span>
-                <button onClick={() => setMobileNavOpen(false)} className="text-content-tertiary hover:text-content-primary p-1" title={t('close') || 'Cerrar'} aria-label={t('close') || 'Cerrar'}><X className="w-5 h-5" strokeWidth={2} /></button>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
+            <nav className="relative z-50 w-64 shell-sidebar p-3 overflow-y-auto flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/60">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-content-tertiary font-semibold uppercase tracking-wider">Workspace</p>
+                  <p className="font-bold text-sm text-content-primary truncate">{currentTeam?.name}</p>
+                </div>
+                <button onClick={() => setMobileNavOpen(false)}
+                  className="text-content-tertiary hover:text-content-primary w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/8 transition-colors shrink-0"
+                  title={t('close') || 'Cerrar'}>
+                  <X className="w-4 h-4" strokeWidth={2} />
+                </button>
               </div>
-              <button onClick={() => { goToView('inicio'); setMobileNavOpen(false); }}
-                className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm transition-colors
-                  ${view === 'inicio' ? 'shell-nav-active font-semibold' : 'text-content-secondary shell-nav-hover'}`}>
-                <Home className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                <span>{t('nav_inicio')}</span>
-              </button>
-              {isAtLeastRookie && visibleDomains.map((domain) => {
-                const isExpanded = expandedDomain === domain.id;
-                const isActiveDomain = currentDomain === domain.id;
-                return (
-                  <div key={domain.id} className="mt-1">
-                    <button
-                      onClick={() => setExpandedDomain(isExpanded ? null : domain.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded flex items-center justify-between text-sm transition-colors
-                        ${isActiveDomain ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
-                      <div className="flex items-center gap-2">
-                        <domain.Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                        <span>{t(domain.labelKey)}</span>
-                      </div>
-                      {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                    </button>
-                    {isExpanded && (
-                      <div className="ml-4 mt-1 space-y-0.5">
-                        {domain.items.map((item) => (
-                          <button key={item.id} onClick={() => { goToView(item.id); setMobileNavOpen(false); }}
-                            title={item.id === 'hr' ? t('hr_page_title') : undefined}
-                            className={`w-full text-left px-3 py-2 rounded flex items-center gap-2 text-sm transition-colors
-                              ${view === item.id ? 'shell-nav-active font-semibold' : 'text-content-tertiary shell-nav-hover'}`}>
-                            <item.Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
-                            <span>{t(item.labelKey)}</span>
+
+              {/* Nav items */}
+              <div className="flex-1 space-y-0.5">
+                <div className="nav-section-label">Principal</div>
+                <button onClick={() => { goToView('inicio'); setMobileNavOpen(false); }}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-2.5 text-[13px] font-medium transition-colors
+                    ${view === 'inicio' ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
+                  <Home className="w-4 h-4 shrink-0" strokeWidth={view === 'inicio' ? 2.5 : 1.75} />
+                  <span>{t('nav_inicio')}</span>
+                </button>
+
+                {isAtLeastRookie && (
+                  <>
+                    <div className="nav-section-label mt-2">Workspace</div>
+                    {visibleDomains.map((domain) => {
+                      const isExpanded = expandedDomain === domain.id;
+                      const isActiveDomain = currentDomain === domain.id;
+                      return (
+                        <div key={domain.id}>
+                          <button
+                            onClick={() => setExpandedDomain(isExpanded ? null : domain.id)}
+                            className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center justify-between text-[13px] font-medium transition-colors
+                              ${isActiveDomain ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
+                            <div className="flex items-center gap-2.5">
+                              <domain.Icon className="w-4 h-4 shrink-0" strokeWidth={isActiveDomain ? 2.25 : 1.75} />
+                              <span>{t(domain.labelKey)}</span>
+                            </div>
+                            <ChevronDown className={`w-3.5 h-3.5 text-content-tertiary transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} strokeWidth={2} />
                           </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              <div className="pt-3 border-t border-slate-800 space-y-2 mt-3">
+                          {isExpanded && (
+                            <div className="ml-4 mt-0.5 space-y-0.5 border-l border-slate-700/40 pl-2">
+                              {domain.items.map((item) => {
+                                const isActive = view === item.id;
+                                return (
+                                  <button key={item.id} onClick={() => { goToView(item.id); setMobileNavOpen(false); }}
+                                    title={item.id === 'hr' ? t('hr_page_title') : undefined}
+                                    className={`w-full text-left px-2.5 py-2 rounded-md flex items-center gap-2 text-[12px] transition-colors
+                                      ${isActive ? 'text-primary font-semibold bg-primary/10' : 'text-content-tertiary shell-nav-hover'}`}>
+                                    <item.Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.5 : 1.75} />
+                                    <span>{t(item.labelKey)}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="pt-3 border-t border-slate-800/60 mt-3 space-y-1">
                 {currentMembership && (
                   <button onClick={() => { goToView('myprofile'); setMobileNavOpen(false); }}
-                    className={`w-full text-left px-3 py-2.5 rounded flex items-center gap-2 text-sm
-                      ${view === 'myprofile' ? 'shell-nav-active font-semibold' : 'text-content-tertiary shell-nav-hover'}`}>
-                    <User className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                    className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2.5 text-[13px] font-medium transition-colors
+                      ${view === 'myprofile' ? 'text-primary bg-primary/10' : 'text-content-secondary shell-nav-hover'}`}>
+                    <User className="w-4 h-4 shrink-0" strokeWidth={1.75} />
                     <span>{t('nav_myprofile')}</span>
                   </button>
                 )}
                 <button onClick={() => { setSelectedTeamId(null); setPreviewRole(null); setMobileNavOpen(false); }}
-                  className="w-full text-left text-xs text-content-tertiary hover:text-content-primary px-2 py-1.5">
+                  className="w-full text-left text-xs text-content-tertiary hover:text-content-primary px-3 py-2 rounded-lg hover:bg-white/5 transition-colors">
                   ← {t('switch_team')}
                 </button>
-                <button onClick={handleSignOut} className="w-full text-left text-xs text-content-tertiary hover:text-content-primary px-2 py-1.5">
+                <button onClick={handleSignOut}
+                  className="w-full text-left text-xs text-content-tertiary hover:text-red-400 px-3 py-2 rounded-lg hover:bg-red-400/8 transition-colors">
                   {t('sign_out')}
                 </button>
               </div>
@@ -2608,47 +2633,57 @@ export default function App() {
         )}
 
         {/* ── Header ── */}
-        <header className="shell-header px-4 py-3 flex items-center justify-between shrink-0 gap-2">
-          <div className="flex items-center gap-2 min-w-0">
+        <header className="shell-header px-3 flex items-center justify-between shrink-0 gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
             {/* Mobile hamburger */}
             <button onClick={() => setMobileNavOpen(true)}
-              className="md:hidden text-content-tertiary hover:text-content-primary w-8 h-8 flex items-center justify-center rounded shell-nav-hover transition-colors shrink-0"
+              className="md:hidden text-content-tertiary hover:text-content-primary w-9 h-9 flex items-center justify-center rounded-lg shell-nav-hover transition-colors shrink-0"
               title={t('expand_menu')}
               aria-label={t('expand_menu')}>
               <HamburgerIcon />
             </button>
             {/* Desktop sidebar collapse toggle */}
             <button onClick={() => setNavCollapsed((c) => !c)}
-              className="hidden md:flex text-content-tertiary hover:text-content-primary w-8 h-8 items-center justify-center rounded shell-nav-hover transition-colors shrink-0"
+              className="hidden md:flex text-content-tertiary hover:text-content-primary w-9 h-9 items-center justify-center rounded-lg shell-nav-hover transition-colors shrink-0"
               title={navCollapsed ? t('expand_menu') : t('collapse_menu')}
               aria-label={navCollapsed ? t('expand_menu') : t('collapse_menu')}>
               <HamburgerIcon />
             </button>
-            <InlineTeamRename
-              team={currentTeam}
-              isPlatformAdmin={isPlatformAdmin}
-              onRename={handleRenameTeam}
-              onDelete={handleDeleteTeam}
-              t={t}
-            />
-            {currentMembership && !previewRole && <span className="hidden sm:inline"><RoleBadge role={currentMembership.role} /></span>}
-            {isPlatformAdmin && !previewRole && (
-              <span className="text-[10px] bg-yellow-500 text-black px-1.5 py-0.5 rounded font-bold hidden sm:inline">
-                {t('platform_admin')}
-              </span>
-            )}
+
+            {/* Divider */}
+            <div className="hidden md:block w-px h-5 bg-slate-700/70 mx-1 shrink-0" />
+
+            <div className="min-w-0 flex items-center gap-2">
+              <InlineTeamRename
+                team={currentTeam}
+                isPlatformAdmin={isPlatformAdmin}
+                onRename={handleRenameTeam}
+                onDelete={handleDeleteTeam}
+                t={t}
+              />
+              {currentMembership && !previewRole && (
+                <span className="hidden sm:inline shrink-0"><RoleBadge role={currentMembership.role} /></span>
+              )}
+              {isPlatformAdmin && !previewRole && (
+                <span className="text-[10px] bg-amber-400/15 text-amber-300 border border-amber-400/30 px-1.5 py-0.5 rounded-md font-semibold tracking-wide hidden sm:inline shrink-0">
+                  {t('platform_admin')}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+
+          <div className="flex items-center gap-1 shrink-0">
             {/* Preview mode controls */}
             {isAdminLevel && (
               previewRole ? (
                 <button onClick={() => setPreviewRole(null)}
-                  className="text-xs bg-amber-500 text-black font-semibold px-2 py-1.5 rounded flex items-center gap-1">
-                  ◉ <span className="hidden sm:inline">{t('exit_preview')}</span>
+                  className="text-xs bg-amber-400/20 border border-amber-400/40 text-amber-300 font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-amber-400/30 transition-colors">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-soft" />
+                  <span className="hidden sm:inline">{t('exit_preview')}</span>
                 </button>
               ) : (
                 <select onChange={(e) => setPreviewRole(e.target.value || null)} defaultValue=""
-                  className="text-xs bg-slate-700 border border-slate-600 text-slate-300 rounded px-2 py-1.5 hidden sm:block">
+                  className="text-xs bg-surface-raised border border-slate-700/60 text-content-secondary rounded-lg px-2.5 py-1.5 hidden sm:block hover:border-slate-600 transition-colors cursor-pointer">
                   <option value="">{t('preview_as')}</option>
                   {['aspirant', 'rookie', 'junior', 'senior', 'leader'].map((r) => (
                     <option key={r} value={r}>{t('role_' + r)}</option>
@@ -2656,42 +2691,54 @@ export default function App() {
                 </select>
               )
             )}
+
             {canEdit && (
               <button onClick={() => goToView('admin')}
-                className="p-2 rounded shell-nav-hover text-content-tertiary hover:text-content-primary transition-colors"
+                className="p-2 rounded-lg shell-nav-hover text-content-tertiary hover:text-content-primary transition-colors"
                 title={t('nav_admin')}
                 aria-label={t('nav_admin')}>
-                <Settings className="w-5 h-5" strokeWidth={1.5} />
+                <Settings className="w-4.5 h-4.5" style={{ width: '18px', height: '18px' }} strokeWidth={1.75} />
               </button>
             )}
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-slate-700/70 mx-1 shrink-0" />
+
             {/* Profile avatar button */}
             <button onClick={() => currentMembership && goToView('myprofile')}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 px-1 py-1 rounded-lg hover:bg-white/5 transition-colors group"
               title={t('nav_myprofile')}
               aria-label={t('nav_myprofile')}>
-              {(currentMembership?.photoURL || userProfile?.photoURL) ? (
-                <SafeProfileImage
-                  src={currentMembership?.photoURL || userProfile?.photoURL}
-                  fallback={
-                    <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-500 flex items-center justify-center text-sm font-bold">
-                      {(currentMembership?.displayName || userProfile?.displayName || '?')[0].toUpperCase()}
-                    </div>
-                  }
-                  className="w-8 h-8 rounded-full object-cover object-[center_top] border-2 border-slate-600 hover:border-primary transition-colors"
-                  alt=""
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-500 flex items-center justify-center text-sm font-bold">
-                  {(userProfile?.displayName || '?')[0].toUpperCase()}
-                </div>
-              )}
-              <span className="text-sm text-content-secondary hidden lg:inline">{currentMembership?.displayName || userProfile?.displayName}</span>
+              <div className="relative shrink-0">
+                {(currentMembership?.photoURL || userProfile?.photoURL) ? (
+                  <SafeProfileImage
+                    src={currentMembership?.photoURL || userProfile?.photoURL}
+                    fallback={
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center text-xs font-bold text-white">
+                        {(currentMembership?.displayName || userProfile?.displayName || '?')[0].toUpperCase()}
+                      </div>
+                    }
+                    className="w-7 h-7 rounded-full object-cover object-[center_top] avatar-ring"
+                    alt=""
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center text-xs font-bold text-white avatar-ring">
+                    {(userProfile?.displayName || '?')[0].toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <span className="text-sm font-medium text-content-secondary group-hover:text-content-primary transition-colors hidden lg:inline max-w-[120px] truncate">
+                {currentMembership?.displayName || userProfile?.displayName}
+              </span>
             </button>
+
+            {/* Switch / Sign out */}
             <button onClick={() => { setSelectedTeamId(null); setPreviewRole(null); }}
-              className="text-xs text-content-tertiary hover:text-content-primary transition-colors hidden sm:block">
+              className="hidden sm:flex items-center gap-1 text-xs text-content-tertiary hover:text-content-primary px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
               {t('switch_team')}
             </button>
-            <button onClick={handleSignOut} className="text-xs text-content-tertiary hover:text-content-primary transition-colors hidden sm:block">
+            <button onClick={handleSignOut}
+              className="hidden sm:flex items-center gap-1 text-xs text-content-tertiary hover:text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-400/8 transition-colors">
               {t('sign_out')}
             </button>
           </div>
@@ -2743,52 +2790,68 @@ export default function App() {
         <div className="flex flex-1 min-h-0 overflow-hidden">
 
           {/* Desktop sidebar (domain groups) */}
-          <nav className={`hidden md:block shell-sidebar ${navCollapsed ? 'w-12' : 'w-48'} p-2 shrink-0 transition-all duration-200 flex flex-col min-w-0 overflow-hidden`}>
-            <div className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <nav className={`hidden md:flex shell-sidebar ${navCollapsed ? 'w-12' : 'w-48'} p-2 shrink-0 transition-all duration-200 flex-col min-w-0 overflow-hidden`}>
+            <div className="flex flex-col gap-0.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-2">
+
+              {/* Home */}
+              {!navCollapsed && <div className="nav-section-label">Principal</div>}
               <button onClick={() => goToView('inicio')}
-                className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors flex-shrink-0
-                  ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
-                  ${view === 'inicio' ? 'shell-nav-active font-semibold' : 'text-content-secondary shell-nav-hover'}`}>
-                <Home className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                className={`w-full text-left rounded-lg flex items-center gap-2.5 text-[13px] font-medium transition-colors flex-shrink-0
+                  ${navCollapsed ? 'justify-center p-2.5 min-h-[40px]' : 'px-2.5 py-2'}
+                  ${view === 'inicio' ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
+                <Home className="w-4 h-4 shrink-0" strokeWidth={view === 'inicio' ? 2.5 : 1.75} />
                 {!navCollapsed && <span className="truncate">{t('nav_inicio')}</span>}
               </button>
-              {isAtLeastRookie && visibleDomains.map((domain) => {
-                const isExpanded = expandedDomain === domain.id || navCollapsed;
-                const isActiveDomain = currentDomain === domain.id;
-                return (
-                  <div key={domain.id} className="flex-shrink-0">
-                    <button
-                      onClick={() => {
-                        if (navCollapsed) setNavCollapsed(false);
-                        setExpandedDomain(expandedDomain === domain.id ? null : domain.id);
-                      }}
-                      className={`w-full text-left rounded flex items-center gap-2 text-sm transition-colors
-                        ${navCollapsed ? 'justify-center p-2 min-h-[36px]' : 'px-2 py-2'}
-                        ${isActiveDomain ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
-                      <domain.Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
-                      {!navCollapsed && (
-                        <>
-                          <span className="truncate flex-1">{t(domain.labelKey)}</span>
-                          {isExpanded ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
-                        </>
-                      )}
-                    </button>
-                    {!navCollapsed && isExpanded && (
-                      <div className="ml-2 mt-0.5 space-y-0.5">
-                        {domain.items.map((item) => (
-                          <button key={item.id} onClick={() => goToView(item.id)}
-                            title={item.id === 'hr' ? t('hr_page_title') : undefined}
-                            className={`w-full text-left px-2 py-1.5 rounded flex items-center gap-2 text-sm transition-colors
-                              ${view === item.id ? 'shell-nav-active font-semibold' : 'text-content-tertiary shell-nav-hover'}`}>
-                            <item.Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
-                            <span className="truncate">{t(item.labelKey)}</span>
-                          </button>
-                        ))}
+
+              {/* Domains */}
+              {isAtLeastRookie && (
+                <>
+                  {!navCollapsed && <div className="nav-section-label mt-1">Workspace</div>}
+                  {visibleDomains.map((domain) => {
+                    const isExpanded = expandedDomain === domain.id || navCollapsed;
+                    const isActiveDomain = currentDomain === domain.id;
+                    return (
+                      <div key={domain.id} className="flex-shrink-0">
+                        <button
+                          onClick={() => {
+                            if (navCollapsed) setNavCollapsed(false);
+                            setExpandedDomain(expandedDomain === domain.id ? null : domain.id);
+                          }}
+                          className={`w-full text-left rounded-lg flex items-center gap-2.5 text-[13px] font-medium transition-colors
+                            ${navCollapsed ? 'justify-center p-2.5 min-h-[40px]' : 'px-2.5 py-2'}
+                            ${isActiveDomain ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
+                          <domain.Icon className="w-4 h-4 shrink-0" strokeWidth={isActiveDomain ? 2.25 : 1.75} />
+                          {!navCollapsed && (
+                            <>
+                              <span className="truncate flex-1">{t(domain.labelKey)}</span>
+                              <ChevronDown
+                                className={`w-3.5 h-3.5 shrink-0 text-content-tertiary transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`}
+                                strokeWidth={2}
+                              />
+                            </>
+                          )}
+                        </button>
+                        {!navCollapsed && isExpanded && (
+                          <div className="ml-3 mt-0.5 space-y-0.5 border-l border-slate-700/40 pl-2">
+                            {domain.items.map((item) => {
+                              const isActive = view === item.id;
+                              return (
+                                <button key={item.id} onClick={() => goToView(item.id)}
+                                  title={item.id === 'hr' ? t('hr_page_title') : undefined}
+                                  className={`w-full text-left px-2 py-1.5 rounded-md flex items-center gap-2 text-[12px] transition-colors
+                                    ${isActive ? 'text-primary font-semibold bg-primary/10' : 'text-content-tertiary shell-nav-hover'}`}>
+                                  <item.Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.5 : 1.75} />
+                                  <span className="truncate">{t(item.labelKey)}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </>
+              )}
             </div>
           </nav>
 
@@ -2951,6 +3014,7 @@ export default function App() {
                   handleReturnInventoryLoan,
                   handleCreateBomPart,
                   handleUpdateBomPart,
+
                   handleDeleteBomPart,
                   handleSaveBomSubsystems,
                   handleCreateFundingAccount,

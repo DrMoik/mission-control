@@ -27,7 +27,7 @@ export function registerFeedbackHost(api) {
 export function showToast(message, type = 'info') {
   if (!message) return;
   if (host) host.toast(String(message), type);
-  else window.alert(String(message)); // eslint-disable-line no-alert
+  else window.alert(String(message));
 }
 
 /**
@@ -44,5 +44,5 @@ export function showToast(message, type = 'info') {
 export function confirmDialog(options) {
   const opts = typeof options === 'string' ? { message: options } : (options || {});
   if (host) return host.confirm(opts);
-  return Promise.resolve(window.confirm(opts.message || '')); // eslint-disable-line no-alert
+  return Promise.resolve(window.confirm(opts.message || ''));
 }

@@ -3,22 +3,29 @@
 
 const VARIANTS = {
   primary:
-    'bg-gradient-to-br from-primary-hover to-primary text-content-inverse font-semibold ' +
-    'hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm ' +
-    'active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100',
+    'relative overflow-hidden bg-gradient-to-br from-teal-500 to-teal-700 text-white font-semibold ' +
+    'shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)] ' +
+    'hover:from-teal-400 hover:to-teal-600 hover:shadow-[0_0_16px_rgba(13,148,136,0.35),0_1px_2px_rgba(0,0,0,0.3)] ' +
+    'active:scale-[0.96] active:shadow-none ' +
+    'disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100',
   premium:
-    'bg-gradient-to-br from-teal-400 via-primary to-teal-700 text-white font-semibold ' +
-    'hover:from-teal-300 hover:via-primary-hover hover:shadow-glow-md ' +
+    'relative overflow-hidden bg-gradient-to-br from-teal-400 via-teal-600 to-cyan-700 text-white font-semibold ' +
+    'shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] ' +
+    'hover:from-teal-300 hover:to-cyan-600 hover:shadow-[0_0_24px_rgba(13,148,136,0.40)] ' +
     'active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100',
   secondary:
-    'bg-surface-overlay text-content-primary border border-slate-600/60 ' +
-    'hover:bg-slate-700/50 hover:border-slate-500/60 ' +
+    'bg-surface-overlay text-content-primary border border-slate-600/50 ' +
+    'shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ' +
+    'hover:bg-slate-700/60 hover:border-slate-500/70 hover:text-content-primary ' +
     'active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100',
   ghost:
-    'bg-transparent text-content-secondary hover:text-content-primary hover:bg-slate-700/40 ' +
-    'active:bg-slate-700/60 disabled:opacity-40 disabled:pointer-events-none',
+    'bg-transparent text-content-secondary ' +
+    'hover:text-content-primary hover:bg-white/6 ' +
+    'active:bg-white/10 disabled:opacity-40 disabled:pointer-events-none',
   danger:
-    'bg-red-600/90 text-white font-semibold hover:bg-red-500 ' +
+    'bg-gradient-to-br from-red-500 to-red-700 text-white font-semibold ' +
+    'shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] ' +
+    'hover:from-red-400 hover:to-red-600 hover:shadow-[0_0_16px_rgba(239,68,68,0.30)] ' +
     'active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100',
   link:
     'bg-transparent text-content-tertiary hover:text-content-primary underline underline-offset-2 ' +
@@ -28,9 +35,8 @@ const VARIANTS = {
 const SIZES = {
   sm: 'px-2.5 py-1.5 text-xs rounded-md',
   md: 'px-4 py-2 text-sm rounded-lg',
-  lg: 'px-5 py-2.5 text-base rounded-lg',
+  lg: 'px-5 py-2.5 text-sm rounded-lg font-semibold',
 };
-
 export default function Button({
   children,
   variant = 'primary',

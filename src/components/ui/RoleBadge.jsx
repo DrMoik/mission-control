@@ -1,30 +1,24 @@
-// ─── RoleBadge ────────────────────────────────────────────────────────────────
-// Renders a small coloured pill showing a member's role.
-// Uses the translation key `role_<roleId>` so the label adapts to the active language.
-
+// --- RoleBadge ---
 import React from 'react';
 import { t } from '../../strings.js';
 
-/** Tailwind colour classes per role. Falls back to slate if unknown. */
 const ROLE_COLORS = {
-  aspirant:      'bg-slate-700/80 text-slate-300',
-  rookie:        'bg-blue-900/50 text-blue-300',
-  junior:        'bg-cyan-900/50 text-cyan-300',
-  senior:        'bg-violet-900/50 text-violet-300',
-  leader:        'bg-amber-900/50 text-amber-300',
-  facultyAdvisor:'bg-purple-900/50 text-purple-300',
-  teamAdmin:     'bg-primary/20 text-primary',
+  aspirant:       { pill: 'bg-slate-700/60 text-slate-300 border-slate-600/40',    dot: 'bg-slate-400' },
+  rookie:         { pill: 'bg-blue-950/70  text-blue-300  border-blue-700/30',     dot: 'bg-blue-400' },
+  junior:         { pill: 'bg-cyan-950/70  text-cyan-300  border-cyan-700/30',     dot: 'bg-cyan-400' },
+  senior:         { pill: 'bg-violet-950/70 text-violet-300 border-violet-700/30', dot: 'bg-violet-400' },
+  leader:         { pill: 'bg-amber-950/70 text-amber-300 border-amber-700/30',    dot: 'bg-amber-400' },
+  facultyAdvisor: { pill: 'bg-purple-950/70 text-purple-300 border-purple-700/30', dot: 'bg-purple-400' },
+  teamAdmin:      { pill: 'bg-teal-950/70  text-teal-300  border-teal-700/40',     dot: 'bg-teal-400' },
 };
+const DEFAULT_COLORS = { pill: 'bg-slate-700/60 text-slate-300 border-slate-600/40', dot: 'bg-slate-400' };
 
-/**
- * @param {{ role: string }} props
- */
 export default function RoleBadge({ role }) {
-  const colorClass = ROLE_COLORS[role] || 'bg-slate-700/80 text-slate-300';
+  const colors = ROLE_COLORS[role] || DEFAULT_COLORS;
   const label = t('role_' + role) || role;
-
   return (
-    <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md ${colorClass}`}>
+    <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-md border ${colors.pill}`}>
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${colors.dot}`} />
       {label}
     </span>
   );
