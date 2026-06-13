@@ -270,7 +270,7 @@ export default function ImageCropModal({
               <button
                 type="button"
                 onClick={() => onApply(src)}
-                className="text-xs text-emerald-400 hover:text-emerald-300 underline"
+                className="text-xs text-teal-400 hover:text-teal-300 underline"
               >
                 {t('image_use_url')}
               </button>
@@ -287,7 +287,7 @@ export default function ImageCropModal({
             type="range" min={0.2} max={8} step={0.01}
             value={userZoom}
             onChange={(e) => setUserZoom(Number(e.target.value))}
-            className="w-full accent-emerald-500"
+            className="w-full accent-teal-500"
           />
         </div>
 
@@ -311,7 +311,7 @@ export default function ImageCropModal({
             type="button"
             onClick={handleApply}
             disabled={status !== 'ready' && !(status === 'error' && src && (src.startsWith('http://') || src.startsWith('https://')))}
-            className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-semibold text-sm rounded-lg transition-colors"
+            className="flex-1 py-2 bg-teal-500 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-semibold text-sm rounded-lg transition-colors"
           >
             {t('apply_btn')}
           </button>

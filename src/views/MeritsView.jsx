@@ -475,7 +475,7 @@ export default function MeritsView({
                       disabled={!(meritForm.logo?.startsWith('http') || meritForm.logo?.startsWith('data:'))}
                       onClick={() => { setCropTarget('create'); setCropSrc(meritForm.logo); setShowIconPicker(false); }}
                       title="Reframe Image"
-                      className="w-8 h-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-white font-semibold rounded transition-colors shrink-0">
+                      className="w-8 h-[26px] flex items-center justify-center bg-teal-700 hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-white font-semibold rounded transition-colors shrink-0">
                       ⟳
                     </button>
                   </div>
@@ -806,7 +806,7 @@ export default function MeritsView({
                           disabled={!(editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:'))}
                           onClick={() => { setCropTarget('edit'); setCropSrc(editForm.logo); setEditIconPickerOpen(false); }}
                           title="Reframe"
-                          className="w-8 h-[26px] flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-white font-semibold rounded shrink-0">⟳</button>
+                          className="w-8 h-[26px] flex items-center justify-center bg-teal-700 hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed text-sm text-white font-semibold rounded shrink-0">⟳</button>
                       </div>
                       {/* Color picker */}
                       {!(editForm.logo?.startsWith('http') || editForm.logo?.startsWith('data:')) && (

@@ -49,7 +49,7 @@ export default function CultureSongField({ label, value = [], onChange, titlePla
         ))}
         {items.length < maxItems && (
           <button type="button" onClick={add}
-            className="text-[11px] text-emerald-400 hover:text-emerald-300">
+            className="text-[11px] text-teal-400 hover:text-teal-300">
             {addLabel}
           </button>
         )}

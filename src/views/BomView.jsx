@@ -488,7 +488,7 @@ export default function BomView({
                               <button
                                 onClick={() => handleUpdate(part.id)}
                                 disabled={saving}
-                                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium disabled:opacity-50"
+                                className="text-xs text-teal-400 hover:text-teal-300 font-medium disabled:opacity-50"
                               >
                                 Guardar
                               </button>

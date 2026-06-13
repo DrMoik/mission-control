@@ -119,7 +119,7 @@ export default function BoardView({
                       <div className="mt-1.5 relative">
                         {!isAssigning ? (
                           <button type="button" onClick={() => { setAssigningCardId(card.id); setSelectedAssigneeIds(new Set()); setAssignSearchQuery(''); setAssignAreaFilter(''); }}
-                            className="text-[10px] text-emerald-400 hover:underline">
+                            className="text-[10px] text-teal-400 hover:underline">
                             {t('task_assign')}
                           </button>
                         ) : (
@@ -161,7 +161,7 @@ export default function BoardView({
                               );
                             })()}
                             {selectedAssigneeIds.size > 0 && (
-                              <p className="text-[10px] text-emerald-400">{t('task_assign_selected')}: {selectedAssigneeIds.size}</p>
+                              <p className="text-[10px] text-teal-400">{t('task_assign_selected')}: {selectedAssigneeIds.size}</p>
                             )}
                             <div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
                               {!showResults ? (
@@ -186,13 +186,13 @@ export default function BoardView({
                                       }}
                                       className={`w-full text-left px-2 py-1.5 rounded text-[11px] transition-colors flex items-center gap-2 ${
                                         selected
-                                          ? 'bg-emerald-600/40 text-emerald-200 border border-emerald-500/50'
+                                          ? 'bg-teal-600/40 text-teal-200 border border-teal-500/50'
                                           : 'text-slate-300 hover:bg-slate-600/50 border border-transparent'
                                       }`}
                                     >
                                       <span className="font-medium min-w-0 truncate">{ensureString(m.displayName, lang)}</span>
                                       {cat && <span className="text-slate-500 text-[9px] shrink-0">({ensureString(cat.name, lang)})</span>}
-                                      {selected && <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-auto" strokeWidth={2.5} />}
+                                      {selected && <Check className="w-4 h-4 text-teal-400 shrink-0 ml-auto" strokeWidth={2.5} />}
                                     </button>
                                   );
                                 })
@@ -214,7 +214,7 @@ export default function BoardView({
                                   setAssignAreaFilter('');
                                 }}
                                 disabled={selectedAssigneeIds.size === 0}
-                                className="text-[10px] bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-black px-2 py-1 rounded">
+                                className="text-[10px] bg-teal-500 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-black px-2 py-1 rounded">
                                 {t('task_assign')}
                               </button>
                               <button type="button" onClick={() => { setAssigningCardId(null); setSelectedAssigneeIds(new Set()); setAssignSearchQuery(''); setAssignAreaFilter(''); }}
@@ -228,7 +228,7 @@ export default function BoardView({
                       <div className="flex gap-1 mt-1.5 flex-wrap">
                         {board.columns.filter((c) => c.id !== col.id).map((target) => (
                           <button key={target.id} onClick={() => moveCard(card.id, col.id, target.id)}
-                            className="text-[10px] text-slate-400 hover:text-emerald-400 border border-slate-600 rounded px-1 transition-colors">
+                            className="text-[10px] text-slate-400 hover:text-teal-400 border border-slate-600 rounded px-1 transition-colors">
                             {t('move_to')} {ensureString(target.name, lang)}
                           </button>
                         ))}

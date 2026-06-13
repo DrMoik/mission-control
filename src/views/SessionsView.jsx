@@ -223,7 +223,7 @@ export default function SessionsView({
                   </div>
                   <div className="flex items-center gap-2">
                     <div className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-                      group.past ? 'bg-amber-500/10 text-amber-300' : 'bg-emerald-500/10 text-emerald-300'
+                      group.past ? 'bg-amber-500/10 text-amber-300' : 'bg-teal-500/10 text-teal-300'
                     }`}>
                       {group.items.length}
                     </div>

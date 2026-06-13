@@ -313,10 +313,10 @@
     height: 1.5px;
     background: linear-gradient(90deg,
       transparent 0%,
-      var(--primary) 20%,
+      #0f766e 20%,
       #14b8a6 42%,
-      #38bdf8 58%,
-      #818cf8 76%,
+      #5eead4 58%,
+      #0d9488 76%,
       var(--primary) 88%,
       transparent 100%);
     background-size: 200% 100%;

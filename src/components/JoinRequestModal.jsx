@@ -26,9 +26,9 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
     <ModalOverlay onClickBackdrop={onCancel}>
       <div className="bg-surface-raised rounded-2xl w-full max-w-md shadow-surface-xl overflow-hidden border border-slate-700/40">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-900 to-slate-800 px-6 py-5">
+        <div className="bg-gradient-to-r from-teal-900 to-slate-800 px-6 py-5">
           <h2 className="text-white font-bold text-lg">{t('join_title')}</h2>
-          <p className="text-emerald-300/80 text-sm mt-0.5">{team.name}</p>
+          <p className="text-teal-300/80 text-sm mt-0.5">{team.name}</p>
           {getL(team.overview?.tagline, lang) && (
             <p className="text-slate-400 text-xs mt-1 italic">"{getL(team.overview.tagline, lang)}"</p>
           )}
@@ -49,7 +49,7 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
                     onClick={() => setCategoryId(c.id)}
                     className={`px-3 py-2.5 rounded-lg text-sm text-left border transition-all ${
                       categoryId === c.id
-                        ? 'bg-emerald-600/30 border-emerald-500 text-emerald-200 font-semibold'
+                        ? 'bg-teal-600/30 border-teal-500 text-teal-200 font-semibold'
                         : 'bg-slate-900/60 border-slate-600 text-slate-300 hover:border-slate-400'
                     }`}
                   >
@@ -77,7 +77,7 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
               value={motivation}
               onChange={(e) => setMotivation(e.target.value)}
               placeholder={t('join_motivation_placeholder')}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm resize-none focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm resize-none focus:outline-none focus:border-teal-500 transition-colors"
             />
           </div>
 
@@ -93,7 +93,7 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
             <button
               onClick={() => canSubmit && onSubmit(categoryId, motivation)}
               disabled={!canSubmit}
-              className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-semibold text-sm rounded-lg transition-colors"
+              className="flex-1 py-2 bg-teal-500 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-semibold text-sm rounded-lg transition-colors"
             >
               {t('join_send')}
             </button>

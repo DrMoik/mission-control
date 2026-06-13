@@ -31,7 +31,7 @@ import { getL, toL, ensureString } from '../utils.js';
 
 // SWOT quadrant metadata (colours are language-independent)
 const SWOT_META = [
-  { key: 'strengths',     labelKey: 'swot_strengths',     border: 'border-emerald-600', bg: 'bg-emerald-950/20' },
+  { key: 'strengths',     labelKey: 'swot_strengths',     border: 'border-teal-600', bg: 'bg-teal-950/20' },
   { key: 'weaknesses',    labelKey: 'swot_weaknesses',    border: 'border-red-600',     bg: 'bg-red-950/20'     },
   { key: 'opportunities', labelKey: 'swot_opportunities', border: 'border-blue-600',    bg: 'bg-blue-950/20'    },
   { key: 'threats',       labelKey: 'swot_threats',       border: 'border-amber-600',   bg: 'bg-amber-950/20'   },
@@ -361,7 +361,7 @@ export default function ToolsView({
                           <p className="text-xs text-slate-600 italic">{t('nothing_yet')}</p>
                         )}
                         {editingSwot && (
-                          <button type="button" onClick={() => addSwotItem(q.key)} className="text-xs text-emerald-400 underline mt-1">
+                          <button type="button" onClick={() => addSwotItem(q.key)} className="text-xs text-teal-400 underline mt-1">
                             {t('add_item_btn')}
                           </button>
                         )}
@@ -448,7 +448,7 @@ export default function ToolsView({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
               { key: 'q1', labelKey: 'eisenhower_do_first',  border: 'border-red-600',     bg: 'bg-red-950/20' },
-              { key: 'q2', labelKey: 'eisenhower_schedule',   border: 'border-emerald-600', bg: 'bg-emerald-950/20' },
+              { key: 'q2', labelKey: 'eisenhower_schedule',   border: 'border-teal-600', bg: 'bg-teal-950/20' },
               { key: 'q3', labelKey: 'eisenhower_delegate',  border: 'border-amber-600',   bg: 'bg-amber-950/20' },
               { key: 'q4', labelKey: 'eisenhower_eliminate', border: 'border-slate-600',   bg: 'bg-slate-800/40' },
             ].map(({ key, labelKey, border, bg }) => (
@@ -465,7 +465,7 @@ export default function ToolsView({
                             type="text"
                             defaultValue={item.text || ''}
                             autoFocus
-                            className="flex-1 min-w-0 px-2 py-1 bg-slate-900 border border-emerald-600 rounded text-xs text-slate-200"
+                            className="flex-1 min-w-0 px-2 py-1 bg-slate-900 border border-teal-600 rounded text-xs text-slate-200"
                             onBlur={(e) => {
                               const v = e.target.value?.trim();
                               if (v !== undefined) {
@@ -485,7 +485,7 @@ export default function ToolsView({
                           />
                         ) : (
                           <span
-                            className="text-sm text-slate-200 flex-1 truncate cursor-pointer hover:text-emerald-300"
+                            className="text-sm text-slate-200 flex-1 truncate cursor-pointer hover:text-teal-300"
                             onClick={() => setEditingEisenhowerItem({ key, id: item.id })}
                             title={t('edit')}
                           >
@@ -647,7 +647,7 @@ export default function ToolsView({
                       value={pughData.issue || ''}
                       onChange={(e) => setPughData((d) => ({ ...d, issue: e.target.value }))}
                       placeholder={t('pugh_issue')}
-                      className="block w-full mt-1 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-slate-200 focus:border-emerald-500 focus:outline-none"
+                      className="block w-full mt-1 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-slate-200 focus:border-teal-500 focus:outline-none"
                     />
                   </th>
                   <th className="border-r border-slate-600 py-2 w-14 bg-slate-900/50">
@@ -677,7 +677,7 @@ export default function ToolsView({
                           alternatives: d.alternatives.map((a) => a.id === alt.id ? { ...a, name: e.target.value } : a),
                         }))}
                         placeholder={t('pugh_alternatives')}
-                        className="w-full bg-transparent border-b border-slate-500 focus:outline-none focus:border-emerald-500 text-slate-200 text-center text-[11px]"
+                        className="w-full bg-transparent border-b border-slate-500 focus:outline-none focus:border-teal-500 text-slate-200 text-center text-[11px]"
                       />
                     </th>
                   ))}
@@ -695,7 +695,7 @@ export default function ToolsView({
                           criteria: d.criteria.map((c) => c.id === crit.id ? { ...c, name: e.target.value } : c),
                         }))}
                         placeholder={t('pugh_criteria')}
-                        className="w-full bg-transparent border-b border-slate-600 focus:outline-none focus:border-emerald-500 text-slate-200"
+                        className="w-full bg-transparent border-b border-slate-600 focus:outline-none focus:border-teal-500 text-slate-200"
                       />
                     </td>
                     <td className="px-2 py-1.5 text-right border-r border-slate-600">
@@ -773,7 +773,7 @@ export default function ToolsView({
                         return sum + (s === null || s === undefined ? 0 : s) * w;
                       }, 0);
                       return (
-                        <td key={alt.id} className="px-2 py-2 text-center font-mono font-bold text-emerald-400 border-r border-slate-600 last:border-r-0">
+                        <td key={alt.id} className="px-2 py-2 text-center font-mono font-bold text-teal-400 border-r border-slate-600 last:border-r-0">
                           {weighted}
                         </td>
                       );

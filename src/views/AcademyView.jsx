@@ -250,7 +250,7 @@ export default function AcademyView({
                     ? (current.knowledgeAreaIds || []).filter((id) => id !== area.id)
                     : [...(current.knowledgeAreaIds || []), area.id],
                 }))}
-                className={`text-[10px] px-2 py-0.5 rounded ${isSelected ? 'bg-emerald-600/50 border border-emerald-500 text-emerald-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}
+                className={`text-[10px] px-2 py-0.5 rounded ${isSelected ? 'bg-teal-600/50 border border-teal-500 text-teal-200' : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-slate-600'}`}
               >
                 {area.name}
               </button>
@@ -269,14 +269,14 @@ export default function AcademyView({
           <button
             type="button"
             onClick={() => setContentTab('modules')}
-            className={`rounded px-3 py-1.5 text-xs font-semibold ${contentTab === 'modules' ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+            className={`rounded px-3 py-1.5 text-xs font-semibold ${contentTab === 'modules' ? 'bg-teal-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
           >
             {t('academy_tab_modules')}
           </button>
           <button
             type="button"
             onClick={() => setContentTab('books')}
-            className={`rounded px-3 py-1.5 text-xs font-semibold ${contentTab === 'books' ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+            className={`rounded px-3 py-1.5 text-xs font-semibold ${contentTab === 'books' ? 'bg-teal-500 text-black' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
           >
             {t('academy_tab_books')}
           </button>
@@ -290,7 +290,7 @@ export default function AcademyView({
             {canEdit && (
               <button
                 onClick={() => setShowNewForm((s) => !s)}
-                className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded"
+                className="text-xs bg-teal-500 text-black font-semibold px-3 py-1.5 rounded"
               >
                 {showNewForm ? t('cancel') : `+ ${t('new_module')}`}
               </button>
@@ -311,7 +311,7 @@ export default function AcademyView({
                   return (
                     <li key={a.id} className="flex items-center justify-between gap-2 text-xs bg-slate-800/50 rounded px-3 py-2">
                       <span className="text-slate-200 truncate">{memberName} -&gt; {modTitle}</span>
-                      <button onClick={() => onApproveModuleAttempt(a.id)} className="shrink-0 px-2 py-1 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded text-[11px]">
+                      <button onClick={() => onApproveModuleAttempt(a.id)} className="shrink-0 px-2 py-1 bg-teal-500 hover:bg-teal-400 text-black font-semibold rounded text-[11px]">
                         {t('approve') || 'Aprobar'}
                       </button>
                     </li>
@@ -359,11 +359,11 @@ export default function AcademyView({
                     </div>
                   </div>
                 ))}
-                <button type="button" onClick={addTopicToNew} className="text-xs text-emerald-400 underline">
+                <button type="button" onClick={addTopicToNew} className="text-xs text-teal-400 underline">
                   + {t('add_topic')}
                 </button>
               </div>
-              <button type="button" onClick={handleCreate} className="px-4 py-2 bg-emerald-500 text-black text-sm font-semibold rounded">
+              <button type="button" onClick={handleCreate} className="px-4 py-2 bg-teal-500 text-black text-sm font-semibold rounded">
                 {t('save')} {t('new_module')}
               </button>
             </div>
@@ -379,10 +379,10 @@ export default function AcademyView({
                   <button
                     key={m.id}
                     onClick={() => { setSelectedId(m.id); setEditingModule(null); }}
-                    className={`w-full text-left px-2 py-2 rounded text-xs flex items-center justify-between gap-1 transition-colors ${selectedId === m.id ? 'bg-emerald-500 text-black' : 'hover:bg-slate-700 text-slate-200'}`}
+                    className={`w-full text-left px-2 py-2 rounded text-xs flex items-center justify-between gap-1 transition-colors ${selectedId === m.id ? 'bg-teal-500 text-black' : 'hover:bg-slate-700 text-slate-200'}`}
                   >
                     <span className="truncate">{getL(m.title, lang)}</span>
-                    {hasAttempt && <span className="shrink-0 font-bold text-emerald-400">●</span>}
+                    {hasAttempt && <span className="shrink-0 font-bold text-teal-400">●</span>}
                   </button>
                 );
               })}
@@ -452,7 +452,7 @@ export default function AcademyView({
                     <div className="text-xs font-semibold text-slate-300">{t('edit_module_title')}</div>
                     <div className="flex gap-2">
                       <button onClick={() => setEditingModule(null)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
-                      <button onClick={handleSaveEdit} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1 rounded">{t('save')}</button>
+                      <button onClick={handleSaveEdit} className="text-xs bg-teal-500 text-black font-semibold px-3 py-1 rounded">{t('save')}</button>
                     </div>
                   </div>
                   <BilingualField label={t('title_req')} value={editingModule.title} onChange={(v) => setEditingModule((m) => ({ ...m, title: v }))} />
@@ -479,7 +479,7 @@ export default function AcademyView({
                         </div>
                       </div>
                     ))}
-                    <button type="button" onClick={addTopicToEdit} className="text-xs text-emerald-400 underline">+ {t('add_topic')}</button>
+                    <button type="button" onClick={addTopicToEdit} className="text-xs text-teal-400 underline">+ {t('add_topic')}</button>
                   </div>
                 </div>
               )}
@@ -492,7 +492,7 @@ export default function AcademyView({
             <div className="flex items-center justify-between">
               <div className="text-xs text-slate-400">{`${t('academy_books_title')} (${visibleBooks.length})`}</div>
               {canManageBooks && (
-                <button type="button" onClick={() => setShowNewBookForm((s) => !s)} className="text-[11px] text-emerald-400 underline">
+                <button type="button" onClick={() => setShowNewBookForm((s) => !s)} className="text-[11px] text-teal-400 underline">
                   {showNewBookForm ? t('cancel') : t('academy_new_book')}
                 </button>
               )}
@@ -515,7 +515,7 @@ export default function AcademyView({
                   ))}
                 </select>
                 <p className="text-[11px] text-slate-500">{t('academy_book_drive_hint')}</p>
-                <button type="button" onClick={handleCreateBook} className="w-full rounded bg-emerald-500 px-3 py-2 text-sm font-semibold text-black">
+                <button type="button" onClick={handleCreateBook} className="w-full rounded bg-teal-500 px-3 py-2 text-sm font-semibold text-black">
                   {t('save')} {t('academy_new_book')}
                 </button>
               </div>
@@ -527,7 +527,7 @@ export default function AcademyView({
                 key={book.id}
                 type="button"
                 onClick={() => { setSelectedBookId(book.id); setEditingBookId(null); }}
-                className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedBookId === book.id ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-700 bg-slate-900/40 hover:border-slate-500'}`}
+                className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedBookId === book.id ? 'border-teal-500 bg-teal-500/10' : 'border-slate-700 bg-slate-900/40 hover:border-slate-500'}`}
               >
                 <div className="flex gap-3">
                   <SafeImage
@@ -574,7 +574,7 @@ export default function AcademyView({
                             setReaderMode(selectedBook.driveUrl ? 'pdf' : 'iframe');
                             setReaderBookId(selectedBook.id);
                           }}
-                          className="rounded bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-black"
+                          className="rounded bg-teal-500 px-3 py-1.5 text-xs font-semibold text-black"
                         >
                           {t('academy_book_open')}
                         </button>
@@ -601,7 +601,7 @@ export default function AcademyView({
                   <div className="text-xs font-semibold text-slate-300">{t('academy_edit_book_title')}</div>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setEditingBookId(null)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
-                    <button type="button" onClick={handleSaveBookEdit} className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1 rounded">{t('save')}</button>
+                    <button type="button" onClick={handleSaveBookEdit} className="text-xs bg-teal-500 text-black font-semibold px-3 py-1 rounded">{t('save')}</button>
                   </div>
                 </div>
                 <input value={editBookDraft.title} onChange={(e) => setEditBookDraft((b) => ({ ...b, title: e.target.value }))} placeholder={t('academy_book_title_ph')} className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm" />
@@ -639,7 +639,7 @@ export default function AcademyView({
                     setReaderInternalFailed(false);
                     setReaderBookId(null);
                   }}
-                  className="rounded border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-200"
+                  className="rounded border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
                 >
                   Ver ficha
                 </button>
@@ -649,7 +649,7 @@ export default function AcademyView({
                     setReaderInternalFailed(false);
                     setReaderBookId(null);
                   }}
-                  className="rounded bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-950 transition-colors hover:bg-emerald-400"
+                  className="rounded bg-teal-500 px-3 py-2 text-xs font-semibold text-slate-950 transition-colors hover:bg-teal-400"
                 >
                   Cerrar lector
                 </button>

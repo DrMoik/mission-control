@@ -99,16 +99,16 @@ export default function TagInput({ label, value = [], onChange, placeholder = 'A
   return (
     <div className="space-y-1 relative" ref={containerRef}>
       {label && <span className="text-xs text-slate-400">{label}</span>}
-      <div className="min-h-[38px] flex flex-wrap gap-1.5 items-center px-2 py-1.5 bg-slate-900 border border-slate-600 rounded focus-within:border-emerald-600 transition-colors">
+      <div className="min-h-[38px] flex flex-wrap gap-1.5 items-center px-2 py-1.5 bg-slate-900 border border-slate-600 rounded focus-within:border-teal-600 transition-colors">
         {value.map((tag, i) => {
           const str = toStr(tag);
           const key = str || `tag-${i}`;
           return (
             <span key={key}
-              className="inline-flex items-center gap-1 bg-emerald-900/50 text-emerald-200 text-xs px-2 py-0.5 rounded-full border border-emerald-700/50">
+              className="inline-flex items-center gap-1 bg-teal-900/50 text-teal-200 text-xs px-2 py-0.5 rounded-full border border-teal-700/50">
               {str}
               <button type="button" onClick={() => remove(tag)}
-                className="text-emerald-400 hover:text-red-400 leading-none transition-colors">×</button>
+                className="text-teal-400 hover:text-red-400 leading-none transition-colors">×</button>
             </span>
           );
         })}
@@ -129,7 +129,7 @@ export default function TagInput({ label, value = [], onChange, placeholder = 'A
               key={s}
               type="button"
               onMouseDown={(e) => { e.preventDefault(); addFromSuggestion(s); }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors ${i === highlightIndex ? 'bg-emerald-900/50 text-emerald-200' : 'text-slate-300 hover:bg-slate-700'}`}
+              className={`w-full text-left px-3 py-2 text-sm transition-colors ${i === highlightIndex ? 'bg-teal-900/50 text-teal-200' : 'text-slate-300 hover:bg-slate-700'}`}
             >
               {s}
             </button>

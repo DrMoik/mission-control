@@ -51,8 +51,8 @@ const createEmptyDraft = (dateValue = new Date()) => ({
 });
 
 const eventBadgeClasses = (event) => {
-  if (event.isBirthday) return 'bg-pink-500/15 text-pink-200 border-pink-400/30';
-  if (event.isSession) return 'bg-violet-500/15 text-violet-200 border-violet-400/30';
+  if (event.isBirthday) return 'bg-amber-500/15 text-amber-200 border-amber-400/30';
+  if (event.isSession) return 'bg-teal-500/15 text-teal-200 border-teal-400/30';
   if (event.categoryName) return 'bg-blue-500/15 text-blue-200 border-blue-400/30';
   return 'bg-slate-700/50 text-slate-200 border-slate-600/60';
 };
@@ -308,7 +308,7 @@ export default function CalendarView({
               type="checkbox"
               checked={showBirthdays}
               onChange={(e) => setShowBirthdays(e.target.checked)}
-              className="rounded border-slate-600 bg-surface-sunken text-pink-500 focus:ring-pink-500"
+              className="rounded border-slate-600 bg-surface-sunken text-teal-500 focus:ring-teal-500"
             />
             <span>{t('calendar_filter_birthdays')}</span>
           </label>
@@ -380,12 +380,12 @@ export default function CalendarView({
                   type="button"
                   onClick={() => setSelectedDateKey(key)}
                   className={`min-h-[130px] border-b border-r border-slate-800/70 p-2 text-left align-top transition-colors ${
-                    isSelected ? 'bg-emerald-500/10' : 'bg-slate-950/20 hover:bg-slate-900/40'
+                    isSelected ? 'bg-teal-500/10' : 'bg-slate-950/20 hover:bg-slate-900/40'
                   } ${!isCurrentMonth ? 'opacity-45' : ''}`}
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold ${
-                      isToday ? 'bg-emerald-400 text-slate-950' : 'text-content-primary'
+                      isToday ? 'bg-teal-400 text-slate-950' : 'text-content-primary'
                     }`}>
                       {day.getDate()}
                     </span>
@@ -504,7 +504,7 @@ export default function CalendarView({
                   onClick={() => setListRange(option.id)}
                   className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition ${
                     listRange === option.id
-                      ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-100'
+                      ? 'border-teal-400/60 bg-teal-500/15 text-teal-100'
                       : 'border-slate-700/60 bg-slate-900/50 text-slate-300 hover:border-slate-500/80 hover:text-slate-100'
                   }`}
                 >
@@ -556,7 +556,7 @@ export default function CalendarView({
                             </button>
                             <button
                               type="button"
-                              className="text-rose-300 transition hover:text-rose-200"
+                              className="text-red-300 transition hover:text-red-200"
                               onClick={() => onDeleteEvent(event.id)}
                             >
                               {t('delete')}
@@ -639,7 +639,7 @@ export default function CalendarView({
                     type="checkbox"
                     checked={draft.allDay}
                     onChange={(e) => setDraft((current) => ({ ...current, allDay: e.target.checked }))}
-                    className="rounded border-slate-600 bg-surface-sunken text-emerald-400 focus:ring-emerald-400"
+                    className="rounded border-slate-600 bg-surface-sunken text-teal-400 focus:ring-teal-400"
                   />
                   Todo el dia
                 </label>

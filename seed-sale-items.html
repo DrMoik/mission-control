@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Seed Sale Items</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; background: #0f172a; color: #e2e8f0; }
+    h1 { color: #34d399; }
+    button { background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 12px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    select { width: 100%; padding: 10px; border-radius: 8px; background: #1e293b; color: #e2e8f0; border: 1px solid #475569; font-size: 14px; margin-top: 8px; }
+    #log { margin-top: 20px; background: #1e293b; padding: 16px; border-radius: 8px; font-size: 13px; line-height: 1.8; max-height: 400px; overflow-y: auto; }
+    .ok  { color: #34d399; }
+    .err { color: #f87171; }
+    .info { color: #94a3b8; }
+    label { font-size: 13px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <h1>🌱 Seed — Catálogo de Ventas</h1>
+  <p style="color:#94a3b8">Importa el inventario de playeras, sudaderas y gorras al catálogo de ventas.</p>
+
+  <div id="step-login">
+    <button id="btn-login">Iniciar sesión con Google</button>
+  </div>
+
+  <div id="step-team" style="display:none">
+    <label>Selecciona tu equipo:</label>
+    <select id="team-select"><option value="">— Cargando —</option></select>
+    <br/>
+    <button id="btn-seed" disabled>Importar inventario (29 productos)</button>
+  </div>
+
+  <div id="log"></div>
+
+  <!-- Firebase CDN (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDl3sTZH41JAdV2hJjf1LtaN0StBAD6Pog",
+      authDomain: "quantum-robotics-48d7e.firebaseapp.com",
+      projectId: "quantum-robotics-48d7e",
+      storageBucket: "quantum-robotics-48d7e.firebasestorage.app",
+      messagingSenderId: "501720395148",
+      appId: "1:501720395148:web:902024b300a446f70afaa9",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+
+    // ── Inventory data from spreadsheet ───────────────────────────────────────
+    const ITEMS = [
+      // Playeras Gris — $290
+      { name: 'Playera Gris CH',            price: 290, stock: 9  },
+      { name: 'Playera Gris M',             price: 290, stock: 53 },
+      { name: 'Playera Gris G',             price: 290, stock: 10 },
+      // Playeras Negra Alien — $290
+      { name: 'Playera Negra Alien CH',     price: 290, stock: 19 },
+      { name: 'Playera Negra Alien M',      price: 290, stock: 56 },
+      { name: 'Playera Negra Alien G',      price: 290, stock: 14 },
+      // Playeras Negra Rover — $290
+      { name: 'Playera Negra Rover CH',     price: 290, stock: 1  },
+      { name: 'Playera Negra Rover M',      price: 290, stock: 25 },
+      { name: 'Playera Negra Rover G',      price: 290, stock: 5  },
+      // PAL-EXPLORADOR — $250
+      { name: 'Playera PAL-EXPLORADOR CH',  price: 250, stock: 2  },
+      { name: 'Playera PAL-EXPLORADOR M',   price: 250, stock: 0  },
+      { name: 'Playera PAL-EXPLORADOR G',   price: 250, stock: 6  },
+      // PAL-TRASBOR — $250
+      { name: 'Playera PAL-TRASBOR CH',     price: 250, stock: 2  },
+      { name: 'Playera PAL-TRASBOR M',      price: 250, stock: 0  },
+      { name: 'Playera PAL-TRASBOR G',      price: 250, stock: 0  },
+      // PN-EXPLORADOR — $250
+      { name: 'Playera PN-EXPLORADOR CH',   price: 250, stock: 1  },
+      { name: 'Playera PN-EXPLORADOR M',    price: 250, stock: 0  },
+      { name: 'Playera PN-EXPLORADOR G',    price: 250, stock: 1  },
+      // PN-TRASBOR — $250
+      { name: 'Playera PN-TRASBOR CH',      price: 250, stock: 2  },
+      { name: 'Playera PN-TRASBOR M',       price: 250, stock: 0  },
+      { name: 'Playera PN-TRASBOR G',       price: 250, stock: 0  },
+      // PM-EXPLORADOR — $250
+      { name: 'Playera PM-EXPLORADOR CH',   price: 250, stock: 11 },
+      { name: 'Playera PM-EXPLORADOR M',    price: 250, stock: 3  },
+      { name: 'Playera PM-EXPLORADOR G',    price: 250, stock: 1  },
+      // PM-TRASBOR — $250
+      { name: 'Playera PM-TRASBOR CH',      price: 250, stock: 0  },
+      { name: 'Playera PM-TRASBOR M',       price: 250, stock: 0  },
+      { name: 'Playera PM-TRASBOR G',       price: 250, stock: 0  },
+      // Sudaderas — $800
+      { name: 'Sudadera',                   price: 800, stock: 24 },
+      // Gorras — $250
+      { name: 'Gorra',                      price: 250, stock: 54 },
+    ];
+
+    // ── UI helpers ─────────────────────────────────────────────────────────────
+    const log = (msg, cls = 'info') => {
+      const el = document.getElementById('log');
+      el.innerHTML += `<div class="${cls}">${msg}</div>`;
+      el.scrollTop = el.scrollHeight;
+    };
+
+    // ── Login ──────────────────────────────────────────────────────────────────
+    document.getElementById('btn-login').addEventListener('click', async () => {
+      try {
+        await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+      } catch (e) {
+        log('❌ Error al iniciar sesión: ' + e.message, 'err');
+      }
+    });
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) return;
+      document.getElementById('step-login').style.display = 'none';
+      document.getElementById('step-team').style.display  = 'block';
+      log(`✅ Sesión iniciada como ${user.email}`, 'ok');
+
+      // Load teams for this user
+      const snap = await db.collection('memberships')
+        .where('userId', '==', user.uid)
+        .where('status', '==', 'active')
+        .get();
+
+      const teamIds = [...new Set(snap.docs.map(d => d.data().teamId))];
+      const sel = document.getElementById('team-select');
+      sel.innerHTML = '<option value="">— Seleccionar equipo —</option>';
+
+      // Fetch team names
+      for (const tid of teamIds) {
+        const teamDoc = await db.collection('teams').doc(tid).get();
+        const name = teamDoc.exists ? (teamDoc.data().name || tid) : tid;
+        const opt = document.createElement('option');
+        opt.value = tid;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      }
+
+      sel.addEventListener('change', () => {
+        document.getElementById('btn-seed').disabled = !sel.value;
+      });
+    });
+
+    // ── Seed ───────────────────────────────────────────────────────────────────
+    document.getElementById('btn-seed').addEventListener('click', async () => {
+      const teamId = document.getElementById('team-select').value;
+      if (!teamId) return;
+
+      document.getElementById('btn-seed').disabled = true;
+      log(`\n🚀 Importando ${ITEMS.length} productos al equipo ${teamId}…`, 'info');
+
+      let ok = 0, fail = 0;
+      for (const item of ITEMS) {
+        try {
+          await db.collection('teamSaleItems').add({
+            teamId,
+            name: item.name,
+            description: '',
+            price: item.price,
+            stock: item.stock,
+            active: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+          log(`✅ ${item.name} (stock: ${item.stock}, $${item.price})`, 'ok');
+          ok++;
+        } catch (e) {
+          log(`❌ ${item.name} — ${e.message}`, 'err');
+          fail++;
+        }
+      }
+
+      log(`\n✔ Importación completa: ${ok} exitosos, ${fail} fallidos.`, ok === ITEMS.length ? 'ok' : 'err');
+      document.getElementById('btn-seed').textContent = '✔ Importado';
+    });
+  </script>
+</body>
+</html>

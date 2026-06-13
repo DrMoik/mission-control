@@ -1,10 +1,10 @@
 // --- StatTile ---
+// accent options: teal (brand), amber (achievement/merit), red (danger), slate (neutral)
 const ACCENT = {
-  teal:   { icon: 'text-teal-400',   bg: 'bg-teal-400/10',   border: 'border-teal-400/20',   value: 'text-teal-300',   glow: 'rgba(20,184,166,0.25)' },
-  amber:  { icon: 'text-amber-400',  bg: 'bg-amber-400/10',  border: 'border-amber-400/20',  value: 'text-amber-300',  glow: 'rgba(251,191,36,0.20)' },
-  red:    { icon: 'text-red-400',    bg: 'bg-red-400/10',    border: 'border-red-400/20',    value: 'text-red-300',    glow: 'rgba(248,113,113,0.20)' },
-  blue:   { icon: 'text-blue-400',   bg: 'bg-blue-400/10',   border: 'border-blue-400/20',   value: 'text-blue-300',   glow: 'rgba(96,165,250,0.20)' },
-  purple: { icon: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20', value: 'text-purple-300', glow: 'rgba(192,132,252,0.20)' },
+  teal:  { icon: 'text-teal-400',  bg: 'bg-teal-400/10',  border: 'border-teal-400/20',  value: 'text-teal-300',  glow: 'rgba(20,184,166,0.25)' },
+  amber: { icon: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20', value: 'text-amber-300', glow: 'rgba(251,191,36,0.20)' },
+  red:   { icon: 'text-red-400',   bg: 'bg-red-400/10',   border: 'border-red-400/20',   value: 'text-red-300',   glow: 'rgba(248,113,113,0.20)' },
+  slate: { icon: 'text-slate-400', bg: 'bg-slate-400/10', border: 'border-slate-400/20', value: 'text-slate-300', glow: 'rgba(148,163,184,0.15)' },
 };
 
 export default function StatTile({ label, value, icon: Icon, accent = 'teal', className = '' }) {

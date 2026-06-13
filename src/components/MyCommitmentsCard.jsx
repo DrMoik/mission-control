@@ -58,7 +58,7 @@ export default function MyCommitmentsCard({
         {/* Tasks */}
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-400">{t('my_pending_tasks')}</span>
-          <span className={`text-sm font-semibold ${pending.length > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+          <span className={`text-sm font-semibold ${pending.length > 0 ? 'text-amber-400' : 'text-teal-400'}`}>
             {pending.length}
           </span>
         </div>
@@ -74,7 +74,7 @@ export default function MyCommitmentsCard({
           <button
             type="button"
             onClick={onNavigateTasks}
-            className="text-xs text-emerald-400 hover:text-emerald-300 underline"
+            className="text-xs text-teal-400 hover:text-teal-300 underline"
           >
             {t('view_tasks')}
           </button>
@@ -87,7 +87,7 @@ export default function MyCommitmentsCard({
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-400">{t('weekly_this_week')}</span>
-          <span className={`text-xs font-medium ${thisWeekPosted ? 'text-emerald-400' : 'text-amber-400'}`}>
+          <span className={`text-xs font-medium ${thisWeekPosted ? 'text-teal-400' : 'text-amber-400'}`}>
             {thisWeekPosted ? t('weekly_posted') : t('weekly_not_posted')}
           </span>
         </div>
@@ -95,7 +95,7 @@ export default function MyCommitmentsCard({
           <button
             type="button"
             onClick={onNavigateProfile}
-            className="text-xs text-emerald-400 hover:text-emerald-300 underline"
+            className="text-xs text-teal-400 hover:text-teal-300 underline"
           >
             {t('view_profile')}
           </button>
@@ -104,7 +104,7 @@ export default function MyCommitmentsCard({
         {/* Profile completion */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-700/50">
           <span className="text-xs text-slate-400">{t('profile_completion')}</span>
-          <span className={`text-sm font-semibold ${profileCompletion.percentage >= 100 ? 'text-emerald-400' : 'text-slate-300'}`}>
+          <span className={`text-sm font-semibold ${profileCompletion.percentage >= 100 ? 'text-teal-400' : 'text-slate-300'}`}>
             {profileCompletion.percentage}% {t('profile_complete_pct')}
           </span>
         </div>
@@ -112,7 +112,7 @@ export default function MyCommitmentsCard({
           <button
             type="button"
             onClick={onNavigateProfile}
-            className="text-xs text-emerald-400 hover:text-emerald-300 underline"
+            className="text-xs text-teal-400 hover:text-teal-300 underline"
           >
             {t('view_profile')}
           </button>

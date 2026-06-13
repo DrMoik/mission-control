@@ -204,7 +204,7 @@ export default function GoalsSection({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium text-content-primary">{getL(goal.objective, lang)}</span>
                           {isDone && (
-                            <span className="text-[10px] bg-emerald-900/60 text-emerald-300 px-1.5 py-0.5 rounded-full">
+                            <span className="text-[10px] bg-teal-900/60 text-teal-300 px-1.5 py-0.5 rounded-full">
                               {t('completed_badge')}
                             </span>
                           )}

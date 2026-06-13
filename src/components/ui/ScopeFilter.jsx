@@ -28,7 +28,7 @@ export default function ScopeFilter({ value, onChange, categories = [], userCate
         <button key={opt.id} onClick={() => onChange(opt.id)}
           className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
             value === opt.id
-              ? 'bg-emerald-500 text-black'
+              ? 'bg-teal-500 text-black'
               : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
           }`}>
           {opt.label}

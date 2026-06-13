@@ -52,7 +52,7 @@ function readAsDataUrl(file) {
 }
 
 // ── Helper: tag chip list (read-only) ──────────────────────────────────────────
-function TagList({ tags, colorClass = 'bg-emerald-900/50 text-emerald-200 border-emerald-700/50', lang = 'es' }) {
+function TagList({ tags, colorClass = 'bg-teal-900/50 text-teal-200 border-teal-700/50', lang = 'es' }) {
   if (!tags?.length) return null;
   return (
     <div className="flex flex-wrap gap-1.5 mt-1">
@@ -248,11 +248,11 @@ export default function ProfileModal({
       >
         {/* ── Cover photo + avatar — z-10 so they render above content */}
         <div className="relative z-10 shrink-0">
-          <div className="h-48 bg-gradient-to-r from-emerald-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-t-xl">
+          <div className="h-48 bg-gradient-to-r from-teal-900 via-slate-800 to-slate-900 relative overflow-hidden rounded-t-xl">
             {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) && (
               <SafeProfileImage
                 src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
-                fallback={<div className="w-full h-full bg-gradient-to-br from-emerald-900/60 to-slate-800" />}
+                fallback={<div className="w-full h-full bg-gradient-to-br from-teal-900/60 to-slate-800" />}
                 className="w-full h-full object-cover"
                 alt=""
               />
@@ -295,7 +295,7 @@ export default function ProfileModal({
                 <span className="text-xs text-slate-400">{t('edit_profile')}</span>
                 <div className="flex gap-2">
                   <button onClick={() => setEditing(false)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
-                  <button onClick={handleSave} className="text-xs bg-emerald-500 text-black font-semibold px-4 py-1.5 rounded">{t('save_profile')}</button>
+                  <button onClick={handleSave} className="text-xs bg-teal-500 text-black font-semibold px-4 py-1.5 rounded">{t('save_profile')}</button>
                 </div>
               </div>
 
@@ -338,7 +338,7 @@ export default function ProfileModal({
                     {t('image_select_file')}
                   </button>
                   <button type="button" disabled={!draft.photoURL} onClick={() => setCropTarget('photoURL')}
-                    className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded transition-colors">
+                    className="shrink-0 px-2 py-1.5 bg-teal-700 hover:bg-teal-600 disabled:opacity-40 text-white text-[11px] font-semibold rounded transition-colors">
                     {t('reframe_profile')}
                   </button>
                   {draft.photoURL && isBlockedImageHost(draft.photoURL) && (
@@ -373,7 +373,7 @@ export default function ProfileModal({
                     {t('image_select_file')}
                   </button>
                   <button type="button" disabled={!draft.coverPhotoURL} onClick={() => setCropTarget('coverPhotoURL')}
-                    className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded transition-colors">
+                    className="shrink-0 px-2 py-1.5 bg-teal-700 hover:bg-teal-600 disabled:opacity-40 text-white text-[11px] font-semibold rounded transition-colors">
                     {t('reframe_cover')}
                   </button>
                   {draft.coverPhotoURL && isBlockedImageHost(draft.coverPhotoURL) && (
@@ -444,7 +444,7 @@ export default function ProfileModal({
                 {draft.iCanHelpWith?.length > 0 && (
                   <div>
                     <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
-                    <LegacyTagList tags={draft.iCanHelpWith} colorClass="bg-emerald-900/20 text-emerald-300/80 border-emerald-700/30" onRemove={(i) => set('iCanHelpWith', draft.iCanHelpWith.filter((_, idx) => idx !== i))} lang={lang} />
+                    <LegacyTagList tags={draft.iCanHelpWith} colorClass="bg-teal-900/20 text-teal-300/80 border-teal-700/30" onRemove={(i) => set('iCanHelpWith', draft.iCanHelpWith.filter((_, idx) => idx !== i))} lang={lang} />
                   </div>
                 )}
                 <SkillPicker label={t('skills_to_learn')} value={draft.learnAreas ?? []} onChange={(v) => set('learnAreas', v)} skills={skillDictionary} allowedTypes={['technical','learning']} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
@@ -458,7 +458,7 @@ export default function ProfileModal({
                 {draft.skillsICanTeach?.length > 0 && (
                   <div>
                     <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
-                    <LegacyTagList tags={draft.skillsICanTeach} colorClass="bg-purple-900/20 text-purple-300/80 border-purple-700/30" onRemove={(i) => set('skillsICanTeach', draft.skillsICanTeach.filter((_, idx) => idx !== i))} lang={lang} />
+                    <LegacyTagList tags={draft.skillsICanTeach} colorClass="bg-slate-800/60 text-slate-300/80 border-slate-700/40" onRemove={(i) => set('skillsICanTeach', draft.skillsICanTeach.filter((_, idx) => idx !== i))} lang={lang} />
                   </div>
                 )}
               </div>
@@ -525,7 +525,7 @@ export default function ProfileModal({
                     <RoleBadge role={membership.role} />
                     {cat && <span className="text-xs text-slate-400">· {getL(cat.name, lang)}</span>}
                     {membership.personalityTag && (
-                      <span className="text-[10px] bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/50">
+                      <span className="text-[10px] bg-slate-700/50 text-slate-300 px-2 py-0.5 rounded-full border border-slate-600/50">
                         {t(membership.personalityTag)}
                       </span>
                     )}
@@ -550,7 +550,7 @@ export default function ProfileModal({
                           `${membership.semester} ${t('semester_suffix')}`
                         }</span>
                       )}
-                      {membership.email     && <a href={`mailto:${membership.email}`} className="text-emerald-400 hover:text-emerald-300">{membership.email}</a>}
+                      {membership.email     && <a href={`mailto:${membership.email}`} className="text-teal-400 hover:text-teal-300">{membership.email}</a>}
                     </div>
                   )}
                 </div>
@@ -611,10 +611,10 @@ export default function ProfileModal({
                           {(membership.helpOfferAreas || []).map((id) => {
                             const s = skillDictionary.find((x) => x.id === id);
                             const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
-                            return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/40 text-emerald-200 border-emerald-700/50">{label}</span>;
+                            return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-teal-900/40 text-teal-200 border-teal-700/50">{label}</span>;
                           })}
                           {(membership.iCanHelpWith || []).map((tag, i) => (
-                            <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/20 text-emerald-300/80 border-emerald-700/30">
+                            <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-teal-900/20 text-teal-300/80 border-teal-700/30">
                               {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
                             </span>
                           ))}
@@ -645,10 +645,10 @@ export default function ProfileModal({
                           {(membership.teachAreas || []).map((id) => {
                             const s = skillDictionary.find((x) => x.id === id);
                             const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
-                            return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/40 text-purple-200 border-purple-700/50">{label}</span>;
+                            return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-teal-900/40 text-teal-200 border-teal-700/50">{label}</span>;
                           })}
                           {(membership.skillsICanTeach || []).map((tag, i) => (
-                            <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/20 text-purple-300/80 border-purple-700/30">
+                            <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-slate-800/60 text-slate-300/80 border-slate-700/40">
                               {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
                             </span>
                           ))}
@@ -673,7 +673,7 @@ export default function ProfileModal({
                             const url = typeof s === 'object' && s ? (s.url || '') : '';
                             return (
                               <li key={i}>
-                                {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:text-emerald-200 underline">{title || t('song_on_repeat')}</a> : (title || '—')}
+                                {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="text-teal-300 hover:text-teal-200 underline">{title || t('song_on_repeat')}</a> : (title || '—')}
                               </li>
                             );
                           })}
@@ -755,7 +755,7 @@ export default function ProfileModal({
                   <div className="flex gap-2 justify-end">
                     <button onClick={() => setEditingWeekly(false)} disabled={savingWeekly} className="text-xs text-slate-400 underline disabled:opacity-50">{t('cancel')}</button>
                     <button onClick={handleSaveWeekly} disabled={savingWeekly}
-                      className="text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded disabled:opacity-60">
+                      className="text-xs bg-teal-500 text-black font-semibold px-3 py-1.5 rounded disabled:opacity-60">
                       {savingWeekly ? '…' : t('save')}
                     </button>
                   </div>
@@ -794,7 +794,7 @@ export default function ProfileModal({
                   </p>
                   {canEditThis && (
                     <button onClick={startWeeklyEdit}
-                      className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1 rounded transition-colors">
+                      className="text-xs bg-teal-600 hover:bg-teal-500 text-white font-semibold px-3 py-1 rounded transition-colors">
                       {t('post_weekly_status')}
                     </button>
                   )}

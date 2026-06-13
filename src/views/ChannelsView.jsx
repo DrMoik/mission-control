@@ -19,9 +19,9 @@ const STATUS_META = {
 function TeamPill({ label, tone = 'default' }) {
   const tones = {
     default: 'border-slate-700 bg-slate-800 text-slate-200',
-    member: 'border-sky-500/40 bg-sky-500/10 text-sky-200',
+    member: 'border-teal-500/40 bg-teal-500/10 text-teal-200',
     pending: 'border-amber-500/40 bg-amber-500/10 text-amber-200',
-    owner: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200',
+    owner: 'border-teal-500/40 bg-teal-500/10 text-teal-200',
     muted: 'border-slate-700 bg-slate-900 text-slate-400',
   };
   return (
@@ -430,7 +430,7 @@ export default function ChannelsView({
                   onClick={() => setSelectedChannelId(channel.id)}
                   className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
                     channel.id === selectedChannelId
-                      ? 'border-emerald-500/40 bg-emerald-500/10'
+                      ? 'border-teal-500/40 bg-teal-500/10'
                       : 'border-slate-700/70 bg-slate-900/40 hover:border-slate-600'
                   }`}
                 >
@@ -558,7 +558,7 @@ export default function ChannelsView({
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div className="flex flex-wrap items-baseline gap-2">
                             <span className="text-sm font-semibold text-slate-100">{membershipNameById.get(message.membershipId) || message.authorName}</span>
-                            <span className="text-xs text-emerald-300">{message.teamName || teamNameById.get(message.teamId) || 'Equipo'}</span>
+                            <span className="text-xs text-teal-300">{message.teamName || teamNameById.get(message.teamId) || 'Equipo'}</span>
                           </div>
                         <span className="text-[11px] text-slate-500">{tsToDate(message.createdAt).toLocaleString()}</span>
                       </div>

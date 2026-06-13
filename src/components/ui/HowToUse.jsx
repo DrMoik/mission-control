@@ -78,7 +78,7 @@ export default function HowToUse({ descKey }) {
           <p className="whitespace-pre-line">{description}</p>
           {hasEx && <p className="text-slate-500 text-[11px] italic">Ejemplo: {example}</p>}
           {hasLn && (
-            <a href={link} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline text-[11px] block">
+            <a href={link} target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline text-[11px] block">
               Más información →
             </a>
           )}

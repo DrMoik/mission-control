@@ -71,7 +71,7 @@ export default function BilingualField({
 
   const handleChange = (text) => onChange({ ...val, [lang]: text });
 
-  const fieldCls = 'w-full min-w-0 px-3 py-2 bg-slate-900 border border-emerald-600 rounded text-sm resize-none transition-colors';
+  const fieldCls = 'w-full min-w-0 px-3 py-2 bg-slate-900 border border-teal-600 rounded text-sm resize-none transition-colors';
 
   return (
     <div className={`space-y-1 ${className}`}>

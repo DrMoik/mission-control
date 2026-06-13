@@ -79,7 +79,7 @@ function CalendarPanel({ selectedDate, viewMonth, minDate, maxDate, onPrevMonth,
         <button
           type="button"
           onClick={onPrevMonth}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 transition-colors hover:border-emerald-400/60 hover:text-emerald-200"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 transition-colors hover:border-teal-400/60 hover:text-teal-200"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -89,7 +89,7 @@ function CalendarPanel({ selectedDate, viewMonth, minDate, maxDate, onPrevMonth,
         <button
           type="button"
           onClick={onNextMonth}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 transition-colors hover:border-emerald-400/60 hover:text-emerald-200"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 transition-colors hover:border-teal-400/60 hover:text-teal-200"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -119,9 +119,9 @@ function CalendarPanel({ selectedDate, viewMonth, minDate, maxDate, onPrevMonth,
                   ? 'cursor-not-allowed border-slate-800 bg-slate-950/20 text-slate-700'
                   :
                 isSelected
-                  ? 'border-emerald-400 bg-emerald-500 text-slate-950 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]'
+                  ? 'border-teal-400 bg-teal-500 text-slate-950 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]'
                   : isCurrentMonth
-                    ? 'border-slate-700 bg-slate-900 text-slate-200 hover:border-emerald-500/50 hover:bg-slate-800'
+                    ? 'border-slate-700 bg-slate-900 text-slate-200 hover:border-teal-500/50 hover:bg-slate-800'
                     : 'border-slate-800 bg-slate-950/40 text-slate-500 hover:border-slate-700'
               }`}
             >
@@ -150,8 +150,8 @@ function TimePanel({ timeValue, onChange }) {
               onClick={() => onChange(formatTimeValue(value, minutes))}
               className={`rounded-lg border px-2 py-2 text-sm transition-colors ${
                 hours === value
-                  ? 'border-emerald-400 bg-emerald-500 text-slate-950'
-                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-emerald-500/50'
+                  ? 'border-teal-400 bg-teal-500 text-slate-950'
+                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-teal-500/50'
               }`}
             >
               {pad(value)}
@@ -170,8 +170,8 @@ function TimePanel({ timeValue, onChange }) {
               onClick={() => onChange(formatTimeValue(hours, value))}
               className={`rounded-lg border px-2 py-2 text-sm transition-colors ${
                 minutes === value
-                  ? 'border-emerald-400 bg-emerald-500 text-slate-950'
-                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-emerald-500/50'
+                  ? 'border-teal-400 bg-teal-500 text-slate-950'
+                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-teal-500/50'
               }`}
             >
               {pad(value)}
@@ -310,7 +310,7 @@ export default function PickerField({
                   <button
                     type="button"
                     onClick={() => commitDate(new Date())}
-                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-200"
+                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
                   >
                     Hoy
                   </button>
@@ -319,7 +319,7 @@ export default function PickerField({
                   <button
                     type="button"
                     onClick={() => commitTime(formatTimeValue(new Date().getHours(), Math.floor(new Date().getMinutes() / 5) * 5))}
-                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-200"
+                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
                   >
                     Ahora
                   </button>
@@ -337,7 +337,7 @@ export default function PickerField({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-slate-950 transition-colors hover:bg-emerald-400"
+                  className="rounded-lg bg-teal-500 px-3 py-2 text-xs font-semibold text-slate-950 transition-colors hover:bg-teal-400"
                 >
                   Listo
                 </button>

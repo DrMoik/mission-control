@@ -98,7 +98,7 @@ export default function PlatformConfigSection({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-semibold rounded hover:bg-emerald-400 disabled:opacity-50"
+              className="px-3 py-1.5 bg-teal-500 text-black text-xs font-semibold rounded hover:bg-teal-400 disabled:opacity-50"
             >
               {saving ? '…' : (tFn('save') || 'Guardar')}
             </button>

@@ -14,7 +14,7 @@ import { BilingualField, Button, Input } from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString, tsToDate } from '../utils.js';
 import { ROLE_LABELS } from '../constants.js';
 
-// ── SVG histogram (vertical bars, dynamic bins, matches slate/emerald aesthetic)
+// ── SVG histogram (vertical bars, dynamic bins, matches slate/teal aesthetic)
 function PointsHistogram({ distribution }) {
   const maxCount = Math.max(...distribution.map((d) => d.count), 1);
   const w = 320;
@@ -412,12 +412,12 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                 <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm mb-3">
                   {awards.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <Trophy className="w-5 h-5 text-emerald-400 shrink-0" strokeWidth={2} />
+                      <Trophy className="w-5 h-5 text-teal-400 shrink-0" strokeWidth={2} />
                       <span className="text-slate-200">
-                        <strong className="text-emerald-400">{awards.length}</strong>{' '}
+                        <strong className="text-teal-400">{awards.length}</strong>{' '}
                         {awards.length === 1 ? t('inicio_merit_count') : t('inicio_merits_count')}
                         {awards.reduce((s, a) => s + (a.points || 0), 0) > 0 && (
-                          <span className="text-emerald-400/90 ml-1">(+{awards.reduce((s, a) => s + (a.points || 0), 0)} {t('inicio_points_total')})</span>
+                          <span className="text-teal-400/90 ml-1">(+{awards.reduce((s, a) => s + (a.points || 0), 0)} {t('inicio_points_total')})</span>
                         )}
                       </span>
                     </div>
@@ -432,7 +432,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                   )}
                   {sessions.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <CalendarDays className="w-5 h-5 text-violet-400 shrink-0" strokeWidth={2} />
+                      <CalendarDays className="w-5 h-5 text-teal-400 shrink-0" strokeWidth={2} />
                       <span className="text-slate-300">
                         <strong>{sessions.length}</strong> {sessions.length === 1 ? t('inicio_session_count') : t('inicio_sessions_count')}
                       </span>
@@ -448,17 +448,17 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                         const membership = teamMemberships?.find((m) => m.id === item.membershipId);
                         return (
                           <li key={`t-${i}`} className="text-slate-300 flex items-start gap-2">
-                            <Trophy className="w-4 h-4 text-emerald-400 shrink-0" strokeWidth={2} />
+                            <Trophy className="w-4 h-4 text-teal-400 shrink-0" strokeWidth={2} />
                             <span>
                               {onViewProfile && membership ? (
-                                <button type="button" onClick={() => onViewProfile(membership)} className="font-semibold text-slate-200 hover:text-emerald-400 hover:underline text-left">
+                                <button type="button" onClick={() => onViewProfile(membership)} className="font-semibold text-slate-200 hover:text-teal-400 hover:underline text-left">
                                   {ensureString(item.memberName)}
                                 </button>
                               ) : (
                                 <strong className="text-slate-200">{ensureString(item.memberName)}</strong>
                               )}{' '}
                               {t('inicio_merit_awarded')}{' '}
-                              <span className="text-emerald-400">+{item.points} pts</span> — {ensureString(item.meritName)}
+                              <span className="text-teal-400">+{item.points} pts</span> — {ensureString(item.meritName)}
                             </span>
                             <span className="text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
                           </li>
@@ -484,7 +484,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                           : '';
                         return (
                           <li key={`t-s-${item.sessionId}`} className="text-slate-300 flex items-start gap-2">
-                            <CalendarDays className="w-4 h-4 text-violet-400 shrink-0" strokeWidth={2} />
+                            <CalendarDays className="w-4 h-4 text-teal-400 shrink-0" strokeWidth={2} />
                             {onNavigateSessions ? (
                               <button type="button" onClick={onNavigateSessions} className="text-left hover:text-slate-100 transition-colors">
                                 <strong className="text-slate-200">{item.title || t('inicio_session_created')}</strong>

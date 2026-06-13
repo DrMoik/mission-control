@@ -232,14 +232,14 @@ export default function KnowledgeMapView({
           <button
             type="button"
             onClick={() => setPerspective('members')}
-            className={`rounded-md px-3 py-2 text-sm transition ${perspective === 'members' ? 'bg-emerald-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
+            className={`rounded-md px-3 py-2 text-sm transition ${perspective === 'members' ? 'bg-teal-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
           >
             Skills por usuario
           </button>
           <button
             type="button"
             onClick={() => setPerspective('skills')}
-            className={`rounded-md px-3 py-2 text-sm transition ${perspective === 'skills' ? 'bg-emerald-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
+            className={`rounded-md px-3 py-2 text-sm transition ${perspective === 'skills' ? 'bg-teal-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
           >
             Usuarios por skill
           </button>
@@ -316,11 +316,11 @@ export default function KnowledgeMapView({
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-emerald-400" strokeWidth={2} />
+                          <User className="h-4 w-4 text-teal-400" strokeWidth={2} />
                           <button
                             type="button"
                             onClick={() => onViewProfile?.(row.membership)}
-                            className="truncate text-left font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
+                            className="truncate text-left font-medium text-teal-400 hover:text-teal-300 hover:underline"
                           >
                             {row.memberName}
                           </button>
@@ -371,7 +371,7 @@ export default function KnowledgeMapView({
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-emerald-400" strokeWidth={2} />
+                          <Users className="h-4 w-4 text-teal-400" strokeWidth={2} />
                           <h3 className="truncate font-medium text-slate-100">{row.areaName}</h3>
                         </div>
                         <p className="mt-1 text-xs text-slate-400">
@@ -394,7 +394,7 @@ export default function KnowledgeMapView({
                                   <button
                                     type="button"
                                     onClick={() => onViewProfile?.(member.membership)}
-                                    className="text-left font-medium text-emerald-400 hover:text-emerald-300 hover:underline"
+                                    className="text-left font-medium text-teal-400 hover:text-teal-300 hover:underline"
                                   >
                                     {member.memberName}
                                   </button>

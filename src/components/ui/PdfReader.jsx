@@ -125,7 +125,7 @@ export default function PdfReader({
           <button
             type="button"
             onClick={() => setZoom((value) => Math.max(0.7, Number((value - 0.1).toFixed(2))))}
-            className="inline-flex items-center justify-center rounded border border-slate-700 px-2.5 py-2 text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-200"
+            className="inline-flex items-center justify-center rounded border border-slate-700 px-2.5 py-2 text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
           >
             <ZoomOut className="h-4 w-4" />
           </button>
@@ -133,7 +133,7 @@ export default function PdfReader({
           <button
             type="button"
             onClick={() => setZoom((value) => Math.min(2.5, Number((value + 0.1).toFixed(2))))}
-            className="inline-flex items-center justify-center rounded border border-slate-700 px-2.5 py-2 text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-200"
+            className="inline-flex items-center justify-center rounded border border-slate-700 px-2.5 py-2 text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
@@ -141,7 +141,7 @@ export default function PdfReader({
             type="button"
             onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
             disabled={previousDisabled}
-            className="inline-flex items-center justify-center rounded border border-slate-700 px-2.5 py-2 text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center justify-center rounded border border-slate-700 px-2.5 py-2 text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -149,7 +149,7 @@ export default function PdfReader({
             type="button"
             onClick={() => setCurrentPage((page) => Math.min(pageCount || page, page + 1))}
             disabled={nextDisabled}
-            className="inline-flex items-center justify-center rounded border border-slate-700 px-2.5 py-2 text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center justify-center rounded border border-slate-700 px-2.5 py-2 text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

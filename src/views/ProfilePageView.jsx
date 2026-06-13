@@ -38,7 +38,7 @@ function SectionHeading({ label }) {
   );
 }
 
-function TagList({ tags, colorClass = 'bg-emerald-900/50 text-emerald-200 border-emerald-700/50', lang = 'es' }) {
+function TagList({ tags, colorClass = 'bg-teal-900/50 text-teal-200 border-teal-700/50', lang = 'es' }) {
   if (!tags?.length) return null;
   return (
     <div className="flex flex-wrap gap-2 mt-1.5">
@@ -298,19 +298,19 @@ export default function ProfilePageView({
     <div className="w-full max-w-full min-h-[60vh]">
       {/* Cover + avatar — z-10 so they render above the content section */}
       <div className="relative z-10">
-        <div className="h-60 bg-gradient-to-br from-emerald-950/80 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden shadow-xl">
+        <div className="h-60 bg-gradient-to-br from-teal-950/80 via-slate-800 to-slate-900 rounded-t-xl relative overflow-hidden shadow-xl">
           {(editing ? draft.coverPhotoURL : membership.coverPhotoURL) ? (
             <>
               <SafeProfileImage
                 src={editing ? draft.coverPhotoURL : membership.coverPhotoURL}
-                fallback={<div className="w-full h-full bg-gradient-to-br from-emerald-900/60 to-slate-800" />}
+                fallback={<div className="w-full h-full bg-gradient-to-br from-teal-900/60 to-slate-800" />}
                 className="w-full h-full object-cover object-center"
                 alt=""
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
             </>
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/40 via-transparent to-slate-800/60" />
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-900/40 via-transparent to-slate-800/60" />
           )}
         </div>
         <div className="absolute -bottom-16 left-6 z-20">
@@ -322,7 +322,7 @@ export default function ProfilePageView({
                   {(ensureString(membership.displayName, lang) || '?')[0].toUpperCase()}
                 </div>
               }
-              className="w-48 h-48 rounded-full border-4 border-slate-800 object-cover object-[center_top] shadow-lg ring-2 ring-emerald-500/30"
+              className="w-48 h-48 rounded-full border-4 border-slate-800 object-cover object-[center_top] shadow-lg ring-2 ring-teal-500/30"
               alt=""
             />
           ) : (
@@ -411,7 +411,7 @@ export default function ProfilePageView({
                   {t('image_select_file')}
                 </button>
                 <button type="button" disabled={!draft.photoURL} onClick={() => setCropTarget('photoURL')}
-                  className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded">
+                  className="shrink-0 px-2 py-1.5 bg-teal-700 hover:bg-teal-600 disabled:opacity-40 text-white text-[11px] font-semibold rounded">
                   {t('reframe_profile')}
                 </button>
                 {draft.photoURL && isBlockedImageHost(draft.photoURL) && (
@@ -445,7 +445,7 @@ export default function ProfilePageView({
                   {t('image_select_file')}
                 </button>
                 <button type="button" disabled={!draft.coverPhotoURL} onClick={() => setCropTarget('coverPhotoURL')}
-                  className="shrink-0 px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-[11px] font-semibold rounded">
+                  className="shrink-0 px-2 py-1.5 bg-teal-700 hover:bg-teal-600 disabled:opacity-40 text-white text-[11px] font-semibold rounded">
                   {t('reframe_cover')}
                 </button>
                 {draft.coverPhotoURL && isBlockedImageHost(draft.coverPhotoURL) && (
@@ -514,7 +514,7 @@ export default function ProfilePageView({
                   <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {(draft.iCanHelpWith || []).map((tag, i) => (
-                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-emerald-900/20 text-emerald-300/80 border-emerald-700/30">
+                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-teal-900/20 text-teal-300/80 border-teal-700/30">
                         {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
                         <button type="button" onClick={() => set('iCanHelpWith', (draft.iCanHelpWith || []).filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400 leading-none transition-colors">×</button>
                       </span>
@@ -542,7 +542,7 @@ export default function ProfilePageView({
                   <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {(draft.skillsICanTeach || []).map((tag, i) => (
-                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-purple-900/20 text-purple-300/80 border-purple-700/30">
+                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-slate-800/60 text-slate-300/80 border-slate-700/40">
                         {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
                         <button type="button" onClick={() => set('skillsICanTeach', (draft.skillsICanTeach || []).filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400 leading-none transition-colors">×</button>
                       </span>
@@ -602,7 +602,7 @@ export default function ProfilePageView({
                     </span>
                   )}
                   {ensureString(membership.personalityTag, lang) && (
-                    <span className="text-[10px] bg-violet-900/50 text-violet-300 px-2 py-0.5 rounded-full border border-violet-700/50">
+                    <span className="text-[10px] bg-slate-700/50 text-slate-300 px-2 py-0.5 rounded-full border border-slate-600/50">
                       {(personalityTags && personalityTags[membership.personalityTag]) || membership.personalityTag}
                     </span>
                   )}
@@ -810,10 +810,10 @@ export default function ProfilePageView({
                         {(membership.helpOfferAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
                           const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
-                          return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/40 text-emerald-200 border-emerald-700/50">{label}</span>;
+                          return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-teal-900/40 text-teal-200 border-teal-700/50">{label}</span>;
                         })}
                         {(membership.iCanHelpWith || []).map((tag, i) => (
-                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-emerald-900/20 text-emerald-300/80 border-emerald-700/30">
+                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-teal-900/20 text-teal-300/80 border-teal-700/30">
                             {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
                           </span>
                         ))}
@@ -844,10 +844,10 @@ export default function ProfilePageView({
                         {(membership.teachAreas || []).map((id) => {
                           const s = skillDictionary.find((x) => x.id === id);
                           const label = id.startsWith('proposed:') ? id.slice(9) : (s?.label || knowledgeAreas.find((x) => x.id === id)?.name || id);
-                          return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/40 text-purple-200 border-purple-700/50">{label}</span>;
+                          return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-teal-900/40 text-teal-200 border-teal-700/50">{label}</span>;
                         })}
                         {(membership.skillsICanTeach || []).map((tag, i) => (
-                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-purple-900/20 text-purple-300/80 border-purple-700/30">
+                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-slate-800/60 text-slate-300/80 border-slate-700/40">
                             {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
                           </span>
                         ))}
@@ -1031,7 +1031,7 @@ export default function ProfilePageView({
                                       key={m.id}
                                       type="button"
                                       onClick={() => onNavigate?.('academy')}
-                                      className="px-2 py-0.5 rounded bg-indigo-900/40 text-indigo-200 border border-indigo-700/50 hover:bg-indigo-900/60"
+                                      className="px-2 py-0.5 rounded bg-teal-900/40 text-teal-200 border border-teal-700/50 hover:bg-teal-900/60"
                                     >
                                       {ensureString(m.title, lang) || '—'}
                                     </button>
@@ -1086,7 +1086,7 @@ export default function ProfilePageView({
               <div className="min-w-0">
                 <h2 className="font-bold text-lg leading-tight">{detailMerit.name}</h2>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="font-mono text-emerald-400 font-bold text-sm">{detailMerit.points} {t('pts_label')}</span>
+                  <span className="font-mono text-teal-400 font-bold text-sm">{detailMerit.points} {t('pts_label')}</span>
                   {detailMerit.categoryId && categories?.find((c) => c.id === detailMerit.categoryId) && (
                     <span className="text-xs text-content-tertiary">
                       · {ensureString(categories.find((c) => c.id === detailMerit.categoryId)?.name)}

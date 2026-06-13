@@ -11,10 +11,10 @@ import Button from '../ui/Button.jsx';
 const TOAST_TTL_MS = 4500;
 
 const TOAST_STYLES = {
-  success: { border: 'border-emerald-600/50', icon: CheckCircle2, iconClass: 'text-emerald-400' },
+  success: { border: 'border-teal-600/50', icon: CheckCircle2, iconClass: 'text-teal-400' },
   error:   { border: 'border-red-600/50',     icon: XCircle,      iconClass: 'text-red-400' },
   warning: { border: 'border-amber-600/50',   icon: AlertTriangle, iconClass: 'text-amber-400' },
-  info:    { border: 'border-sky-600/50',     icon: Info,          iconClass: 'text-sky-400' },
+  info:    { border: 'border-blue-600/50',     icon: Info,          iconClass: 'text-blue-400' },
 };
 
 function Toast({ toast, onDismiss }) {

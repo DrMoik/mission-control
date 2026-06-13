@@ -35,7 +35,7 @@ export default function CultureListField({ label, value = [], onChange, placehol
         ))}
         {items.length < maxItems && (
           <button type="button" onClick={add}
-            className="text-[11px] text-emerald-400 hover:text-emerald-300">
+            className="text-[11px] text-teal-400 hover:text-teal-300">
             {addLabel}
           </button>
         )}

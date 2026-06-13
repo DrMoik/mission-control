@@ -145,17 +145,17 @@ export default function SkillPicker({
           ))}
         </select>
       )}
-      <div className="min-h-[38px] flex flex-wrap gap-1.5 items-center px-2 py-1.5 bg-slate-900 border border-slate-600 rounded focus-within:border-emerald-600 transition-colors">
+      <div className="min-h-[38px] flex flex-wrap gap-1.5 items-center px-2 py-1.5 bg-slate-900 border border-slate-600 rounded focus-within:border-teal-600 transition-colors">
         {value.map((id) => (
           <span
             key={id}
-            className="inline-flex items-center gap-1 bg-emerald-900/50 text-emerald-200 text-xs px-2 py-0.5 rounded-full border border-emerald-700/50"
+            className="inline-flex items-center gap-1 bg-teal-900/50 text-teal-200 text-xs px-2 py-0.5 rounded-full border border-teal-700/50"
           >
             {getSkillLabel(id)}
             <button
               type="button"
               onClick={() => remove(id)}
-              className="text-emerald-400 hover:text-red-400 leading-none transition-colors"
+              className="text-teal-400 hover:text-red-400 leading-none transition-colors"
             >
               ×
             </button>
@@ -185,7 +185,7 @@ export default function SkillPicker({
                 addById(s.id);
               }}
               className={`w-full text-left px-3 py-2 text-sm transition-colors flex justify-between items-center gap-2 ${
-                i === highlightIndex ? 'bg-emerald-900/50 text-emerald-200' : 'text-slate-300 hover:bg-slate-700'
+                i === highlightIndex ? 'bg-teal-900/50 text-teal-200' : 'text-slate-300 hover:bg-slate-700'
               }`}
             >
               <span className="truncate">{s.label}</span>

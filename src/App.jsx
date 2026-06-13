@@ -2250,7 +2250,7 @@ export default function App() {
       {['en', 'es'].map((l) => (
         <button key={l} onClick={() => handleSetLang(l)}
           className={`px-2 py-1 rounded text-[11px] font-bold transition-colors ${
-            lang === l ? 'bg-emerald-500 text-black' : 'text-slate-400 hover:text-white'
+            lang === l ? 'bg-teal-500 text-black' : 'text-slate-400 hover:text-white'
           }`}>
           {l.toUpperCase()}
         </button>
@@ -2309,7 +2309,7 @@ export default function App() {
                   {getL(team.overview?.tagline, lang) && <p className="text-sm text-slate-300 italic">"{getL(team.overview.tagline, lang)}"</p>}
                   {getL(team.overview?.about, lang)   && <p className="text-xs text-slate-400 line-clamp-3">{getL(team.overview.about, lang)}</p>}
                   <button onClick={handleGoogleSignIn}
-                    className="mt-1 text-xs bg-emerald-500 text-black font-semibold px-3 py-1.5 rounded hover:bg-emerald-400 transition-colors">
+                    className="mt-1 text-xs bg-teal-500 text-black font-semibold px-3 py-1.5 rounded hover:bg-teal-400 transition-colors">
                     {t('sign_in_google')}
                   </button>
                 </div>
@@ -2361,10 +2361,10 @@ export default function App() {
               onChange={(e) => setRenameValue(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') commitRename(team.id); if (e.key === 'Escape') setRenamingTeamId(null); }}
               placeholder={t('rename_team_ph')}
-              className="flex-1 px-2 py-1 bg-slate-900 border border-emerald-600 rounded text-xs"
+              className="flex-1 px-2 py-1 bg-slate-900 border border-teal-600 rounded text-xs"
             />
             <button onClick={() => commitRename(team.id)}
-              className="px-2 py-1 bg-emerald-500 text-black text-[11px] font-semibold rounded">
+              className="px-2 py-1 bg-teal-500 text-black text-[11px] font-semibold rounded">
               {t('save')}
             </button>
             <button onClick={() => setRenamingTeamId(null)}
@@ -2503,7 +2503,7 @@ export default function App() {
                     className="flex gap-2">
                     <input name="name" placeholder={t('team_name_placeholder')} required
                       className="flex-1 px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm" />
-                    <button type="submit" className="px-4 py-2 bg-emerald-500 text-black text-xs font-semibold rounded">
+                    <button type="submit" className="px-4 py-2 bg-teal-500 text-black text-xs font-semibold rounded">
                       {t('create')}
                     </button>
                   </form>
@@ -2754,12 +2754,12 @@ export default function App() {
 
         {/* ── App body: sidebar + main ── */}
         {notificationState.banner && (
-          <div className="mx-4 mt-3 rounded-xl border border-emerald-700/40 bg-emerald-950/70 px-4 py-3 text-sm text-emerald-50 shadow-lg">
+          <div className="mx-4 mt-3 rounded-xl border border-teal-700/40 bg-teal-950/70 px-4 py-3 text-sm text-teal-50 shadow-lg">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-semibold">{notificationState.banner.title}</p>
                 {notificationState.banner.body && (
-                  <p className="mt-1 text-xs text-emerald-100/85">{notificationState.banner.body}</p>
+                  <p className="mt-1 text-xs text-teal-100/85">{notificationState.banner.body}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -2770,7 +2770,7 @@ export default function App() {
                       navigate(notificationState.banner.route);
                       notificationState.clearBanner();
                     }}
-                    className="text-xs font-semibold text-emerald-200 underline"
+                    className="text-xs font-semibold text-teal-200 underline"
                   >
                     Abrir
                   </button>
@@ -2778,7 +2778,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={notificationState.clearBanner}
-                  className="text-xs text-emerald-200/80 hover:text-emerald-50"
+                  className="text-xs text-teal-200/80 hover:text-teal-50"
                 >
                   Cerrar
                 </button>
@@ -3079,7 +3079,7 @@ export default function App() {
               <button key={tab.id} onClick={() => goToView(tab.id)}
                 title={tab.id === 'hr' ? t('hr_page_title') : undefined}
                 className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded flex-1 transition-colors
-                  ${view === tab.id ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}>
+                  ${view === tab.id ? 'text-teal-400' : 'text-slate-500 hover:text-slate-300'}`}>
                 <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
                 <span className="text-[9px] leading-none truncate">{t(tab.labelKey)}</span>
               </button>

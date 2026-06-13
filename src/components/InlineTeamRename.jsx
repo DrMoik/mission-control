@@ -25,10 +25,10 @@ export default function InlineTeamRename({ team, isPlatformAdmin, onRename, onDe
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
-          className="px-2 py-1 bg-slate-800 border border-emerald-600 rounded text-sm font-bold w-44"
+          className="px-2 py-1 bg-slate-800 border border-teal-600 rounded text-sm font-bold w-44"
         />
         <button onClick={commit}
-          className="text-[11px] bg-emerald-500 text-black font-semibold px-2 py-1 rounded">
+          className="text-[11px] bg-teal-500 text-black font-semibold px-2 py-1 rounded">
           {t('save')}
         </button>
         <button onClick={() => setEditing(false)} className="text-[11px] text-slate-400 underline">

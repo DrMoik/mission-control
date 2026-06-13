@@ -217,7 +217,7 @@ export default function InventoryView({
       <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-emerald-400">{t('inventory_spreadsheet') || 'Hoja de inventario'}</h3>
+            <h3 className="text-sm font-semibold text-teal-400">{t('inventory_spreadsheet') || 'Hoja de inventario'}</h3>
             <p className="text-xs text-content-tertiary">
               {t('inventory_counters_help') || 'Cantidad = cuantas unidades tienes. Unidad = como se mide, por ejemplo piezas, cajas o litros.'}
             </p>
@@ -269,7 +269,7 @@ export default function InventoryView({
             </thead>
             <tbody className="divide-y divide-slate-700/40 bg-surface-raised/50">
               {canManageInventory && (
-                <tr className="bg-emerald-950/10">
+                <tr className="bg-teal-950/10">
                   <td className="px-2 py-2">
                     <select
                       value={draft.categoryId}
@@ -461,7 +461,7 @@ export default function InventoryView({
                           {editable ? (
                             isEditing ? (
                               <div className="flex gap-2">
-                                <button onClick={submitEdit} className="text-emerald-400 underline">
+                                <button onClick={submitEdit} className="text-teal-400 underline">
                                   {t('save') || 'Guardar'}
                                 </button>
                                 <button onClick={cancelEdit} className="text-content-tertiary hover:text-content-primary transition-colors underline">
@@ -473,14 +473,14 @@ export default function InventoryView({
                                 <button
                                   onClick={() => openLoanModal(item)}
                                   disabled={!canLoan}
-                                  className="text-sky-400 underline disabled:no-underline disabled:opacity-40"
+                                  className="text-teal-400 underline disabled:no-underline disabled:opacity-40"
                                 >
                                   {t('inventory_register_loan') || 'Prestamo'}
                                 </button>
                                 {activeItemLoans.length > 0 && (
                                   <button
                                     onClick={() => onReturnLoan?.(activeItemLoans[0]?.id)}
-                                    className="text-emerald-400 underline"
+                                    className="text-teal-400 underline"
                                   >
                                     {t('inventory_return') || 'Registrar devolucion'}
                                   </button>
@@ -586,7 +586,7 @@ export default function InventoryView({
                         {loan.borrowerName || 'Member'} · {loan.quantity || 1}
                         {loan.dueDate ? ` · ${t('inventory_due_date') || 'Vence'} ${loan.dueDate}` : ''}
                       </span>
-                      <button onClick={() => onReturnLoan?.(loan.id)} className="text-emerald-400 underline">
+                      <button onClick={() => onReturnLoan?.(loan.id)} className="text-teal-400 underline">
                         {t('inventory_return') || 'Registrar devolucion'}
                       </button>
                     </div>
@@ -598,7 +598,7 @@ export default function InventoryView({
                 <button
                   onClick={submitLoan}
                   disabled={!loanDraft.membershipId || loanModalAvailableQty <= 0}
-                  className="rounded bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded bg-teal-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {t('inventory_register_loan') || 'Prestamo'}
                 </button>
@@ -636,7 +636,7 @@ export default function InventoryView({
                       {state === 'overdue' && <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-semibold text-red-300">{t('inventory_overdue') || 'Vencido'}</span>}
                       {state === 'soon' && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">{t('inventory_due_soon') || 'Por vencer'}</span>}
                       {canManageInventory && (
-                        <button onClick={() => onReturnLoan?.(loan.id)} className="text-emerald-400 underline">
+                        <button onClick={() => onReturnLoan?.(loan.id)} className="text-teal-400 underline">
                           {t('inventory_return') || 'Registrar devolucion'}
                         </button>
                       )}

@@ -295,7 +295,7 @@ export default function AdminView({
                         <button
                           type="button"
                           onClick={() => onApproveSkillProposal?.(p.id)}
-                          className="text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-2 py-1 rounded"
+                          className="text-xs bg-teal-500 hover:bg-teal-400 text-black font-semibold px-2 py-1 rounded"
                         >
                           {tFn('approve') || 'Aprobar'}
                         </button>
@@ -471,7 +471,7 @@ export default function AdminView({
       </div>
 
       {/* ═══════════ TAREAS — flujo Solicitar Revisión ═══════════ */}
-      <div className="border-l-4 border-pink-600/50 pl-4">
+      <div className="border-l-4 border-teal-600/50 pl-4">
         <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_tasks') || 'Tareas'}</h3>
         <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_tasks_hint') || 'Puntos por calificación en el flujo "Solicitar Revisión". Al guardar se aplican retroactivamente a todos los eventos existentes.'}</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

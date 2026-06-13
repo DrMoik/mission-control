@@ -22,7 +22,7 @@ for (const [path, mod] of Object.entries(iconModules)) {
 export const ACHIEVEMENT_ICON_COLORS = [
   { id: '', label: 'Por defecto', hex: null, filter: null },
   { id: 'amber', label: 'Ámbar', hex: '#f59e0b', filter: 'brightness(0) saturate(100%) invert(70%) sepia(89%) saturate(1020%) hue-rotate(357deg)' },
-  { id: 'emerald', label: 'Esmeralda', hex: '#10b981', filter: 'brightness(0) saturate(100%) invert(70%) sepia(68%) saturate(1000%) hue-rotate(130deg)' },
+  { id: 'teal', label: 'Esmeralda', hex: '#10b981', filter: 'brightness(0) saturate(100%) invert(70%) sepia(68%) saturate(1000%) hue-rotate(130deg)' },
   { id: 'cyan', label: 'Cian', hex: '#06b6d4', filter: 'brightness(0) saturate(100%) invert(72%) sepia(65%) saturate(800%) hue-rotate(165deg)' },
   { id: 'blue', label: 'Azul', hex: '#3b82f6', filter: 'brightness(0) saturate(100%) invert(55%) sepia(98%) saturate(1500%) hue-rotate(210deg)' },
   { id: 'violet', label: 'Violeta', hex: '#8b5cf6', filter: 'brightness(0) saturate(100%) invert(60%) sepia(90%) saturate(1200%) hue-rotate(250deg)' },
@@ -37,7 +37,7 @@ export const ACHIEVEMENT_ICON_COLORS = [
 
 /** Categories (merit families) — icons aligned to family meaning. Matches MERIT_FAMILIES_DEFAULT. */
 export const ACHIEVEMENT_ICON_CATEGORIES = {
-  general:       { label: 'Logros generales',                icons: ['trophy', 'medal', 'ribbon', 'crown-coin', 'star-prominences', 'star-cycle', 'gems', 'medal-skull', 'emerald', 'diamond-hard', 'sun', 'moon'] },
+  general:       { label: 'Logros generales',                icons: ['trophy', 'medal', 'ribbon', 'crown-coin', 'star-prominences', 'star-cycle', 'gems', 'medal-skull', 'teal', 'diamond-hard', 'sun', 'moon'] },
   technical:     { label: 'Técnico',                         icons: ['gears', 'cog', 'anvil', 'gear-hammer', 'robot-golem', 'test-tubes', 'erlenmeyer', 'molecule', 'atomic-slashes', 'arcing-bolt', 'bubbling-flask', 'compass', 'fire-ring', 'processor', 'microchip', 'ram', 'laptop', 'pc', 'database', 'keyboard'] },
   leadership:    { label: 'Liderazgo',                       icons: ['crown', 'laurel-crown', 'eagle-emblem', 'rally-the-troops', 'winged-sword', 'checked-shield', 'sword-clash'] },
   collaboration: { label: 'Colaboración',                    icons: ['all-for-one', 'paw-heart', 'conversation', 'muscle-up', 'feather'] },
@@ -78,7 +78,7 @@ export const ACHIEVEMENT_ICON_KEYS = [
     ...Object.values(ACHIEVEMENT_ICON_CATEGORIES).flatMap((g) => g.icons),
     ...Object.values(ACHIEVEMENT_ICON_AREAS).flatMap((g) => g.icons),
     'trophy', 'medal', 'ribbon', 'crown-coin', 'medal-skull', 'star-prominences', 'star-cycle',
-    'gems', 'emerald', 'diamond-hard', 'sun', 'moon', 'butterfly', 'sprout', 'sword-clash',
+    'gems', 'teal', 'diamond-hard', 'sun', 'moon', 'butterfly', 'sprout', 'sword-clash',
   ]),
 ];
 

@@ -305,7 +305,7 @@ function FondosTab({
                       <td className="px-3 py-2.5 text-content-secondary whitespace-nowrap">{formatDate(e.date)}</td>
                       <td className="px-3 py-2.5 text-content-tertiary text-[11px]">{accountLabel(acc)}</td>
                       <td className="px-3 py-2.5 text-content-primary">{e.description || '—'}</td>
-                      <td className="px-3 py-2.5 text-right text-emerald-400">{e.type === 'in' ? formatMoney(e.amount) : '—'}</td>
+                      <td className="px-3 py-2.5 text-right text-teal-400">{e.type === 'in' ? formatMoney(e.amount) : '—'}</td>
                       <td className="px-3 py-2.5 text-right text-red-400">{e.type === 'out' ? formatMoney(e.amount) : '—'}</td>
                       <td className="px-3 py-2.5 text-content-tertiary">{e.category || '—'}</td>
                       <td className="px-3 py-2.5 text-right font-mono text-content-primary">{formatMoney(e._balanceAfter)}</td>
@@ -474,9 +474,9 @@ function VentasTab({
     <div className="space-y-5">
       {/* ── Summary tiles ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 shadow-surface-sm">
+        <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">{t('sales_total_confirmed')}</div>
-          <div className="text-2xl font-bold text-emerald-400">{formatMoney(totalConfirmed)}</div>
+          <div className="text-2xl font-bold text-teal-400">{formatMoney(totalConfirmed)}</div>
           <div className="text-xs text-content-tertiary mt-0.5">{confirmedSales.length} {t('sales_confirmed_sales')}</div>
         </div>
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 shadow-surface-sm">
@@ -514,7 +514,7 @@ function VentasTab({
                   <span className="text-sm text-content-primary">{leader.name}</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-semibold text-emerald-400">{formatMoney(leader.amount)}</div>
+                  <div className="text-sm font-semibold text-teal-400">{formatMoney(leader.amount)}</div>
                   <div className="text-[11px] text-content-tertiary">{leader.count} {t('sales_confirmed_sales')}</div>
                 </div>
               </div>
@@ -799,14 +799,14 @@ function VentasTab({
                     <div className="flex items-start gap-3 min-w-0">
                       <div className="mt-0.5 shrink-0">
                         {isConfirmed
-                          ? <CheckCircle2 className="w-4 h-4 text-emerald-400" strokeWidth={2} />
+                          ? <CheckCircle2 className="w-4 h-4 text-teal-400" strokeWidth={2} />
                           : <Clock className="w-4 h-4 text-amber-400" strokeWidth={2} />
                         }
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-0.5">
                           <span className="text-sm text-content-primary font-medium">{sale.sellerName}</span>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isConfirmed ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isConfirmed ? 'bg-teal-500/15 text-teal-400' : 'bg-amber-500/15 text-amber-400'}`}>
                             {isConfirmed ? t('sales_status_confirmed') : t('sales_status_pending')}
                           </span>
                           <span className="text-xs text-content-tertiary">{formatDate(sale.date)}</span>

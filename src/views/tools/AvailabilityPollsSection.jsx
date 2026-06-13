@@ -165,15 +165,15 @@ function SelectionMatrix({
                 const baseClass = !enabled
                   ? 'bg-slate-950/30 text-slate-700'
                   : isAgreed
-                    ? 'bg-emerald-300 border-emerald-200 text-slate-950'
+                    ? 'bg-teal-300 border-teal-200 text-slate-950'
                     : intensity >= 0.9
-                      ? 'bg-emerald-300/95 border-emerald-200/90 text-slate-950'
+                      ? 'bg-teal-300/95 border-teal-200/90 text-slate-950'
                       : intensity >= 0.7
-                        ? 'bg-emerald-400/70 border-emerald-300/80 text-slate-950'
+                        ? 'bg-teal-400/70 border-teal-300/80 text-slate-950'
                         : intensity >= 0.45
-                          ? 'bg-emerald-500/45 border-emerald-400/65 text-slate-100'
+                          ? 'bg-teal-500/45 border-teal-400/65 text-slate-100'
                           : intensity > 0
-                            ? 'bg-emerald-700/28 border-emerald-600/45 text-slate-200'
+                            ? 'bg-teal-700/28 border-teal-600/45 text-slate-200'
                             : 'bg-slate-900/90 border-slate-800 text-slate-300';
 
                 return (
@@ -184,7 +184,7 @@ function SelectionMatrix({
                         disabled={readOnly}
                         onClick={() => onToggleSlot?.(date, time)}
                         className={`group relative flex h-9 w-full min-w-[64px] items-center justify-center rounded-md border px-1 py-0.5 text-center transition-all sm:h-10 sm:min-w-[72px] ${
-                          readOnly ? 'cursor-default' : 'hover:-translate-y-[1px] hover:border-emerald-200/80'
+                          readOnly ? 'cursor-default' : 'hover:-translate-y-[1px] hover:border-teal-200/80'
                         } ${baseClass}`}
                         title={
                           isAgreed
@@ -508,7 +508,7 @@ export default function AvailabilityPollsSection({
           <Card
             key={poll.id}
             padding={false}
-            className={`overflow-hidden${poll.agreedSlot ? ' border-l-2 border-l-emerald-400' : ''}`}
+            className={`overflow-hidden${poll.agreedSlot ? ' border-l-2 border-l-teal-400' : ''}`}
           >
             <button
               type="button"
@@ -533,7 +533,7 @@ export default function AvailabilityPollsSection({
                     <span>{proposedSlotKeys.length} horario{proposedSlotKeys.length === 1 ? '' : 's'} propuesto{proposedSlotKeys.length === 1 ? '' : 's'}</span>
                     {bestSlot && !poll.agreedSlot && <span>Mejor opcion actual: {formatDate(bestSlot.date)} a las {bestSlot.time}</span>}
                     {poll.agreedSlot && (
-                      <span className="font-semibold text-emerald-300">
+                      <span className="font-semibold text-teal-300">
                         Acordado: {formatDate(poll.agreedSlot.date)} a las {poll.agreedSlot.time}
                       </span>
                     )}
@@ -576,11 +576,11 @@ export default function AvailabilityPollsSection({
                     {!poll.agreedSlot && (
                       <div className="flex flex-wrap gap-2 text-[11px] text-slate-400">
                         <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2 py-1">
-                          <span className="h-2.5 w-4 rounded-full border border-emerald-50/95 bg-transparent" />
+                          <span className="h-2.5 w-4 rounded-full border border-teal-50/95 bg-transparent" />
                           Tu selección
                         </span>
                         <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2 py-1">
-                          <span className="h-1.5 w-4 rounded-full bg-emerald-200" />
+                          <span className="h-1.5 w-4 rounded-full bg-teal-200" />
                           Más coincidencias
                         </span>
                       </div>
@@ -639,7 +639,7 @@ export default function AvailabilityPollsSection({
                                   Acordar
                                 </Button>
                               ) : isAgreed ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-[11px] font-semibold text-emerald-300">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/20 px-2 py-1 text-[11px] font-semibold text-teal-300">
                                   <Check className="h-3.5 w-3.5" />
                                   Final
                                 </span>
@@ -657,7 +657,7 @@ export default function AvailabilityPollsSection({
                       <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Estado del acuerdo</div>
                       {poll.agreedSlot ? (
                         <div className="space-y-2">
-                          <div className="text-sm font-semibold text-emerald-300">
+                          <div className="text-sm font-semibold text-teal-300">
                             {formatDate(poll.agreedSlot.date)} a las {poll.agreedSlot.time}
                           </div>
                           <div className="text-xs text-slate-500">

@@ -32,7 +32,7 @@ export default function NotificationPreferencesCard({
           </div>
           <input
             type="checkbox"
-            className="h-4 w-4 accent-emerald-500"
+            className="h-4 w-4 accent-teal-500"
             checked={Boolean(preferences.assignmentsEnabled)}
             disabled={!canManageToggles}
             onChange={(event) => onTogglePreference('assignmentsEnabled', event.target.checked)}
@@ -46,7 +46,7 @@ export default function NotificationPreferencesCard({
           </div>
           <input
             type="checkbox"
-            className="h-4 w-4 accent-emerald-500"
+            className="h-4 w-4 accent-teal-500"
             checked={Boolean(preferences.sessionsEnabled)}
             disabled={!canManageToggles}
             onChange={(event) => onTogglePreference('sessionsEnabled', event.target.checked)}
@@ -59,15 +59,15 @@ export default function NotificationPreferencesCard({
       )}
 
       {isSupported && permissionState !== 'granted' && (
-        <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-emerald-700/40 bg-emerald-950/20 px-3 py-2">
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-teal-700/40 bg-teal-950/20 px-3 py-2">
           <div>
-            <p className="text-sm text-emerald-200">{t('notifications_enable_title')}</p>
-            <p className="text-[11px] text-emerald-300/80">{t('notifications_enable_hint')}</p>
+            <p className="text-sm text-teal-200">{t('notifications_enable_title')}</p>
+            <p className="text-[11px] text-teal-300/80">{t('notifications_enable_hint')}</p>
           </div>
           <button
             type="button"
             onClick={onRequestPermission}
-            className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-950 transition-colors hover:bg-emerald-400"
+            className="rounded-lg bg-teal-500 px-3 py-1.5 text-xs font-semibold text-slate-950 transition-colors hover:bg-teal-400"
           >
             {t('notifications_enable_cta')}
           </button>
@@ -75,7 +75,7 @@ export default function NotificationPreferencesCard({
       )}
 
       {(registrationState === 'error' || lastError) && (
-        <p className="mt-3 text-xs text-rose-300">{lastError || t('notifications_error')}</p>
+        <p className="mt-3 text-xs text-red-300">{lastError || t('notifications_error')}</p>
       )}
     </div>
   );
