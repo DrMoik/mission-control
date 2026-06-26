@@ -807,6 +807,7 @@ export const STRINGS = {
 
     // ── Tools — scope & last-edited ───────────────────────────────────────────
     scope_global:         'Global (todos los miembros)',
+    scope_leadership:     'Liderazgo general',
     scope_category:       'Área:',
     scope_label:          'Alcance',
     scope_select_ph:      'Seleccionar alcance…',

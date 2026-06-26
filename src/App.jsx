@@ -38,6 +38,7 @@ import {
   MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT, SKILL_DICTIONARY_DEFAULT, SKILL_TYPES,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES, SELECTED_TEAM_STORAGE_KEY,
+  LEADERSHIP_SCOPE,
 } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels, isWeekEligibleForPoints, toGoogleDrivePreviewUrl, toGoogleDriveOpenUrl, isMechanicsCategoryName } from './utils.js';
 import { NAV_DOMAINS, VIEW_TO_DOMAIN } from './config/navigation.js';
@@ -1553,6 +1554,7 @@ export default function App() {
   const canEditToolItem = React.useCallback((item) => {
     if (!item) return false;
     if (canEdit) return true;                                    // admin always can
+    if (item.categoryId === LEADERSHIP_SCOPE) return canEditTools; // leadership scope: leader+
     if (!item.categoryId) return canEditTools;                  // global: leader+ is fine
     // Category-specific: must be a leader of that exact category
     return memberRole === 'leader' && currentMembership?.categoryId === item.categoryId;

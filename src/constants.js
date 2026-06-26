@@ -27,6 +27,10 @@ export const ROLE_RANK = Object.fromEntries(ROLE_ORDER.map((r, i) => [r, i]));
 /** Roles that can assign a given logro. One per logro. */
 export const ASSIGNABLE_BY_OPTIONS = ['leader', 'teamAdmin', 'facultyAdvisor'];
 
+/** Sentinel `categoryId` value for tool items scoped to leadership only.
+ *  Items with this scope are visible exclusively to leaders and above. */
+export const LEADERSHIP_SCOPE = '__leadership__';
+
 /** Sugerencias de colaboración — shown in profile dropdown. Defaults in Spanish. */
 export const COLLAB_TAG_SUGGESTIONS = [
   'OpenCV', 'Python', 'C++', 'CAD', 'SolidWorks', 'Arduino', 'Raspberry Pi',

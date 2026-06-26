@@ -6,6 +6,7 @@ import Button from '../../components/ui/Button.jsx';
 import Input from '../../components/ui/Input.jsx';
 import Textarea from '../../components/ui/Textarea.jsx';
 import { ensureString } from '../../utils.js';
+import { LEADERSHIP_SCOPE } from '../../constants.js';
 
 const createActionItem = () => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -21,7 +22,7 @@ const emptyForm = () => ({
   agenda: '',
   discussion: '',
   decisions: '',
-  teamMembersText: '',
+  teamMembers: [],
   nextMeetingDate: '',
   categoryId: '',
   actionItems: [createActionItem()],
@@ -38,10 +39,10 @@ const normalizeMembers = (value) => {
   return [];
 };
 
-const membersToText = (meeting) => {
+const membersToArray = (meeting) => {
   const members = normalizeMembers(meeting.teamMembers);
-  if (members.length > 0) return members.join('\n');
-  return ensureString(meeting.attendees, lang);
+  if (members.length > 0) return members;
+  return normalizeMembers(meeting.attendees);
 };
 
 const normalizeActionItems = (items = []) => {
@@ -72,7 +73,7 @@ const startDraftFromMeeting = (meeting) => ({
   agenda: ensureString(meeting.agenda, lang),
   discussion: ensureString(meeting.discussion || meeting.notes, lang),
   decisions: ensureString(meeting.decisions, lang),
-  teamMembersText: membersToText(meeting),
+  teamMembers: membersToArray(meeting),
   nextMeetingDate: meeting.nextMeetingDate || '',
   categoryId: meeting.categoryId || '',
   actionItems: normalizeActionItems(meeting.actionItems),
@@ -104,6 +105,59 @@ function SectionPanel({ title, children }) {
 function FieldLabel({ children }) {
   return (
     <label className="block text-[11px] font-semibold uppercase tracking-[0.15em] text-content-tertiary">{children}</label>
+  );
+}
+
+function ScopeSelect({ value, onChange, categories }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={`${selectCls} mt-1`}>
+      <option value="">{t('scope_global')}</option>
+      <option value={LEADERSHIP_SCOPE}>{t('scope_leadership')}</option>
+      {categories.map((category) => (
+        <option key={category.id} value={category.id}>
+          {t('scope_category')} {ensureString(category.name, lang)}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function TeamMemberSelect({ memberships = [], selected = [], onChange }) {
+  const activeNames = memberships
+    .filter((m) => m.status === 'active')
+    .map((m) => ({ id: m.id, name: ensureString(m.displayName, lang).trim() }))
+    .filter((m) => m.name);
+  const selectedSet = new Set(selected);
+  const available = activeNames.filter((m) => !selectedSet.has(m.name));
+
+  const addMember = (name) => {
+    const trimmed = (name || '').trim();
+    if (!trimmed || selectedSet.has(trimmed)) return;
+    onChange([...selected, trimmed]);
+  };
+  const removeMember = (name) => onChange(selected.filter((n) => n !== name));
+
+  return (
+    <div className="mt-1 space-y-2">
+      <select value="" onChange={(e) => addMember(e.target.value)} className={selectCls}>
+        <option value="">Seleccionar integrante…</option>
+        {available.map((m) => (
+          <option key={m.id} value={m.name}>{m.name}</option>
+        ))}
+      </select>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((name, index) => (
+            <span key={`${name}-${index}`} className="inline-flex items-center gap-1 rounded-full border border-slate-600 bg-surface-overlay px-2 py-0.5 text-xs text-content-secondary">
+              {name}
+              <button type="button" onClick={() => removeMember(name)} className="text-content-tertiary transition-colors hover:text-red-400" title={t('delete')}>
+                <X className="h-3 w-3" strokeWidth={2} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -181,7 +235,7 @@ function ActionItemsTable({ meeting, canEditThis, onToggleAction, onRemoveAction
 }
 
 export default function MeetingsSection({
-  meetings, categories, canCreate, resolveCanEdit,
+  meetings, categories, memberships = [], canCreate, resolveCanEdit,
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
 }) {
   const [form, setForm] = useState(emptyForm());
@@ -194,7 +248,7 @@ export default function MeetingsSection({
     e.preventDefault();
     const organization = form.organization.trim();
     if (!organization) return;
-    const teamMembers = normalizeMembers(form.teamMembersText);
+    const teamMembers = normalizeMembers(form.teamMembers);
     const actionItems = sanitizeActionItems(form.actionItems);
     await onCreateMeeting({
       title: organization,
@@ -235,7 +289,7 @@ export default function MeetingsSection({
     if (!editDraft) return;
     const organization = editDraft.organization.trim();
     if (!organization) return;
-    const teamMembers = normalizeMembers(editDraft.teamMembersText);
+    const teamMembers = normalizeMembers(editDraft.teamMembers);
     const discussion = editDraft.discussion.trim();
     await onUpdateMeeting(meeting.id, {
       title: organization,
@@ -320,10 +374,8 @@ export default function MeetingsSection({
           <div className="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_180px]">
             <div>
               <FieldLabel>Integrantes del equipo</FieldLabel>
-              <Textarea value={form.teamMembersText}
-                onChange={(e) => setForm((c) => ({ ...c, teamMembersText: e.target.value }))}
-                placeholder={'Un integrante por linea\nTambien puedes separar por comas'}
-                className="mt-1 min-h-[110px]" />
+              <TeamMemberSelect memberships={memberships} selected={form.teamMembers}
+                onChange={(teamMembers) => setForm((c) => ({ ...c, teamMembers }))} />
             </div>
             <div className="space-y-3">
               <div>
@@ -334,16 +386,8 @@ export default function MeetingsSection({
               </div>
               <div>
                 <FieldLabel>{t('scope_label')}</FieldLabel>
-                <select value={form.categoryId}
-                  onChange={(e) => setForm((c) => ({ ...c, categoryId: e.target.value }))}
-                  className={`${selectCls} mt-1`}>
-                  <option value="">{t('scope_global')}</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {t('scope_category')} {ensureString(category.name, lang)}
-                    </option>
-                  ))}
-                </select>
+                <ScopeSelect value={form.categoryId} categories={categories}
+                  onChange={(categoryId) => setForm((c) => ({ ...c, categoryId }))} />
               </div>
             </div>
           </div>
@@ -419,7 +463,9 @@ export default function MeetingsSection({
                         </div>
                       )}
                       <div className="mt-1.5">
-                        {meeting.categoryId ? (
+                        {meeting.categoryId === LEADERSHIP_SCOPE ? (
+                          <span className="rounded-full bg-amber-900/40 px-1.5 py-0.5 text-[9px] text-amber-300">{t('scope_leadership')}</span>
+                        ) : meeting.categoryId ? (
                           <span className="rounded-full bg-blue-900/40 px-1.5 py-0.5 text-[9px] text-blue-300">
                             {t('scope_category')} {ensureString(categories.find((c) => c.id === meeting.categoryId)?.name, lang) || meeting.categoryId}
                           </span>
@@ -523,9 +569,8 @@ export default function MeetingsSection({
                       <div className="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_180px]">
                         <div>
                           <FieldLabel>Integrantes del equipo</FieldLabel>
-                          <Textarea value={editDraft.teamMembersText}
-                            onChange={(e) => setEditDraft((c) => ({ ...c, teamMembersText: e.target.value }))}
-                            className="mt-1 min-h-[110px]" />
+                          <TeamMemberSelect memberships={memberships} selected={editDraft.teamMembers}
+                            onChange={(teamMembers) => setEditDraft((c) => ({ ...c, teamMembers }))} />
                         </div>
                         <div className="space-y-3">
                           <div>
@@ -536,16 +581,8 @@ export default function MeetingsSection({
                           </div>
                           <div>
                             <FieldLabel>{t('scope_label')}</FieldLabel>
-                            <select value={editDraft.categoryId}
-                              onChange={(e) => setEditDraft((c) => ({ ...c, categoryId: e.target.value }))}
-                              className={`${selectCls} mt-1`}>
-                              <option value="">{t('scope_global')}</option>
-                              {categories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                  {t('scope_category')} {ensureString(category.name, lang)}
-                                </option>
-                              ))}
-                            </select>
+                            <ScopeSelect value={editDraft.categoryId} categories={categories}
+                              onChange={(categoryId) => setEditDraft((c) => ({ ...c, categoryId }))} />
                           </div>
                         </div>
                       </div>

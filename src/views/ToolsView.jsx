@@ -28,6 +28,7 @@ import MeetingsSection         from './tools/MeetingsSection.jsx';
 import GoalsSection            from './tools/GoalsSection.jsx';
 import { BilingualField, Button, Input, HowToUse, ScopeFilter } from '../components/ui/index.js';
 import { getL, toL, ensureString } from '../utils.js';
+import { LEADERSHIP_SCOPE } from '../constants.js';
 
 // SWOT quadrant metadata (colours are language-independent)
 const SWOT_META = [
@@ -121,14 +122,16 @@ export default function ToolsView({
 
   // ── Visibility helper ──────────────────────────────────────────────────────
   // An item is visible to the current user when:
+  //   • it is leadership-scoped → only leaders and above (canEditTools) or admins, OR
   //   • it is global (no categoryId), OR
   //   • it belongs to the user's category, OR
   //   • the user is an admin (canEdit)
   const isVisible = React.useCallback((item) => {
+    if (item.categoryId === LEADERSHIP_SCOPE) return canEdit || canEditTools;
     if (!item.categoryId) return true;
     if (canEdit) return true;
     return item.categoryId === userCategoryId;
-  }, [canEdit, userCategoryId]);
+  }, [canEdit, canEditTools, userCategoryId]);
 
   // Apply both visibility AND scope-filter
   const filterItems = React.useCallback((items) => {
@@ -898,6 +901,7 @@ export default function ToolsView({
           <MeetingsSection
             meetings={visibleMeetings}
             categories={categories}
+            memberships={memberships}
             canCreate={canCreate}
             resolveCanEdit={resolveCanEdit}
             onCreateMeeting={onCreateMeeting}

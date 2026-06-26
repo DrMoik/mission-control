@@ -713,4 +713,38 @@ service cloud.firestore {
           isLeaderOrAbove(resource.data.teamId) &&
           request.resource.data.teamId == resource.data.teamId &&
           request.resource.data.channelId == resource.data.channelId &&
-          request.resource.data.diff(resource.
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt', 'respondedByMembershipId', 'updatedAt'])
+        );
+      allow delete: if isPlatformAdmin() || isLeaderOrAbove(resource.data.ownerTeamId);
+    }
+
+    match /crossTeamMessages/{messageId} {
+      allow read: if request.auth != null &&
+        resource.data.channelId != null &&
+        exists(/databases/$(database)/documents/crossTeamChannels/$(resource.data.channelId)) &&
+        isLeaderOrAboveInTeamList(
+          get(/databases/$(database)/documents/crossTeamChannels/$(resource.data.channelId)).data.get('memberTeamIds', [])
+        );
+      allow create: if request.auth != null &&
+        request.resource.data.channelId != null &&
+        request.resource.data.teamId != null &&
+        exists(/databases/$(database)/documents/crossTeamChannels/$(request.resource.data.channelId)) &&
+        isLeaderOrAbove(request.resource.data.teamId) &&
+        (
+          (
+            channelTeamExists(request.resource.data.channelId, request.resource.data.teamId) &&
+            channelTeamDoc(request.resource.data.channelId, request.resource.data.teamId).data.status in ['owner', 'member']
+          ) ||
+          get(/databases/$(database)/documents/crossTeamChannels/$(request.resource.data.channelId)).data.get('memberTeamIds', []).hasAny([request.resource.data.teamId])
+        );
+      allow update, delete: if false;
+    }
+
+    match /auditLog/{logId} {
+      allow read: if isTeamAdmin(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update, delete: if false;
+    }
+
+  }
+}
