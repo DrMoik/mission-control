@@ -421,6 +421,10 @@ export const STRINGS = {
     no_members_filter:    'Ningún miembro coincide con los filtros.',
     suspended_header:     'Suspendidos',
     reinstate:            'Reactivar',
+    archive_member:       'Archivar',
+    archived_header:      'Archivados',
+    archived_stat:        'Archivados',
+    no_archived_members:  'No hay miembros archivados.',
 
     // ── Logros (antes Méritos) ─────────────────────────────────────────────────
     merits_title:          'Logros y Reconocimientos',

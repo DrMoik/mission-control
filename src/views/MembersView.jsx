@@ -62,6 +62,7 @@ export default function MembersView({
   knowledgeAreas = [], skillDictionary = [],
   onUpdateRole, onAssignCategory, onAddStrike, onRemoveStrike,
   onViewProfile, onCreateGhostMember, onApproveMember, onRejectMember,
+  onArchiveMember, onUnarchiveMember, canArchiveMembers = false,
 }) {
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
 
@@ -83,6 +84,7 @@ export default function MembersView({
   const pending   = memberships.filter((m) => m.status === 'pending');
   const active    = memberships.filter((m) => m.status === 'active');
   const suspended = memberships.filter((m) => m.status === 'suspended');
+  const archived  = memberships.filter((m) => m.status === 'inactive');
 
   const getSkillLabel = (id) => id.startsWith('proposed:') ? id.slice(9) : (skillDictionary.find((x) => x.id === id)?.label || knowledgeAreas.find((x) => x.id === id)?.name);
 
@@ -197,7 +199,7 @@ export default function MembersView({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-content-primary tracking-tight">{t('members_title')}</h2>
-          <p className="text-sm text-content-secondary mt-0.5">{active.length} miembros activos · {suspended.length} suspendidos</p>
+          <p className="text-sm text-content-secondary mt-0.5">{active.length} miembros activos · {suspended.length} suspendidos · {archived.length} archivados</p>
         </div>
         {(canEdit || isPlatformAdmin) && (
           <div className="shrink-0">
@@ -214,7 +216,7 @@ export default function MembersView({
       </div>
 
       {/* ── Stat tiles ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">Activos</div>
           <div className="text-2xl font-bold text-content-primary">{active.length}</div>
@@ -230,6 +232,10 @@ export default function MembersView({
         <div className="rounded-xl border border-red-900/30 bg-red-950/10 p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">Suspendidos</div>
           <div className="text-2xl font-bold text-red-400">{suspended.length}</div>
+        </div>
+        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+          <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">{t('archived_stat')}</div>
+          <div className="text-2xl font-bold text-content-secondary">{archived.length}</div>
         </div>
       </div>
 
@@ -373,6 +379,7 @@ export default function MembersView({
                 <th className="px-3 py-2.5"><SortHeader col="category" label={t('th_category')} {...sortHeaderProps} /></th>
                 <th className="px-3 py-2.5"><SortHeader col="strikes" label={t('th_strikes')} {...sortHeaderProps} /></th>
                 {canEdit && <th className="px-3 py-2.5">{t('hr_complaints_count')}</th>}
+                {canArchiveMembers && <th className="px-3 py-2.5">{t('th_action')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -429,11 +436,19 @@ export default function MembersView({
                       })()}
                     </td>
                   )}
+                  {canArchiveMembers && (
+                    <td className="px-3 py-2.5">
+                      <button
+                        onClick={() => onArchiveMember?.(m.id)}
+                        className="text-[10px] text-content-tertiary border border-slate-600/60 rounded px-1.5 py-0.5 hover:bg-surface-overlay hover:text-content-primary transition-colors"
+                      >{t('archive_member')}</button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={canEdit ? 5 : 4} className="px-3 py-8 text-content-tertiary text-center">{t('no_members_filter')}</td>
+                  <td colSpan={4 + (canEdit ? 1 : 0) + (canArchiveMembers ? 1 : 0)} className="px-3 py-8 text-content-tertiary text-center">{t('no_members_filter')}</td>
                 </tr>
               )}
             </tbody>
@@ -467,6 +482,37 @@ export default function MembersView({
                       {(canRemoveStrikeMember ? canRemoveStrikeMember(m) : (canStrikeMember ? canStrikeMember(m) : canEdit)) && (
                         <button onClick={() => onRemoveStrike(m.id)} className="text-[11px] text-primary hover:underline">{t('reinstate')}</button>
                       )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Archived members ── */}
+      {canArchiveMembers && archived.length > 0 && (
+        <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-700/40 text-xs text-content-tertiary font-semibold">
+            {t('archived_header')} ({archived.length})
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="text-left text-content-tertiary border-b border-slate-700/40 bg-surface-sunken/30">
+                  <th className="px-3 py-2.5">{t('th_member')}</th>
+                  <th className="px-3 py-2.5">{t('th_role')}</th>
+                  <th className="px-3 py-2.5">{t('th_action')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {archived.map((m) => (
+                  <tr key={m.id} className="border-b border-slate-700/40 opacity-60">
+                    <td className="px-3 py-2.5 text-content-primary">{ensureString(m.displayName)}</td>
+                    <td className="px-3 py-2.5"><RoleBadge role={m.role} /></td>
+                    <td className="px-3 py-2.5">
+                      <button onClick={() => onUnarchiveMember?.(m.id)} className="text-[11px] text-primary hover:underline">{t('reinstate')}</button>
                     </td>
                   </tr>
                 ))}

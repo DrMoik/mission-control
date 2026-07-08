@@ -20,7 +20,7 @@ import { db } from './firebase.js';
 import {
   collection, doc, setDoc, updateDoc, deleteDoc,
   addDoc, query, where, serverTimestamp, Timestamp, runTransaction,
-  getDocs, writeBatch, arrayUnion, arrayRemove,
+  getDocs, writeBatch, arrayUnion, arrayRemove, deleteField,
 } from 'firebase/firestore';
 import { useAuth } from './hooks/useAuth.js';
 import { useFirebaseSubscriptions } from './hooks/useFirebaseSubscriptions.js';
@@ -198,6 +198,10 @@ export default function App() {
   );
   const canUseCrossTeamChannels = effectiveAdmin || atLeast(effectiveRole, 'leader');
   const canManageCrossTeamChannels = isPlatformAdmin || atLeast(memberRole, 'leader');
+  // Archiving members: team admins/faculty advisors, plus "general" leaders
+  // (leader role with no categoryId — i.e. not scoped to a single area).
+  // Area-scoped leaders cannot archive.
+  const canArchiveMembers = canEdit || (memberRole === 'leader' && !currentMembership?.categoryId);
 
   const currentTeam = useMemo(
     () => allTeams.find((t) => t.id === selectedTeamId) || null,
@@ -805,6 +809,25 @@ export default function App() {
   const handleRejectMember = async (membershipId) => {
     if (!canEdit) return;
     await deleteDoc(doc(db, 'memberships', membershipId));
+  };
+
+  // Archive a single member outside of a full season reset — same 'inactive'
+  // status season reset uses for departing members, so leaderboards, season
+  // stats and rosters already exclude them. Reversible via handleUnarchiveMember.
+  const handleArchiveMember = async (membershipId) => {
+    if (!canArchiveMembers) return;
+    await updateDoc(doc(db, 'memberships', membershipId), {
+      status: 'inactive',
+      inactiveSince: serverTimestamp(),
+    });
+  };
+
+  const handleUnarchiveMember = async (membershipId) => {
+    if (!canArchiveMembers) return;
+    await updateDoc(doc(db, 'memberships', membershipId), {
+      status: 'active',
+      inactiveSince: deleteField(),
+    });
   };
 
   const handleUpdateMemberRole = async (membershipId, newRole) => {
@@ -3057,6 +3080,7 @@ export default function App() {
                   canViewFunding,
                   canEditTools,
                   canManageSessions,
+                  canArchiveMembers,
                 }}
                 options={{
                   careerOptions,
@@ -3093,6 +3117,8 @@ export default function App() {
                   handleCreateGhostMember,
                   handleApproveMember,
                   handleRejectMember,
+                  handleArchiveMember,
+                  handleUnarchiveMember,
                   handleCreateMerit,
                   handleUpdateMerit,
                   handleDeleteMerit,

@@ -91,6 +91,7 @@ export default function AppViewContent({
     canViewFunding,
     canEditTools,
     canManageSessions,
+    canArchiveMembers,
   } = permissions;
   const {
     careerOptions,
@@ -127,6 +128,8 @@ export default function AppViewContent({
     handleCreateGhostMember,
     handleApproveMember,
     handleRejectMember,
+    handleArchiveMember,
+    handleUnarchiveMember,
     handleCreateMerit,
     handleUpdateMerit,
     handleDeleteMerit,
@@ -326,6 +329,9 @@ export default function AppViewContent({
           onCreateGhostMember={handleCreateGhostMember}
           onApproveMember={handleApproveMember}
           onRejectMember={handleRejectMember}
+          onArchiveMember={handleArchiveMember}
+          onUnarchiveMember={handleUnarchiveMember}
+          canArchiveMembers={canArchiveMembers}
         />
       )}
       {view === 'merits' && isAtLeastRookie && (
