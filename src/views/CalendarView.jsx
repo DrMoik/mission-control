@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Calendar, CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { t, lang } from '../strings.js';
-import { BilingualField, ScopeFilter } from '../components/ui/index.js';
+import { BilingualField, ScopeFilter, TrashBin } from '../components/ui/index.js';
 import PickerField from '../components/ui/PickerField.jsx';
 import Button from '../components/ui/Button.jsx';
 import ModalOverlay from '../components/ModalOverlay.jsx';
-import { getL, toL, fillL, ensureString, parseCalendarDate } from '../utils.js';
+import { getL, toL, fillL, ensureString, parseCalendarDate, isGeneralLeadershipCategoryName } from '../utils.js';
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
 
@@ -66,12 +66,28 @@ export default function CalendarView({
   canEdit,
   canEditTools,
   resolveCanEdit,
+  trashed = {},
+  onRestoreItem,
+  onPurgeItem,
   onCreateEvent,
   onUpdateEvent,
   onDeleteEvent,
 }) {
   const userCategoryId = currentMembership?.categoryId || null;
   const today = startOfDay(new Date());
+
+  // "Liderazgo general" area: content is visible (read-only) to every leader, but
+  // only its own leaders/admins may create or edit it.
+  const generalLeadershipCategoryId = useMemo(
+    () => (categories || []).find((c) => isGeneralLeadershipCategoryName(c.name))?.id || null,
+    [categories],
+  );
+  const creatableCategories = useMemo(
+    () => (categories || []).filter(
+      (c) => !isGeneralLeadershipCategoryName(c.name) || (resolveCanEdit ? resolveCanEdit({ categoryId: c.id }) : false),
+    ),
+    [categories, resolveCanEdit],
+  );
 
   const [scopeFilter, setScopeFilter] = useState('all');
   const [viewMode, setViewMode] = useState('calendar');
@@ -86,8 +102,9 @@ export default function CalendarView({
   const isVisible = useCallback((item) => {
     if (!item.categoryId) return true;
     if (canEdit) return true;
+    if (canEditTools && item.categoryId === generalLeadershipCategoryId) return true;
     return item.categoryId === userCategoryId;
-  }, [canEdit, userCategoryId]);
+  }, [canEdit, canEditTools, userCategoryId, generalLeadershipCategoryId]);
 
   const filterItems = useCallback((items) => (
     items.filter((item) => {
@@ -321,7 +338,17 @@ export default function CalendarView({
         categories={categories}
         userCategoryId={userCategoryId}
         canEdit={canEdit}
+        extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null}
       />
+
+      {canEdit && (
+        <TrashBin
+          items={trashed?.teamEvents || []}
+          onRestore={(id) => onRestoreItem?.('teamEvents', id)}
+          onPurge={(id) => onPurgeItem?.('teamEvents', id)}
+          renderLabel={(item) => ensureString(item.title, lang) || '—'}
+        />
+      )}
 
       <div className="flex flex-wrap gap-2">
         {[
@@ -625,7 +652,7 @@ export default function CalendarView({
                   className={selectClass}
                 >
                   <option value="">{t('scope_global')}</option>
-                  {categories.map((category) => (
+                  {creatableCategories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {t('scope_category')} {ensureString(category.name, lang)}
                     </option>

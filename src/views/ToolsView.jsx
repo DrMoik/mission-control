@@ -26,8 +26,8 @@ import BoardTypeSection        from './tools/BoardTypeSection.jsx';
 import AvailabilityPollsSection from './tools/AvailabilityPollsSection.jsx';
 import MeetingsSection         from './tools/MeetingsSection.jsx';
 import GoalsSection            from './tools/GoalsSection.jsx';
-import { BilingualField, Button, Input, HowToUse, ScopeFilter } from '../components/ui/index.js';
-import { getL, toL, ensureString } from '../utils.js';
+import { BilingualField, Button, Input, HowToUse, ScopeFilter, TrashBin } from '../components/ui/index.js';
+import { getL, toL, ensureString, isGeneralLeadershipCategoryName } from '../utils.js';
 import { LEADERSHIP_SCOPE } from '../constants.js';
 
 // SWOT quadrant metadata (colours are language-independent)
@@ -67,6 +67,7 @@ export default function ToolsView({
   teamSwots = [], teamEisenhowers = [], teamPughs = [], teamBoards, teamAvailabilityPolls = [], teamMeetings, teamGoals,
   categories, memberships = [], currentMembership, memberRole, canEdit, canEditTools,
   resolveCanEdit,
+  trashed = {}, onRestoreItem, onPurgeItem,
   onCreateTask, canAssignTask,
   onCreateSwot, onUpdateSwot, onDeleteSwot,
   onCreateEisenhower, onUpdateEisenhower, onDeleteEisenhower,
@@ -120,18 +121,37 @@ export default function ToolsView({
 
   const userCategoryId = currentMembership?.categoryId || null;
 
+  // The "Liderazgo general" area: its content is visible (read-only) to every
+  // leader so general leaders can coordinate all area leaders.
+  const generalLeadershipCategoryId = React.useMemo(
+    () => (categories || []).find((c) => isGeneralLeadershipCategoryName(c.name))?.id || null,
+    [categories],
+  );
+
+  // Categories a user may pick when CREATING an item. Everyone keeps their usual
+  // options, but the "Liderazgo general" area is only creatable by its own
+  // leaders/admins — other leaders see its content read-only.
+  const creatableCategories = React.useMemo(
+    () => (categories || []).filter(
+      (c) => !isGeneralLeadershipCategoryName(c.name) || (resolveCanEdit ? resolveCanEdit({ categoryId: c.id }) : false),
+    ),
+    [categories, resolveCanEdit],
+  );
+
   // ── Visibility helper ──────────────────────────────────────────────────────
   // An item is visible to the current user when:
   //   • it is leadership-scoped → only leaders and above (canEditTools) or admins, OR
   //   • it is global (no categoryId), OR
+  //   • it belongs to the "Liderazgo general" area and the user is a leader+, OR
   //   • it belongs to the user's category, OR
   //   • the user is an admin (canEdit)
   const isVisible = React.useCallback((item) => {
     if (item.categoryId === LEADERSHIP_SCOPE) return canEdit || canEditTools;
     if (!item.categoryId) return true;
     if (canEdit) return true;
+    if (canEditTools && item.categoryId === generalLeadershipCategoryId) return true;
     return item.categoryId === userCategoryId;
-  }, [canEdit, canEditTools, userCategoryId]);
+  }, [canEdit, canEditTools, userCategoryId, generalLeadershipCategoryId]);
 
   // Apply both visibility AND scope-filter
   const filterItems = React.useCallback((items) => {
@@ -169,6 +189,20 @@ export default function ToolsView({
   // Whether the current user can CREATE a new item (regardless of scope — permission
   // is re-checked per-item in the handler)
   const canCreate = canEditTools; // any leader+ can try; scope permission enforced server-side
+
+  // Inline "Papelera" for a tool collection — recovery is team-admin only.
+  const trashLabel = (item) => ensureString(item.name ?? item.title ?? item.objective, lang) || '—';
+  const renderTrash = (collectionName, filterFn = null, labelFn = trashLabel) => {
+    if (!canEdit) return null;
+    return (
+      <TrashBin
+        items={(trashed?.[collectionName] || []).filter((item) => (filterFn ? filterFn(item) : true))}
+        onRestore={(id) => onRestoreItem?.(collectionName, id)}
+        onPurge={(id) => onPurgeItem?.(collectionName, id)}
+        renderLabel={labelFn}
+      />
+    );
+  };
 
   // ── SWOT helpers ───────────────────────────────────────────────────────────
 
@@ -257,7 +291,8 @@ export default function ToolsView({
         <div className="space-y-4">
           <HowToUse descKey="tool_desc_swot" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
-            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           <p className="text-xs text-slate-400">{t('swot_desc')}</p>
 
           {/* New SWOT form — only shown when user can create */}
@@ -277,7 +312,7 @@ export default function ToolsView({
                   className="px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary"
                 >
                   <option value="">{t('scope_global')}</option>
-                  {categories.map((c) => (
+                  {creatableCategories.map((c) => (
                     <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
                   ))}
                 </select>
@@ -379,6 +414,7 @@ export default function ToolsView({
           {visibleSwots.length === 0 && (
             <p className="text-xs text-slate-500 italic">{t('nothing_yet')}</p>
           )}
+          {renderTrash('teamSwots')}
         </div>
       )}
 
@@ -387,7 +423,8 @@ export default function ToolsView({
         <div className="space-y-4">
           <HowToUse descKey="tool_desc_eisenhower" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
-            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           {canCreate && (
             <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
               <div className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-3">{t('create_new')} Eisenhower</div>
@@ -414,7 +451,7 @@ export default function ToolsView({
                   className="px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary"
                 >
                   <option value="">{t('scope_global')}</option>
-                  {categories.map((c) => (
+                  {creatableCategories.map((c) => (
                     <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
                   ))}
                 </select>
@@ -554,6 +591,7 @@ export default function ToolsView({
           {visibleEisenhowerList.length === 0 && (
             <p className="text-xs text-slate-500 italic">{t('nothing_yet')}</p>
           )}
+          {renderTrash('teamEisenhowers')}
         </div>
       )}
 
@@ -562,7 +600,8 @@ export default function ToolsView({
         <div className="space-y-4">
           <HowToUse descKey="tool_desc_pugh" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
-            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           {canCreate && (
             <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
               <div className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-3">{t('create_new')} Pugh</div>
@@ -589,7 +628,7 @@ export default function ToolsView({
                   className="px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary"
                 >
                   <option value="">{t('scope_global')}</option>
-                  {categories.map((c) => (
+                  {creatableCategories.map((c) => (
                     <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
                   ))}
                 </select>
@@ -801,6 +840,7 @@ export default function ToolsView({
           {!selectedPugh && visiblePughList.length === 0 && (
             <p className="text-slate-500 text-sm py-4">{t('pugh_no_matrices')}</p>
           )}
+          {renderTrash('teamPughs')}
         </div>
       )}
 
@@ -809,7 +849,8 @@ export default function ToolsView({
         <div className="space-y-4">
           <HowToUse descKey="tool_desc_kanban" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
-            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           <BoardTypeSection
             boards={visibleBoards.filter((b) => !b.boardType || b.boardType === 'kanban')}
             boardType="kanban"
@@ -820,6 +861,7 @@ export default function ToolsView({
             ]}
             emptyText={t('no_kanban')}
             categories={categories}
+            scopeCategories={creatableCategories}
             canCreate={canCreate}
             resolveCanEdit={resolveCanEdit}
             onCreateBoard={onCreateBoard}
@@ -831,6 +873,7 @@ export default function ToolsView({
             currentMembership={currentMembership}
             memberRole={memberRole}
           />
+          {renderTrash('teamBoards', (b) => !b.boardType || b.boardType === 'kanban')}
         </div>
       )}
 
@@ -839,7 +882,8 @@ export default function ToolsView({
         <div className="space-y-4">
           <HowToUse descKey="tool_desc_scrum" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
-            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           <BoardTypeSection
             boards={visibleBoards.filter((b) => b.boardType === 'scrum')}
             boardType="scrum"
@@ -852,6 +896,7 @@ export default function ToolsView({
             emptyText={t('no_sprints')}
             placeholder={t('sprint_ph')}
             categories={categories}
+            scopeCategories={creatableCategories}
             canCreate={canCreate}
             resolveCanEdit={resolveCanEdit}
             onCreateBoard={onCreateBoard}
@@ -863,6 +908,7 @@ export default function ToolsView({
             currentMembership={currentMembership}
             memberRole={memberRole}
           />
+          {renderTrash('teamBoards', (b) => b.boardType === 'scrum')}
         </div>
       )}
 
@@ -871,7 +917,8 @@ export default function ToolsView({
         <div className="space-y-4">
           <HowToUse descKey="tool_desc_retro" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
-            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           <BoardTypeSection
             boards={visibleBoards.filter((b) => b.boardType === 'retro')}
             boardType="retro"
@@ -883,12 +930,14 @@ export default function ToolsView({
             emptyText={t('no_retros')}
             placeholder={t('retro_ph')}
             categories={categories}
+            scopeCategories={creatableCategories}
             canCreate={canCreate}
             resolveCanEdit={resolveCanEdit}
             onCreateBoard={onCreateBoard}
             onUpdateBoard={onUpdateBoard}
             onDeleteBoard={onDeleteBoard}
           />
+          {renderTrash('teamBoards', (b) => b.boardType === 'retro')}
         </div>
       )}
 
@@ -897,10 +946,12 @@ export default function ToolsView({
         <div className="space-y-4">
           <HowToUse descKey="tool_desc_meetings" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
-            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           <MeetingsSection
             meetings={visibleMeetings}
             categories={categories}
+            scopeCategories={creatableCategories}
             memberships={memberships}
             canCreate={canCreate}
             resolveCanEdit={resolveCanEdit}
@@ -908,6 +959,7 @@ export default function ToolsView({
             onUpdateMeeting={onUpdateMeeting}
             onDeleteMeeting={onDeleteMeeting}
           />
+          {renderTrash('teamMeetings')}
         </div>
       )}
 
@@ -915,10 +967,12 @@ export default function ToolsView({
         <div className="space-y-4">
           <HowToUse descKey="tool_desc_availability" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
-            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           <AvailabilityPollsSection
             polls={visibleAvailabilityPolls}
             categories={categories}
+            scopeCategories={creatableCategories}
             memberships={memberships}
             currentMembership={currentMembership}
             canCreate={canCreate}
@@ -927,6 +981,7 @@ export default function ToolsView({
             onUpdatePoll={onUpdateAvailabilityPoll}
             onDeletePoll={onDeleteAvailabilityPoll}
           />
+          {renderTrash('teamAvailabilityPolls')}
         </div>
       )}
 
@@ -935,16 +990,19 @@ export default function ToolsView({
         <div className="space-y-4">
           <HowToUse descKey="tool_desc_goals" />
           <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
-            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit} />
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           <GoalsSection
             goals={visibleGoals}
             categories={categories}
+            scopeCategories={creatableCategories}
             canCreate={canCreate}
             resolveCanEdit={resolveCanEdit}
             onCreateGoal={onCreateGoal}
             onUpdateGoal={onUpdateGoal}
             onDeleteGoal={onDeleteGoal}
           />
+          {renderTrash('teamGoals')}
         </div>
       )}
     </div>

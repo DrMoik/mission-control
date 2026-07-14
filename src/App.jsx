@@ -32,6 +32,7 @@ import AppViewContent from './app/router/AppViewContent.jsx';
 import { getRouteState } from './app/router/routeState.js';
 import { t, lang, STRINGS }         from './strings.js';
 import { showToast, confirmDialog } from './services/feedback.js';
+import { softDeleteDoc, restoreDoc, purgeDoc, msUntilPurge } from './services/softDelete.js';
 import {
   EMPTY_PROFILE, MERIT_DOMAINS,
   CAREER_OPTIONS, SEMESTER_OPTIONS, PERSONALITY_TAGS, PERSONALITY_TAGS_DEFAULT, MERIT_TIERS,
@@ -114,6 +115,7 @@ export default function App() {
     teamSaleItems,
     teamSales,
     teamBomParts,
+    trashed,
     userMembershipsReady,
   } = useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile });
 
@@ -1571,7 +1573,7 @@ export default function App() {
   const handleDeleteAcademyBook = async (bookId) => {
     const book = academyBooks.find((item) => item.id === bookId);
     if (!book || !canEditToolItem(book)) return;
-    await deleteDoc(doc(db, 'academyBooks', bookId));
+    await softDeleteDoc('academyBooks', bookId, trashActor());
   };
 
   const canEditToolItem = React.useCallback((item) => {
@@ -1589,6 +1591,24 @@ export default function App() {
     lastEditedByUserId:    authUser?.uid || null,
     lastEditedAt:          serverTimestamp(),
   }), [userProfile, authUser]);
+
+  // Who is performing a soft-delete (stamped on trashed docs for the Papelera)
+  const trashActor = React.useCallback(() => ({
+    name: userProfile?.displayName || authUser?.email || 'Unknown',
+    uid:  authUser?.uid || null,
+  }), [userProfile, authUser]);
+
+  // Generic restore / permanent-delete for any soft-deletable collection.
+  // Recovery (the Papelera) is restricted to team admins only.
+  const handleRestoreItem = React.useCallback((collectionName, id) => {
+    if (!canEdit) return;
+    restoreDoc(collectionName, id).catch((error) => console.warn('Restore failed:', error));
+  }, [canEdit]);
+
+  const handlePurgeItem = React.useCallback((collectionName, id) => {
+    if (!canEdit) return;
+    purgeDoc(collectionName, id).catch((error) => console.warn('Purge failed:', error));
+  }, [canEdit]);
 
   // ── Tools: Calendar ────────────────────────────────────────────────────────
 
@@ -1770,7 +1790,7 @@ export default function App() {
   const handleDeleteEvent = async (eventId) => {
     const evt = teamEvents.find((e) => e.id === eventId);
     if (!canEditToolItem(evt)) return;
-    await deleteDoc(doc(db, 'teamEvents', eventId));
+    await softDeleteDoc('teamEvents', eventId, trashActor());
   };
 
   // ── Tools: SWOT / FODA (multiple entries per team) ─────────────────────────
@@ -1805,7 +1825,7 @@ export default function App() {
   const handleDeleteSwot = async (swotId) => {
     const swot = teamSwots.find((s) => s.id === swotId);
     if (!swot || !canEditToolItem(swot)) return;
-    await deleteDoc(doc(db, 'teamSwots', swotId));
+    await softDeleteDoc('teamSwots', swotId, trashActor());
   };
 
   // ── Tools: Eisenhower (multiple entries per team) ─────────────────────────
@@ -1834,7 +1854,7 @@ export default function App() {
   const handleDeleteEisenhower = async (id) => {
     const entry = teamEisenhowers.find((e) => e.id === id);
     if (!entry || !canEditToolItem(entry)) return;
-    await deleteDoc(doc(db, 'teamEisenhowers', id));
+    await softDeleteDoc('teamEisenhowers', id, trashActor());
   };
 
   // ── Tools: Pugh (multiple entries per team) ─────────────────────────────────
@@ -1867,7 +1887,7 @@ export default function App() {
   const handleDeletePugh = async (id) => {
     const entry = teamPughs.find((e) => e.id === id);
     if (!entry || !canEditToolItem(entry)) return;
-    await deleteDoc(doc(db, 'teamPughs', id));
+    await softDeleteDoc('teamPughs', id, trashActor());
   };
 
   // ── Tools: Boards (Kanban / SCRUM / Retro) ─────────────────────────────────
@@ -1916,7 +1936,7 @@ export default function App() {
   const handleDeleteBoard = async (boardId) => {
     const board = teamBoards.find((b) => b.id === boardId);
     if (!canEditToolItem(board)) return;
-    await deleteDoc(doc(db, 'teamBoards', boardId));
+    await softDeleteDoc('teamBoards', boardId, trashActor());
   };
 
   // ── Tools: Meetings ────────────────────────────────────────────────────────
@@ -1940,7 +1960,7 @@ export default function App() {
   const handleDeleteMeeting = async (id) => {
     const meeting = teamMeetings.find((m) => m.id === id);
     if (!canEditToolItem(meeting)) return;
-    await deleteDoc(doc(db, 'teamMeetings', id));
+    await softDeleteDoc('teamMeetings', id, trashActor());
   };
 
   // —— Tools: Availability polls / when2meet-style coordination ——————————————
@@ -1985,7 +2005,7 @@ export default function App() {
   const handleDeleteAvailabilityPoll = async (id) => {
     const poll = teamAvailabilityPolls.find((item) => item.id === id);
     if (!poll || !canEditToolItem(poll)) return;
-    await deleteDoc(doc(db, 'teamAvailabilityPolls', id));
+    await softDeleteDoc('teamAvailabilityPolls', id, trashActor());
   };
 
   // ── Tools: Goals / OKRs ────────────────────────────────────────────────────
@@ -2009,7 +2029,7 @@ export default function App() {
   const handleDeleteGoal = async (id) => {
     const goal = teamGoals.find((g) => g.id === id);
     if (!canEditToolItem(goal)) return;
-    await deleteDoc(doc(db, 'teamGoals', id));
+    await softDeleteDoc('teamGoals', id, trashActor());
   };
 
   useEffect(() => {
@@ -2020,12 +2040,28 @@ export default function App() {
       const expiryDate = expiresAt && typeof expiresAt.toDate === 'function' ? expiresAt.toDate() : (expiresAt ? new Date(expiresAt) : null);
       if (!expiryDate || Number.isNaN(expiryDate.getTime())) return;
       if (expiryDate.getTime() <= now) {
-        deleteDoc(doc(db, 'teamAvailabilityPolls', poll.id)).catch((error) => {
+        softDeleteDoc('teamAvailabilityPolls', poll.id, trashActor()).catch((error) => {
           console.warn('Cleanup availability poll:', error);
         });
       }
     });
-  }, [isAdminLevel, memberRole, teamAvailabilityPolls]);
+  }, [isAdminLevel, memberRole, teamAvailabilityPolls, trashActor]);
+
+  // Auto-purge the Papelera: permanently delete anything trashed longer than the
+  // retention window. Runs client-side when a leader/admin is present (no cron).
+  useEffect(() => {
+    if (!(isAdminLevel || atLeast(memberRole, 'leader'))) return;
+    Object.entries(trashed || {}).forEach(([collectionName, items]) => {
+      (items || []).forEach((item) => {
+        const remaining = msUntilPurge(item);
+        if (remaining != null && remaining <= 0) {
+          purgeDoc(collectionName, item.id).catch((error) => {
+            console.warn('Auto-purge failed:', collectionName, error);
+          });
+        }
+      });
+    });
+  }, [isAdminLevel, memberRole, trashed]);
 
   // ── Feed ───────────────────────────────────────────────────────────────────
 
@@ -3065,6 +3101,7 @@ export default function App() {
                   skillDictionary,
                   allTeams,
                   tsToDate,
+                  trashed,
                 }}
                 permissions={{
                   isAtLeastRookie,
@@ -3130,6 +3167,8 @@ export default function App() {
                   handleCreateEvent,
                   handleUpdateEvent,
                   handleDeleteEvent,
+                  handleRestoreItem,
+                  handlePurgeItem,
                   canEditToolItem,
                   handleCreateTask,
                   canAssignTask,

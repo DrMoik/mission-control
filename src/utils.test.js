@@ -12,6 +12,7 @@ import {
   fillL,
   toEmbedUrl,
   isMechanicsCategoryName,
+  isGeneralLeadershipCategoryName,
 } from './utils.js';
 
 describe('isMechanicsCategoryName', () => {
@@ -25,6 +26,20 @@ describe('isMechanicsCategoryName', () => {
   it('rejects other category names', () => {
     expect(isMechanicsCategoryName('Software')).toBe(false);
     expect(isMechanicsCategoryName('')).toBe(false);
+  });
+});
+
+describe('isGeneralLeadershipCategoryName', () => {
+  it('matches the general-leadership area name', () => {
+    expect(isGeneralLeadershipCategoryName('Liderazgo general')).toBe(true);
+    expect(isGeneralLeadershipCategoryName('liderazgo general')).toBe(true);
+    expect(isGeneralLeadershipCategoryName(' Liderazgo General ')).toBe(true);
+    expect(isGeneralLeadershipCategoryName('General leadership')).toBe(true);
+  });
+
+  it('rejects other category names', () => {
+    expect(isGeneralLeadershipCategoryName('Mecánica')).toBe(false);
+    expect(isGeneralLeadershipCategoryName('')).toBe(false);
   });
 });
 

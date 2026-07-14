@@ -3,6 +3,7 @@ import { Check, ChevronDown } from 'lucide-react';
 import { t, lang } from '../../strings.js';
 import { ensureString } from '../../utils.js';
 import ModalOverlay from '../../components/ModalOverlay.jsx';
+import { confirmDialog } from '../../services/feedback.js';
 import PickerField from '../../components/ui/PickerField.jsx';
 import Card from '../../components/layout/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -220,6 +221,7 @@ function SelectionMatrix({
 export default function AvailabilityPollsSection({
   polls,
   categories,
+  scopeCategories = categories,
   memberships,
   currentMembership,
   canCreate,
@@ -315,7 +317,7 @@ export default function AvailabilityPollsSection({
                       className="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
                     >
                       <option value="">{t('scope_global')}</option>
-                      {categories.map((category) => (
+                      {scopeCategories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {t('scope_category')} {ensureString(category.name, lang)}
                         </option>
@@ -549,7 +551,11 @@ export default function AvailabilityPollsSection({
                       variant="link"
                       size="sm"
                       className="text-red-400"
-                      onClick={() => onDeletePoll(poll.id)}
+                      onClick={async () => {
+                        if (await confirmDialog({ message: t('poll_delete_confirm'), confirmLabel: t('delete'), danger: true })) {
+                          onDeletePoll(poll.id);
+                        }
+                      }}
                     >
                       {t('delete')}
                     </Button>

@@ -31,7 +31,7 @@ import BoardView   from './BoardView.jsx';
  */
 export default function BoardTypeSection({
   boards, boardType, defaultColumns, emptyText, placeholder,
-  categories, canCreate, resolveCanEdit,
+  categories, scopeCategories = categories, canCreate, resolveCanEdit,
   onCreateBoard, onUpdateBoard, onDeleteBoard,
   onCreateTask, canAssignTask, memberships = [],
   currentMembership = null,
@@ -111,7 +111,7 @@ export default function BoardTypeSection({
           <Input value={newBoardName} onChange={(e) => setNewBoardName(e.target.value)} placeholder={placeholder || t('new_board_btn')} className="flex-1 min-w-[140px]" />
           <select value={newCategoryId} onChange={(e) => setNewCategoryId(e.target.value)} className="px-2 py-1.5 bg-surface-overlay border border-slate-600/60 rounded-lg text-xs text-content-primary">
             <option value="">{t('scope_global')}</option>
-            {categories.map((c) => (<option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>))}
+            {scopeCategories.map((c) => (<option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>))}
           </select>
           <Button variant="primary" size="sm" onClick={handleCreate}>{t('create_board_btn')}</Button>
         </div>

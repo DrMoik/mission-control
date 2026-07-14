@@ -17,4 +17,5 @@ export { default as CultureListField } from './CultureListField.jsx';
 export { default as CultureSongField } from './CultureSongField.jsx';
 export { default as HowToUse }       from './HowToUse.jsx';
 export { default as ScopeFilter }    from './ScopeFilter.jsx';
+export { default as TrashBin }       from './TrashBin.jsx';
 export { default as SafeProfileImage } from './SafeProfileImage.jsx';

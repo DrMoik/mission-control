@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { t, lang } from '../strings.js';
 import { showToast } from '../services/feedback.js';
-import { toEmbedUrl, tsToDate, getL, toL, fillL, ensureString, toGoogleDriveDownloadUrl } from '../utils.js';
-import { BilingualField } from '../components/ui/index.js';
+import { toEmbedUrl, tsToDate, getL, toL, fillL, ensureString, toGoogleDriveDownloadUrl, atLeast, isGeneralLeadershipCategoryName } from '../utils.js';
+import { BilingualField, TrashBin } from '../components/ui/index.js';
 import ModalOverlay from '../components/ModalOverlay.jsx';
 import PdfReader from '../components/ui/PdfReader.jsx';
 import SafeImage from '../components/ui/SafeImage.jsx';
@@ -37,6 +37,9 @@ export default function AcademyView({
   modules,
   moduleAttempts,
   books = [],
+  trashedBooks = [],
+  onRestoreBook,
+  onPurgeBook,
   teamMemberships = [],
   categories = [],
   currentMembership = null,
@@ -71,9 +74,25 @@ export default function AcademyView({
   const selected = modules.find((m) => m.id === selectedId) || null;
   const attempt = selected ? moduleAttempts.find((a) => a.moduleId === selectedId) : null;
 
+  // "Liderazgo general" area: books are visible (read-only) to every leader, but
+  // only its own leaders/admins may create or edit them.
+  const generalLeadershipCategoryId = useMemo(
+    () => (categories || []).find((c) => isGeneralLeadershipCategoryName(c.name))?.id || null,
+    [categories],
+  );
+  const isLeaderPlus = canEdit || atLeast(currentMembership?.role, 'leader');
+  const bookScopeCategories = useMemo(
+    () => (categories || []).filter(
+      (c) => !isGeneralLeadershipCategoryName(c.name) || canEdit || currentMembership?.categoryId === c.id,
+    ),
+    [categories, canEdit, currentMembership],
+  );
+
   const visibleBooks = useMemo(
-    () => books.filter((book) => !book.categoryId || canEdit || currentMembership?.categoryId === book.categoryId),
-    [books, canEdit, currentMembership],
+    () => books.filter((book) => !book.categoryId || canEdit
+      || currentMembership?.categoryId === book.categoryId
+      || (isLeaderPlus && book.categoryId === generalLeadershipCategoryId)),
+    [books, canEdit, currentMembership, isLeaderPlus, generalLeadershipCategoryId],
   );
 
   const selectedBook = visibleBooks.find((book) => book.id === selectedBookId) || null;
@@ -508,7 +527,7 @@ export default function AcademyView({
                 <input value={newBook.coverUrl} onChange={(e) => setNewBook((b) => ({ ...b, coverUrl: e.target.value }))} placeholder={t('academy_book_cover_url')} className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm" />
                 <select value={newBook.categoryId} onChange={(e) => setNewBook((b) => ({ ...b, categoryId: e.target.value }))} className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm">
                   <option value="">{t('scope_global')}</option>
-                  {categories.map((category) => (
+                  {bookScopeCategories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {t('scope_category')} {ensureString(category.name, lang)}
                     </option>
@@ -543,6 +562,14 @@ export default function AcademyView({
                 </div>
               </button>
             ))}
+            {canEdit && (
+              <TrashBin
+                items={trashedBooks}
+                onRestore={onRestoreBook}
+                onPurge={onPurgeBook}
+                renderLabel={(book) => ensureString(book.title, lang) || '—'}
+              />
+            )}
           </div>
 
           <div className="md:col-span-2 bg-slate-800 rounded-lg p-4 space-y-4 min-h-[320px]">
@@ -611,7 +638,7 @@ export default function AcademyView({
                 <input value={editBookDraft.coverUrl} onChange={(e) => setEditBookDraft((b) => ({ ...b, coverUrl: e.target.value }))} placeholder={t('academy_book_cover_url')} className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm" />
                 <select value={editBookDraft.categoryId} onChange={(e) => setEditBookDraft((b) => ({ ...b, categoryId: e.target.value }))} className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm">
                   <option value="">{t('scope_global')}</option>
-                  {categories.map((category) => (
+                  {bookScopeCategories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {t('scope_category')} {ensureString(category.name, lang)}
                     </option>

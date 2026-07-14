@@ -235,7 +235,7 @@ function ActionItemsTable({ meeting, canEditThis, onToggleAction, onRemoveAction
 }
 
 export default function MeetingsSection({
-  meetings, categories, memberships = [], canCreate, resolveCanEdit,
+  meetings, categories, scopeCategories = categories, memberships = [], canCreate, resolveCanEdit,
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
 }) {
   const [form, setForm] = useState(emptyForm());
@@ -386,7 +386,7 @@ export default function MeetingsSection({
               </div>
               <div>
                 <FieldLabel>{t('scope_label')}</FieldLabel>
-                <ScopeSelect value={form.categoryId} categories={categories}
+                <ScopeSelect value={form.categoryId} categories={scopeCategories}
                   onChange={(categoryId) => setForm((c) => ({ ...c, categoryId }))} />
               </div>
             </div>

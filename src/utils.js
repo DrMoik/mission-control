@@ -20,6 +20,16 @@ export const isMechanicsCategoryName = (name) => {
   return n === 'mechanics' || n === 'mecánica' || n === 'mecanica' || n === 'mechanical';
 };
 
+/**
+ * True when a team category name is the general-leadership ("Liderazgo general")
+ * area — the coordinating leadership class whose content every leader can view
+ * (read-only) but only its own leaders/admins can create or edit.
+ */
+export const isGeneralLeadershipCategoryName = (name) => {
+  const n = String(name || '').trim().toLowerCase();
+  return n === 'liderazgo general' || n === 'general leadership';
+};
+
 // ── Firestore timestamp helpers ───────────────────────────────────────────────
 
 /**

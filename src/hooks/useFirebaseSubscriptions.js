@@ -90,6 +90,8 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
   const [teamSaleItems, setTeamSaleItems] = useState([]);
   const [teamSales, setTeamSales] = useState([]);
   const [teamBomParts, setTeamBomParts] = useState([]);
+  // Soft-deleted ("papelera") docs, keyed by collection name. Populated by subSoft().
+  const [trashed, setTrashed] = useState({});
   const [userMembershipsReady, setUserMembershipsReady] = useState(false);
 
   // Stable primitives derived from objects/arrays, so the listener effects below
@@ -148,12 +150,26 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       return;
     }
     const unsubs = [];
+    setTrashed({});
 
     const sub = (q, setter, transform) =>
       unsubs.push(
         onSnapshot(q, (snap) => {
           const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
           setter(transform ? transform(rows) : rows);
+        }),
+      );
+
+    // Like sub(), but splits soft-deleted docs out of the active list and into
+    // the `trashed` map (keyed by collection name) for the Papelera UI.
+    const subSoft = (name, q, setter, transform) =>
+      unsubs.push(
+        onSnapshot(q, (snap) => {
+          const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          const active = rows.filter((r) => !r.deletedAt);
+          const dead = rows.filter((r) => r.deletedAt);
+          setter(transform ? transform(active) : active);
+          setTrashed((prev) => ({ ...prev, [name]: dead }));
         }),
       );
 
@@ -174,12 +190,14 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       setTeamModules,
       (rows) => [...rows].sort((a, b) => (a.order ?? 999) - (b.order ?? 999)),
     );
-    sub(
+    subSoft(
+      'academyBooks',
       query(collection(db, 'academyBooks'), where('teamId', '==', selectedTeamId)),
       setAcademyBooks,
       (rows) => [...rows].sort((a, b) => String(a.title?.es || a.title?.en || a.title || '').localeCompare(String(b.title?.es || b.title?.en || b.title || ''))),
     );
-    sub(
+    subSoft(
+      'teamEvents',
       query(collection(db, 'teamEvents'), where('teamId', '==', selectedTeamId)),
       setTeamEvents,
       (rows) => [...rows].sort((a, b) => tsToDate(a.date) - tsToDate(b.date)),
@@ -189,23 +207,27 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       setTeamSessions,
       (rows) => [...rows].sort((a, b) => tsToDate(b.scheduledAt) - tsToDate(a.scheduledAt)),
     );
-    sub(
+    subSoft(
+      'teamSwots',
       query(collection(db, 'teamSwots'), where('teamId', '==', selectedTeamId)),
       setTeamSwots,
       (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
     );
-    sub(
+    subSoft(
+      'teamEisenhowers',
       query(collection(db, 'teamEisenhowers'), where('teamId', '==', selectedTeamId)),
       setTeamEisenhowers,
       (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
     );
-    sub(
+    subSoft(
+      'teamPughs',
       query(collection(db, 'teamPughs'), where('teamId', '==', selectedTeamId)),
       setTeamPughs,
       (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
     );
-    sub(query(collection(db, 'teamBoards'), where('teamId', '==', selectedTeamId)), setTeamBoards);
-    sub(
+    subSoft('teamBoards', query(collection(db, 'teamBoards'), where('teamId', '==', selectedTeamId)), setTeamBoards);
+    subSoft(
+      'teamAvailabilityPolls',
       query(collection(db, 'teamAvailabilityPolls'), where('teamId', '==', selectedTeamId)),
       setTeamAvailabilityPolls,
       (rows) => [...rows].sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''))),
@@ -217,8 +239,8 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
     );
     sub(query(collection(db, 'comments'), where('teamId', '==', selectedTeamId)), setTeamComments);
     sub(query(collection(db, 'postReactions'), where('teamId', '==', selectedTeamId)), setTeamPostReactions);
-    sub(query(collection(db, 'teamMeetings'), where('teamId', '==', selectedTeamId)), setTeamMeetings);
-    sub(query(collection(db, 'teamGoals'), where('teamId', '==', selectedTeamId)), setTeamGoals);
+    subSoft('teamMeetings', query(collection(db, 'teamMeetings'), where('teamId', '==', selectedTeamId)), setTeamMeetings);
+    subSoft('teamGoals', query(collection(db, 'teamGoals'), where('teamId', '==', selectedTeamId)), setTeamGoals);
     sub(
       query(collection(db, 'weeklyStatuses'), where('teamId', '==', selectedTeamId)),
       setTeamWeeklyStatuses,
@@ -430,6 +452,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
     teamSaleItems,
     teamSales,
     teamBomParts,
+    trashed,
     userMembershipsReady,
   };
 }

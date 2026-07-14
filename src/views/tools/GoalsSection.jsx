@@ -27,7 +27,7 @@ const makeKrId = () => `${Date.now()}`;
  * }} props
  */
 export default function GoalsSection({
-  goals, categories, canCreate, resolveCanEdit,
+  goals, categories, scopeCategories = categories, canCreate, resolveCanEdit,
   onCreateGoal, onUpdateGoal, onDeleteGoal,
 }) {
   const [showForm,       setShowForm]       = useState(false);
@@ -152,7 +152,7 @@ export default function GoalsSection({
               className="px-2 py-1.5 bg-surface-sunken border border-slate-600 rounded-lg text-xs text-content-secondary focus:border-primary focus:outline-none"
             >
               <option value="">{t('scope_global')}</option>
-              {categories.map((c) => (
+              {scopeCategories.map((c) => (
                 <option key={c.id} value={c.id}>{t('scope_category')} {ensureString(c.name, lang)}</option>
               ))}
             </select>

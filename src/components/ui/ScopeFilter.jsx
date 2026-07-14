@@ -11,14 +11,15 @@ import { ensureString } from '../../utils.js';
  *   categories: Array<{ id: string, name: unknown }>,
  *   userCategoryId: string | null,
  *   canEdit: boolean,
+ *   extraVisibleCategoryId?: string | null,  // extra category shown to non-admins (e.g. Liderazgo general for all leaders)
  * }} props
  */
-export default function ScopeFilter({ value, onChange, categories = [], userCategoryId, canEdit }) {
+export default function ScopeFilter({ value, onChange, categories = [], userCategoryId, canEdit, extraVisibleCategoryId = null }) {
   const options = [
     { id: 'all',    label: 'Todos'    },
     { id: 'global', label: 'Global'   },
     ...(categories || [])
-      .filter((c) => canEdit || c.id === userCategoryId)
+      .filter((c) => canEdit || c.id === userCategoryId || c.id === extraVisibleCategoryId)
       .map((c) => ({ id: c.id, label: ensureString(c.name) })),
   ];
 

@@ -76,6 +76,7 @@ export default function AppViewContent({
     skillDictionary,
     allTeams,
     tsToDate,
+    trashed,
   } = teamState;
   const {
     isAtLeastRookie,
@@ -141,6 +142,8 @@ export default function AppViewContent({
     handleCreateEvent,
     handleUpdateEvent,
     handleDeleteEvent,
+    handleRestoreItem,
+    handlePurgeItem,
     canEditToolItem,
     handleCreateTask,
     canAssignTask,
@@ -382,6 +385,9 @@ export default function AppViewContent({
           canEdit={canEdit}
           canEditTools={canEditTools}
           resolveCanEdit={canEditToolItem}
+          trashed={trashed}
+          onRestoreItem={handleRestoreItem}
+          onPurgeItem={handlePurgeItem}
           onCreateEvent={handleCreateEvent}
           onUpdateEvent={handleUpdateEvent}
           onDeleteEvent={handleDeleteEvent}
@@ -405,6 +411,9 @@ export default function AppViewContent({
           canEdit={canEdit}
           canEditTools={canEditTools}
           resolveCanEdit={canEditToolItem}
+          trashed={trashed}
+          onRestoreItem={handleRestoreItem}
+          onPurgeItem={handlePurgeItem}
           onCreateTask={handleCreateTask}
           canAssignTask={canAssignTask}
           onCreateEvent={handleCreateEvent}
@@ -438,6 +447,9 @@ export default function AppViewContent({
           modules={teamModules}
           moduleAttempts={teamModuleAttempts}
           books={academyBooks}
+          trashedBooks={trashed?.academyBooks || []}
+          onRestoreBook={(id) => handleRestoreItem('academyBooks', id)}
+          onPurgeBook={(id) => handlePurgeItem('academyBooks', id)}
           teamMemberships={teamMemberships}
           categories={teamCategories}
           currentMembership={currentMembership}
