@@ -35,6 +35,9 @@ export default function SafeImage({ src, alt = '', className = '', fallback, fal
       src={src}
       alt={alt}
       className={className}
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
       onError={() => setErrored(true)}
     />
   );

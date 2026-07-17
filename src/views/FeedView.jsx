@@ -169,6 +169,7 @@ function FeedGalleryModal({ mediaItems, activeIndex, onClose, onNavigate }) {
                 controls
                 autoPlay
                 preload="metadata"
+                referrerPolicy="no-referrer"
                 className="max-h-[82vh] w-full bg-black"
               />
             )
@@ -214,6 +215,7 @@ function FeedGalleryTile({ item, onClick, overlay = null, className = '' }) {
                 muted
                 playsInline
                 preload="metadata"
+                referrerPolicy="no-referrer"
                 className="h-full w-full object-cover"
               />
             )}
@@ -345,6 +347,7 @@ function FeedVideoGallery({ videos, className = '' }) {
               src={videoUrl}
               controls
               preload="metadata"
+              referrerPolicy="no-referrer"
               className="max-h-[32rem] w-full bg-black"
             />
           )}
