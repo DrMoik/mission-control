@@ -126,22 +126,22 @@ function SelectionMatrix({
 }) {
   if (dates.length === 0 || times.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-700 bg-slate-950/40 px-4 py-10 text-center text-sm text-slate-500">
+      <div className="rounded-xl border border-dashed border-hairline bg-slate-950/40 px-4 py-10 text-center text-sm text-slate-500">
         Ajusta el rango de fechas y horas para generar la cuadrícula.
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-700 bg-slate-950/40">
+    <div className="overflow-x-auto rounded-xl border border-hairline bg-slate-950/40">
       <table className="min-w-full border-collapse">
         <thead>
           <tr>
-            <th className="sticky left-0 z-10 border-b border-r border-slate-700 bg-slate-900 px-2 py-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            <th className="sticky left-0 z-10 border-b border-r border-hairline bg-slate-900 px-2 py-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
               Hora
             </th>
             {dates.map((date) => (
-              <th key={date} className="min-w-[72px] border-b border-slate-700 bg-slate-900 px-1.5 py-1 text-center sm:min-w-[84px]">
+              <th key={date} className="min-w-[72px] border-b border-hairline bg-slate-900 px-1.5 py-1 text-center sm:min-w-[84px]">
                 <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400 sm:text-[10px]">
                   {new Date(`${date}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'short' })}
                 </div>
@@ -153,7 +153,7 @@ function SelectionMatrix({
         <tbody>
           {times.map((time) => (
             <tr key={time}>
-              <th className="sticky left-0 z-10 border-r border-t border-slate-700 bg-slate-900 px-1.5 py-1.5 text-left text-[10px] font-medium text-slate-300 sm:text-[11px]">
+              <th className="sticky left-0 z-10 border-r border-t border-hairline bg-slate-900 px-1.5 py-1.5 text-left text-[10px] font-medium text-slate-300 sm:text-[11px]">
                 {time}
               </th>
               {dates.map((date) => {
@@ -175,10 +175,10 @@ function SelectionMatrix({
                           ? 'bg-teal-500/45 border-teal-400/65 text-slate-100'
                           : intensity > 0
                             ? 'bg-teal-700/28 border-teal-600/45 text-slate-200'
-                            : 'bg-slate-900/90 border-slate-800 text-slate-300';
+                            : 'bg-slate-900/90 border-hairline-strong text-slate-300';
 
                 return (
-                  <td key={slotKey} className="border-t border-slate-800 p-0.5">
+                  <td key={slotKey} className="border-t border-hairline-strong p-0.5">
                     {enabled ? (
                       <button
                         type="button"
@@ -205,7 +205,7 @@ function SelectionMatrix({
                         ) : null}
                       </button>
                     ) : (
-                      <div className="h-9 min-w-[64px] rounded-md border border-dashed border-slate-800 bg-slate-950/20 sm:h-10 sm:min-w-[72px]" />
+                      <div className="h-9 min-w-[64px] rounded-md border border-dashed border-hairline-strong bg-slate-950/20 sm:h-10 sm:min-w-[72px]" />
                     )}
                   </td>
                 );
@@ -293,8 +293,8 @@ export default function AvailabilityPollsSection({
 
           {showCreateForm && (
             <ModalOverlay onClickBackdrop={() => { setShowCreateForm(false); setForm(createPollForm()); }}>
-              <form onSubmit={handleCreate} className="space-y-4 rounded-xl border border-slate-700 bg-slate-800 p-4">
-                <div className="border-b border-slate-700 pb-3 text-center">
+              <form onSubmit={handleCreate} className="space-y-4 rounded-xl border border-hairline bg-slate-800 p-4">
+                <div className="border-b border-hairline pb-3 text-center">
                   <div className="text-lg font-semibold text-slate-100">Coordinar horario</div>
                   <div className="mt-1 text-xs text-slate-500">Define solo el marco temporal. Despues, la comunidad vota directamente en la cuadrícula.</div>
                 </div>
@@ -393,7 +393,7 @@ export default function AvailabilityPollsSection({
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                <div className="rounded-lg border border-hairline bg-slate-900/60 p-3">
                   <div className="mb-3">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Vista previa del marco temporal</div>
                     <div className="mt-1 text-xs text-slate-500">
@@ -402,15 +402,15 @@ export default function AvailabilityPollsSection({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-3">
+                    <div className="rounded-lg border border-hairline bg-slate-900/60 px-3 py-3">
                       <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Dias</div>
                       <div className="mt-1 text-lg font-semibold text-slate-100">{draftDates.length}</div>
                     </div>
-                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-3">
+                    <div className="rounded-lg border border-hairline bg-slate-900/60 px-3 py-3">
                       <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Horarios por dia</div>
                       <div className="mt-1 text-lg font-semibold text-slate-100">{draftTimes.length}</div>
                     </div>
-                    <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-3">
+                    <div className="rounded-lg border border-hairline bg-slate-900/60 px-3 py-3">
                       <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">Bloques totales</div>
                       <div className="mt-1 text-lg font-semibold text-slate-100">{draftEnabledSlots.size}</div>
                     </div>
@@ -568,7 +568,7 @@ export default function AvailabilityPollsSection({
             </button>
 
             {isExpanded && (
-              <div className="space-y-4 border-t border-slate-700 px-4 py-4">
+              <div className="space-y-4 border-t border-hairline px-4 py-4">
                 <Card>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -581,11 +581,11 @@ export default function AvailabilityPollsSection({
                     </div>
                     {!poll.agreedSlot && (
                       <div className="flex flex-wrap gap-2 text-[11px] text-slate-400">
-                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2 py-1">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-hairline bg-slate-900 px-2 py-1">
                           <span className="h-2.5 w-4 rounded-full border border-teal-50/95 bg-transparent" />
                           Tu selección
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2 py-1">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-hairline bg-slate-900 px-2 py-1">
                           <span className="h-1.5 w-4 rounded-full bg-teal-200" />
                           Más coincidencias
                         </span>
@@ -611,7 +611,7 @@ export default function AvailabilityPollsSection({
                     <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Participantes</div>
                     <div className="space-y-1 text-sm text-slate-300">
                       {Object.keys(responses).length > 0 ? Object.keys(responses).map((membershipId) => (
-                        <div key={membershipId} className="flex items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2">
+                        <div key={membershipId} className="flex items-center justify-between gap-2 rounded-lg border border-hairline-strong bg-slate-950/40 px-3 py-2">
                           <span>{getMembershipLabel(membershipId, memberships)}</span>
                           <span className="text-xs text-slate-500">
                             {Object.values(responses[membershipId] || {}).filter(Boolean).length} disponibilidad{Object.values(responses[membershipId] || {}).filter(Boolean).length === 1 ? '' : 'es'}
@@ -631,7 +631,7 @@ export default function AvailabilityPollsSection({
                           const slot = parseSlotKey(slotKey);
                           const isAgreed = poll.agreedSlot?.date === slot.date && poll.agreedSlot?.time === slot.time;
                           return (
-                            <div key={slotKey} className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2">
+                            <div key={slotKey} className="flex items-center justify-between gap-3 rounded-lg border border-hairline-strong bg-slate-950/40 px-3 py-2">
                               <div>
                                 <div className="text-sm font-medium text-slate-200">{formatDate(slot.date)} · {slot.time}</div>
                                 <div className="text-xs text-slate-500">{count} disponible{count === 1 ? '' : 's'}</div>

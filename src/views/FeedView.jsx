@@ -10,6 +10,7 @@ import ModalOverlay from '../components/ModalOverlay.jsx';
 import SafeImage from '../components/ui/SafeImage.jsx';
 import { SafeProfileImage, Button, Input, Textarea } from '../components/ui/index.js';
 import { Card } from '../components/layout/index.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 const MAX_VISIBLE_POST_IMAGES = 5;
 const REACTION_TYPES = [
@@ -41,8 +42,8 @@ function ReactionPopover({ memberships, reactionsByType }) {
   if (!sections.length) return null;
 
   return (
-    <div className="pointer-events-none absolute bottom-full left-0 z-20 mb-3 hidden min-w-[13rem] rounded-2xl border border-slate-700/90 bg-slate-950 px-3 py-2.5 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.45)] ring-1 ring-black/40 backdrop-blur-sm group-hover:block group-focus-within:block">
-      <div className="absolute left-5 top-full h-3 w-3 -translate-y-1/2 rotate-45 border-b border-r border-slate-700/90 bg-slate-950" />
+    <div className="pointer-events-none absolute bottom-full left-0 z-20 mb-3 hidden min-w-[13rem] rounded-2xl border border-hairline bg-slate-950 px-3 py-2.5 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.45)] ring-1 ring-black/40 backdrop-blur-sm group-hover:block group-focus-within:block">
+      <div className="absolute left-5 top-full h-3 w-3 -translate-y-1/2 rotate-45 border-b border-r border-hairline bg-slate-950" />
       <div className="space-y-2">
         {sections.map((section) => (
           <div key={section.id}>
@@ -126,7 +127,7 @@ function FeedGalleryModal({ mediaItems, activeIndex, onClose, onNavigate }) {
           className="absolute right-3 top-3 z-10 rounded-full bg-black/50 p-2 text-white transition hover:bg-black/70"
           aria-label={t('close') || 'Close'}
         >
-          <X className="h-5 w-5" />
+          <X className="h-5 w-5" strokeWidth={1.75} />
         </button>
 
         {mediaItems.length > 1 && (
@@ -137,7 +138,7 @@ function FeedGalleryModal({ mediaItems, activeIndex, onClose, onNavigate }) {
               className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 p-2 text-white transition hover:bg-black/75"
               aria-label="Previous image"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5 w-5" strokeWidth={1.75} />
             </button>
             <button
               type="button"
@@ -145,7 +146,7 @@ function FeedGalleryModal({ mediaItems, activeIndex, onClose, onNavigate }) {
               className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/55 p-2 text-white transition hover:bg-black/75"
               aria-label="Next image"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-5 w-5" strokeWidth={1.75} />
             </button>
           </>
         )}
@@ -425,7 +426,7 @@ export default function FeedView({
   return (
     <div className="w-full max-w-none space-y-6 lg:max-w-2xl">
       <div className="animate-fade-in">
-        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('feed_title')}</h2>
+        <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">{t('feed_title')}</h2>
         <p className="text-sm text-content-secondary mt-1">{t('feed_desc')}</p>
       </div>
 
@@ -454,7 +455,8 @@ export default function FeedView({
       )}
 
       {/* Post list */}
-      {posts.map((post, postIndex) => {
+      <StaggerList as="div" className="space-y-6">
+      {posts.map((post) => {
         const postComments = comments
           .filter((c) => c.postId === post.id)
           .sort((a, b) => tsToDate(a.createdAt) - tsToDate(b.createdAt));
@@ -477,10 +479,9 @@ export default function FeedView({
         }, {});
 
         return (
+          <StaggerItem as="div" key={post.id}>
           <Card
-            key={post.id}
-            className="overflow-hidden hover:border-primary/25 hover:shadow-glow-sm hover:-translate-y-0.5 animate-slide-up"
-            style={{ animationDelay: `${Math.min(postIndex * 60, 360)}ms` }}
+            className="overflow-hidden hover:border-primary/25 hover:shadow-glow-sm hover:-translate-y-0.5"
           >
             {/* Post body */}
             <div className="flex items-start gap-3 p-4">
@@ -503,11 +504,11 @@ export default function FeedView({
                     className="text-sm font-semibold hover:underline">
                     {authorName}
                   </button>
-                  <span className="text-[11px] text-slate-400">{tsToDate(post.createdAt).toLocaleString()}</span>
+                  <span className="text-[11px] text-slate-400 font-mono tabular-nums">{tsToDate(post.createdAt).toLocaleString()}</span>
                 </div>
                 <p className="text-sm text-slate-200 mt-1.5 whitespace-pre-wrap leading-relaxed">{post.content}</p>
                 <FeedMediaGallery mediaItems={postMediaItems} onOpenItem={(index) => openGallery(postMediaItems, index)} />
-                <div className="group relative mt-3 inline-flex items-center overflow-visible rounded-full border border-slate-700 bg-slate-900/80">
+                <div className="group relative mt-3 inline-flex items-center overflow-visible rounded-full border border-hairline bg-slate-900/80">
                   {REACTION_TYPES.map(({ id, emoji, label }, index) => {
                     const isActive = myReaction === id;
                     const count = reactionCounts[id] || 0;
@@ -518,7 +519,7 @@ export default function FeedView({
                         onClick={() => onToggleReaction?.(post.id, id)}
                         className={[
                           'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs transition-all duration-150 hover:scale-110 active:scale-95',
-                          index > 0 ? 'border-l border-slate-700' : '',
+                          index > 0 ? 'border-l border-hairline' : '',
                           isActive
                             ? 'bg-primary/15 text-primary'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-slate-100',
@@ -542,7 +543,7 @@ export default function FeedView({
             </div>
 
             {/* Comment toggle */}
-            <div className="border-t border-slate-700/60 px-4 py-2">
+            <div className="border-t border-hairline px-4 py-2">
               <button onClick={() => setExpandedPostId(isExpanded ? null : post.id)}
                 className="inline-flex items-center gap-1.5 text-xs text-content-tertiary hover:text-content-primary transition-colors">
                 <span>
@@ -551,13 +552,13 @@ export default function FeedView({
                     : t('add_a_comment_btn')
                   }
                 </span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} strokeWidth={1.75} />
               </button>
             </div>
 
             {/* Comment thread */}
             {isExpanded && (
-              <div className="border-t border-slate-700/60 bg-surface-sunken/30 px-4 pb-4 pt-3 space-y-3">
+              <div className="border-t border-hairline bg-surface-sunken/30 px-4 pb-4 pt-3 space-y-3">
                 {postComments.map((c) => (
                   <div key={c.id} className="flex items-start gap-2 animate-slide-up">
                     {(() => {
@@ -567,15 +568,15 @@ export default function FeedView({
                     <div className="w-7 h-7 rounded-full bg-primary/20 border border-primary/30 shrink-0 flex items-center justify-center text-xs font-bold text-primary">
                       {(commentAuthorName || '?')[0].toUpperCase()}
                     </div>
-                    <div className="flex-1 bg-surface-overlay/60 border border-slate-700/40 rounded-lg px-3 py-2">
+                    <div className="flex-1 bg-surface-overlay/60 border border-hairline rounded-lg px-3 py-2">
                       <div className="flex items-baseline gap-2">
                         <span className="text-xs font-semibold text-content-primary">{commentAuthorName}</span>
-                        <span className="text-[10px] text-content-tertiary">{tsToDate(c.createdAt).toLocaleString()}</span>
+                        <span className="text-[10px] text-content-tertiary font-mono tabular-nums">{tsToDate(c.createdAt).toLocaleString()}</span>
                       </div>
                       <p className="text-xs text-content-secondary mt-0.5">{c.content}</p>
                     </div>
                     {(canEdit || c.authorId === authUser?.uid) && (
-                      <button onClick={() => onDeleteComment(c.id)} className="text-error hover:text-red-400 shrink-0 mt-1 p-0.5 transition-colors" title={t('delete')} aria-label={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
+                      <button onClick={() => onDeleteComment(c.id)} className="text-error hover:text-red-400 shrink-0 mt-1 p-0.5 transition-colors" title={t('delete')} aria-label={t('delete')}><X className="w-4 h-4" strokeWidth={1.75} /></button>
                     )}
                         </>
                       );
@@ -597,8 +598,10 @@ export default function FeedView({
               </div>
             )}
           </Card>
+          </StaggerItem>
         );
       })}
+      </StaggerList>
 
       {galleryState.items.length > 0 && (
         <FeedGalleryModal

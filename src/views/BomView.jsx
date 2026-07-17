@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef } from 'react';
+import { Settings, X } from 'lucide-react';
 import { confirmDialog } from '../services/feedback.js';
 
 const DEFAULT_SUBSYSTEMS = ['Chasis', 'Tracción', 'Brazo', 'Laboratorio', 'Antenas'];
@@ -191,7 +192,7 @@ export default function BomView({
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gradient tracking-tight">Lista de Materiales</h2>
+          <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">Lista de Materiales</h2>
           <p className="text-sm text-content-secondary mt-1">
             Partes necesarias para construir cada subsistema del rover.
           </p>
@@ -233,13 +234,13 @@ export default function BomView({
           {canManage && (
             <button
               onClick={() => setManagingSubsystems((v) => !v)}
-              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors inline-flex items-center gap-1 ${
                 managingSubsystems
                   ? 'border-amber-500 text-amber-400 bg-amber-500/10'
                   : 'border-border text-content-tertiary hover:text-content-primary'
               }`}
             >
-              {managingSubsystems ? 'Cerrar' : '⚙ Subsistemas'}
+              {managingSubsystems ? 'Cerrar' : (<><Settings className="w-3.5 h-3.5" strokeWidth={1.75} /> Subsistemas</>)}
             </button>
           )}
         </div>
@@ -261,7 +262,7 @@ export default function BomView({
                     className="text-content-tertiary hover:text-red-400 transition-colors disabled:opacity-40 leading-none"
                     aria-label={`Eliminar ${sub}`}
                   >
-                    ×
+                    <X className="w-3 h-3" strokeWidth={1.75} />
                   </button>
                 </span>
               ))}
@@ -506,7 +507,7 @@ export default function BomView({
                       <tr className={`${rowBg} border-b border-border/50 hover:bg-primary/5 transition-colors`}>
                         <td className="px-3 py-2 text-content-secondary">{part.subsystem || '—'}</td>
                         <td className="px-3 py-2 font-medium text-content-primary">{part.name || '—'}</td>
-                        <td className="px-3 py-2 tabular-nums">{part.quantity != null ? part.quantity : '—'}</td>
+                        <td className="px-3 py-2 font-mono tabular-nums">{part.quantity != null ? part.quantity : '—'}</td>
                         <td className="px-3 py-2 text-content-secondary">{part.version || '—'}</td>
                         <td className="px-3 py-2 text-content-secondary">{part.material || '—'}</td>
                         <td className="px-3 py-2 text-content-secondary">{part.manufacturing || '—'}</td>

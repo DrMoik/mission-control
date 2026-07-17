@@ -43,7 +43,7 @@ export default function CultureSongField({ label, value = [], onChange, titlePla
               onChange={(e) => set(i, 'url', e.target.value)}
               placeholder={urlPlaceholder}
               type="url"
-              className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded text-[11px] text-slate-300 placeholder-slate-500"
+              className="w-full px-2 py-1 bg-slate-900 border border-hairline rounded text-[11px] text-slate-300 placeholder-slate-500"
             />
           </div>
         ))}

@@ -11,7 +11,7 @@ export default function StatTile({ label, value, icon: Icon, accent = 'teal', cl
   const a = ACCENT[accent] || ACCENT.teal;
   return (
     <div className={[
-      'group relative rounded-xl border border-slate-700/40 bg-surface-raised p-4',
+      'group relative rounded-xl border border-hairline bg-surface-raised p-4',
       'shadow-surface-sm overflow-hidden',
       'hover:border-slate-600/60 hover:-translate-y-0.5',
       'transition-all duration-200',

@@ -48,7 +48,7 @@ import GoogleIcon from './components/ui/GoogleIcon.jsx';
 import HamburgerIcon from './components/ui/HamburgerIcon.jsx';
 import InlineTeamRename from './components/InlineTeamRename.jsx';
 import SafeProfileImage from './components/ui/SafeProfileImage.jsx';
-import { Home, User, Settings, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { Home, User, Settings, ChevronDown, ChevronRight, X, MoreHorizontal } from 'lucide-react';
 
 import JoinRequestModal from './components/JoinRequestModal.jsx';
 import {
@@ -2474,7 +2474,7 @@ export default function App() {
   if (!authUser) {
     return (
         <div className="min-h-screen bg-surface-base text-content-primary flex flex-col">
-          <header className="border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
+          <header className="border-b border-hairline-strong px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="font-bold text-lg leading-tight">{t('app_name')}</h1>
               <p className="text-[11px] text-slate-500 hidden sm:block">{t('app_subtitle')}</p>
@@ -2493,7 +2493,7 @@ export default function App() {
               <p className="text-content-secondary text-sm mb-6">{t('sign_in_google')} — {t('app_subtitle')}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {allTeams.map((team) => (
-                <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-2 border border-slate-700/40 shadow-sm hover:border-slate-600/50 transition-colors">
+                <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-2 border border-hairline shadow-sm hover:border-slate-600/50 transition-colors">
                   <h2 className="font-bold text-base">{team.name}</h2>
                   {getL(team.overview?.tagline, lang) && <p className="text-sm text-slate-300 italic">"{getL(team.overview.tagline, lang)}"</p>}
                   {getL(team.overview?.about, lang)   && <p className="text-xs text-slate-400 line-clamp-3">{getL(team.overview.about, lang)}</p>}
@@ -2622,7 +2622,7 @@ export default function App() {
                   {activeMyTeams.map((team) => {
                     const mem = userMemberships.find((m) => m.teamId === team.id);
                     return (
-                      <div key={team.id} className="bg-surface-raised rounded-xl p-4 space-y-1 border border-slate-700/40 shadow-surface-sm hover:border-primary/40 hover:shadow-surface-md transition-all duration-200">
+                      <div key={team.id} className="bg-surface-raised rounded-xl p-4 space-y-1 border border-hairline shadow-surface-sm hover:border-primary/40 hover:shadow-surface-md transition-all duration-200">
                         <button onClick={() => { setSelectedTeamId(team.id); navigate('/inicio'); }}
                           className="w-full text-left hover:text-primary transition-colors active:scale-[0.98]">
                           <div className="flex items-center justify-between gap-2">
@@ -2669,7 +2669,7 @@ export default function App() {
                 <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{t('join_a_team')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {otherTeams.map((team) => (
-                    <div key={team.id} className="bg-surface-raised rounded-xl p-4 space-y-2 border border-slate-700/40 shadow-surface-sm hover:border-primary/40 hover:shadow-surface-md transition-all duration-200">
+                    <div key={team.id} className="bg-surface-raised rounded-xl p-4 space-y-2 border border-hairline shadow-surface-sm hover:border-primary/40 hover:shadow-surface-md transition-all duration-200">
                       <h3 className="font-bold text-sm">{team.name}</h3>
                       {getL(team.overview?.tagline, lang) && <p className="text-xs text-slate-400 italic">"{getL(team.overview.tagline, lang)}"</p>}
                       {getL(team.overview?.about, lang)   && <p className="text-xs text-slate-500 line-clamp-2">{getL(team.overview.about, lang)}</p>}
@@ -2735,7 +2735,7 @@ export default function App() {
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
             <nav className="relative z-50 w-64 shell-sidebar p-3 overflow-y-auto flex flex-col">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/60">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-hairline-strong">
                 <div className="min-w-0">
                   <p className="text-[10px] text-content-tertiary font-semibold uppercase tracking-wider">Workspace</p>
                   <p className="font-bold text-sm text-content-primary truncate">{currentTeam?.name}</p>
@@ -2743,7 +2743,7 @@ export default function App() {
                 <button onClick={() => setMobileNavOpen(false)}
                   className="text-content-tertiary hover:text-content-primary w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/8 transition-colors shrink-0"
                   title={t('close') || 'Cerrar'}>
-                  <X className="w-4 h-4" strokeWidth={2} />
+                  <X className="w-4 h-4" strokeWidth={1.75} />
                 </button>
               </div>
 
@@ -2753,7 +2753,7 @@ export default function App() {
                 <button onClick={() => { goToView('inicio'); setMobileNavOpen(false); }}
                   className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-2.5 text-[13px] font-medium transition-colors
                     ${view === 'inicio' ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
-                  <Home className="w-4 h-4 shrink-0" strokeWidth={view === 'inicio' ? 2.5 : 1.75} />
+                  <Home className="w-4 h-4 shrink-0" strokeWidth={view === 'inicio' ? 2.25 : 1.75} />
                   <span>{t('nav_inicio')}</span>
                 </button>
 
@@ -2773,10 +2773,10 @@ export default function App() {
                               <domain.Icon className="w-4 h-4 shrink-0" strokeWidth={isActiveDomain ? 2.25 : 1.75} />
                               <span>{t(domain.labelKey)}</span>
                             </div>
-                            <ChevronDown className={`w-3.5 h-3.5 text-content-tertiary transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} strokeWidth={2} />
+                            <ChevronDown className={`w-3.5 h-3.5 text-content-tertiary transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} strokeWidth={1.75} />
                           </button>
                           {isExpanded && (
-                            <div className="ml-4 mt-0.5 space-y-0.5 border-l border-slate-700/40 pl-2">
+                            <div className="ml-4 mt-0.5 space-y-0.5 border-l border-hairline pl-2">
                               {domain.items.map((item) => {
                                 const isActive = view === item.id;
                                 return (
@@ -2784,7 +2784,7 @@ export default function App() {
                                     title={item.id === 'hr' ? t('hr_page_title') : undefined}
                                     className={`w-full text-left px-2.5 py-2 rounded-md flex items-center gap-2 text-[12px] transition-colors
                                       ${isActive ? 'text-primary font-semibold bg-primary/10' : 'text-content-tertiary shell-nav-hover'}`}>
-                                    <item.Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.5 : 1.75} />
+                                    <item.Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.25 : 1.75} />
                                     <span>{t(item.labelKey)}</span>
                                   </button>
                                 );
@@ -2799,7 +2799,7 @@ export default function App() {
               </div>
 
               {/* Footer */}
-              <div className="pt-3 border-t border-slate-800/60 mt-3 space-y-1">
+              <div className="pt-3 border-t border-hairline-strong mt-3 space-y-1">
                 {currentMembership && (
                   <button onClick={() => { goToView('myprofile'); setMobileNavOpen(false); }}
                     className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2.5 text-[13px] font-medium transition-colors
@@ -2872,7 +2872,7 @@ export default function App() {
                 </button>
               ) : (
                 <select onChange={(e) => setPreviewRole(e.target.value || null)} defaultValue=""
-                  className="text-xs bg-surface-raised border border-slate-700/60 text-content-secondary rounded-lg px-2.5 py-1.5 hidden sm:block hover:border-slate-600 transition-colors cursor-pointer">
+                  className="text-xs bg-surface-raised border border-hairline text-content-secondary rounded-lg px-2.5 py-1.5 hidden sm:block hover:border-slate-600 transition-colors cursor-pointer">
                   <option value="">{t('preview_as')}</option>
                   {['aspirant', 'rookie', 'junior', 'senior', 'leader'].map((r) => (
                     <option key={r} value={r}>{t('role_' + r)}</option>
@@ -2886,7 +2886,7 @@ export default function App() {
                 className="p-2 rounded-lg shell-nav-hover text-content-tertiary hover:text-content-primary transition-colors"
                 title={t('nav_admin')}
                 aria-label={t('nav_admin')}>
-                <Settings className="w-4.5 h-4.5" style={{ width: '18px', height: '18px' }} strokeWidth={1.75} />
+                <Settings className="w-4.5 h-4.5" strokeWidth={1.75} />
               </button>
             )}
 
@@ -2988,7 +2988,7 @@ export default function App() {
                 className={`w-full text-left rounded-lg flex items-center gap-2.5 text-[13px] font-medium transition-colors flex-shrink-0
                   ${navCollapsed ? 'justify-center p-2.5 min-h-[40px]' : 'px-2.5 py-2'}
                   ${view === 'inicio' ? 'shell-nav-active' : 'text-content-secondary shell-nav-hover'}`}>
-                <Home className="w-4 h-4 shrink-0" strokeWidth={view === 'inicio' ? 2.5 : 1.75} />
+                <Home className="w-4 h-4 shrink-0" strokeWidth={view === 'inicio' ? 2.25 : 1.75} />
                 {!navCollapsed && <span className="truncate">{t('nav_inicio')}</span>}
               </button>
 
@@ -3015,13 +3015,13 @@ export default function App() {
                               <span className="truncate flex-1">{t(domain.labelKey)}</span>
                               <ChevronDown
                                 className={`w-3.5 h-3.5 shrink-0 text-content-tertiary transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`}
-                                strokeWidth={2}
+                                strokeWidth={1.75}
                               />
                             </>
                           )}
                         </button>
                         {!navCollapsed && isExpanded && (
-                          <div className="ml-3 mt-0.5 space-y-0.5 border-l border-slate-700/40 pl-2">
+                          <div className="ml-3 mt-0.5 space-y-0.5 border-l border-hairline pl-2">
                             {domain.items.map((item) => {
                               const isActive = view === item.id;
                               return (
@@ -3029,7 +3029,7 @@ export default function App() {
                                   title={item.id === 'hr' ? t('hr_page_title') : undefined}
                                   className={`w-full text-left px-2 py-1.5 rounded-md flex items-center gap-2 text-[12px] transition-colors
                                     ${isActive ? 'text-primary font-semibold bg-primary/10' : 'text-content-tertiary shell-nav-hover'}`}>
-                                  <item.Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.5 : 1.75} />
+                                  <item.Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.25 : 1.75} />
                                   <span className="truncate">{t(item.labelKey)}</span>
                                 </button>
                               );
@@ -3268,22 +3268,22 @@ export default function App() {
         </div>
 
         {/* ── Mobile bottom nav bar ── */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 flex items-center justify-around px-1 py-1 z-30">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-hairline-strong flex items-center justify-around px-1 py-1 z-30">
           {navItems.slice(0, 5).map((tab) => {
             const Icon = tab.Icon;
             return (
               <button key={tab.id} onClick={() => goToView(tab.id)}
                 title={tab.id === 'hr' ? t('hr_page_title') : undefined}
                 className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded flex-1 transition-colors
-                  ${view === tab.id ? 'text-teal-400' : 'text-slate-500 hover:text-slate-300'}`}>
-                <Icon className="w-5 h-5 shrink-0" strokeWidth={1.5} />
+                  ${view === tab.id ? 'text-primary' : 'text-slate-500 hover:text-slate-300'}`}>
+                <Icon className="w-5 h-5 shrink-0" strokeWidth={view === tab.id ? 2.25 : 1.75} />
                 <span className="text-[9px] leading-none truncate">{t(tab.labelKey)}</span>
               </button>
             );
           })}
           <button onClick={() => setMobileNavOpen(true)}
             className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded flex-1 text-slate-500 hover:text-slate-300">
-            <span className="text-lg leading-none">⋯</span>
+            <MoreHorizontal className="w-5 h-5 shrink-0" strokeWidth={1.75} />
             <span className="text-[9px] leading-none">{t('more_btn')}</span>
           </button>
         </nav>

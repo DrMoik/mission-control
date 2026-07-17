@@ -61,7 +61,7 @@ function ConfirmDialog({ confirm, onResolve }) {
         role="dialog"
         aria-modal="true"
         aria-label={confirm.title || confirm.message}
-        className="modal-panel w-full max-w-sm rounded-2xl border border-slate-700/60 bg-surface-raised p-5 shadow-2xl"
+        className="modal-panel w-full max-w-sm rounded-2xl border border-hairline bg-surface-raised p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {confirm.title && (

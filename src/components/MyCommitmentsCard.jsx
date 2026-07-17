@@ -50,7 +50,7 @@ export default function MyCommitmentsCard({
   const profileCompletion = computeProfileCompletion(currentMembership);
 
   return (
-    <div className="bg-surface-raised rounded-xl p-4 border border-slate-700/40 shadow-surface-sm">
+    <div className="bg-surface-raised rounded-xl p-4 border border-hairline shadow-surface-sm">
       <h3 className="text-sm font-semibold text-content-primary mb-3">{t('my_commitments')}</h3>
       <p className="text-xs text-content-secondary mb-4">{t('my_commitments_desc')}</p>
 
@@ -81,7 +81,7 @@ export default function MyCommitmentsCard({
         )}
 
         {/* Weekly streak */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-700/50">
+        <div className="flex items-center justify-between pt-2 border-t border-hairline">
           <span className="text-xs text-slate-400">{t('weekly_streak')}</span>
           <span className="text-sm font-semibold text-slate-200">{streak}</span>
         </div>
@@ -102,7 +102,7 @@ export default function MyCommitmentsCard({
         )}
 
         {/* Profile completion */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-700/50">
+        <div className="flex items-center justify-between pt-2 border-t border-hairline">
           <span className="text-xs text-slate-400">{t('profile_completion')}</span>
           <span className={`text-sm font-semibold ${profileCompletion.percentage >= 100 ? 'text-teal-400' : 'text-slate-300'}`}>
             {profileCompletion.percentage}% {t('profile_complete_pct')}

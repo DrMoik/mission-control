@@ -5,6 +5,7 @@
 //   • TAREAS — Puntos por calificación (retroactivo)
 
 import React, { useState } from 'react';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 import SeasonResetSection from '../components/SeasonResetSection.jsx';
 import { t } from '../strings.js';
 import { showToast } from '../services/feedback.js';
@@ -172,7 +173,7 @@ export default function AdminView({
   return (
     <div className="space-y-8 p-4">
       <div className="flex flex-wrap items-center gap-2 animate-fade-in">
-        <h2 className="text-2xl font-bold text-gradient tracking-tight">{tFn('admin_tab_title') || 'Admin'}</h2>
+        <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">{tFn('admin_tab_title') || 'Admin'}</h2>
         <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md font-medium">
           {tFn('admin_only') || 'Solo admin'}
         </span>
@@ -186,7 +187,7 @@ export default function AdminView({
         <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_profile') || 'Perfil'}</h3>
         <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_profile_hint') || 'Opciones del formulario de perfil: carreras, semestres, etiquetas de personalidad, diccionario de habilidades.'}</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
             <h4 className="text-sm font-semibold text-primary">{tFn('admin_careers_majors') || 'Carreras / Majors'}</h4>
             <p className="text-[10px] text-content-tertiary">{tFn('admin_empty_ok') || 'Línea vacía = opción "no definido".'}</p>
             <textarea
@@ -209,7 +210,7 @@ export default function AdminView({
             </button>
           </section>
 
-          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
             <h4 className="text-sm font-semibold text-primary">{tFn('admin_semesters') || 'Semestres'}</h4>
             <textarea
               key="semesters"
@@ -231,7 +232,7 @@ export default function AdminView({
             </button>
           </section>
 
-          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
             <h4 className="text-sm font-semibold text-primary">{tFn('admin_personality_tags') || 'Etiquetas de personalidad'}</h4>
             <p className="text-[10px] text-content-tertiary">{tFn('admin_personality_hint') || 'Diccionario: etiqueta : texto mostrado. Una por línea. Ej: ptag_creative: Creativo/a. El tag se guarda; el texto es cómo se renderiza.'}</p>
             <textarea
@@ -255,7 +256,7 @@ export default function AdminView({
           </section>
 
           {onSaveSkillDictionary && (
-            <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3 lg:col-span-2">
+            <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3 lg:col-span-2">
               <h4 className="text-sm font-semibold text-primary">{tFn('admin_skill_dictionary') || 'Diccionario de habilidades'}</h4>
               <p className="text-[10px] text-content-tertiary">{tFn('admin_skill_dictionary_hint') || 'Una por línea: id: etiqueta: tipo. Tipos: technical, learning, support, collaboration. Para perfil de colaboración.'}</p>
               <textarea
@@ -280,14 +281,14 @@ export default function AdminView({
           )}
 
           {skillProposals.filter((p) => (p.status || 'pending') === 'pending').length > 0 && (
-            <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3 lg:col-span-2">
+            <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3 lg:col-span-2">
               <h4 className="text-sm font-semibold text-amber-400">{tFn('admin_skill_proposals') || 'Propuestas de habilidades'}</h4>
               <p className="text-[10px] text-content-tertiary">{tFn('admin_skill_proposals_hint') || 'Los miembros proponen habilidades que no están en el catálogo. Aprueba para agregarlas al diccionario.'}</p>
-              <div className="space-y-2">
+              <StaggerList as="div" className="space-y-2">
                 {skillProposals.filter((p) => (p.status || 'pending') === 'pending').map((p) => {
                   const proposer = memberships.find((m) => m.id === p.proposedByMembershipId);
                   return (
-                    <div key={p.id} className="flex items-center justify-between gap-2 py-2 px-3 bg-slate-900/60 rounded border border-slate-600">
+                    <StaggerItem as="div" key={p.id} className="flex items-center justify-between gap-2 py-2 px-3 bg-slate-900/60 rounded border border-slate-600">
                       <div>
                         <span className="text-sm text-slate-200 font-medium">{p.label || p.proposedLabel}</span>
                         {p.proposedType && <span className="text-[10px] text-slate-500 ml-1">({p.proposedType})</span>}
@@ -309,10 +310,10 @@ export default function AdminView({
                           {tFn('reject') || 'Rechazar'}
                         </button>
                       </div>
-                    </div>
+                    </StaggerItem>
                   );
                 })}
-              </div>
+              </StaggerList>
             </section>
           )}
         </div>
@@ -323,7 +324,7 @@ export default function AdminView({
         <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_merits') || 'Logros y méritos'}</h3>
         <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_merits_hint') || 'Dominios, niveles, familias de mérito y puntos de logros automáticos (Actualización semanal, Perfil completo, 50 actualizaciones). Al guardar los puntos del sistema se aplican retroactivamente a todos los eventos existentes.'}</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
             <h4 className="text-sm font-semibold text-primary">{tFn('merit_attr_domains') || 'Áreas / dominios'}</h4>
             <p className="text-[10px] text-content-tertiary">{tFn('admin_domains_hint') || 'Una por línea. Formato id: etiqueta (ej. physical: Componente físico) o texto plano.'}</p>
             <textarea
@@ -348,7 +349,7 @@ export default function AdminView({
             </button>
           </section>
 
-          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
             <h4 className="text-sm font-semibold text-primary">{tFn('admin_merit_tiers') || 'Niveles de mérito'}</h4>
             <textarea
               key="tiers"
@@ -370,7 +371,7 @@ export default function AdminView({
             </button>
           </section>
 
-          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
             <h4 className="text-sm font-semibold text-primary">{tFn('admin_merit_families') || 'Familias de mérito'}</h4>
             <p className="text-[10px] text-content-tertiary">{tFn('admin_merit_families_hint') || 'Una por línea: id: nombre o id: nombre — descripción. Para inferencia de trayectorias.'}</p>
             <textarea
@@ -393,7 +394,7 @@ export default function AdminView({
             </button>
           </section>
 
-          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
             <h4 className="text-sm font-semibold text-primary">{tFn('admin_knowledge_areas') || 'Áreas de conocimiento'}</h4>
             <p className="text-[10px] text-content-tertiary">{tFn('admin_knowledge_areas_hint') || 'Una por línea: id: nombre. Para el mapa de conocimientos.'}</p>
             <textarea
@@ -416,7 +417,7 @@ export default function AdminView({
             </button>
           </section>
 
-          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3 lg:col-span-2">
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3 lg:col-span-2">
             <div className="flex items-center gap-2">
               <h4 className="text-sm font-semibold text-primary">{tFn('admin_system_merit_points') || 'Puntos de logros del sistema'}</h4>
               <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-medium">{tFn('admin_retroactive') || 'Retroactivo'}</span>
@@ -477,7 +478,7 @@ export default function AdminView({
         <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_tasks') || 'Tareas'}</h3>
         <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_tasks_hint') || 'Puntos por calificación en el flujo "Solicitar Revisión". Al guardar se aplican retroactivamente a todos los eventos existentes.'}</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3 lg:col-span-2">
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3 lg:col-span-2">
             <div className="flex items-center gap-2">
               <h4 className="text-sm font-semibold text-primary">{tFn('admin_task_grade_points') || 'Puntos por tarea revisada'}</h4>
               <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-medium">{tFn('admin_retroactive') || 'Retroactivo'}</span>
@@ -542,7 +543,7 @@ export default function AdminView({
       {/* ─── TEMPORADA ─── */}
       {onSeasonReset && (
         <div className="mt-8">
-          <h2 className="text-xs font-bold text-content-tertiary uppercase tracking-widest mb-4 border-t border-slate-700/40 pt-6">
+          <h2 className="text-xs font-bold text-content-tertiary uppercase tracking-widest mb-4 border-t border-hairline pt-6">
             Temporada
           </h2>
           <SeasonResetSection

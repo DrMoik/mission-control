@@ -88,7 +88,7 @@ const formatDateLabel = (value) => {
   });
 };
 
-const sectionPanelCls = 'rounded-lg border border-slate-700/40 bg-surface-sunken/40 p-3';
+const sectionPanelCls = 'rounded-lg border border-hairline bg-surface-sunken/40 p-3';
 const sectionLabelCls = 'mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-tertiary';
 const pickerCls = 'w-full rounded-lg border border-slate-600 bg-surface-sunken px-3 py-2 text-sm text-content-primary placeholder:text-content-tertiary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors duration-150';
 const selectCls = 'w-full rounded-lg border border-slate-600 bg-surface-sunken px-3 py-2 text-sm text-content-secondary focus:border-primary focus:outline-none';
@@ -170,21 +170,21 @@ function ActionItemsEditor({ items, onChange }) {
 
   return (
     <div className="space-y-2">
-      <div className="hidden rounded-lg border border-slate-700/40 bg-surface-sunken/40 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-content-tertiary md:grid md:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)_140px_44px] md:gap-2">
+      <div className="hidden rounded-lg border border-hairline bg-surface-sunken/40 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-content-tertiary md:grid md:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)_140px_44px] md:gap-2">
         <div>Punto de accion</div>
         <div>Responsable</div>
         <div>Fecha limite</div>
         <div />
       </div>
       {items.map((item) => (
-        <div key={item.id} className="grid gap-2 rounded-lg border border-slate-700/40 bg-surface-sunken/30 p-2 md:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)_140px_44px]">
+        <div key={item.id} className="grid gap-2 rounded-lg border border-hairline bg-surface-sunken/30 p-2 md:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)_140px_44px]">
           <Input value={item.text} onChange={(e) => updateItem(item.id, 'text', e.target.value)} placeholder="Accion a realizar" />
           <Input value={item.assignee} onChange={(e) => updateItem(item.id, 'assignee', e.target.value)} placeholder="Persona responsable" />
           <PickerField type="date" value={item.deadline} onChange={(value) => updateItem(item.id, 'deadline', value)} placeholder="Seleccionar fecha" className={pickerCls} />
           <button
             type="button"
             onClick={() => removeItem(item.id)}
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-700/40 text-red-400 transition-colors hover:border-red-500/60 hover:text-red-300"
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-hairline text-red-400 transition-colors hover:border-red-500/60 hover:text-red-300"
             title={t('delete')}
           >
             <X className="h-4 w-4" strokeWidth={2} />
@@ -208,7 +208,7 @@ function ActionItemsTable({ meeting, canEditThis, onToggleAction, onRemoveAction
     return <p className="text-sm text-content-tertiary">Sin puntos de accion registrados.</p>;
   }
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-700/40">
+    <div className="overflow-hidden rounded-lg border border-hairline">
       <div className="grid grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)_130px_60px] bg-surface-sunken/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-content-tertiary">
         <div>Punto de accion</div>
         <div>Responsable</div>
@@ -216,7 +216,7 @@ function ActionItemsTable({ meeting, canEditThis, onToggleAction, onRemoveAction
         <div className="text-center">Estado</div>
       </div>
       {items.map((item) => (
-        <div key={item.id} className="grid grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)_130px_60px] items-center gap-2 border-t border-slate-700/40 bg-surface-sunken/20 px-3 py-2 text-sm text-content-primary">
+        <div key={item.id} className="grid grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)_130px_60px] items-center gap-2 border-t border-hairline bg-surface-sunken/20 px-3 py-2 text-sm text-content-primary">
           <div className={item.done ? 'line-through text-content-tertiary' : ''}>{ensureString(item.text, lang) || '-'}</div>
           <div className="text-content-secondary">{ensureString(item.assignee, lang) || '-'}</div>
           <div className="text-content-secondary">{item.deadline ? formatDateLabel(item.deadline) : '-'}</div>
@@ -328,8 +328,8 @@ export default function MeetingsSection({
 
       {/* ── Create form panel ── */}
       {canCreate && showCreateForm && (
-        <form onSubmit={handleCreate} className="space-y-4 rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm p-5">
-          <div className="border-b border-slate-700/40 pb-3">
+        <form onSubmit={handleCreate} className="space-y-4 rounded-xl border border-hairline bg-surface-raised shadow-surface-sm p-5">
+          <div className="border-b border-hairline pb-3">
             <div className="text-base font-semibold text-content-primary">Registro de Minutas del Equipo</div>
           </div>
 
@@ -392,7 +392,7 @@ export default function MeetingsSection({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-700/40">
+          <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
             <Button type="button" variant="secondary" size="sm" onClick={() => { setShowCreateForm(false); setForm(emptyForm()); }}>{t('cancel')}</Button>
             <Button type="submit" size="sm">Guardar minuta</Button>
           </div>
@@ -400,8 +400,8 @@ export default function MeetingsSection({
       )}
 
       {/* ── Meetings panel ── */}
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700/40 flex items-center justify-between">
+      <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-hairline flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">{t('meetings_title')}</span>
           <span className="text-xs text-content-tertiary">{meetings.length} minutas</span>
         </div>
@@ -436,7 +436,7 @@ export default function MeetingsSection({
                     className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-slate-700/20 transition-colors"
                     onClick={() => setExpandedId(isExpanded ? null : meeting.id)}
                   >
-                    <div className="w-14 shrink-0 rounded-lg bg-surface-overlay border border-slate-700/40 p-2 text-center">
+                    <div className="w-14 shrink-0 rounded-lg bg-surface-overlay border border-hairline p-2 text-center">
                       {meeting.date ? (
                         <>
                           <div className="text-[10px] uppercase text-content-tertiary">
@@ -488,7 +488,7 @@ export default function MeetingsSection({
 
                   {/* Expanded detail view */}
                   {isExpanded && !isEditing && (
-                    <div className="space-y-3 border-t border-slate-700/40 bg-surface-sunken/30 px-4 py-4">
+                    <div className="space-y-3 border-t border-hairline bg-surface-sunken/30 px-4 py-4">
                       <div className="grid gap-3 md:grid-cols-2">
                         <SectionPanel title="Organizacion del equipo">
                           <p className="whitespace-pre-wrap text-sm text-content-primary">{title}</p>
@@ -533,7 +533,7 @@ export default function MeetingsSection({
 
                   {/* Edit form */}
                   {isEditing && editDraft && (
-                    <div className="space-y-4 border-t border-slate-700/40 bg-surface-sunken/30 px-4 py-4">
+                    <div className="space-y-4 border-t border-hairline bg-surface-sunken/30 px-4 py-4">
                       <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_180px]">
                         <div>
                           <FieldLabel>Organizacion / equipo</FieldLabel>
@@ -587,7 +587,7 @@ export default function MeetingsSection({
                         </div>
                       </div>
 
-                      <div className="flex justify-end gap-2 pt-2 border-t border-slate-700/40">
+                      <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
                         <Button type="button" variant="secondary" size="sm" onClick={() => { setEditingId(null); setEditDraft(null); }}>{t('cancel')}</Button>
                         <Button type="button" size="sm" onClick={() => saveEdit(meeting)}>{t('save')}</Button>
                       </div>

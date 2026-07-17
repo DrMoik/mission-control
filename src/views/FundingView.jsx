@@ -9,6 +9,7 @@ import { t } from '../strings.js';
 import PickerField from '../components/ui/PickerField.jsx';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 function formatMoney(n) {
   if (n == null || isNaN(n)) return '—';
@@ -141,29 +142,29 @@ function FondosTab({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 shadow-surface-sm sm:col-span-1">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">{t('funding_grand_total')}</div>
-          <div className="text-2xl font-bold text-primary">{formatMoney(grandTotal)}</div>
+          <div className="text-2xl font-bold text-primary font-mono tabular-nums">{formatMoney(grandTotal)}</div>
         </div>
         {accounts.slice(0, 2).map((acc) => (
-          <div key={acc.id} className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+          <div key={acc.id} className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm">
             <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1 truncate">{accountLabel(acc)}</div>
-            <div className="text-2xl font-bold text-content-primary">{formatMoney(acc.currentBalance)}</div>
+            <div className="text-2xl font-bold text-content-primary font-mono tabular-nums">{formatMoney(acc.currentBalance)}</div>
           </div>
         ))}
       </div>
 
       {/* ── Accounts panel ── */}
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700/40 flex items-center justify-between">
+      <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-hairline flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">{t('funding_accounts_title')}</span>
           {canEdit && (
             <Button variant="secondary" size="sm" onClick={startAddAccount}>
-              <Plus className="w-3 h-3 mr-1" strokeWidth={2.5} />{t('funding_add_account')}
+              <Plus className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} />{t('funding_add_account')}
             </Button>
           )}
         </div>
 
         {(addingAccount || editingAccountId) && (
-          <div className="border-b border-slate-700/40 bg-surface-sunken/30 px-4 py-4 space-y-3">
+          <div className="border-b border-hairline bg-surface-sunken/30 px-4 py-4 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-content-tertiary block mb-1">{t('funding_bank')}</label>
@@ -194,7 +195,7 @@ function FondosTab({
 
         {accounts.length === 0 ? (
           <div className="px-4 py-8 text-center">
-            <Wallet className="w-7 h-7 text-content-tertiary mx-auto mb-2" strokeWidth={1.5} />
+            <Wallet className="w-7 h-7 text-content-tertiary mx-auto mb-2" strokeWidth={1.75} />
             <p className="text-xs text-content-tertiary italic">{t('funding_no_accounts')}</p>
           </div>
         ) : (
@@ -203,7 +204,7 @@ function FondosTab({
               <div key={acc.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/20 transition-colors">
                 <div>
                   <span className="text-sm text-content-primary">{accountLabel(acc)}</span>
-                  <span className="ml-2 font-mono text-primary font-semibold">{formatMoney(acc.currentBalance)}</span>
+                  <span className="ml-2 font-mono tabular-nums text-primary font-semibold">{formatMoney(acc.currentBalance)}</span>
                 </div>
                 {canEdit && (
                   <div className="flex gap-2">
@@ -221,13 +222,13 @@ function FondosTab({
       {canEdit && !addingEntry && (
         <div className="flex justify-end">
           <Button size="sm" onClick={startAddEntry} disabled={accounts.length === 0}>
-            <Plus className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />{t('funding_add_entry')}
+            <Plus className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} />{t('funding_add_entry')}
           </Button>
         </div>
       )}
       {addingEntry && (
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-700/40">
+        <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-hairline">
             <span className="text-sm font-semibold text-content-primary">{t('funding_add_entry')}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
@@ -265,7 +266,7 @@ function FondosTab({
               <Input value={entryDraft.category} onChange={(e) => setEntryDraft((d) => ({ ...d, category: e.target.value }))} placeholder="Categoría (opcional)" />
             </div>
           </div>
-          <div className="flex gap-2 justify-end pt-2 border-t border-slate-700/40">
+          <div className="flex gap-2 justify-end pt-2 border-t border-hairline">
             <Button type="button" variant="secondary" size="sm" onClick={() => setAddingEntry(false)}>{t('cancel')}</Button>
             <Button type="button" size="sm" onClick={handleCreateEntry}
               disabled={!entryDraft.accountId || !entryDraft.amount}>{t('save')}</Button>
@@ -274,14 +275,14 @@ function FondosTab({
       )}
 
       {/* ── Ledger table ── */}
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700/40">
+      <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-hairline">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">Movimientos</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-surface-sunken/50 border-b border-slate-700/40">
+              <tr className="bg-surface-sunken/50 border-b border-hairline">
                 <th className="text-left px-3 py-2.5 text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('funding_date')}</th>
                 <th className="text-left px-3 py-2.5 text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('funding_account')}</th>
                 <th className="text-left px-3 py-2.5 text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('funding_description')}</th>
@@ -292,35 +293,39 @@ function FondosTab({
                 {canEdit && <th className="w-10" />}
               </tr>
             </thead>
-            <tbody>
-              {withBalances.length === 0 ? (
+            {withBalances.length === 0 ? (
+              <tbody>
                 <tr>
                   <td colSpan={canEdit ? 8 : 7} className="px-3 py-10 text-center text-content-tertiary italic">{t('funding_no_entries')}</td>
                 </tr>
-              ) : (
-                withBalances.map((e) => {
+              </tbody>
+            ) : (
+              <StaggerList as="tbody">
+                {withBalances.map((e) => {
                   const acc = accounts.find((a) => a.id === e.accountId);
                   return (
-                    <tr key={e.id} className="border-b border-slate-700/40 hover:bg-slate-700/20 transition-colors">
-                      <td className="px-3 py-2.5 text-content-secondary whitespace-nowrap">{formatDate(e.date)}</td>
+                    <StaggerItem as="tr" key={e.id}
+                      className="border-b border-hairline hover:bg-slate-700/20 transition-colors"
+                      style={{ borderLeft: `3px solid ${e.type === 'in' ? 'var(--color-success)' : 'var(--color-error)'}` }}>
+                      <td className="px-3 py-2.5 text-content-secondary whitespace-nowrap font-mono tabular-nums">{formatDate(e.date)}</td>
                       <td className="px-3 py-2.5 text-content-tertiary text-[11px]">{accountLabel(acc)}</td>
                       <td className="px-3 py-2.5 text-content-primary">{e.description || '—'}</td>
-                      <td className="px-3 py-2.5 text-right text-teal-400">{e.type === 'in' ? formatMoney(e.amount) : '—'}</td>
-                      <td className="px-3 py-2.5 text-right text-red-400">{e.type === 'out' ? formatMoney(e.amount) : '—'}</td>
+                      <td className="px-3 py-2.5 text-right text-teal-400 font-mono tabular-nums">{e.type === 'in' ? formatMoney(e.amount) : '—'}</td>
+                      <td className="px-3 py-2.5 text-right text-red-400 font-mono tabular-nums">{e.type === 'out' ? formatMoney(e.amount) : '—'}</td>
                       <td className="px-3 py-2.5 text-content-tertiary">{e.category || '—'}</td>
-                      <td className="px-3 py-2.5 text-right font-mono text-content-primary">{formatMoney(e._balanceAfter)}</td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums text-content-primary">{formatMoney(e._balanceAfter)}</td>
                       {canEdit && (
                         <td className="px-3 py-2.5">
                           <button onClick={() => onDeleteEntry?.(e.id)} className="text-red-400 hover:text-red-300 p-0.5 transition-colors" title={t('delete')}>
-                            <X className="w-4 h-4" strokeWidth={2} />
+                            <X className="w-4 h-4" strokeWidth={1.75} />
                           </button>
                         </td>
                       )}
-                    </tr>
+                    </StaggerItem>
                   );
-                })
-              )}
-            </tbody>
+                })}
+              </StaggerList>
+            )}
           </table>
         </div>
       </div>
@@ -476,15 +481,15 @@ function VentasTab({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">{t('sales_total_confirmed')}</div>
-          <div className="text-2xl font-bold text-teal-400">{formatMoney(totalConfirmed)}</div>
+          <div className="text-2xl font-bold text-teal-400 font-mono tabular-nums">{formatMoney(totalConfirmed)}</div>
           <div className="text-xs text-content-tertiary mt-0.5">{confirmedSales.length} {t('sales_confirmed_sales')}</div>
         </div>
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">{t('sales_total_pending')}</div>
-          <div className="text-2xl font-bold text-amber-400">{formatMoney(totalPending)}</div>
+          <div className="text-2xl font-bold text-amber-400 font-mono tabular-nums">{formatMoney(totalPending)}</div>
           <div className="text-xs text-content-tertiary mt-0.5">{pendingSales.length} {t('sales_pending_count')}</div>
         </div>
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">{t('sales_leaderboard')}</div>
           {leaders.length === 0 ? (
             <p className="text-xs text-content-tertiary italic mt-1">—</p>
@@ -499,9 +504,9 @@ function VentasTab({
 
       {/* ── Leaderboard panel ── */}
       {leaders.length > 0 && (
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-700/40 flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-400" strokeWidth={1.5} />
+        <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-hairline flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-amber-400" strokeWidth={1.75} />
             <span className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">{t('sales_leaderboard')}</span>
           </div>
           <div className="divide-y divide-slate-700/40">
@@ -514,7 +519,7 @@ function VentasTab({
                   <span className="text-sm text-content-primary">{leader.name}</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-semibold text-teal-400">{formatMoney(leader.amount)}</div>
+                  <div className="text-sm font-semibold text-teal-400 font-mono tabular-nums">{formatMoney(leader.amount)}</div>
                   <div className="text-[11px] text-content-tertiary">{leader.count} {t('sales_confirmed_sales')}</div>
                 </div>
               </div>
@@ -524,22 +529,22 @@ function VentasTab({
       )}
 
       {/* ── Product catalog ── */}
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700/40 flex items-center justify-between">
+      <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-hairline flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Package className="w-4 h-4 text-content-tertiary" strokeWidth={1.5} />
+            <Package className="w-4 h-4 text-content-tertiary" strokeWidth={1.75} />
             <span className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">{t('sales_catalog')}</span>
           </div>
           {canEdit && (
             <Button variant="secondary" size="sm" onClick={startAddItem}>
-              <Plus className="w-3 h-3 mr-1" strokeWidth={2.5} />{t('sales_add_item')}
+              <Plus className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} />{t('sales_add_item')}
             </Button>
           )}
         </div>
 
         {/* Catalog form */}
         {(addingItem || editingItemId) && (
-          <div className="border-b border-slate-700/40 bg-surface-sunken/30 px-4 py-4 space-y-3">
+          <div className="border-b border-hairline bg-surface-sunken/30 px-4 py-4 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="text-xs text-content-tertiary block mb-1">{t('sales_item_category')}</label>
@@ -589,7 +594,7 @@ function VentasTab({
 
         {saleItems.length === 0 ? (
           <div className="px-4 py-8 text-center">
-            <Package className="w-7 h-7 text-content-tertiary mx-auto mb-2" strokeWidth={1.5} />
+            <Package className="w-7 h-7 text-content-tertiary mx-auto mb-2" strokeWidth={1.75} />
             <p className="text-xs text-content-tertiary italic">{t('sales_no_items')}</p>
           </div>
         ) : (() => {
@@ -605,8 +610,11 @@ function VentasTab({
             if (!b) return -1;
             return a.localeCompare(b);
           });
-          const renderItem = (item) => (
-            <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/20 transition-colors">
+          const renderItem = (item) => {
+            const stockLevel = (item.stock ?? 0) === 0 ? 'error' : (item.stock ?? 0) <= 3 ? 'warning' : null;
+            return (
+            <div key={item.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-700/20 transition-colors"
+              style={stockLevel ? { borderLeft: `3px solid var(--color-${stockLevel})` } : undefined}>
               <div className="flex items-center gap-3 min-w-0">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -622,7 +630,7 @@ function VentasTab({
               </div>
               <div className="flex items-center gap-4 shrink-0">
                 <div className="text-right">
-                  <div className="text-sm font-semibold text-primary">{formatMoney(item.price)}</div>
+                  <div className="text-sm font-semibold text-primary font-mono tabular-nums">{formatMoney(item.price)}</div>
                   <div className={`text-[11px] ${(item.stock ?? 0) === 0 ? 'text-red-400' : (item.stock ?? 0) <= 3 ? 'text-amber-400' : 'text-content-tertiary'}`}>
                     {(item.stock ?? 0) === 0 ? t('sales_out_of_stock') : (item.stock ?? 0) <= 3 ? `${t('sales_low_stock')}: ${item.stock}` : `Stock: ${item.stock}`}
                   </div>
@@ -630,22 +638,23 @@ function VentasTab({
                 {canEdit && (
                   <div className="flex gap-2">
                     <button onClick={() => startEditItem(item)} className="text-amber-400 hover:text-amber-300 p-0.5 transition-colors" title={t('edit')}>
-                      <Pencil className="w-3.5 h-3.5" strokeWidth={2} />
+                      <Pencil className="w-3.5 h-3.5" strokeWidth={1.75} />
                     </button>
                     <button onClick={() => onDeleteSaleItem?.(item.id)} className="text-red-400 hover:text-red-300 p-0.5 transition-colors" title={t('delete')}>
-                      <X className="w-3.5 h-3.5" strokeWidth={2} />
+                      <X className="w-3.5 h-3.5" strokeWidth={1.75} />
                     </button>
                   </div>
                 )}
               </div>
             </div>
-          );
+            );
+          };
           return (
             <div className="divide-y divide-slate-700/40">
               {sortedKeys.map((key) => (
                 <div key={key}>
                   {key && (
-                    <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700/30">
+                    <div className="px-4 py-2 bg-slate-800/50 border-b border-hairline">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-content-tertiary">{key}</span>
                     </div>
                   )}
@@ -661,17 +670,17 @@ function VentasTab({
       {canRegisterSale && !registeringOpen && (
         <div className="flex justify-end">
           <Button onClick={() => setRegisteringOpen(true)} disabled={activeItems.length === 0}>
-            <ShoppingBag className="w-4 h-4 mr-1.5" strokeWidth={2} />{t('sales_register')}
+            <ShoppingBag className="w-4 h-4 mr-1.5" strokeWidth={1.75} />{t('sales_register')}
           </Button>
         </div>
       )}
 
       {registeringOpen && (
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-700/40">
+        <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-hairline">
             <span className="text-sm font-semibold text-content-primary">{t('sales_register_title')}</span>
             <button onClick={() => setRegisteringOpen(false)} className="text-content-tertiary hover:text-content-secondary">
-              <X className="w-4 h-4" strokeWidth={2} />
+              <X className="w-4 h-4" strokeWidth={1.75} />
             </button>
           </div>
 
@@ -743,24 +752,24 @@ function VentasTab({
                     placeholder="Cant."
                   />
                 </div>
-                <div className="w-24 shrink-0 text-right text-sm font-semibold text-primary whitespace-nowrap">
+                <div className="w-24 shrink-0 text-right text-sm font-semibold text-primary font-mono tabular-nums whitespace-nowrap">
                   {formatMoney((Number(line.quantity) || 0) * (Number(line.unitPrice) || 0))}
                 </div>
                 {saleDraft.lines.length > 1 && (
                   <button onClick={() => removeLine(idx)} className="text-red-400 hover:text-red-300 p-0.5 shrink-0">
-                    <X className="w-4 h-4" strokeWidth={2} />
+                    <X className="w-4 h-4" strokeWidth={1.75} />
                   </button>
                 )}
               </div>
             ))}
             <button onClick={addLine} className="text-xs text-primary hover:underline flex items-center gap-1 mt-1">
-              <Plus className="w-3 h-3" strokeWidth={2.5} />{t('sales_add_line')}
+              <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />{t('sales_add_line')}
             </button>
           </div>
 
-          <div className="flex items-center justify-between py-2 border-t border-slate-700/40">
+          <div className="flex items-center justify-between py-2 border-t border-hairline">
             <span className="text-sm text-content-secondary">{t('sales_total')}</span>
-            <span className="text-lg font-bold text-primary">{formatMoney(saleTotal)}</span>
+            <span className="text-lg font-bold text-primary font-mono tabular-nums">{formatMoney(saleTotal)}</span>
           </div>
 
           <div>
@@ -768,7 +777,7 @@ function VentasTab({
             <Input value={saleDraft.notes} onChange={(e) => setSaleDraft((d) => ({ ...d, notes: e.target.value }))} placeholder="Notas opcionales" />
           </div>
 
-          <div className="flex gap-2 justify-end pt-2 border-t border-slate-700/40">
+          <div className="flex gap-2 justify-end pt-2 border-t border-hairline">
             <Button type="button" variant="secondary" size="sm" onClick={() => setRegisteringOpen(false)}>{t('cancel')}</Button>
             <Button type="button" size="sm" onClick={handleRegisterSale}
               disabled={!saleDraft.lines.some((l) => l.itemId && Number(l.quantity) > 0)}>
@@ -779,28 +788,29 @@ function VentasTab({
       )}
 
       {/* ── Sales ledger ── */}
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700/40 flex items-center gap-2">
-          <ShoppingBag className="w-4 h-4 text-content-tertiary" strokeWidth={1.5} />
+      <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-hairline flex items-center gap-2">
+          <ShoppingBag className="w-4 h-4 text-content-tertiary" strokeWidth={1.75} />
           <span className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">{t('sales_ledger')}</span>
         </div>
         {sales.length === 0 ? (
           <div className="px-4 py-10 text-center">
-            <ShoppingBag className="w-7 h-7 text-content-tertiary mx-auto mb-2" strokeWidth={1.5} />
+            <ShoppingBag className="w-7 h-7 text-content-tertiary mx-auto mb-2" strokeWidth={1.75} />
             <p className="text-xs text-content-tertiary italic">{t('sales_no_sales')}</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-700/40">
+          <StaggerList as="div" className="divide-y divide-slate-700/40">
             {sales.map((sale) => {
               const isConfirmed = sale.status === 'confirmed';
               return (
-                <div key={sale.id} className="px-4 py-3 hover:bg-slate-700/10 transition-colors">
+                <StaggerItem as="div" key={sale.id} className="px-4 py-3 hover:bg-slate-700/10 transition-colors"
+                  style={{ borderLeft: `3px solid ${isConfirmed ? 'var(--color-success)' : 'var(--color-warning)'}` }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
                       <div className="mt-0.5 shrink-0">
                         {isConfirmed
-                          ? <CheckCircle2 className="w-4 h-4 text-teal-400" strokeWidth={2} />
-                          : <Clock className="w-4 h-4 text-amber-400" strokeWidth={2} />
+                          ? <CheckCircle2 className="w-4 h-4 text-teal-400" strokeWidth={1.75} />
+                          : <Clock className="w-4 h-4 text-amber-400" strokeWidth={1.75} />
                         }
                       </div>
                       <div className="min-w-0">
@@ -830,10 +840,10 @@ function VentasTab({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-bold text-primary">{formatMoney(sale.totalAmount)}</span>
+                      <span className="text-sm font-bold text-primary font-mono tabular-nums">{formatMoney(sale.totalAmount)}</span>
                       {!isConfirmed && canEdit && (
                         <Button size="sm" onClick={() => onConfirmSale?.(sale.id)}>
-                          <CheckCircle2 className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />{t('sales_confirm_payment')}
+                          <CheckCircle2 className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} />{t('sales_confirm_payment')}
                         </Button>
                       )}
                       {canEdit && (
@@ -843,10 +853,10 @@ function VentasTab({
                       )}
                     </div>
                   </div>
-                </div>
+                </StaggerItem>
               );
             })}
-          </div>
+          </StaggerList>
         )}
       </div>
     </div>
@@ -885,12 +895,12 @@ export default function FundingView({
     <div className="space-y-5 max-w-5xl">
       {/* ── Page header ── */}
       <div>
-        <h2 className="text-xl font-bold text-content-primary tracking-tight">{t('nav_funding')}</h2>
+        <h2 className="text-xl font-bold text-content-primary tracking-tight font-display">{t('nav_funding')}</h2>
         <p className="text-sm text-content-secondary mt-0.5">Registro financiero del equipo</p>
       </div>
 
       {/* ── Tab bar ── */}
-      <div className="flex gap-1 border-b border-slate-700/40">
+      <div className="flex gap-1 border-b border-hairline">
         {tabs.map((tab) => (
           <button
             key={tab.id}

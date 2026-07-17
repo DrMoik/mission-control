@@ -11,6 +11,7 @@ import { ensureString } from '../utils.js';
 import { TASK_GRADES } from '../constants.js';
 import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
 import { Button, Input } from '../components/ui/index.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 function SectionToggle({ label, count, open, onToggle }) {
   return (
@@ -19,7 +20,7 @@ function SectionToggle({ label, count, open, onToggle }) {
       onClick={onToggle}
       className="inline-flex items-center gap-1.5 text-sm font-medium text-content-secondary hover:text-content-primary transition-colors"
     >
-      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? '' : '-rotate-90'}`} strokeWidth={2} />
+      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${open ? '' : '-rotate-90'}`} strokeWidth={1.75} />
       {label} <span className="text-content-tertiary text-xs">({count})</span>
     </button>
   );
@@ -129,20 +130,28 @@ export default function TasksView({
       : t('task_status_in_progress');
 
     const cardBg = isCompleted
-      ? 'bg-surface-raised/40 border-slate-700/40'
+      ? 'bg-surface-raised/40 border-hairline'
       : isPendingReview
         ? 'bg-amber-950/20 border-amber-700/40'
         : isBlocked
           ? 'bg-red-950/15 border-red-600/30'
-          : 'bg-surface-raised border-slate-700/40 hover:border-primary/25 hover:shadow-glow-sm';
+          : 'bg-surface-raised border-hairline hover:border-primary/25 hover:shadow-glow-sm';
 
     const badgeCls = isCompleted ? 'bg-surface-overlay text-content-tertiary'
       : isPendingReview ? 'bg-amber-900/40 text-amber-300 border border-amber-700/40'
       : isBlocked ? 'bg-red-900/40 text-red-300 border border-red-700/40'
-      : 'bg-surface-overlay text-content-tertiary border border-slate-700/40';
+      : 'bg-surface-overlay text-content-tertiary border border-hairline';
+
+    const spineColor = isCompleted ? 'transparent'
+      : isPendingReview ? 'var(--color-warning)'
+      : isBlocked ? 'var(--color-error)'
+      : 'var(--color-info)';
 
     return (
-      <div className={`rounded-xl border p-4 space-y-2 transition-all duration-200 ${cardBg}`}>
+      <div
+        className={`rounded-xl border p-4 space-y-2 transition-all duration-200 border-l-[3px] ${cardBg}`}
+        style={{ borderLeftColor: spineColor }}
+      >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -164,7 +173,7 @@ export default function TasksView({
                 <> · {t('task_assigned_to')}: {assigneeNames}</>
               )}
               {due && (
-                <> · {t('task_due')}: {due.toLocaleDateString()}
+                <> · {t('task_due')}: <span className="font-mono tabular-nums">{due.toLocaleDateString()}</span>
                   {isOverdue && (
                     <span className="ml-1 text-error font-medium">
                       ({t('task_overdue_by')} {overdueDays} {t('task_overdue_days')})
@@ -193,7 +202,7 @@ export default function TasksView({
                               : [...(task.knowledgeAreaIds || []), a.id];
                             onUpdateTask(task.id, { knowledgeAreaIds: next });
                           }}
-                          className={`text-[10px] px-1.5 py-0.5 rounded-md border transition-colors ${sel ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-tertiary border-slate-700/40'}`}
+                          className={`text-[10px] px-1.5 py-0.5 rounded-md border transition-colors ${sel ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-surface-overlay hover:bg-slate-700/50 text-content-tertiary border-hairline'}`}
                         >
                           {a.name}
                         </button>
@@ -215,7 +224,7 @@ export default function TasksView({
                       .map((a) => (
                         <span
                           key={a.id}
-                          className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface-overlay text-content-tertiary border border-slate-700/40"
+                          className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface-overlay text-content-tertiary border border-hairline"
                         >
                           {a.name}
                         </span>
@@ -299,7 +308,7 @@ export default function TasksView({
                     key={grade}
                     type="button"
                     onClick={() => onGradeTask(task.id, grade)}
-                    className="text-[10px] bg-surface-overlay hover:bg-primary/20 hover:text-primary text-content-secondary border border-slate-700/40 hover:border-primary/40 px-2 py-1 rounded-md capitalize transition-colors"
+                    className="text-[10px] bg-surface-overlay hover:bg-primary/20 hover:text-primary text-content-secondary border border-hairline hover:border-primary/40 px-2 py-1 rounded-md capitalize transition-colors"
                   >
                     {t(`task_grade_${grade}`)}
                   </button>
@@ -318,18 +327,18 @@ export default function TasksView({
           </div>
         </div>
         {isCompleted && task.grade && (
-          <div className="space-y-0.5 pt-1 border-t border-slate-700/40">
+          <div className="space-y-0.5 pt-1 border-t border-hairline">
             <p className="text-[11px] text-content-tertiary">
               {t('task_grade_label')}: <span className="text-content-secondary">{t(`task_grade_${task.grade}`)}</span>
             </p>
             {acceptedAt && (
               <p className="text-[11px] text-content-tertiary">
-                {t('task_accepted_at')}: {acceptedAt.toLocaleDateString()}
+                {t('task_accepted_at')}: <span className="font-mono tabular-nums">{acceptedAt.toLocaleDateString()}</span>
               </p>
             )}
             {acceptanceLeadTime && (
               <p className="text-[11px] text-content-tertiary">
-                {t('task_acceptance_time')}: {acceptanceLeadTime}
+                {t('task_acceptance_time')}: <span className="font-mono tabular-nums">{acceptanceLeadTime}</span>
               </p>
             )}
           </div>
@@ -341,7 +350,7 @@ export default function TasksView({
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="animate-fade-in">
-        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('nav_tasks')}</h2>
+        <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">{t('nav_tasks')}</h2>
         <p className="text-sm text-content-secondary mt-1">{t('task_from_pm_tools')}</p>
       </div>
 
@@ -422,14 +431,18 @@ export default function TasksView({
         ) : filteredMyPending.length === 0 && filteredMyPendingReview.length === 0 ? (
           <p className="text-xs text-content-tertiary italic py-2">{taskSearch ? t('search_no_results') : t('task_no_pending_guidance')}</p>
         ) : (
-          <div className="space-y-2">
+          <StaggerList as="div" className="space-y-2">
             {filteredMyPending.map((task) => (
-              <TaskCard key={task.id} task={task} showRequestReview showGrade={false} />
+              <StaggerItem as="div" key={task.id}>
+                <TaskCard task={task} showRequestReview showGrade={false} />
+              </StaggerItem>
             ))}
             {filteredMyPendingReview.map((task) => (
-              <TaskCard key={task.id} task={task} showRequestReview={false} showGrade={false} />
+              <StaggerItem as="div" key={task.id}>
+                <TaskCard task={task} showRequestReview={false} showGrade={false} />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerList>
         )}
       </div>
 
@@ -443,7 +456,7 @@ export default function TasksView({
             onToggle={() => setShowHistory((s) => !s)}
           />
           {showHistory && (
-            <div className="mt-3 rounded-xl border border-slate-700/40 bg-surface-raised overflow-hidden divide-y divide-slate-700/40">
+            <div className="mt-3 rounded-xl border border-hairline bg-surface-raised overflow-hidden divide-y divide-slate-700/40">
               {[...myTasks]
                 .filter(matchesSearch)
                 .sort((a, b) => {

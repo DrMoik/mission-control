@@ -24,7 +24,7 @@ export default function JoinRequestModal({ team, categories, onSubmit, onCancel 
 
   return (
     <ModalOverlay onClickBackdrop={onCancel}>
-      <div className="bg-surface-raised rounded-2xl w-full max-w-md shadow-surface-xl overflow-hidden border border-slate-700/40">
+      <div className="bg-surface-raised rounded-2xl w-full max-w-md shadow-surface-xl overflow-hidden border border-hairline">
         {/* Header */}
         <div className="bg-gradient-to-r from-teal-900 to-slate-800 px-6 py-5">
           <h2 className="text-white font-bold text-lg">{t('join_title')}</h2>

@@ -291,7 +291,7 @@ export default function ProfileModal({
           {editing ? (
             <div className="space-y-4">
               {/* Save / cancel bar */}
-              <div className="flex justify-between items-center pb-1 border-b border-slate-700">
+              <div className="flex justify-between items-center pb-1 border-b border-hairline">
                 <span className="text-xs text-slate-400">{t('edit_profile')}</span>
                 <div className="flex gap-2">
                   <button onClick={() => setEditing(false)} className="text-xs text-slate-400 underline">{t('cancel')}</button>
@@ -319,12 +319,12 @@ export default function ProfileModal({
                   {draft.photoURL ? (
                     <SafeProfileImage
                       src={draft.photoURL}
-                      fallback={<div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>}
+                      fallback={<div className="w-9 h-9 rounded-full shrink-0 border border-hairline bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>}
                       className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-600"
                       alt=""
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>
+                    <div className="w-9 h-9 rounded-full shrink-0 border border-hairline bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>
                   )}
                   <input value={draft.photoURL} onChange={(e) => set('photoURL', e.target.value)}
                     placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
@@ -354,12 +354,12 @@ export default function ProfileModal({
                   {draft.coverPhotoURL ? (
                     <SafeProfileImage
                       src={draft.coverPhotoURL}
-                      fallback={<div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>}
+                      fallback={<div className="w-14 h-9 rounded shrink-0 border border-hairline bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>}
                       className="w-14 h-9 rounded object-cover shrink-0 border border-slate-600"
                       alt=""
                     />
                   ) : (
-                    <div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>
+                    <div className="w-14 h-9 rounded shrink-0 border border-hairline bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>
                   )}
                   <input value={draft.coverPhotoURL} onChange={(e) => set('coverPhotoURL', e.target.value)}
                     placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm" />
@@ -413,7 +413,7 @@ export default function ProfileModal({
               </div>
 
               {/* ── Mission ── */}
-              <div className="border-t border-slate-700 pt-3 space-y-3">
+              <div className="border-t border-hairline pt-3 space-y-3">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_mission')}</p>
                 <BilingualField
                   label={t('current_objective')}
@@ -430,7 +430,7 @@ export default function ProfileModal({
               </div>
 
               {/* ── Collaboration ── */}
-              <div className="border-t border-slate-700 pt-3 space-y-3">
+              <div className="border-t border-hairline pt-3 space-y-3">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_collaboration')}</p>
                 <p className="text-[10px] text-slate-500">{t('collab_skill_hint')}</p>
                 <SkillPicker label={t('looking_for_help_in')} value={draft.helpNeedsAreas ?? []} onChange={(v) => set('helpNeedsAreas', v)} skills={skillDictionary} allowedTypes={['technical','learning','support','collaboration']} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
@@ -458,13 +458,13 @@ export default function ProfileModal({
                 {draft.skillsICanTeach?.length > 0 && (
                   <div>
                     <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
-                    <LegacyTagList tags={draft.skillsICanTeach} colorClass="bg-slate-800/60 text-slate-300/80 border-slate-700/40" onRemove={(i) => set('skillsICanTeach', draft.skillsICanTeach.filter((_, idx) => idx !== i))} lang={lang} />
+                    <LegacyTagList tags={draft.skillsICanTeach} colorClass="bg-slate-800/60 text-slate-300/80 border-hairline" onRemove={(i) => set('skillsICanTeach', draft.skillsICanTeach.filter((_, idx) => idx !== i))} lang={lang} />
                   </div>
                 )}
               </div>
 
               {/* ── Culture ── */}
-              <div className="border-t border-slate-700 pt-3 space-y-4">
+              <div className="border-t border-hairline pt-3 space-y-4">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('section_culture')}</p>
                 <CultureSongField label={t('culture_what_i_listen')} value={draft.whatIListenTo || []} onChange={(v) => set('whatIListenTo', v)}
                   titlePlaceholder={t('song_title_ph')} urlPlaceholder={t('song_url_ph')} addLabel={t('culture_add')} maxItems={3} />
@@ -487,7 +487,7 @@ export default function ProfileModal({
               </div>
 
               {/* ── About ── */}
-              <div className="border-t border-slate-700 pt-3 space-y-3">
+              <div className="border-t border-hairline pt-3 space-y-3">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{t('about_label')}</p>
                 <BilingualField
                   label={t('about_me')}
@@ -648,7 +648,7 @@ export default function ProfileModal({
                             return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-teal-900/40 text-teal-200 border-teal-700/50">{label}</span>;
                           })}
                           {(membership.skillsICanTeach || []).map((tag, i) => (
-                            <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-slate-800/60 text-slate-300/80 border-slate-700/40">
+                            <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-slate-800/60 text-slate-300/80 border-hairline">
                               {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
                             </span>
                           ))}
@@ -665,7 +665,7 @@ export default function ProfileModal({
                   <SectionHeading label={t('section_culture')} />
                   <div className="space-y-2">
                     {membership.whatIListenTo?.length > 0 && (
-                      <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-hairline">
                         <p className="text-[10px] text-slate-500 mb-1">{t('culture_what_i_listen')}</p>
                         <ul className="text-sm text-slate-200 space-y-0.5">
                           {membership.whatIListenTo.map((s, i) => {
@@ -681,19 +681,19 @@ export default function ProfileModal({
                       </div>
                     )}
                     {membership.bookThatMarkedMe?.length > 0 && (
-                      <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-hairline">
                         <p className="text-[10px] text-slate-500 mb-1">{t('culture_book_that_marked')}</p>
                         <ul className="text-sm text-slate-200 space-y-0.5">{membership.bookThatMarkedMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
                       </div>
                     )}
                     {membership.ideaThatMotivatesMe?.length > 0 && (
-                      <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-hairline">
                         <p className="text-[10px] text-slate-500 mb-1">{t('culture_idea_that_motivates')}</p>
                         <ul className="text-sm text-slate-200 space-y-0.5">{membership.ideaThatMotivatesMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
                       </div>
                     )}
                     {membership.quoteThatMovesMe?.length > 0 && (
-                      <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-slate-700/30">
+                      <div className="bg-slate-800/60 rounded-lg px-3 py-2.5 border border-hairline">
                         <p className="text-[10px] text-slate-500 mb-1">{t('culture_quote_that_moves')}</p>
                         <ul className="text-sm text-slate-200 space-y-0.5 italic">{membership.quoteThatMovesMe.map((s, i) => <li key={i}>&quot;{ensureString(s, lang)}&quot;</li>)}</ul>
                       </div>

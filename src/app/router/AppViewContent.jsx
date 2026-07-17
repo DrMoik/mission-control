@@ -1,5 +1,8 @@
 import React, { lazy, Suspense } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { t } from '../../strings.js';
+
+const MotionDiv = motion.div;
 
 const OverviewView = lazy(() => import('../../views/OverviewView.jsx'));
 const InicioView = lazy(() => import('../../views/InicioView.jsx'));
@@ -233,8 +236,17 @@ export default function AppViewContent({
     handleSeasonReset,
   } = handlers;
   const { navigate, goToView } = nav;
+  const reduceMotion = useReducedMotion();
 
   return (
+    <AnimatePresence mode="wait" initial={false}>
+      <MotionDiv
+        key={view}
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={reduceMotion ? undefined : { opacity: 0 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+      >
     <Suspense fallback={<div className="py-16 text-center text-content-tertiary text-sm">{t('loading')}</div>}>
       {view === 'inicio' && (
         <InicioView
@@ -657,5 +669,7 @@ export default function AppViewContent({
         />
       )}
     </Suspense>
+      </MotionDiv>
+    </AnimatePresence>
   );
 }

@@ -7,6 +7,7 @@ import { tsToDate } from '../utils.js';
 import { Button, Input, Textarea } from '../components/ui/index.js';
 import { Card } from '../components/layout/index.js';
 import ModalOverlay from '../components/ModalOverlay.jsx';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 const STATUS_META = {
   owner: { labelKey: 'channels_status_owner', tone: 'owner' },
@@ -18,11 +19,11 @@ const STATUS_META = {
 
 function TeamPill({ label, tone = 'default' }) {
   const tones = {
-    default: 'border-slate-700 bg-slate-800 text-slate-200',
+    default: 'border-hairline bg-slate-800 text-slate-200',
     member: 'border-teal-500/40 bg-teal-500/10 text-teal-200',
     pending: 'border-amber-500/40 bg-amber-500/10 text-amber-200',
     owner: 'border-teal-500/40 bg-teal-500/10 text-teal-200',
-    muted: 'border-slate-700 bg-slate-900 text-slate-400',
+    muted: 'border-hairline bg-slate-900 text-slate-400',
   };
   return (
     <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${tones[tone] || tones.default}`}>
@@ -381,7 +382,7 @@ export default function ChannelsView({
         <div className="space-y-6">
           <Card className="space-y-4">
             <div>
-              <h2 className="text-lg font-semibold text-content-primary">{t('channels_title')}</h2>
+              <h2 className="text-lg font-semibold text-content-primary font-display">{t('channels_title')}</h2>
               <p className="mt-1 text-sm text-content-secondary">{t('channels_help')}</p>
             </div>
             <Button variant="primary" onClick={() => setShowCreateModal(true)}>
@@ -423,15 +424,17 @@ export default function ChannelsView({
             {sortedChannels.length === 0 && (
               <p className="text-sm text-content-secondary">{t('channels_no_channels')}</p>
             )}
-            <div className="space-y-2">
+            <StaggerList as="div" className="space-y-2">
               {sortedChannels.map((channel) => (
-                <button
+                <StaggerItem
+                  as="button"
                   key={channel.id}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedChannelId(channel.id)}
                   className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
                     channel.id === selectedChannelId
                       ? 'border-teal-500/40 bg-teal-500/10'
-                      : 'border-slate-700/70 bg-slate-900/40 hover:border-slate-600'
+                      : 'border-hairline bg-slate-900/40 hover:border-slate-600'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -445,9 +448,9 @@ export default function ChannelsView({
                       <TeamPill label={t('channels_status_owner')} tone="owner" />
                     )}
                   </div>
-                </button>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerList>
           </Card>
         </div>
 
@@ -460,7 +463,7 @@ export default function ChannelsView({
 
           {selectedChannel && (
             <>
-              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-800 pb-4">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-hairline-strong pb-4">
                 <div>
                   <h3 className="text-xl font-semibold text-slate-50">{selectedChannel.name}</h3>
                   {selectedChannel.description ? (
@@ -496,7 +499,7 @@ export default function ChannelsView({
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                <div className="rounded-xl border border-slate-800 bg-slate-950/30 p-4">
+                <div className="rounded-xl border border-hairline-strong bg-slate-950/30 p-4">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">{t('channels_members')}</p>
                   <div className="space-y-2">
                     {rosterGroups.active.map((entry) => (
@@ -507,7 +510,7 @@ export default function ChannelsView({
                     ))}
                   </div>
                 </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/30 p-4">
+                <div className="rounded-xl border border-hairline-strong bg-slate-950/30 p-4">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">{t('channels_pending_members')}</p>
                   <div className="space-y-2">
                     {rosterGroups.pending.length === 0 && (
@@ -521,7 +524,7 @@ export default function ChannelsView({
                     ))}
                   </div>
                 </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/30 p-4">
+                <div className="rounded-xl border border-hairline-strong bg-slate-950/30 p-4">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">{t('channels_history')}</p>
                   <div className="space-y-2">
                     {rosterGroups.history.length === 0 && (
@@ -543,7 +546,7 @@ export default function ChannelsView({
                     {t('channels_pending_alert')}
                   </div>
                 )}
-                <div className="max-h-[420px] space-y-3 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                <div className="max-h-[420px] space-y-3 overflow-y-auto rounded-2xl border border-hairline-strong bg-slate-950/40 p-4">
                   {actionError && (
                     <p className="text-sm text-red-400">{actionError}</p>
                   )}
@@ -553,18 +556,20 @@ export default function ChannelsView({
                   {messages.length === 0 && (
                     <p className="text-sm text-content-secondary">{t('channels_empty_messages')}</p>
                   )}
+                  <StaggerList as="div" className="contents">
                     {messages.map((message) => (
-                      <div key={message.id} className="rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3">
+                      <StaggerItem as="div" key={message.id} className="rounded-xl border border-hairline-strong bg-slate-900/80 px-4 py-3">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div className="flex flex-wrap items-baseline gap-2">
                             <span className="text-sm font-semibold text-slate-100">{membershipNameById.get(message.membershipId) || message.authorName}</span>
                             <span className="text-xs text-teal-300">{message.teamName || teamNameById.get(message.teamId) || 'Equipo'}</span>
                           </div>
-                        <span className="text-[11px] text-slate-500">{tsToDate(message.createdAt).toLocaleString()}</span>
+                        <span className="text-[11px] text-slate-500 font-mono tabular-nums">{tsToDate(message.createdAt).toLocaleString()}</span>
                       </div>
                       <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">{message.content}</p>
-                    </div>
+                    </StaggerItem>
                   ))}
+                  </StaggerList>
                 </div>
 
                 {canParticipateInChannel ? (
@@ -585,7 +590,7 @@ export default function ChannelsView({
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/30 px-4 py-3 text-sm text-slate-400">
+                  <div className="rounded-2xl border border-hairline-strong bg-slate-950/30 px-4 py-3 text-sm text-slate-400">
                     {currentTeamChannelStatus === 'pending'
                       ? t('channels_pending_notice')
                       : t('channels_readonly_notice')}
@@ -599,7 +604,7 @@ export default function ChannelsView({
 
       {showCreateModal && (
         <ModalOverlay onClickBackdrop={closeCreateModal}>
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+          <div className="w-full max-w-2xl rounded-2xl border border-hairline bg-slate-900 p-5 shadow-2xl">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-slate-50">{t('channels_new_channel')}</h3>
@@ -642,7 +647,7 @@ export default function ChannelsView({
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{t('channels_invite_teams')}</p>
                 <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                   {availableCreateTeams.map((team) => (
-                    <label key={team.id} className="flex items-center gap-2 rounded-lg border border-slate-700/70 px-3 py-2 text-sm">
+                    <label key={team.id} className="flex items-center gap-2 rounded-lg border border-hairline px-3 py-2 text-sm">
                       <input
                         type="checkbox"
                         checked={createDraft.invitedTeamIds.includes(team.id)}
@@ -675,7 +680,7 @@ export default function ChannelsView({
 
       {showEditModal && selectedChannel && (
         <ModalOverlay onClickBackdrop={closeEditModal}>
-          <div className="w-full max-w-xl rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+          <div className="w-full max-w-xl rounded-2xl border border-hairline bg-slate-900 p-5 shadow-2xl">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-slate-50">{t('channels_edit')}</h3>
@@ -712,7 +717,7 @@ export default function ChannelsView({
 
       {showInviteModal && selectedChannel && (
         <ModalOverlay onClickBackdrop={closeInviteModal}>
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+          <div className="w-full max-w-2xl rounded-2xl border border-hairline bg-slate-900 p-5 shadow-2xl">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-slate-50">{t('channels_add_invites')}</h3>
@@ -728,7 +733,7 @@ export default function ChannelsView({
                   <p className="text-sm text-slate-500">{t('channels_no_available_teams')}</p>
                 )}
                 {availableInviteTeams.map((team) => (
-                  <label key={team.id} className="flex items-center gap-2 rounded-lg border border-slate-700/70 px-3 py-2 text-sm">
+                  <label key={team.id} className="flex items-center gap-2 rounded-lg border border-hairline px-3 py-2 text-sm">
                     <input
                       type="checkbox"
                       checked={inviteDraft.includes(team.id)}

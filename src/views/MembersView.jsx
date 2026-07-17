@@ -16,6 +16,7 @@ import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
 import Textarea from '../components/ui/Textarea.jsx';
 import { ensureString, tsToDate } from '../utils.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 function StrikePipsWithEvidence({ member, canViewEvidence, onShowEvidence }) {
   const history = member?.strikeHistory || [];
@@ -50,7 +51,7 @@ function SortHeader({ col, label, sortBy, sortDir, onToggle }) {
   return (
     <button type="button" onClick={() => onToggle(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
       {label}
-      {sortBy === col && <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${sortDir === 'asc' ? 'rotate-180' : ''}`} />}
+      {sortBy === col && <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${sortDir === 'asc' ? 'rotate-180' : ''}`} strokeWidth={1.75} />}
     </button>
   );
 }
@@ -198,7 +199,7 @@ export default function MembersView({
       {/* ── Page header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-content-primary tracking-tight">{t('members_title')}</h2>
+          <h2 className="font-display text-xl font-bold text-content-primary tracking-tight">{t('members_title')}</h2>
           <p className="text-sm text-content-secondary mt-0.5">{active.length} miembros activos · {suspended.length} suspendidos · {archived.length} archivados</p>
         </div>
         {(canEdit || isPlatformAdmin) && (
@@ -209,7 +210,7 @@ export default function MembersView({
               onClick={() => setShowGhostForm((s) => !s)}
               className="border-purple-700/50 text-purple-300 hover:text-purple-200"
             >
-              <UserPlus className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />{t('add_faculty_ghost')}
+              <UserPlus className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} />{t('add_faculty_ghost')}
             </Button>
           </div>
         )}
@@ -217,32 +218,32 @@ export default function MembersView({
 
       {/* ── Stat tiles ── */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">Activos</div>
-          <div className="text-2xl font-bold text-content-primary">{active.length}</div>
+          <div className="font-mono tabular-nums text-2xl font-bold text-content-primary">{active.length}</div>
         </div>
         <div className="rounded-xl border border-amber-700/30 bg-amber-950/20 p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">Pendientes</div>
-          <div className="text-2xl font-bold text-amber-400">{pending.length}</div>
+          <div className="font-mono tabular-nums text-2xl font-bold text-amber-400">{pending.length}</div>
         </div>
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">Áreas</div>
-          <div className="text-2xl font-bold text-content-primary">{categories.length}</div>
+          <div className="font-mono tabular-nums text-2xl font-bold text-content-primary">{categories.length}</div>
         </div>
         <div className="rounded-xl border border-red-900/30 bg-red-950/10 p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">Suspendidos</div>
-          <div className="text-2xl font-bold text-red-400">{suspended.length}</div>
+          <div className="font-mono tabular-nums text-2xl font-bold text-red-400">{suspended.length}</div>
         </div>
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm">
           <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary mb-1">{t('archived_stat')}</div>
-          <div className="text-2xl font-bold text-content-secondary">{archived.length}</div>
+          <div className="font-mono tabular-nums text-2xl font-bold text-content-secondary">{archived.length}</div>
         </div>
       </div>
 
       {/* ── Ghost / faculty creation form ── */}
       {showGhostForm && (
         <form onSubmit={handleCreateGhost} className="rounded-xl border border-purple-800/50 bg-surface-raised shadow-surface-sm p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-700/40">
+          <div className="flex items-center justify-between pb-3 border-b border-hairline">
             <span className="text-sm font-semibold text-purple-300">{t('new_ghost_form_title')}</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -268,7 +269,7 @@ export default function MembersView({
           <Textarea rows={2} value={ghostForm.bio}
             onChange={(e) => setGhostForm((f) => ({ ...f, bio: e.target.value }))}
             placeholder={t('brief_bio_ph')} className="resize-none" />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-700/40">
+          <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
             <Button type="button" variant="secondary" size="sm" onClick={() => setShowGhostForm(false)}>{t('cancel')}</Button>
             <Button type="submit" size="sm" className="bg-purple-600 hover:bg-purple-500 text-white">{t('create_profile_btn')}</Button>
           </div>
@@ -315,7 +316,7 @@ export default function MembersView({
       )}
 
       {/* ── Filter bar ── */}
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm p-3 space-y-2.5">
+      <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm p-3 space-y-2.5">
         <div className="flex flex-wrap gap-2">
           <Input value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder={t('search_name')} className="flex-1 min-w-[160px]" />
@@ -365,15 +366,15 @@ export default function MembersView({
       </div>
 
       {/* ── Active members table ── */}
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700/40 flex items-center gap-2">
-          <Users className="w-4 h-4 text-content-tertiary" strokeWidth={1.5} />
+      <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-hairline flex items-center gap-2">
+          <Users className="w-4 h-4 text-content-tertiary" strokeWidth={1.75} />
           <span className="text-xs text-content-tertiary font-medium">{`${filtered.length} de ${active.length} miembros`}</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
             <thead>
-              <tr className="text-left text-content-tertiary border-b border-slate-700/40 bg-surface-sunken/30">
+              <tr className="text-left text-content-tertiary border-b border-hairline bg-surface-sunken/30">
                 <th className="px-3 py-2.5"><SortHeader col="name" label={t('th_member')} {...sortHeaderProps} /></th>
                 <th className="px-3 py-2.5"><SortHeader col="role" label={t('th_role')} {...sortHeaderProps} /></th>
                 <th className="px-3 py-2.5"><SortHeader col="category" label={t('th_category')} {...sortHeaderProps} /></th>
@@ -382,9 +383,9 @@ export default function MembersView({
                 {canArchiveMembers && <th className="px-3 py-2.5">{t('th_action')}</th>}
               </tr>
             </thead>
-            <tbody>
-              {filtered.map((m, mIndex) => (
-                <tr key={m.id} className={`border-b border-slate-700/40 hover:bg-slate-700/20 transition-colors animate-slide-up ${isMatch(m) ? 'bg-primary/5' : ''}`} style={{ animationDelay: `${Math.min(mIndex * 40, 300)}ms` }}>
+            <StaggerList as="tbody">
+              {filtered.map((m) => (
+                <StaggerItem as="tr" key={m.id} className={`border-b border-hairline hover:bg-slate-700/20 transition-colors ${isMatch(m) ? 'bg-primary/5' : ''}`}>
                   <td className="px-3 py-2.5">
                     <MemberAvatar membership={m} onViewProfile={onViewProfile} />
                     {m.ghost && <span className="text-[10px] text-purple-400 ml-1">{t('external_badge')}</span>}
@@ -429,9 +430,9 @@ export default function MembersView({
                       {(() => {
                         const count = complaintsAgainstMember.filter((c) => c.targetMembershipId === m.id).length;
                         return count > 0 ? (
-                          <span className="text-amber-400 font-medium">{count}</span>
+                          <span className="font-mono tabular-nums text-amber-400 font-medium">{count}</span>
                         ) : (
-                          <span className="text-content-tertiary">0</span>
+                          <span className="font-mono tabular-nums text-content-tertiary">0</span>
                         );
                       })()}
                     </td>
@@ -444,14 +445,14 @@ export default function MembersView({
                       >{t('archive_member')}</button>
                     </td>
                   )}
-                </tr>
+                </StaggerItem>
               ))}
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={4 + (canEdit ? 1 : 0) + (canArchiveMembers ? 1 : 0)} className="px-3 py-8 text-content-tertiary text-center">{t('no_members_filter')}</td>
                 </tr>
               )}
-            </tbody>
+            </StaggerList>
           </table>
         </div>
       </div>
@@ -465,7 +466,7 @@ export default function MembersView({
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="text-left text-content-tertiary border-b border-slate-700/40 bg-surface-sunken/30">
+                <tr className="text-left text-content-tertiary border-b border-hairline bg-surface-sunken/30">
                   <th className="px-3 py-2.5">{t('th_member')}</th>
                   <th className="px-3 py-2.5">{t('th_strikes')}</th>
                   <th className="px-3 py-2.5">{t('th_action')}</th>
@@ -473,7 +474,7 @@ export default function MembersView({
               </thead>
               <tbody>
                 {suspended.map((m) => (
-                  <tr key={m.id} className="border-b border-slate-700/40 opacity-60">
+                  <tr key={m.id} className="border-b border-hairline opacity-60">
                     <td className="px-3 py-2.5 text-content-primary">{ensureString(m.displayName)}</td>
                     <td className="px-3 py-2.5">
                       <StrikePipsWithEvidence member={m} canViewEvidence={canEdit || canStrike} onShowEvidence={setStrikeEvidenceMember} />
@@ -493,14 +494,14 @@ export default function MembersView({
 
       {/* ── Archived members ── */}
       {canArchiveMembers && archived.length > 0 && (
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-700/40 text-xs text-content-tertiary font-semibold">
+        <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-hairline text-xs text-content-tertiary font-semibold">
             {t('archived_header')} ({archived.length})
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="text-left text-content-tertiary border-b border-slate-700/40 bg-surface-sunken/30">
+                <tr className="text-left text-content-tertiary border-b border-hairline bg-surface-sunken/30">
                   <th className="px-3 py-2.5">{t('th_member')}</th>
                   <th className="px-3 py-2.5">{t('th_role')}</th>
                   <th className="px-3 py-2.5">{t('th_action')}</th>
@@ -508,7 +509,7 @@ export default function MembersView({
               </thead>
               <tbody>
                 {archived.map((m) => (
-                  <tr key={m.id} className="border-b border-slate-700/40 opacity-60">
+                  <tr key={m.id} className="border-b border-hairline opacity-60">
                     <td className="px-3 py-2.5 text-content-primary">{ensureString(m.displayName)}</td>
                     <td className="px-3 py-2.5"><RoleBadge role={m.role} /></td>
                     <td className="px-3 py-2.5">
@@ -532,8 +533,8 @@ export default function MembersView({
 
       {strikeEvidenceMember && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setStrikeEvidenceMember(null)}>
-          <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-md max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b border-slate-700/40 flex items-center justify-between">
+          <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-md max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-hairline flex items-center justify-between">
               <h3 className="text-sm font-semibold text-content-primary">
                 {t('strike_evidence_title')} — {ensureString(strikeEvidenceMember.displayName)}
               </h3>
@@ -544,9 +545,9 @@ export default function MembersView({
                 const date = h.createdAt?.toDate ? h.createdAt.toDate() : (h.createdAt ? tsToDate(h.createdAt) : null);
                 const dateStr = date ? date.toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—';
                 return (
-                  <div key={i} className="rounded-lg bg-surface-sunken/60 p-3 border border-slate-700/40">
+                  <div key={i} className="rounded-lg bg-surface-sunken/60 p-3 border border-hairline">
                     <div className="text-[11px] text-content-tertiary mb-3">
-                      {t('strike_evidence_strike')} {i + 1} · {dateStr}
+                      {t('strike_evidence_strike')} {i + 1} · <span className="font-mono tabular-nums">{dateStr}</span>
                       {h.addedByName && ` · ${t('strike_evidence_added_by')}: ${h.addedByName}`}
                     </div>
                     {h.evidence?.text && <p className="text-xs text-content-primary whitespace-pre-wrap mb-2">{h.evidence.text}</p>}

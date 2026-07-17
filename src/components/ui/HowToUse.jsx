@@ -65,7 +65,7 @@ export default function HowToUse({ descKey }) {
   const hasLn = !!link && link.startsWith('http');
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg text-xs">
+    <div className="bg-slate-800/60 border border-hairline rounded-lg text-xs">
       <button onClick={() => setOpen((s) => !s)}
         className="w-full text-left px-3 py-2 flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors">
         <span className="font-semibold inline-flex items-center gap-1">

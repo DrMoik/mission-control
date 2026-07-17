@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Search, User, Users } from 'lucide-react';
 import { t, lang } from '../strings.js';
 import { ensureString, getL } from '../utils.js';
 import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 const normalizeSearch = (value) =>
   ensureString(value)
@@ -20,17 +21,17 @@ function ExpandButton({ expanded, onClick, title }) {
       type="button"
       onClick={onClick}
       title={title}
-      className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-700 bg-slate-900 text-slate-400 transition hover:border-slate-600 hover:text-slate-200"
+      className="inline-flex h-8 w-8 items-center justify-center rounded border border-hairline bg-slate-900 text-slate-400 transition hover:border-slate-600 hover:text-slate-200"
     >
-      <Icon className="h-4 w-4" strokeWidth={2} />
+      <Icon className="h-4 w-4" strokeWidth={1.75} />
     </button>
   );
 }
 
 function FilterInput({ value, onChange, placeholder }) {
   return (
-    <label className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300">
-      <Search className="h-4 w-4 text-slate-500" strokeWidth={2} />
+    <label className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-hairline bg-slate-900 px-3 py-2 text-sm text-slate-300">
+      <Search className="h-4 w-4 text-slate-500" strokeWidth={1.75} />
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -223,30 +224,30 @@ export default function KnowledgeMapView({
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-base font-semibold">{t('nav_knowledge_map') || 'Mapa curricular'}</h2>
+          <h2 className="font-display text-base font-semibold">{t('nav_knowledge_map') || 'Mapa curricular'}</h2>
           <p className="max-w-3xl text-xs text-slate-500">
             {t('knowledge_map_hint') || 'Vista derivada solo de módulos aprobados. Puedes revisar skills por usuario y usuarios por skill sin saturar la pantalla.'}
           </p>
         </div>
-        <div className="grid min-w-[220px] grid-cols-2 gap-2 rounded-lg border border-slate-700 bg-slate-900 p-1">
+        <div className="grid min-w-[220px] grid-cols-2 gap-2 rounded-lg border border-hairline bg-slate-900 p-1">
           <button
             type="button"
             onClick={() => setPerspective('members')}
-            className={`rounded-md px-3 py-2 text-sm transition ${perspective === 'members' ? 'bg-teal-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
+            className={`rounded-md px-3 py-2 text-sm transition ${perspective === 'members' ? 'bg-primary text-content-inverse' : 'text-slate-300 hover:bg-slate-800'}`}
           >
             Skills por usuario
           </button>
           <button
             type="button"
             onClick={() => setPerspective('skills')}
-            className={`rounded-md px-3 py-2 text-sm transition ${perspective === 'skills' ? 'bg-teal-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
+            className={`rounded-md px-3 py-2 text-sm transition ${perspective === 'skills' ? 'bg-primary text-content-inverse' : 'text-slate-300 hover:bg-slate-800'}`}
           >
             Usuarios por skill
           </button>
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-3">
+      <div className="rounded-xl border border-hairline bg-slate-800/70 p-3">
         <div className="flex flex-wrap gap-2">
           <FilterInput
             value={memberSearch}
@@ -261,7 +262,7 @@ export default function KnowledgeMapView({
           <select
             value={selectedAreaId}
             onChange={(event) => setSelectedAreaId(event.target.value)}
-            className="min-w-[220px] rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300"
+            className="min-w-[220px] rounded-lg border border-hairline bg-slate-900 px-3 py-2 text-sm text-slate-300"
           >
             <option value="">Todas las skills</option>
             {knowledgeAreas.map((area) => (
@@ -273,7 +274,7 @@ export default function KnowledgeMapView({
           <select
             value={selectedMemberId}
             onChange={(event) => setSelectedMemberId(event.target.value)}
-            className="min-w-[220px] rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300"
+            className="min-w-[220px] rounded-lg border border-hairline bg-slate-900 px-3 py-2 text-sm text-slate-300"
           >
             <option value="">Todos los usuarios</option>
             {memberships.map((membership) => (
@@ -285,13 +286,13 @@ export default function KnowledgeMapView({
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-400">
-          <span className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1">
+          <span className="rounded-full border border-hairline bg-slate-900 px-2.5 py-1">
             {formatCountLabel(memberRows.length, 'usuario visible', 'usuarios visibles')}
           </span>
-          <span className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1">
+          <span className="rounded-full border border-hairline bg-slate-900 px-2.5 py-1">
             {formatCountLabel(skillRows.length, 'skill visible', 'skills visibles')}
           </span>
-          <span className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1">
+          <span className="rounded-full border border-hairline bg-slate-900 px-2.5 py-1">
             {formatCountLabel(evidence.length, 'modulo aprobado registrado', 'modulos aprobados registrados')}
           </span>
         </div>
@@ -306,21 +307,21 @@ export default function KnowledgeMapView({
           {t('knowledge_map_no_evidence') || 'No hay módulos aprobados que coincidan con los filtros actuales.'}
         </div>
       ) : (
-        <div className="space-y-3">
+        <StaggerList as="div" className="space-y-3">
           {perspective === 'members'
             ? memberRows.map((row) => {
                 const rowKey = `member:${row.membership.id}`;
                 const expanded = !!expandedRows[rowKey];
                 return (
-                  <section key={row.membership.id} className="overflow-hidden rounded-xl border border-slate-700 bg-slate-800">
+                  <StaggerItem as="section" key={row.membership.id} className="overflow-hidden rounded-xl border border-hairline bg-slate-800">
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-teal-400" strokeWidth={2} />
+                          <User className="h-4 w-4 text-primary" strokeWidth={1.75} />
                           <button
                             type="button"
                             onClick={() => onViewProfile?.(row.membership)}
-                            className="truncate text-left font-medium text-teal-400 hover:text-teal-300 hover:underline"
+                            className="truncate text-left font-medium text-primary hover:text-primary-hover hover:underline"
                           >
                             {row.memberName}
                           </button>
@@ -336,10 +337,10 @@ export default function KnowledgeMapView({
                       />
                     </div>
                     {expanded && (
-                      <div className="border-t border-slate-700 bg-slate-900/60 px-4 py-3">
+                      <div className="border-t border-hairline bg-slate-900/60 px-4 py-3">
                         <div className="grid gap-3 md:grid-cols-2">
                           {row.skills.map((skill) => (
-                            <article key={skill.areaId} className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                            <article key={skill.areaId} className="rounded-lg border border-hairline bg-slate-950/60 p-3">
                               <div className="flex items-start justify-between gap-3">
                                 <div>
                                   <h3 className="font-medium text-slate-200">{skill.areaName}</h3>
@@ -360,18 +361,18 @@ export default function KnowledgeMapView({
                         </div>
                       </div>
                     )}
-                  </section>
+                  </StaggerItem>
                 );
               })
             : skillRows.map((row) => {
                 const rowKey = `skill:${row.area.id}`;
                 const expanded = !!expandedRows[rowKey];
                 return (
-                  <section key={row.area.id} className="overflow-hidden rounded-xl border border-slate-700 bg-slate-800">
+                  <StaggerItem as="section" key={row.area.id} className="overflow-hidden rounded-xl border border-hairline bg-slate-800">
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-teal-400" strokeWidth={2} />
+                          <Users className="h-4 w-4 text-primary" strokeWidth={1.75} />
                           <h3 className="truncate font-medium text-slate-100">{row.areaName}</h3>
                         </div>
                         <p className="mt-1 text-xs text-slate-400">
@@ -385,16 +386,16 @@ export default function KnowledgeMapView({
                       />
                     </div>
                     {expanded && (
-                      <div className="border-t border-slate-700 bg-slate-900/60 px-4 py-3">
+                      <div className="border-t border-hairline bg-slate-900/60 px-4 py-3">
                         <div className="space-y-3">
                           {row.members.map((member) => (
-                            <article key={member.membershipId} className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                            <article key={member.membershipId} className="rounded-lg border border-hairline bg-slate-950/60 p-3">
                               <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
                                   <button
                                     type="button"
                                     onClick={() => onViewProfile?.(member.membership)}
-                                    className="text-left font-medium text-teal-400 hover:text-teal-300 hover:underline"
+                                    className="text-left font-medium text-primary hover:text-primary-hover hover:underline"
                                   >
                                     {member.memberName}
                                   </button>
@@ -415,10 +416,10 @@ export default function KnowledgeMapView({
                         </div>
                       </div>
                     )}
-                  </section>
+                  </StaggerItem>
                 );
               })}
-        </div>
+        </StaggerList>
       )}
     </div>
   );

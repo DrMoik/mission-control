@@ -10,6 +10,7 @@ import SafeProfileImage from '../components/ui/SafeProfileImage.jsx';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
 import { getL, toL, fillL, ensureString } from '../utils.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 export default function CategoriesView({
   categories, memberships, canEdit,
@@ -48,13 +49,13 @@ export default function CategoriesView({
       {/* ── Page header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-content-primary tracking-tight">{t('categories_title')}</h2>
+          <h2 className="font-display text-xl font-bold text-content-primary tracking-tight">{t('categories_title')}</h2>
           <p className="text-sm text-content-secondary mt-0.5">{`${categories.length} áreas · ${totalMembers} miembros activos`}</p>
         </div>
         {canEdit && !showForm && (
           <div className="shrink-0">
             <Button size="sm" onClick={() => setShowForm(true)}>
-              <Plus className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />{t('add_category')}
+              <Plus className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} />{t('add_category')}
             </Button>
           </div>
         )}
@@ -62,8 +63,8 @@ export default function CategoriesView({
 
       {/* ── Create form panel ── */}
       {canEdit && showForm && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-700/40">
+        <form onSubmit={handleCreate} className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-hairline">
             <span className="text-sm font-semibold text-content-primary">{t('add_category')}</span>
           </div>
           <div>
@@ -80,7 +81,7 @@ export default function CategoriesView({
             value={newDesc}
             onChange={setNewDesc}
           />
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-700/40">
+          <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
             <Button type="button" variant="secondary" size="sm" onClick={() => setShowForm(false)}>{t('cancel')}</Button>
             <Button type="submit" size="sm">{t('add_category')}</Button>
           </div>
@@ -89,7 +90,7 @@ export default function CategoriesView({
 
       {/* ── Categories list ── */}
       {categories.length === 0 ? (
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm">
+        <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm">
           <div className="px-4 py-12 text-center">
             <Users className="w-8 h-8 text-content-tertiary mx-auto mb-3" strokeWidth={1.5} />
             <div className="text-content-tertiary text-sm">
@@ -97,19 +98,19 @@ export default function CategoriesView({
             </div>
             {canEdit && !showForm && (
               <Button size="sm" className="mt-4" onClick={() => setShowForm(true)}>
-                <Plus className="w-3.5 h-3.5 mr-1" strokeWidth={2.5} />{t('add_category')}
+                <Plus className="w-3.5 h-3.5 mr-1" strokeWidth={1.75} />{t('add_category')}
               </Button>
             )}
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <StaggerList as="div" className="space-y-3">
           {categories.map((cat) => {
             const catMembers = memberships.filter((m) => m.categoryId === cat.id && m.status === 'active');
             const isEditing  = editingId === cat.id;
 
             return (
-              <div key={cat.id} className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
+              <StaggerItem as="div" key={cat.id} className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
                 {/* Category header */}
                 <div className="px-4 py-3">
                   {isEditing ? (
@@ -155,13 +156,13 @@ export default function CategoriesView({
 
                 {/* Member chips */}
                 {catMembers.length > 0 && (
-                  <div className="border-t border-slate-700/40 bg-surface-sunken/30 px-4 py-3">
+                  <div className="border-t border-hairline bg-surface-sunken/30 px-4 py-3">
                     <div className="flex flex-wrap gap-2">
                       {catMembers.map((m) => (
                         <button
                           key={m.id}
                           onClick={() => onViewProfile?.(m)}
-                          className="flex items-center gap-2 bg-surface-overlay hover:bg-slate-700/60 border border-slate-700/40 rounded-lg px-2.5 py-1.5 transition-colors"
+                          className="flex items-center gap-2 bg-surface-overlay hover:bg-slate-700/60 border border-hairline rounded-lg px-2.5 py-1.5 transition-colors"
                         >
                           {m.photoURL ? (
                             <SafeProfileImage
@@ -190,14 +191,14 @@ export default function CategoriesView({
                 )}
 
                 {catMembers.length === 0 && (
-                  <div className="border-t border-slate-700/40 px-4 py-2 text-xs text-content-tertiary italic">
+                  <div className="border-t border-hairline px-4 py-2 text-xs text-content-tertiary italic">
                     {t('no_members_yet')}
                   </div>
                 )}
-              </div>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerList>
       )}
     </div>
   );

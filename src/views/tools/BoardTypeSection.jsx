@@ -118,7 +118,7 @@ export default function BoardTypeSection({
       )}
 
       {activeBoards.length === 0 && (
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-8 text-center text-xs text-content-tertiary italic">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-8 text-center text-xs text-content-tertiary italic">
           {archivedBoards.length > 0
             ? 'Todos los tableros activos fueron archivados. Usa la seccion de archivados para consultarlos o restaurarlos.'
             : `${emptyText}${canCreate ? t('create_above') : ''}`}
@@ -131,11 +131,11 @@ export default function BoardTypeSection({
           {activeBoards.map((b) => (
             <button key={b.id} onClick={() => setSelectedBoardId(b.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150
-                ${selectedBoard?.id === b.id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}>
+                ${selectedBoard?.id === b.id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}>
               {ensureString(b.name, lang)}
               {b.categoryId
                 ? <span className="ml-1.5 text-[9px] bg-blue-900/40 text-blue-300 border border-blue-800/50 px-1 py-0.5 rounded">{ensureString(categories.find((c) => c.id === b.categoryId)?.name, lang) ?? ''}</span>
-                : <span className="ml-1.5 text-[9px] bg-surface-overlay text-content-tertiary border border-slate-700/40 px-1 py-0.5 rounded">{t('scope_global')}</span>
+                : <span className="ml-1.5 text-[9px] bg-surface-overlay text-content-tertiary border border-hairline px-1 py-0.5 rounded">{t('scope_global')}</span>
               }
             </button>
           ))}
@@ -151,7 +151,7 @@ export default function BoardTypeSection({
                     {t('scope_category')} {ensureString(categories.find((c) => c.id === selectedBoard.categoryId)?.name, lang)}
                     <span className="ml-1 text-blue-400/70">· {t('category_only_hint')}</span>
                   </span>
-                : <span className="text-[10px] bg-surface-overlay text-content-tertiary border border-slate-700/40 px-2 py-0.5 rounded-full">{t('scope_global')}</span>
+                : <span className="text-[10px] bg-surface-overlay text-content-tertiary border border-hairline px-2 py-0.5 rounded-full">{t('scope_global')}</span>
               }
               {canEditSelected && (
                 <button type="button" onClick={startEditBoard} className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors underline">{t('edit')}</button>
@@ -194,7 +194,7 @@ export default function BoardTypeSection({
       )}
 
       {archivedBoards.length > 0 && (
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">Archivados</div>
@@ -221,7 +221,7 @@ export default function BoardTypeSection({
                       className={`w-full rounded-lg border px-3 py-3 text-left transition-colors ${
                         isSelected
                           ? 'border-primary/50 bg-primary/10'
-                          : 'border-slate-700/50 bg-slate-900/40 hover:border-slate-600/70 hover:bg-slate-900/70'
+                          : 'border-hairline bg-slate-900/40 hover:border-slate-600/70 hover:bg-slate-900/70'
                       }`}
                     >
                       <div className="text-sm font-semibold text-content-primary">{ensureString(board.name, lang)}</div>
@@ -235,7 +235,7 @@ export default function BoardTypeSection({
               </div>
 
               {selectedArchivedBoard && (
-                <div className="space-y-3 rounded-xl border border-slate-700/50 bg-slate-900/35 p-4">
+                <div className="space-y-3 rounded-xl border border-hairline bg-slate-900/35 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">Auditoria</div>

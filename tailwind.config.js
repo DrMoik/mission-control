@@ -34,9 +34,14 @@ export default {
         warning: 'var(--color-warning)',
         error: 'var(--color-error)',
         info: 'var(--color-info)',
+        // Hairline borders — thin, low-opacity, used instead of solid slate borders
+        hairline: 'var(--border-subtle)',
+        'hairline-strong': 'var(--border-default)',
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],
@@ -74,9 +79,9 @@ export default {
         'surface-lg': '0 10px 15px -3px rgb(0 0 0 / 0.25), 0 4px 6px -4px rgb(0 0 0 / 0.2)',
         'surface-xl': '0 20px 25px -5px rgb(0 0 0 / 0.25), 0 8px 10px -6px rgb(0 0 0 / 0.2)',
         'inner-subtle': 'inset 0 1px 0 0 rgb(255 255 255 / 0.03)',
-        'glow-sm': '0 0 15px rgba(13, 148, 136, 0.25)',
-        'glow-md': '0 0 30px rgba(13, 148, 136, 0.22), 0 0 60px rgba(13, 148, 136, 0.10)',
-        'glow-lg': '0 0 50px rgba(13, 148, 136, 0.28), 0 0 100px rgba(13, 148, 136, 0.12)',
+        'glow-sm': '0 0 15px rgba(23, 209, 184, 0.25)',
+        'glow-md': '0 0 30px rgba(23, 209, 184, 0.22), 0 0 60px rgba(23, 209, 184, 0.10)',
+        'glow-lg': '0 0 50px rgba(23, 209, 184, 0.28), 0 0 100px rgba(23, 209, 184, 0.12)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -98,8 +103,8 @@ export default {
           to:   { opacity: '1' },
         },
         'glow-breathe': {
-          '0%, 100%': { boxShadow: '0 0 15px rgba(13, 148, 136, 0.15)' },
-          '50%':       { boxShadow: '0 0 30px rgba(13, 148, 136, 0.35)' },
+          '0%, 100%': { boxShadow: '0 0 15px rgba(23, 209, 184, 0.15)' },
+          '50%':       { boxShadow: '0 0 30px rgba(23, 209, 184, 0.35)' },
         },
         'shimmer': {
           '0%':   { backgroundPosition: '-200% center' },

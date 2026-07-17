@@ -74,7 +74,7 @@ function MemberRow({ membership, departing, onToggle }) {
           ? 'opacity-40 cursor-not-allowed'
           : departing
             ? 'bg-red-950/40 border border-red-800/50 hover:bg-red-950/60'
-            : 'bg-surface-raised border border-slate-700/40 hover:border-slate-600/60',
+            : 'bg-surface-raised border border-hairline hover:border-slate-600/60',
       ].join(' ')}
     >
       {/* Checkbox indicator */}
@@ -283,7 +283,7 @@ export default function SeasonResetSection({ team, memberships = [], onSeasonRes
                   );
                 })}
               </div>
-              <p className="mt-3 text-[11px] text-content-tertiary bg-slate-900/60 border border-slate-700/50 rounded-lg px-3 py-2">
+              <p className="mt-3 text-[11px] text-content-tertiary bg-slate-900/60 border border-hairline rounded-lg px-3 py-2">
                 <strong className="text-content-secondary">Nunca se eliminan:</strong> merits, eventos de puntos, módulos de academia, inventario, BOM, finanzas, canales y perfiles de miembros.
               </p>
             </div>
@@ -305,7 +305,7 @@ export default function SeasonResetSection({ team, memberships = [], onSeasonRes
         {step === 2 && (
           <>
             {/* Summary */}
-            <div className="rounded-lg border border-slate-700/50 bg-slate-900/60 p-4 space-y-3">
+            <div className="rounded-lg border border-hairline bg-slate-900/60 p-4 space-y-3">
               <p className="text-sm font-semibold text-content-primary">Resumen de cambios</p>
 
               {seasonLabel && (

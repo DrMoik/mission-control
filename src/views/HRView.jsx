@@ -8,6 +8,7 @@ import { ensureString, tsToDate } from '../utils.js';
 import { showToast } from '../services/feedback.js';
 import EvidenceInput from '../components/EvidenceInput.jsx';
 import { Button, Textarea } from '../components/ui/index.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 /**
  * @param {{
@@ -144,12 +145,12 @@ export default function HRView({
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="animate-fade-in">
-        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('hr_page_title')}</h2>
+        <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">{t('hr_page_title')}</h2>
       </div>
-      <div className="flex gap-2 border-b border-slate-700/40 pb-2 animate-slide-up animate-delay-1">
+      <div className="flex gap-2 border-b border-hairline pb-2 animate-slide-up animate-delay-1">
         {[['suggestions', t('hr_suggestions')], ['complaints', t('hr_complaints')]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-150 ${tab === id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}>
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-150 ${tab === id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}>
             {label}
           </button>
         ))}
@@ -158,17 +159,17 @@ export default function HRView({
       {tab === 'suggestions' && (
         <div className="space-y-4">
           {authUserId && (
-            <div className="flex gap-4 p-3 rounded-xl border border-slate-700/40 bg-surface-raised">
+            <div className="flex gap-4 p-3 rounded-xl border border-hairline bg-surface-raised">
               <span className="text-xs text-content-tertiary">
-                {t('hr_my_suggestions_posted')}: <strong className="text-content-primary">{mySuggestionsCount}</strong>
+                {t('hr_my_suggestions_posted')}: <strong className="font-mono tabular-nums text-content-primary">{mySuggestionsCount}</strong>
               </span>
               <span className="text-xs text-content-tertiary">
-                {t('hr_my_suggestions_implemented')}: <strong className="text-primary">{myImplementedCount}</strong>
+                {t('hr_my_suggestions_implemented')}: <strong className="font-mono tabular-nums text-primary">{myImplementedCount}</strong>
               </span>
             </div>
           )}
 
-          <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+          <div className="rounded-xl border border-hairline bg-surface-raised p-4">
             <h3 className="text-sm font-semibold text-content-primary mb-2">{t('hr_suggestions_submit')}</h3>
             <form onSubmit={handleSubmitSuggestion} className="space-y-3">
               <Textarea value={suggestionContent} onChange={(e) => setSuggestionContent(e.target.value)} placeholder={t('hr_suggestion_placeholder')} rows={4} required />
@@ -192,46 +193,50 @@ export default function HRView({
                   ['all', `${t('hr_suggestions_all')} (${suggestions.length})`],
                 ].map(([id, label]) => (
                   <button key={id} onClick={() => setSuggestionStatusFilter(id)}
-                    className={`px-2 py-1 text-xs font-semibold rounded-lg border transition-all duration-150 ${suggestionStatusFilter === id ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-surface-overlay border-slate-700/40 text-content-tertiary hover:bg-slate-700/50 hover:text-content-secondary'}`}>
+                    className={`px-2 py-1 text-xs font-semibold rounded-lg border transition-all duration-150 ${suggestionStatusFilter === id ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-surface-overlay border-hairline text-content-tertiary hover:bg-slate-700/50 hover:text-content-secondary'}`}>
                     {label}
                   </button>
                 ))}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto">
+              <StaggerList as="div" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto">
                 {filteredSuggestions.map((s) => {
                   const preview = (ensureString(s.content) || '').slice(0, 80);
                   const status = s.status || 'pending';
                   return (
-                    <button
+                    <StaggerItem
+                      as="button"
+                      whileTap={{ scale: 0.98 }}
                       key={s.id}
                       type="button"
                       onClick={() => {
                         setViewModalSuggestion(s);
                         setShowAcceptPoints(false);
                       }}
-                      className="text-left p-4 rounded-xl border border-slate-700/40 bg-surface-raised hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200"
+                      className={`text-left p-4 rounded-xl border border-hairline border-l-2 bg-surface-raised hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200 ${
+                        status === 'accepted' ? 'border-l-success' : status === 'pending' ? 'border-l-warning' : 'border-l-hairline'
+                      }`}
                     >
                       <p className="text-content-primary text-xs line-clamp-3">{preview}{preview.length >= 80 ? '…' : ''}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <span className="text-[10px] text-content-tertiary">
                             {s.isAnonymous ? t('hr_anonymous') : getLiveAuthorName(s)}
                           </span>
-                        <span className="text-[10px] text-content-tertiary">{formatDate(s.createdAt)}</span>
+                        <span className="text-[10px] font-mono tabular-nums text-content-tertiary">{formatDate(s.createdAt)}</span>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
                           status === 'pending' ? 'bg-amber-900/40 text-amber-300 border border-amber-700/40' :
                           status === 'accepted' ? 'bg-primary/15 text-primary border border-primary/30' :
-                          'bg-surface-overlay text-content-tertiary border border-slate-700/40'
+                          'bg-surface-overlay text-content-tertiary border border-hairline'
                         }`}>
                           {status === 'pending' ? t('hr_suggestions_pending') : status === 'accepted' ? t('hr_suggestions_accepted') : t('hr_suggestions_dismissed')}
                         </span>
                         {s.status === 'accepted' && s.meritPoints && (
-                          <span className="text-[10px] text-primary">+{s.meritPoints} pts</span>
+                          <span className="text-[10px] font-mono tabular-nums text-primary">+{s.meritPoints} pts</span>
                         )}
                       </div>
-                    </button>
+                    </StaggerItem>
                   );
                 })}
-              </div>
+              </StaggerList>
             </div>
           )}
           {canViewHr && suggestions.length === 0 && (
@@ -246,16 +251,16 @@ export default function HRView({
           onClick={() => !acceptSaving && (setViewModalSuggestion(null), setShowAcceptPoints(false))}
         >
           <div
-            className="rounded-xl border border-slate-700/40 bg-surface-raised p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-surface-xl"
+            className="rounded-xl border border-hairline bg-surface-raised p-5 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-surface-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-sm font-semibold text-content-primary mb-2">{t('hr_suggestions_list')}</h3>
               <p className="text-sm text-content-primary whitespace-pre-wrap mb-4">{ensureString(viewModalSuggestion.content)}</p>
               <p className="text-xs text-content-tertiary mb-4">
                 {viewModalSuggestion.isAnonymous ? t('hr_anonymous') : getLiveAuthorName(viewModalSuggestion)}
-                {' · '}{formatDate(viewModalSuggestion.createdAt)}
+                {' · '}<span className="font-mono tabular-nums">{formatDate(viewModalSuggestion.createdAt)}</span>
               {viewModalSuggestion.status === 'accepted' && viewModalSuggestion.meritPoints && (
-                <span className="ml-2 text-primary">+{viewModalSuggestion.meritPoints} pts</span>
+                <span className="ml-2 font-mono tabular-nums text-primary">+{viewModalSuggestion.meritPoints} pts</span>
               )}
             </p>
 
@@ -341,7 +346,7 @@ export default function HRView({
 
       {tab === 'complaints' && (
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+          <div className="rounded-xl border border-hairline bg-surface-raised p-4">
             <h3 className="text-sm font-semibold text-content-primary mb-2">{t('hr_complaints_submit')}</h3>
             <p className="text-[11px] text-content-tertiary mb-3">{t('hr_complaint_non_anonymous')}</p>
             <form onSubmit={handleSubmitComplaint} className="space-y-3">
@@ -405,11 +410,11 @@ export default function HRView({
           </div>
 
           {canViewHr && complaints.length > 0 && (
-            <div className="rounded-xl border border-slate-700/40 bg-surface-raised overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-700/40 bg-surface-sunken/30 text-xs font-semibold text-content-tertiary uppercase tracking-wider">
+            <div className="rounded-xl border border-hairline bg-surface-raised overflow-hidden">
+              <div className="px-4 py-3 border-b border-hairline bg-surface-sunken/30 text-xs font-semibold text-content-tertiary uppercase tracking-wider">
                 {t('hr_complaints_list')} ({complaints.length})
               </div>
-              <div className="divide-y divide-slate-700/40 max-h-96 overflow-y-auto">
+              <StaggerList as="div" className="divide-y divide-slate-700/40 max-h-96 overflow-y-auto">
                 {complaints.map((c) => {
                   const targetLabel =
                     c.type === 'area'
@@ -418,7 +423,7 @@ export default function HRView({
                         ? ensureString(memberships.find((m) => m.id === c.targetMembershipId)?.displayName)
                         : null;
                   return (
-                    <div key={c.id} className="px-4 py-3 text-xs hover:bg-slate-700/20 transition-colors">
+                    <StaggerItem as="div" key={c.id} className="px-4 py-3 text-xs hover:bg-slate-700/20 transition-colors">
                       <div className="flex flex-wrap gap-2 mb-1">
                         <span className="bg-amber-900/40 text-amber-300 border border-amber-700/40 px-1.5 py-0.5 rounded-md">
                           {t('hr_complaint_type_' + c.type)}
@@ -440,12 +445,12 @@ export default function HRView({
                       )}
                         <p className="text-content-tertiary mt-1">
                           {isFaculty ? `${getLiveAuthorName(c)} — ` : ''}
-                          {formatDate(c.createdAt)}
+                          <span className="font-mono tabular-nums">{formatDate(c.createdAt)}</span>
                         </p>
-                    </div>
+                    </StaggerItem>
                   );
                 })}
-              </div>
+              </StaggerList>
             </div>
           )}
           {canViewHr && complaints.length === 0 && (

@@ -9,6 +9,7 @@ import { confirmDialog } from '../services/feedback.js';
 import PickerField from '../components/ui/PickerField.jsx';
 import { Button, Input, Textarea } from '../components/ui/index.js';
 import { ensureString } from '../utils.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 import { SESSION_ATTENDANCE_POINTS_DEFAULT, SESSION_CLASSES, SESSION_TYPES } from '../constants.js';
 
 function formatDatetime(ts) {
@@ -136,7 +137,7 @@ export default function SessionsView({
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center justify-between animate-fade-in">
         <div>
-          <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('session_title')}</h2>
+          <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">{t('session_title')}</h2>
         </div>
         {canManageSessions && (
           <Button variant={showNewForm ? 'secondary' : 'primary'} size="sm" onClick={() => setShowNewForm((s) => !s)}>
@@ -146,7 +147,7 @@ export default function SessionsView({
       </div>
 
       {showNewForm && canManageSessions && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3 animate-slide-up">
+        <form onSubmit={handleCreate} className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3 animate-slide-up">
           <div>
             <label className="text-[11px] text-content-tertiary block mb-1">{t('task_title')} *</label>
             <Input value={newSession.title} onChange={(e) => setNewSession((s) => ({ ...s, title: e.target.value }))} placeholder={t('task_title_ph')} required />
@@ -187,7 +188,7 @@ export default function SessionsView({
             <label className="text-[11px] text-content-tertiary block mb-1">{t('session_long_description')}</label>
             <Textarea value={newSession.longDescription} onChange={(e) => setNewSession((s) => ({ ...s, longDescription: e.target.value }))} placeholder={t('task_description_ph')} rows={3} />
           </div>
-          <label className="flex items-center gap-2 rounded-lg border border-slate-700/40 bg-surface-overlay px-3 py-2 text-sm text-content-secondary cursor-pointer">
+          <label className="flex items-center gap-2 rounded-lg border border-hairline bg-surface-overlay px-3 py-2 text-sm text-content-secondary cursor-pointer">
             <input type="checkbox" checked={Boolean(newSession.grantsPoints)} onChange={(e) => setNewSession((s) => ({ ...s, grantsPoints: e.target.checked }))} className="rounded" />
             <span>{t('session_grants_points')}</span>
           </label>
@@ -222,8 +223,8 @@ export default function SessionsView({
                     {group.title}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-                      group.past ? 'bg-amber-500/10 text-amber-300' : 'bg-teal-500/10 text-teal-300'
+                    <div className={`rounded-full px-2 py-1 text-[10px] font-mono tabular-nums font-semibold ${
+                      group.past ? 'bg-amber-500/10 text-amber-300' : 'bg-primary/10 text-primary'
                     }`}>
                       {group.items.length}
                     </div>
@@ -231,42 +232,44 @@ export default function SessionsView({
                       <button
                         type="button"
                         onClick={() => setShowPastSessions((value) => !value)}
-                        className="inline-flex items-center justify-center rounded-lg border border-slate-700/50 bg-surface-overlay p-1.5 text-content-tertiary transition-colors hover:border-slate-500/70 hover:text-content-primary"
+                        className="inline-flex items-center justify-center rounded-lg border border-hairline bg-surface-overlay p-1.5 text-content-tertiary transition-colors hover:border-slate-500/70 hover:text-content-primary"
                         aria-label={showPastSessions ? 'Contraer sesiones pasadas' : 'Expandir sesiones pasadas'}
                         title={showPastSessions ? 'Contraer sesiones pasadas' : 'Expandir sesiones pasadas'}
                       >
-                        {showPastSessions ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        {showPastSessions ? <ChevronDown className="h-4 w-4" strokeWidth={1.75} /> : <ChevronRight className="h-4 w-4" strokeWidth={1.75} />}
                       </button>
                     )}
                   </div>
                 </div>
 
-                {(!group.collapsible || showPastSessions) && group.items.map((session) => {
+                {(!group.collapsible || showPastSessions) && (
+                <StaggerList as="div" className="space-y-2">
+                {group.items.map((session) => {
             const isOrganizer = session.createdBy === authUser?.uid;
             const canTakeAttendance = isOrganizer || canManageSessions;
             const isExpanded = expandedId === session.id;
             const showAttendanceUI = isExpanded && canTakeAttendance && attendanceUISessionId === session.id;
             const isPastSession = group.past;
             return (
-              <div
+              <StaggerItem
+                as="div"
                 key={session.id}
-                className={`rounded-xl border overflow-hidden transition-colors animate-slide-up ${
+                className={`rounded-xl border overflow-hidden transition-colors ${
                   isPastSession
                     ? 'border-amber-500/20 bg-amber-500/5 hover:border-amber-400/30'
-                    : 'border-slate-700/40 bg-surface-raised hover:border-primary/20'
+                    : 'border-hairline bg-surface-raised hover:border-primary/20'
                 }`}
-                style={{ animationDelay: `${Math.min(group.items.indexOf(session) * 50, 300)}ms` }}
               >
                 <div className="p-4 cursor-pointer" onClick={() => setExpandedId((id) => (id === session.id ? null : session.id))}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-content-primary">{ensureString(session.title, lang)}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface-overlay border border-slate-700/40 text-content-tertiary">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface-overlay border border-hairline text-content-tertiary">
                           {getClassLabel(session.sessionClass)} · {getTypeLabel(session.sessionType)}
                         </span>
                         {session.grantsPoints && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/30">
+                          <span className="text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-md bg-primary/15 text-primary border border-primary/30">
                             +{session.meritPoints || SESSION_ATTENDANCE_POINTS_DEFAULT} pts
                           </span>
                         )}
@@ -277,7 +280,7 @@ export default function SessionsView({
                         )}
                       </div>
                       <p className="text-[11px] text-content-tertiary mt-0.5">
-                        {formatDatetime(session.scheduledAt)}
+                        <span className="font-mono tabular-nums">{formatDatetime(session.scheduledAt)}</span>
                         {session.durationMinutes && ` · ${session.durationMinutes} min`}
                         {session.place && ` · ${ensureString(session.place, lang)}`}
                       </p>
@@ -285,12 +288,12 @@ export default function SessionsView({
                         <p className={`text-xs text-content-secondary mt-2 whitespace-pre-wrap ${!isExpanded ? 'line-clamp-2' : ''}`}>{ensureString(session.shortDescription || session.description, lang)}</p>
                       )}
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-content-tertiary shrink-0 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} strokeWidth={2} />
+                    <ChevronDown className={`w-4 h-4 text-content-tertiary shrink-0 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} strokeWidth={1.75} />
                   </div>
                 </div>
 
                 {isExpanded && (
-                  <div className={`border-t p-4 space-y-4 ${isPastSession ? 'border-amber-500/20 bg-amber-500/5' : 'border-slate-700/40 bg-surface-sunken/20'}`}>
+                  <div className={`border-t p-4 space-y-4 ${isPastSession ? 'border-amber-500/20 bg-amber-500/5' : 'border-hairline bg-surface-sunken/20'}`}>
                     {(session.place || session.longDescription || session.description) && (
                       <div className="space-y-1">
                         {session.place && <p className="text-xs text-content-secondary"><span className="text-content-tertiary">{t('session_place')}:</span> {ensureString(session.place, lang)}</p>}
@@ -311,7 +314,7 @@ export default function SessionsView({
                             <div className="flex gap-1 mb-2">
                               {['all', 'attended', 'not_attended'].map((f) => (
                                 <button key={f} type="button" onClick={() => setAttendanceFilter(f)}
-                                  className={`text-[11px] px-2 py-1 rounded-lg border transition-all duration-150 ${attendanceFilter === f ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50'}`}>
+                                  className={`text-[11px] px-2 py-1 rounded-lg border transition-all duration-150 ${attendanceFilter === f ? 'bg-primary/20 border-primary/40 text-primary' : 'bg-surface-overlay border-hairline text-content-secondary hover:bg-slate-700/50'}`}>
                                   {f === 'all' ? t('session_attendance_all') : f === 'attended' ? t('session_attendance_attended') : t('session_attendance_not_attended')}
                                 </button>
                               ))}
@@ -334,16 +337,18 @@ export default function SessionsView({
                       </div>
                     )}
                     {canManageSessions && (
-                      <div className="flex gap-3 pt-2 border-t border-slate-700/40">
+                      <div className="flex gap-3 pt-2 border-t border-hairline">
                         <button type="button" onClick={() => setEditingId(session.id)} className="text-xs text-content-tertiary hover:text-content-primary transition-colors underline">{t('session_edit')}</button>
                         <button type="button" onClick={async () => { if (await confirmDialog({ message: t('session_delete_confirm') || '¿Eliminar esta sesión?', confirmLabel: t('delete'), danger: true })) onDeleteSession(session.id); }} className="text-xs text-error hover:text-red-400 transition-colors underline">{t('delete')}</button>
                       </div>
                     )}
                   </div>
                 )}
-              </div>
+              </StaggerItem>
             );
                 })}
+                </StaggerList>
+                )}
               </div>
             ) : null
           ))}
@@ -387,7 +392,7 @@ function EditSessionModal({ session, onCancel, onSave, getClassLabel, getTypeLab
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-5 max-w-md w-full space-y-3 max-h-[90vh] overflow-y-auto shadow-surface-xl">
+      <div className="rounded-xl border border-hairline bg-surface-raised p-5 max-w-md w-full space-y-3 max-h-[90vh] overflow-y-auto shadow-surface-xl">
         <h3 className="font-semibold text-content-primary">{t('session_edit')}</h3>
         <div>
           <label className="text-[11px] text-content-tertiary block mb-1">{t('task_title')} *</label>
@@ -458,7 +463,7 @@ function EditSessionModal({ session, onCancel, onSave, getClassLabel, getTypeLab
           <label className="text-[11px] text-content-tertiary block mb-1">{t('session_long_description')}</label>
           <Textarea value={longDescription} onChange={(e) => setLongDescription(e.target.value)} rows={3} />
         </div>
-        <label className="flex items-center gap-2 rounded-lg border border-slate-700/40 bg-surface-overlay px-3 py-2 text-sm text-content-secondary cursor-pointer">
+        <label className="flex items-center gap-2 rounded-lg border border-hairline bg-surface-overlay px-3 py-2 text-sm text-content-secondary cursor-pointer">
           <input type="checkbox" checked={grantsPoints} onChange={(e) => setGrantsPoints(e.target.checked)} className="rounded" />
           <span>{t('session_grants_points')}</span>
         </label>

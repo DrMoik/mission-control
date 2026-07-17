@@ -5,6 +5,7 @@ import { BilingualField, ScopeFilter, TrashBin } from '../components/ui/index.js
 import PickerField from '../components/ui/PickerField.jsx';
 import Button from '../components/ui/Button.jsx';
 import ModalOverlay from '../components/ModalOverlay.jsx';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 import { getL, toL, fillL, ensureString, parseCalendarDate, isGeneralLeadershipCategoryName } from '../utils.js';
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
@@ -55,6 +56,13 @@ const eventBadgeClasses = (event) => {
   if (event.isSession) return 'bg-teal-500/15 text-teal-200 border-teal-400/30';
   if (event.categoryName) return 'bg-blue-500/15 text-blue-200 border-blue-400/30';
   return 'bg-slate-700/50 text-slate-200 border-slate-600/60';
+};
+
+const eventSpineColor = (event) => {
+  if (event.isBirthday) return 'var(--color-warning)';
+  if (event.isSession) return 'var(--primary)';
+  if (event.categoryName) return 'var(--color-info)';
+  return 'var(--border-default)';
 };
 
 export default function CalendarView({
@@ -294,31 +302,31 @@ export default function CalendarView({
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-content-primary">{t('calendar_title')}</h2>
+          <h2 className="text-xl font-bold tracking-tight text-content-primary font-display">{t('calendar_title')}</h2>
           <p className="mt-0.5 text-sm text-content-secondary">{t('tool_desc_calendar')}</p>
         </div>
         {canEditTools && (
           <Button size="sm" onClick={() => openCreateForm()}>
-            <Plus className="mr-1 h-3.5 w-3.5" strokeWidth={2.5} />
+            <Plus className="mr-1 h-3.5 w-3.5" strokeWidth={1.75} />
             {t('add_event_btn')}
           </Button>
         )}
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm">
           <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-content-tertiary">Eventos visibles</div>
-          <div className="text-2xl font-bold text-content-primary">{visibleEvents.length}</div>
+          <div className="text-2xl font-bold text-content-primary font-mono tabular-nums">{visibleEvents.length}</div>
         </div>
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm">
           <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-content-tertiary">Proximos</div>
-          <div className="text-2xl font-bold text-primary">{upcomingCount}</div>
+          <div className="text-2xl font-bold text-primary font-mono tabular-nums">{upcomingCount}</div>
         </div>
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm">
           <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-content-tertiary">Mes actual</div>
           <div className="text-lg font-bold capitalize text-content-primary">{monthLabel(currentMonth)}</div>
         </div>
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm">
           <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-tertiary">Capas</div>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-content-secondary">
             <input
@@ -368,14 +376,14 @@ export default function CalendarView({
 
       {viewMode === 'calendar' ? (
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.8fr)_360px]">
-        <div className="overflow-hidden rounded-2xl border border-slate-700/40 bg-surface-raised shadow-surface-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/40 px-4 py-3">
+        <div className="overflow-hidden rounded-2xl border border-hairline bg-surface-raised shadow-surface-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-4 py-3">
             <div className="flex items-center gap-2">
-              <button type="button" onClick={previousMonth} className="rounded-lg border border-slate-700/60 bg-slate-900/70 p-2 text-slate-300 transition-colors hover:border-slate-500 hover:text-white">
-                <ChevronLeft className="h-4 w-4" />
+              <button type="button" onClick={previousMonth} className="rounded-lg border border-hairline bg-slate-900/70 p-2 text-slate-300 transition-colors hover:border-slate-500 hover:text-white">
+                <ChevronLeft className="h-4 w-4" strokeWidth={1.75} />
               </button>
-              <button type="button" onClick={nextMonth} className="rounded-lg border border-slate-700/60 bg-slate-900/70 p-2 text-slate-300 transition-colors hover:border-slate-500 hover:text-white">
-                <ChevronRight className="h-4 w-4" />
+              <button type="button" onClick={nextMonth} className="rounded-lg border border-hairline bg-slate-900/70 p-2 text-slate-300 transition-colors hover:border-slate-500 hover:text-white">
+                <ChevronRight className="h-4 w-4" strokeWidth={1.75} />
               </button>
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-content-tertiary">Vista mensual</div>
@@ -385,7 +393,7 @@ export default function CalendarView({
             <Button variant="secondary" size="sm" onClick={jumpToToday}>Hoy</Button>
           </div>
 
-          <div className="grid grid-cols-7 border-b border-slate-700/40 bg-slate-900/60">
+          <div className="grid grid-cols-7 border-b border-hairline bg-slate-900/60">
             {WEEKDAY_LABELS.map((label) => (
               <div key={label} className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-content-tertiary">
                 {label}
@@ -406,7 +414,7 @@ export default function CalendarView({
                   key={key}
                   type="button"
                   onClick={() => setSelectedDateKey(key)}
-                  className={`min-h-[130px] border-b border-r border-slate-800/70 p-2 text-left align-top transition-colors ${
+                  className={`min-h-[130px] border-b border-r border-hairline-strong p-2 text-left align-top transition-colors ${
                     isSelected ? 'bg-teal-500/10' : 'bg-slate-950/20 hover:bg-slate-900/40'
                   } ${!isCurrentMonth ? 'opacity-45' : ''}`}
                 >
@@ -422,7 +430,7 @@ export default function CalendarView({
                           e.stopPropagation();
                           openCreateForm(day);
                         }}
-                        className="rounded-full border border-slate-700/60 px-2 py-0.5 text-[10px] text-slate-400"
+                        className="rounded-full border border-hairline px-2 py-0.5 text-[10px] text-slate-400"
                       >
                         +
                       </span>
@@ -450,10 +458,10 @@ export default function CalendarView({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-700/40 bg-surface-raised shadow-surface-sm">
-          <div className="border-b border-slate-700/40 px-4 py-4">
+        <div className="overflow-hidden rounded-2xl border border-hairline bg-surface-raised shadow-surface-sm">
+          <div className="border-b border-hairline px-4 py-4">
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-content-tertiary">
-              <CalendarDays className="h-4 w-4" />
+              <CalendarDays className="h-4 w-4" strokeWidth={1.75} />
               Agenda del dia
             </div>
             <div className="mt-1 text-lg font-semibold text-content-primary">
@@ -463,8 +471,8 @@ export default function CalendarView({
 
           <div className="space-y-3 p-4">
             {selectedDayEvents.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-700/60 bg-slate-950/30 px-4 py-10 text-center">
-                <Calendar className="mx-auto mb-3 h-8 w-8 text-content-tertiary" strokeWidth={1.5} />
+              <div className="rounded-xl border border-dashed border-hairline bg-slate-950/30 px-4 py-10 text-center">
+                <Calendar className="mx-auto mb-3 h-8 w-8 text-content-tertiary" strokeWidth={1.75} />
                 <div className="text-sm text-content-tertiary">No hay eventos en esta fecha.</div>
                 {canEditTools && (
                   <Button size="sm" className="mt-4" onClick={() => openCreateForm(selectedDate)}>
@@ -477,7 +485,7 @@ export default function CalendarView({
               const canManage = !event.isBirthday && !event.isSession && resolveCanEdit(event);
               const isPast = startOfDay(event.startAt) < today;
               return (
-                <div key={event.id} className={`rounded-xl border border-slate-700/60 bg-slate-950/30 p-4 ${isPast ? 'opacity-60' : ''}`}>
+                <div key={event.id} className={`rounded-xl border border-hairline bg-slate-950/30 p-4 ${isPast ? 'opacity-60' : ''}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-content-primary">{getL(event.title, lang)}</div>
@@ -513,8 +521,8 @@ export default function CalendarView({
         </div>
       </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-700/40 bg-surface-raised shadow-surface-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-700/40 px-4 py-3">
+        <div className="overflow-hidden rounded-2xl border border-hairline bg-surface-raised shadow-surface-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-hairline px-4 py-3">
             <div>
               <div className="text-xs uppercase tracking-[0.18em] text-content-tertiary">Vista de lista</div>
               <div className="text-lg font-semibold text-content-primary">{listEvents.length} eventos visibles</div>
@@ -532,7 +540,7 @@ export default function CalendarView({
                   className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition ${
                     listRange === option.id
                       ? 'border-teal-400/60 bg-teal-500/15 text-teal-100'
-                      : 'border-slate-700/60 bg-slate-900/50 text-slate-300 hover:border-slate-500/80 hover:text-slate-100'
+                      : 'border-hairline bg-slate-900/50 text-slate-300 hover:border-slate-500/80 hover:text-slate-100'
                   }`}
                 >
                   {option.label}
@@ -544,24 +552,26 @@ export default function CalendarView({
 
           {listEvents.length === 0 ? (
             <div className="px-4 py-12 text-center text-content-tertiary">
-              <Calendar className="mx-auto mb-3 h-8 w-8" strokeWidth={1.5} />
+              <Calendar className="mx-auto mb-3 h-8 w-8" strokeWidth={1.75} />
               <div className="text-sm">No hay eventos para mostrar en este periodo.</div>
             </div>
           ) : (
-            <div className="divide-y divide-slate-700/40">
+            <StaggerList as="div" className="divide-y divide-slate-700/40">
               {listEvents.map((event) => {
                 const canManage = !event.isBirthday && !event.isSession && resolveCanEdit(event);
                 const isPastEvent = endOfDay(event.endAt) < today;
                 const monthLabel = event.startAt.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '').toUpperCase();
                 return (
-                  <div
+                  <StaggerItem
+                    as="div"
                     key={event.id}
                     className={`flex items-start gap-4 px-4 py-5 transition-colors hover:bg-slate-900/25 ${isPastEvent ? 'opacity-75' : ''}`}
+                    style={{ borderLeft: `3px solid ${eventSpineColor(event)}` }}
                   >
                     <div className="flex h-[84px] w-[62px] shrink-0 flex-col items-center justify-center rounded-2xl bg-slate-800/80 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                       <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{monthLabel}</div>
-                      <div className="mt-1 text-[2rem] font-semibold leading-none text-slate-100">{event.startAt.getDate()}</div>
-                      <div className="mt-1 text-[11px] font-medium tracking-[0.08em] text-slate-500">{event.startAt.getFullYear()}</div>
+                      <div className="mt-1 text-[2rem] font-semibold leading-none text-slate-100 font-mono tabular-nums">{event.startAt.getDate()}</div>
+                      <div className="mt-1 text-[11px] font-medium tracking-[0.08em] text-slate-500 font-mono tabular-nums">{event.startAt.getFullYear()}</div>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-4">
@@ -601,7 +611,7 @@ export default function CalendarView({
 
                       <div className="mt-2 text-xs text-content-tertiary">
                         {event.startAt.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                        {!event.allDay ? ` - ${displayTime(event.startAt)} - ${displayTime(event.endAt)}` : ' - Todo el dia'}
+                        {!event.allDay ? <> - <span className="font-mono tabular-nums">{displayTime(event.startAt)} - {displayTime(event.endAt)}</span></> : ' - Todo el dia'}
                       </div>
                       {!event.isBirthday && event.lastEditedByName && (
                         <div className="mt-1 text-xs text-slate-500">
@@ -610,18 +620,18 @@ export default function CalendarView({
                         </div>
                       )}
                     </div>
-                  </div>
+                  </StaggerItem>
                 );
               })}
-            </div>
+            </StaggerList>
           )}
         </div>
       )}
 
       {showForm && (
         <ModalOverlay onClickBackdrop={closeForm}>
-          <form onSubmit={submitDraft} className="w-[min(94vw,760px)] space-y-5 rounded-2xl border border-slate-700 bg-slate-800 p-5 shadow-2xl">
-            <div className="border-b border-slate-700 pb-3">
+          <form onSubmit={submitDraft} className="w-[min(94vw,760px)] space-y-5 rounded-2xl border border-hairline bg-slate-800 p-5 shadow-2xl">
+            <div className="border-b border-hairline pb-3">
               <div className="text-lg font-semibold text-slate-100">
                 {editingEventId ? `${t('edit')} ${t('event_title_label')}` : t('add_event_btn')}
               </div>
@@ -660,7 +670,7 @@ export default function CalendarView({
                 </select>
               </div>
 
-              <div className="rounded-xl border border-slate-700/60 bg-slate-900/50 p-4">
+              <div className="rounded-xl border border-hairline bg-slate-900/50 p-4">
                 <label className="flex items-center gap-2 text-sm text-slate-200">
                   <input
                     type="checkbox"
@@ -721,7 +731,7 @@ export default function CalendarView({
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-slate-700 pt-3">
+            <div className="flex justify-end gap-2 border-t border-hairline pt-3">
               <Button type="button" variant="secondary" onClick={closeForm}>{t('cancel')}</Button>
               <Button type="submit">{editingEventId ? t('save') : t('add_event_btn')}</Button>
             </div>

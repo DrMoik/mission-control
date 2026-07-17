@@ -123,8 +123,8 @@ export default function GoalsSection({
 
       {/* ── Create form panel ── */}
       {canCreate && showForm && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-700/40">
+        <form onSubmit={handleCreate} className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-hairline">
             <span className="text-sm font-semibold text-content-primary">{t('new_goal_btn')}</span>
           </div>
           <BilingualField
@@ -157,7 +157,7 @@ export default function GoalsSection({
               ))}
             </select>
           </div>
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-700/40">
+          <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
             <Button type="button" variant="secondary" size="sm" onClick={() => setShowForm(false)}>{t('cancel')}</Button>
             <Button type="submit" size="sm">{t('add_goal_btn')}</Button>
           </div>
@@ -165,9 +165,9 @@ export default function GoalsSection({
       )}
 
       {/* ── Goals panel ── */}
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm overflow-hidden">
+      <div className="rounded-xl border border-hairline bg-surface-raised shadow-surface-sm overflow-hidden">
         {/* Panel header */}
-        <div className="px-4 py-3 border-b border-slate-700/40 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-hairline flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">{t('goals_title')}</span>
           <span className="text-xs text-content-tertiary">{activeGoals.length} {t('active_label') || 'activos'}</span>
         </div>
@@ -258,7 +258,7 @@ export default function GoalsSection({
 
                   {/* Edit goal form */}
                   {editingGoalId === goal.id && (
-                    <form onSubmit={handleSaveGoalEdit} className="border-t border-slate-700/40 bg-surface-sunken/30 px-4 py-4 space-y-3">
+                    <form onSubmit={handleSaveGoalEdit} className="border-t border-hairline bg-surface-sunken/30 px-4 py-4 space-y-3">
                       <div className="text-xs font-semibold text-amber-400/90 mb-1">{t('edit')} {t('goal_ph')}</div>
                       <BilingualField
                         label={`${t('goal_ph')} *`}
@@ -299,7 +299,7 @@ export default function GoalsSection({
 
                   {/* Expanded key results */}
                   {isExpanded && (
-                    <div className="border-t border-slate-700/40 bg-surface-sunken/30 px-4 py-4 space-y-3">
+                    <div className="border-t border-hairline bg-surface-sunken/30 px-4 py-4 space-y-3">
                       <div className="text-xs font-semibold uppercase tracking-wider text-content-tertiary">{t('key_results_label')}</div>
                       {krs.length === 0 && (
                         <p className="text-xs text-content-tertiary italic">{t('no_key_results') || 'No hay resultados clave todavía.'}</p>

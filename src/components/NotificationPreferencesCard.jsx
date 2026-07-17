@@ -13,7 +13,7 @@ export default function NotificationPreferencesCard({
   const canManageToggles = isSupported && permissionState === 'granted';
 
   return (
-    <div className="mb-4 rounded-xl border border-slate-700/40 bg-surface-sunken/60 p-4">
+    <div className="mb-4 rounded-xl border border-hairline bg-surface-sunken/60 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-content-primary">{t('notifications_title')}</p>
@@ -25,7 +25,7 @@ export default function NotificationPreferencesCard({
       </div>
 
       <div className="mt-4 space-y-3">
-        <label className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${canManageToggles ? 'border-slate-700/50 bg-slate-950/30' : 'border-slate-800/60 bg-slate-950/20 opacity-70'}`}>
+        <label className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${canManageToggles ? 'border-hairline bg-slate-950/30' : 'border-hairline-strong bg-slate-950/20 opacity-70'}`}>
           <div>
             <p className="text-sm text-content-primary">{t('notifications_assignments')}</p>
             <p className="text-[11px] text-content-tertiary">{t('notifications_assignments_hint')}</p>
@@ -39,7 +39,7 @@ export default function NotificationPreferencesCard({
           />
         </label>
 
-        <label className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${canManageToggles ? 'border-slate-700/50 bg-slate-950/30' : 'border-slate-800/60 bg-slate-950/20 opacity-70'}`}>
+        <label className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${canManageToggles ? 'border-hairline bg-slate-950/30' : 'border-hairline-strong bg-slate-950/20 opacity-70'}`}>
           <div>
             <p className="text-sm text-content-primary">{t('notifications_sessions')}</p>
             <p className="text-[11px] text-content-tertiary">{t('notifications_sessions_hint')}</p>

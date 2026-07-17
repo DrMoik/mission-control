@@ -13,6 +13,7 @@ import { t, lang } from '../strings.js';
 import { BilingualField, Button, Input } from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString, tsToDate } from '../utils.js';
 import { ROLE_LABELS } from '../constants.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 // ── SVG histogram (vertical bars, dynamic bins, matches slate/teal aesthetic)
 function PointsHistogram({ distribution }) {
@@ -302,7 +303,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
             <Button variant="ghost" size="sm" onClick={addKpi}>{t('add_kpi')}</Button>
           </div>
           {draft.kpis.map((kpi, i) => (
-            <div key={i} className="mb-3 rounded-xl border border-slate-700/40 bg-surface-overlay/60 p-3 space-y-2">
+            <div key={i} className="mb-3 rounded-xl border border-hairline bg-surface-overlay/60 p-3 space-y-2">
               <BilingualField
                 label={t('kpi_label')}
                 value={kpi.label}
@@ -313,7 +314,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                 <label className="text-xs text-content-tertiary w-20 shrink-0">{t('kpi_value')}</label>
                 <Input value={kpi.value} onChange={(e) => updateKpiValue(i, e.target.value)}
                   placeholder="e.g. 3 / 42%" className="flex-1 text-xs" />
-                <button onClick={() => removeKpi(i)} className="text-error hover:text-red-400 p-1 shrink-0 transition-colors" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
+                <button onClick={() => removeKpi(i)} className="text-error hover:text-red-400 p-1 shrink-0 transition-colors" title={t('delete')}><X className="w-4 h-4" strokeWidth={1.75} /></button>
               </div>
             </div>
           ))}
@@ -332,7 +333,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-start justify-between gap-4 animate-fade-in">
         <div>
-          <h2 className="text-2xl font-bold text-gradient tracking-tight">{ensureString(team?.name, lang)}</h2>
+          <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">{ensureString(team?.name, lang)}</h2>
           {tagline && <p className="text-gradient-primary font-medium italic mt-1 text-base">"{tagline}"</p>}
         </div>
         {canEdit && (
@@ -344,27 +345,27 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
 
       {/* Live stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up animate-delay-1">
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200">
           <div className="text-[11px] text-content-tertiary uppercase tracking-wide">{t('total_members')}</div>
-          <div className="text-2xl font-bold mt-1 text-content-primary">{activeMembers}</div>
+          <div className="font-mono tabular-nums text-2xl font-bold mt-1 text-content-primary">{activeMembers}</div>
         </div>
         <button
           type="button"
           onClick={() => setShowPointsDetail(true)}
-          className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm hover:border-primary/30 hover:shadow-glow-sm transition-all duration-200 text-left w-full cursor-pointer group"
+          className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm hover:border-primary/30 hover:shadow-glow-sm transition-all duration-200 text-left w-full cursor-pointer group"
         >
           <div className="text-[11px] text-content-tertiary uppercase tracking-wide">{t('avg_points_per_member')}</div>
-          <div className="text-2xl font-bold mt-1 text-primary">{avgPointsPerMember}</div>
+          <div className="font-mono tabular-nums text-2xl font-bold mt-1 text-primary">{avgPointsPerMember}</div>
           <div className="text-[10px] text-content-tertiary mt-1 opacity-0 group-hover:opacity-100 transition-opacity">{t('click_for_details')}</div>
         </button>
-        <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200">
+        <div className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200">
           <div className="text-[11px] text-content-tertiary uppercase tracking-wide">{t('nav_academy')}</div>
-          <div className="text-2xl font-bold mt-1 text-content-primary">{teamModules.length}</div>
+          <div className="font-mono tabular-nums text-2xl font-bold mt-1 text-content-primary">{teamModules.length}</div>
         </div>
         {(ov.kpis || []).map((kpi, i) => (
-          <div key={i} className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-sm hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200">
+          <div key={i} className="rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-sm hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200">
             <div className="text-[11px] text-content-tertiary uppercase tracking-wide truncate">{getL(kpi.label, lang)}</div>
-            <div className="text-2xl font-bold mt-1 text-content-primary">{ensureString(kpi.value)}</div>
+            <div className="font-mono tabular-nums text-2xl font-bold mt-1 text-content-primary">{ensureString(kpi.value)}</div>
           </div>
         ))}
       </div>
@@ -402,8 +403,8 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
         return (
           <div className="rounded-xl border border-primary/25 bg-surface-raised shadow-glow-sm overflow-hidden animate-slide-up animate-delay-2 relative">
             <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-primary/6 blur-3xl pointer-events-none" />
-            <div className="px-4 py-3 border-b border-slate-700/40 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-amber-400" strokeWidth={2.5} />
+            <div className="px-4 py-3 border-b border-hairline flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-amber-400" strokeWidth={1.75} />
               <span className="text-xs font-semibold text-amber-400/90 uppercase tracking-wider">{t('inicio_team')} · {t('inicio_summary_7d')}</span>
             </div>
             <div className="p-4">
@@ -412,7 +413,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                 <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm mb-3">
                   {awards.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <Trophy className="w-5 h-5 text-teal-400 shrink-0" strokeWidth={2} />
+                      <Trophy className="w-5 h-5 text-teal-400 shrink-0" strokeWidth={1.75} />
                       <span className="text-slate-200">
                         <strong className="text-teal-400">{awards.length}</strong>{' '}
                         {awards.length === 1 ? t('inicio_merit_count') : t('inicio_merits_count')}
@@ -424,7 +425,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                   )}
                   {posts.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <FileText className="w-5 h-5 text-blue-400 shrink-0" strokeWidth={2} />
+                      <FileText className="w-5 h-5 text-blue-400 shrink-0" strokeWidth={1.75} />
                       <span className="text-slate-300">
                         <strong>{posts.length}</strong> {posts.length === 1 ? t('inicio_post_count') : t('inicio_posts_count')}
                       </span>
@@ -432,7 +433,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                   )}
                   {sessions.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <CalendarDays className="w-5 h-5 text-teal-400 shrink-0" strokeWidth={2} />
+                      <CalendarDays className="w-5 h-5 text-teal-400 shrink-0" strokeWidth={1.75} />
                       <span className="text-slate-300">
                         <strong>{sessions.length}</strong> {sessions.length === 1 ? t('inicio_session_count') : t('inicio_sessions_count')}
                       </span>
@@ -440,15 +441,15 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                   )}
                 </div>
                 {teamItems.length > 0 && (
-                  <ul className="space-y-1.5 max-h-36 overflow-y-auto text-xs">
+                  <StaggerList as="ul" className="space-y-1.5 max-h-36 overflow-y-auto text-xs">
                     {teamItems.map((item, i) => {
                       const d = item.date ? new Date(item.date) : null;
                       const dateStr = d ? d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
                       if (item.type === 'merit') {
                         const membership = teamMemberships?.find((m) => m.id === item.membershipId);
                         return (
-                          <li key={`t-${i}`} className="text-slate-300 flex items-start gap-2">
-                            <Trophy className="w-4 h-4 text-teal-400 shrink-0" strokeWidth={2} />
+                          <StaggerItem as="li" key={`t-${i}`} className="text-slate-300 flex items-start gap-2">
+                            <Trophy className="w-4 h-4 text-teal-400 shrink-0" strokeWidth={1.75} />
                             <span>
                               {onViewProfile && membership ? (
                                 <button type="button" onClick={() => onViewProfile(membership)} className="font-semibold text-slate-200 hover:text-teal-400 hover:underline text-left">
@@ -460,19 +461,19 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                               {t('inicio_merit_awarded')}{' '}
                               <span className="text-teal-400">+{item.points} pts</span> — {ensureString(item.meritName)}
                             </span>
-                            <span className="text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
-                          </li>
+                            <span className="font-mono tabular-nums text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
+                          </StaggerItem>
                         );
                       }
                       if (item.type === 'posts' && onNavigateFeed) {
                         return (
-                          <li key={`t-p-${i}`} className="text-slate-300 flex items-start gap-2">
-                            <FileText className="w-4 h-4 text-blue-400 shrink-0" strokeWidth={2} />
+                          <StaggerItem as="li" key={`t-p-${i}`} className="text-slate-300 flex items-start gap-2">
+                            <FileText className="w-4 h-4 text-blue-400 shrink-0" strokeWidth={1.75} />
                             <button type="button" onClick={onNavigateFeed} className="text-left hover:text-slate-100 transition-colors">
                               <strong className="text-slate-200">{item.count}</strong> {item.count === 1 ? t('inicio_post_feed') : t('inicio_posts_feed')}
                             </button>
-                            <span className="text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
-                          </li>
+                            <span className="font-mono tabular-nums text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
+                          </StaggerItem>
                         );
                       }
                       if (item.type === 'session') {
@@ -483,8 +484,8 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                             })()
                           : '';
                         return (
-                          <li key={`t-s-${item.sessionId}`} className="text-slate-300 flex items-start gap-2">
-                            <CalendarDays className="w-4 h-4 text-teal-400 shrink-0" strokeWidth={2} />
+                          <StaggerItem as="li" key={`t-s-${item.sessionId}`} className="text-slate-300 flex items-start gap-2">
+                            <CalendarDays className="w-4 h-4 text-teal-400 shrink-0" strokeWidth={1.75} />
                             {onNavigateSessions ? (
                               <button type="button" onClick={onNavigateSessions} className="text-left hover:text-slate-100 transition-colors">
                                 <strong className="text-slate-200">{item.title || t('inicio_session_created')}</strong>
@@ -496,13 +497,13 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                                 {schedStr && <span className="text-slate-500 ml-1">— {schedStr}</span>}
                               </span>
                             )}
-                            <span className="text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
-                          </li>
+                            <span className="font-mono tabular-nums text-slate-500 shrink-0 text-[10px]">{dateStr}</span>
+                          </StaggerItem>
                         );
                       }
                       return null;
                     })}
-                  </ul>
+                  </StaggerList>
                 )}
               </>
             ) : (
@@ -541,10 +542,10 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
           onClick={() => { setShowPointsDetail(false); setStatsViewMode('global'); setStatsSubFilter(''); }}
         >
           <div
-            className="rounded-2xl border border-slate-700/60 bg-surface-raised w-full max-w-lg shadow-surface-xl overflow-hidden text-content-primary"
+            className="rounded-2xl border border-hairline bg-surface-raised w-full max-w-lg shadow-surface-xl overflow-hidden text-content-primary"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-5 border-b border-slate-700/40">
+            <div className="p-5 border-b border-hairline">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <h3 className="font-bold text-lg text-slate-100">{t('avg_points_per_member')}</h3>
                 <div className="flex gap-2 flex-wrap">
@@ -595,7 +596,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
               </div>
               {filteredMembers.length > 0 ? (
                 <>
-                  <p className="text-2xl font-bold text-primary">{avgFiltered} pts</p>
+                  <p className="font-mono tabular-nums text-2xl font-bold text-primary">{avgFiltered} pts</p>
                   <div className="flex gap-4 mt-2 text-sm text-content-tertiary">
                     <span>{t('std_deviation')}: <span className="font-mono text-content-secondary">{stdDev}</span></span>
                     <span>({filteredMembers.length})</span>
@@ -608,12 +609,12 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
               )}
             </div>
             {filteredMembers.length > 0 && (
-              <div className="p-5 border-t border-slate-700/40">
+              <div className="p-5 border-t border-hairline">
                 <h4 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-2">{t('points_distribution')}</h4>
                 <PointsHistogram distribution={distribution} />
               </div>
             )}
-            <div className="p-5 border-t border-slate-700/40">
+            <div className="p-5 border-t border-hairline">
               <Button
                 variant="secondary"
                 onClick={() => { setShowPointsDetail(false); setStatsViewMode('global'); setStatsSubFilter(''); }}

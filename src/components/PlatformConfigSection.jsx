@@ -70,7 +70,7 @@ export default function PlatformConfigSection({
         <span className={`inline-block text-slate-500 transition-transform ${open ? '' : '-rotate-90'}`}>▼</span>
       </button>
       {open && (
-        <div className="mt-3 space-y-3 pt-3 border-t border-slate-700">
+        <div className="mt-3 space-y-3 pt-3 border-t border-hairline">
           <p className="text-[11px] text-slate-500">
             {isTeamMode ? (tFn('team_config_help') || 'Estas etiquetas se usan al crear logros en este equipo.') : (tFn('platform_config_help') || 'Estas etiquetas se usan al crear logros. Los equipos nuevos usan estos valores por defecto.')}
           </p>

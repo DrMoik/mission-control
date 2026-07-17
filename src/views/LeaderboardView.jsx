@@ -8,6 +8,7 @@ import { t, lang } from '../strings.js';
 import { ensureString } from '../utils.js';
 import { RoleBadge, MemberAvatar } from '../components/ui/index.js';
 import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 // Sortable table header (top-level so React preserves identity across renders)
 function SortTh({ col, label, className = '', sortBy, sortDir, onToggle }) {
@@ -15,7 +16,7 @@ function SortTh({ col, label, className = '', sortBy, sortDir, onToggle }) {
     <th className={className}>
       <button type="button" onClick={() => onToggle(col)} className="text-left hover:text-content-primary transition-colors flex items-center gap-0.5">
         {label}
-        {sortBy === col && <ChevronDown className={`w-3 h-3 transition-transform duration-150 ${sortDir === 'asc' ? 'rotate-180' : ''}`} />}
+        {sortBy === col && <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${sortDir === 'asc' ? 'rotate-180' : ''}`} strokeWidth={1.75} />}
       </button>
     </th>
   );
@@ -125,7 +126,7 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
   return (
     <div className="space-y-4 max-w-2xl">
       <div className="animate-fade-in">
-        <h2 className="text-2xl font-bold text-gradient tracking-tight">Leaderboard</h2>
+        <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">Leaderboard</h2>
       </div>
 
       {/* Points / Effort mode toggle */}
@@ -135,7 +136,7 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 ${
               mode === id
                 ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm'
-                : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'
+                : 'bg-surface-overlay border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'
             }`}>
             {label}
           </button>
@@ -150,7 +151,7 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 ${
                 tab === id
                   ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm'
-                  : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'
+                  : 'bg-surface-overlay border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'
               }`}>
               {label}
             </button>
@@ -158,13 +159,13 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-700/40 bg-surface-raised overflow-hidden shadow-surface-sm animate-slide-up animate-delay-2">
+      <div className="rounded-xl border border-hairline bg-surface-raised overflow-hidden shadow-surface-sm animate-slide-up animate-delay-2">
         {rows.length === 0 ? (
           <div className="p-8 text-xs text-content-tertiary text-center italic">{t('no_merit_data')}</div>
         ) : (
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="text-left text-xs text-content-tertiary border-b border-slate-700/40 bg-surface-sunken/30">
+              <tr className="text-left text-xs text-content-tertiary border-b border-hairline bg-surface-sunken/30">
                 <th className="px-3 py-2.5 w-10">#</th>
                 <SortTh col="name" label={t('th_member')} className="px-3 py-2.5" {...sortThProps} />
                 <th className="px-3 py-2.5">{t('th_role')}</th>
@@ -180,11 +181,11 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
                 )}
               </tr>
             </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <tr key={row.membershipId} className="border-b border-slate-700/40 hover:bg-slate-700/20 transition-colors animate-slide-up" style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}>
+            <StaggerList as="tbody">
+              {rows.map((row) => (
+                <StaggerItem as="tr" key={row.membershipId} className="border-b border-hairline hover:bg-slate-700/20 transition-colors">
                   <td className="px-3 py-2.5">
-                    <span className={`font-bold text-base ${
+                    <span className={`font-mono tabular-nums font-bold text-base ${
                       row.pointsRank === 1 ? 'text-yellow-400' :
                       row.pointsRank === 2 ? 'text-slate-300'  :
                       row.pointsRank === 3 ? 'text-amber-600'  : 'text-content-tertiary'
@@ -202,16 +203,16 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
                   <td className="px-3 py-2.5 text-content-tertiary text-xs">{row.categoryName}</td>
                   {showEffortCols ? (
                     <>
-                      <td className="px-3 py-2.5 text-right font-mono text-content-secondary">{row.weeklyCount ?? 0}</td>
-                      <td className="px-3 py-2.5 text-right font-mono text-content-secondary">{row.tasksDone ?? 0}</td>
-                      <td className="px-3 py-2.5 text-right font-mono font-bold text-primary">{row.effort ?? 0}</td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums text-content-secondary">{row.weeklyCount ?? 0}</td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums text-content-secondary">{row.tasksDone ?? 0}</td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums font-bold text-primary">{row.effort ?? 0}</td>
                     </>
                   ) : (
-                    <td className="px-3 py-2.5 text-right font-mono font-bold text-primary">{row.points}</td>
+                    <td className="px-3 py-2.5 text-right font-mono tabular-nums font-bold text-primary">{row.points}</td>
                   )}
-                </tr>
+                </StaggerItem>
               ))}
-            </tbody>
+            </StaggerList>
           </table>
         )}
       </div>

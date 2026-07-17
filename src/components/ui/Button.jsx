@@ -3,15 +3,15 @@
 
 const VARIANTS = {
   primary:
-    'relative overflow-hidden bg-gradient-to-br from-teal-500 to-teal-700 text-white font-semibold ' +
+    'relative overflow-hidden bg-gradient-to-br from-primary to-teal-700 text-white font-semibold ' +
     'shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)] ' +
-    'hover:from-teal-400 hover:to-teal-600 hover:shadow-[0_0_16px_rgba(13,148,136,0.35),0_1px_2px_rgba(0,0,0,0.3)] ' +
+    'hover:from-primary-hover hover:to-primary hover:shadow-[0_0_16px_rgba(23,209,184,0.35),0_1px_2px_rgba(0,0,0,0.3)] ' +
     'active:scale-[0.96] active:shadow-none ' +
     'disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100',
   premium:
-    'relative overflow-hidden bg-gradient-to-br from-teal-400 via-teal-600 to-teal-800 text-white font-semibold ' +
+    'relative overflow-hidden bg-gradient-to-br from-primary-hover via-primary to-teal-800 text-white font-semibold ' +
     'shadow-[0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] ' +
-    'hover:from-teal-300 hover:to-teal-700 hover:shadow-[0_0_24px_rgba(13,148,136,0.40)] ' +
+    'hover:from-primary hover:to-teal-700 hover:shadow-[0_0_24px_rgba(23,209,184,0.40)] ' +
     'active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none disabled:active:scale-100',
   secondary:
     'bg-surface-overlay text-content-primary border border-slate-600/50 ' +

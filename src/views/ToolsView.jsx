@@ -29,6 +29,7 @@ import GoalsSection            from './tools/GoalsSection.jsx';
 import { BilingualField, Button, Input, HowToUse, ScopeFilter, TrashBin } from '../components/ui/index.js';
 import { getL, toL, ensureString, isGeneralLeadershipCategoryName } from '../utils.js';
 import { LEADERSHIP_SCOPE } from '../constants.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 // SWOT quadrant metadata (colours are language-independent)
 const SWOT_META = [
@@ -244,7 +245,7 @@ export default function ToolsView({
   return (
     <div className="space-y-4">
       <div className="animate-fade-in">
-        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('team_tools_title')}</h2>
+        <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">{t('team_tools_title')}</h2>
       </div>
 
       {/* Tool tab bar — grouped by function: Identify & plan vs Execute */}
@@ -261,7 +262,7 @@ export default function ToolsView({
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150
                 ${toolTab === id
                   ? 'bg-primary/20 border border-primary/40 text-primary shadow-glow-sm'
-                  : 'bg-surface-overlay border border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary border'}`}>
+                  : 'bg-surface-overlay border border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary border'}`}>
               {label}
             </button>
           ))}
@@ -279,7 +280,7 @@ export default function ToolsView({
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150
                 ${toolTab === id
                   ? 'bg-primary/20 border border-primary/40 text-primary shadow-glow-sm'
-                  : 'bg-surface-overlay border border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}>
+                  : 'bg-surface-overlay border border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}>
               {label}
             </button>
           ))}
@@ -297,7 +298,7 @@ export default function ToolsView({
 
           {/* New SWOT form — only shown when user can create */}
           {canEditTools && (
-            <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+            <div className="rounded-xl border border-hairline bg-surface-raised p-4">
               <div className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-3">{t('create_new')} FODA / SWOT</div>
               <form onSubmit={handleCreateSwotSubmit} className="flex flex-wrap gap-2 items-end">
                 <Input
@@ -332,7 +333,7 @@ export default function ToolsView({
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 border
                       ${selectedSwotId === s.id
                         ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm'
-                        : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}
+                        : 'bg-surface-overlay border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}
                   >
                     {ensureString(s.name, lang) || t('swot_new_entry')}
                   </button>
@@ -378,9 +379,9 @@ export default function ToolsView({
                   return (
                     <div key={q.key} className={`border-2 ${q.border} ${q.bg} rounded-lg p-4`}>
                       <div className="font-semibold text-sm mb-3">{t(q.labelKey)}</div>
-                      <div className="space-y-2">
+                      <StaggerList as="div" className="space-y-2">
                         {displayItems.map((item) => (
-                          <div key={item.id} className="flex items-start gap-2">
+                          <StaggerItem as="div" key={item.id} className="flex items-start gap-2">
                             <span className="text-slate-400 mt-0.5 text-xs shrink-0">•</span>
                             {editingSwot ? (
                               <div className="flex-1 space-y-1">
@@ -393,7 +394,7 @@ export default function ToolsView({
                             ) : (
                               <span className="text-sm text-slate-200">{getL(item.text, lang)}</span>
                             )}
-                          </div>
+                          </StaggerItem>
                         ))}
                         {displayItems.length === 0 && !editingSwot && (
                           <p className="text-xs text-slate-600 italic">{t('nothing_yet')}</p>
@@ -403,7 +404,7 @@ export default function ToolsView({
                             {t('add_item_btn')}
                           </button>
                         )}
-                      </div>
+                      </StaggerList>
                     </div>
                   );
                 })}
@@ -426,7 +427,7 @@ export default function ToolsView({
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
             extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           {canCreate && (
-            <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+            <div className="rounded-xl border border-hairline bg-surface-raised p-4">
               <div className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-3">{t('create_new')} Eisenhower</div>
               <form
                 onSubmit={async (e) => {
@@ -466,7 +467,7 @@ export default function ToolsView({
                   <button
                     type="button"
                     onClick={() => setSelectedEisenhowerId(m.id)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all duration-150 ${selectedEisenhowerId === m.id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all duration-150 ${selectedEisenhowerId === m.id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}
                   >
                     {ensureString(m.name, lang) || m.id}
                   </button>
@@ -603,7 +604,7 @@ export default function ToolsView({
             categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
             extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
           {canCreate && (
-            <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+            <div className="rounded-xl border border-hairline bg-surface-raised p-4">
               <div className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-3">{t('create_new')} Pugh</div>
               <form
                 onSubmit={async (e) => {
@@ -643,7 +644,7 @@ export default function ToolsView({
                   <button
                     type="button"
                     onClick={() => setSelectedPughId(m.id)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all duration-150 ${selectedPughId === m.id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all duration-150 ${selectedPughId === m.id ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm' : 'bg-surface-overlay border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'}`}
                   >
                     {ensureString(m.name, lang) || m.id}
                   </button>
@@ -727,7 +728,7 @@ export default function ToolsView({
               </thead>
               <tbody>
                 {(pughData.criteria || []).map((crit) => (
-                  <tr key={crit.id} className="border-b border-slate-700/50">
+                  <tr key={crit.id} className="border-b border-hairline">
                     <td className="px-2 py-1.5 border-r border-slate-600">
                       <input
                         type="text"

@@ -8,6 +8,7 @@ import { ensureString } from '../utils.js';
 import MyCommitmentsCard from '../components/MyCommitmentsCard.jsx';
 import StatTile from '../components/ui/StatTile.jsx';
 import { getTaskAssigneeIds } from '../utils/taskHelpers.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 const LAST_VISIT_KEY = (teamId) => `mission-control:lastVisit_${teamId}`;
 
@@ -100,7 +101,7 @@ export default function InicioView({
         {currentMembership && (
           <p className="text-sm text-content-tertiary mb-0.5">{getGreeting()}{displayName ? ', ' : ''}<span className="text-gradient-primary font-semibold">{displayName}</span></p>
         )}
-        <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('nav_inicio')}</h2>
+        <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">{t('nav_inicio')}</h2>
         <p className="text-sm text-content-secondary mt-1">{t('inicio_desc')}</p>
       </div>
 
@@ -110,8 +111,8 @@ export default function InicioView({
           {/* Ambient glow blob */}
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary/8 blur-3xl pointer-events-none" />
 
-          <div className="px-4 py-3 border-b border-slate-700/40 flex items-center gap-2">
-            <Zap className="w-3.5 h-3.5 text-amber-400" strokeWidth={2.5} />
+          <div className="px-4 py-3 border-b border-hairline flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5 text-amber-400" strokeWidth={1.75} />
             <span className="text-xs font-semibold text-amber-400/90 uppercase tracking-wider">
               {t('inicio_personal')} · {t('inicio_summary_7d')}
             </span>
@@ -120,22 +121,22 @@ export default function InicioView({
           {/* Stat tiles */}
           <div className="grid grid-cols-3 divide-x divide-slate-700/40">
             <div className="px-4 py-3 text-center">
-              <div className="text-xl font-bold text-amber-400">{personalSummary.meritCount}</div>
+              <div className="font-mono tabular-nums text-xl font-bold text-amber-400">{personalSummary.meritCount}</div>
               <div className="text-[10px] text-content-tertiary uppercase tracking-wider mt-0.5">{t('inicio_my_merits')}</div>
             </div>
             <div className="px-4 py-3 text-center">
-              <div className="text-xl font-bold text-primary">{personalSummary.myPoints}</div>
+              <div className="font-mono tabular-nums text-xl font-bold text-primary">{personalSummary.myPoints}</div>
               <div className="text-[10px] text-content-tertiary uppercase tracking-wider mt-0.5">{t('inicio_points_total')}</div>
             </div>
             <div className="px-4 py-3 text-center">
-              <div className="text-xl font-bold text-content-primary">{personalSummary.myTaskCount}</div>
+              <div className="font-mono tabular-nums text-xl font-bold text-content-primary">{personalSummary.myTaskCount}</div>
               <div className="text-[10px] text-content-tertiary uppercase tracking-wider mt-0.5">{t('inicio_tasks_to_you')}</div>
             </div>
           </div>
 
           {/* Activity timeline */}
           {personalItems.length > 0 ? (
-            <div className="px-4 py-3 border-t border-slate-700/40">
+            <div className="px-4 py-3 border-t border-hairline">
               <div className="border-l-2 border-primary/20 pl-4 ml-1 space-y-3 max-h-44 overflow-y-auto">
                 {personalItems.map((item, i) => {
                   const d = item.date ? new Date(item.date) : null;
@@ -149,9 +150,9 @@ export default function InicioView({
                       {/* Timeline dot */}
                       <span className="absolute -left-[22px] top-1 w-2 h-2 rounded-full border-2 border-surface-raised bg-primary/60" />
                       {item.type === 'merit' ? (
-                        <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" strokeWidth={2} />
+                        <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" strokeWidth={1.75} />
                       ) : (
-                        <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" strokeWidth={2.5} />
+                        <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" strokeWidth={1.75} />
                       )}
                       <span className="text-content-secondary flex-1 min-w-0">
                         {item.type === 'merit' ? (
@@ -160,14 +161,14 @@ export default function InicioView({
                           <>{t('inicio_task_assigned')}: <span className="text-content-primary font-medium">{item.title || '—'}</span></>
                         )}
                       </span>
-                      <span className="text-content-tertiary shrink-0 text-[10px]">{dateStr}</span>
+                      <span className="font-mono tabular-nums text-content-tertiary shrink-0 text-[10px]">{dateStr}</span>
                     </div>
                   );
                 })}
               </div>
             </div>
           ) : (
-            <div className="px-4 py-4 border-t border-slate-700/40">
+            <div className="px-4 py-4 border-t border-hairline">
               <p className="text-xs text-content-tertiary italic">{t('inicio_no_activity')}</p>
             </div>
           )}
@@ -189,26 +190,28 @@ export default function InicioView({
       )}
 
       {/* ── Quick links ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-slide-up animate-delay-3">
+      <StaggerList as="div" className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {[
           { label: t('nav_overview'), sub: t('inicio_link_team_card'), onClick: onNavigateOverview },
           { label: t('nav_feed'),     sub: t('inicio_link_activity'),   onClick: onNavigateFeed },
           { label: t('nav_tasks'),    sub: t('inicio_link_tasks'),      onClick: onNavigateTasks },
         ].map(({ label, sub, onClick }) => (
-          <button
+          <StaggerItem
+            as="button"
             key={label}
             type="button"
             onClick={onClick}
+            whileTap={{ scale: 0.98 }}
             className="group p-3.5 rounded-xl border border-slate-600/50 bg-surface-raised text-left transition-all duration-200 hover:border-primary/40 hover:shadow-glow-sm hover:-translate-y-0.5"
           >
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm font-semibold text-content-primary">{label}</span>
-              <ArrowRight className="w-3.5 h-3.5 text-content-tertiary group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-150" strokeWidth={2} />
+              <ArrowRight className="w-3.5 h-3.5 text-content-tertiary group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-150" strokeWidth={1.75} />
             </div>
             <span className="text-xs text-content-tertiary">{sub}</span>
-          </button>
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerList>
 
       {!currentMembership && (
         <p className="text-xs text-content-tertiary italic">{t('inicio_no_membership')}</p>

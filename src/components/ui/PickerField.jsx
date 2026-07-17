@@ -75,11 +75,11 @@ function CalendarPanel({ selectedDate, viewMonth, minDate, maxDate, onPrevMonth,
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2">
+      <div className="flex items-center justify-between rounded-xl border border-hairline bg-slate-950/50 px-3 py-2">
         <button
           type="button"
           onClick={onPrevMonth}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 transition-colors hover:border-teal-400/60 hover:text-teal-200"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-hairline bg-slate-900 text-slate-300 transition-colors hover:border-teal-400/60 hover:text-teal-200"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -89,7 +89,7 @@ function CalendarPanel({ selectedDate, viewMonth, minDate, maxDate, onPrevMonth,
         <button
           type="button"
           onClick={onNextMonth}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 transition-colors hover:border-teal-400/60 hover:text-teal-200"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-hairline bg-slate-900 text-slate-300 transition-colors hover:border-teal-400/60 hover:text-teal-200"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -116,13 +116,13 @@ function CalendarPanel({ selectedDate, viewMonth, minDate, maxDate, onPrevMonth,
               onClick={() => !isDisabled && onPickDate(day)}
               className={`h-10 rounded-xl border text-sm transition-colors ${
                 isDisabled
-                  ? 'cursor-not-allowed border-slate-800 bg-slate-950/20 text-slate-700'
+                  ? 'cursor-not-allowed border-hairline-strong bg-slate-950/20 text-slate-700'
                   :
                 isSelected
                   ? 'border-teal-400 bg-teal-500 text-slate-950 shadow-[0_0_0_1px_rgba(16,185,129,0.25)]'
                   : isCurrentMonth
-                    ? 'border-slate-700 bg-slate-900 text-slate-200 hover:border-teal-500/50 hover:bg-slate-800'
-                    : 'border-slate-800 bg-slate-950/40 text-slate-500 hover:border-slate-700'
+                    ? 'border-hairline bg-slate-900 text-slate-200 hover:border-teal-500/50 hover:bg-slate-800'
+                    : 'border-hairline-strong bg-slate-950/40 text-slate-500 hover:border-hairline'
               }`}
             >
               {day.getDate()}
@@ -140,7 +140,7 @@ function TimePanel({ timeValue, onChange }) {
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-3">
+      <div className="rounded-xl border border-hairline bg-slate-950/50 p-3">
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Hora</div>
         <div className="grid max-h-64 grid-cols-4 gap-2 overflow-y-auto pr-1">
           {Array.from({ length: 24 }, (_, value) => (
@@ -151,7 +151,7 @@ function TimePanel({ timeValue, onChange }) {
               className={`rounded-lg border px-2 py-2 text-sm transition-colors ${
                 hours === value
                   ? 'border-teal-400 bg-teal-500 text-slate-950'
-                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-teal-500/50'
+                  : 'border-hairline bg-slate-900 text-slate-200 hover:border-teal-500/50'
               }`}
             >
               {pad(value)}
@@ -160,7 +160,7 @@ function TimePanel({ timeValue, onChange }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-700 bg-slate-950/50 p-3">
+      <div className="rounded-xl border border-hairline bg-slate-950/50 p-3">
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">Minutos</div>
         <div className="grid max-h-64 grid-cols-3 gap-2 overflow-y-auto pr-1">
           {minuteOptions.map((value) => (
@@ -171,7 +171,7 @@ function TimePanel({ timeValue, onChange }) {
               className={`rounded-lg border px-2 py-2 text-sm transition-colors ${
                 minutes === value
                   ? 'border-teal-400 bg-teal-500 text-slate-950'
-                  : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-teal-500/50'
+                  : 'border-hairline bg-slate-900 text-slate-200 hover:border-teal-500/50'
               }`}
             >
               {pad(value)}
@@ -264,7 +264,7 @@ export default function PickerField({
 
       {open && (
         <ModalOverlay onClickBackdrop={() => setOpen(false)}>
-          <div className="w-[min(92vw,720px)] rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-2xl">
+          <div className="w-[min(92vw,720px)] rounded-2xl border border-hairline bg-slate-900 p-4 shadow-2xl">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold text-slate-100">
@@ -304,13 +304,13 @@ export default function PickerField({
               )}
             </div>
 
-            <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-slate-800 pt-4">
+            <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-hairline-strong pt-4">
               <div className="flex gap-2">
                 {type !== 'time' && (
                   <button
                     type="button"
                     onClick={() => commitDate(new Date())}
-                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
+                    className="rounded-lg border border-hairline bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
                   >
                     Hoy
                   </button>
@@ -319,7 +319,7 @@ export default function PickerField({
                   <button
                     type="button"
                     onClick={() => commitTime(formatTimeValue(new Date().getHours(), Math.floor(new Date().getMinutes() / 5) * 5))}
-                    className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
+                    className="rounded-lg border border-hairline bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
                   >
                     Ahora
                   </button>
@@ -330,7 +330,7 @@ export default function PickerField({
                 <button
                   type="button"
                   onClick={clearValue}
-                  className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-red-500/50 hover:text-red-300"
+                  className="rounded-lg border border-hairline bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-red-500/50 hover:text-red-300"
                 >
                   Limpiar
                 </button>

@@ -47,7 +47,7 @@ export default function AddStrikeModal({ memberName, onConfirm, onCancel }) {
   return (
     <ModalOverlay onClickBackdrop={onCancel}>
       <div className="bg-surface-raised rounded-xl border border-slate-600 shadow-surface-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-4 border-b border-slate-700">
+        <div className="p-4 border-b border-hairline">
           <h3 className="text-sm font-semibold text-slate-200">{t('add_strike_evidence_title')}</h3>
           <p className="text-[11px] text-slate-500 mt-1">{t('add_strike_evidence_hint')}</p>
           {memberName && (

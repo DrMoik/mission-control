@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { t } from '../strings.js';
 import PickerField from '../components/ui/PickerField.jsx';
 import { Button } from '../components/ui/index.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 const ITEM_TYPES = [
   { id: 'tool', label: 'Herramienta' },
@@ -189,7 +190,7 @@ export default function InventoryView({
     <div className="space-y-6 max-w-[1200px]">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gradient tracking-tight">{t('inventory_title') || 'Inventario'}</h2>
+          <h2 className="font-display text-2xl font-bold text-gradient tracking-tight">{t('inventory_title') || 'Inventario'}</h2>
           <p className="text-sm text-content-secondary mt-1">
             {t('inventory_help') || 'Administra herramientas, consumibles y otros recursos por area.'}
           </p>
@@ -205,7 +206,7 @@ export default function InventoryView({
               className={`rounded-full px-3 py-1 text-xs font-semibold border transition-all duration-150 ${
                 typeFilter === opt.id
                   ? 'bg-primary/20 border-primary/40 text-primary shadow-glow-sm'
-                  : 'bg-surface-overlay border-slate-700/40 text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'
+                  : 'bg-surface-overlay border-hairline text-content-secondary hover:bg-slate-700/50 hover:text-content-primary'
               }`}
             >
               {opt.label}
@@ -214,7 +215,7 @@ export default function InventoryView({
         </div>
       </div>
 
-      <section className="rounded-xl border border-slate-700/40 bg-surface-raised p-4">
+      <section className="rounded-xl border border-hairline bg-surface-raised p-4">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold text-teal-400">{t('inventory_spreadsheet') || 'Hoja de inventario'}</h3>
@@ -252,7 +253,7 @@ export default function InventoryView({
           </div>
         )}
 
-        <div className="overflow-x-auto rounded-xl border border-slate-700/40">
+        <div className="overflow-x-auto rounded-xl border border-hairline">
           <table className="min-w-full text-sm">
             <thead className="bg-surface-sunken/60 text-content-tertiary">
               <tr>
@@ -347,7 +348,7 @@ export default function InventoryView({
                 </tr>
               )}
 
-              {visibleItems.length === 0 ? (
+              {visibleItems.length === 0 && (
                 <tr>
                   <td
                     colSpan={canManageInventory ? 9 : 8}
@@ -356,8 +357,11 @@ export default function InventoryView({
                     {t('inventory_empty') || 'No hay items en este inventario todavia.'}
                   </td>
                 </tr>
-              ) : (
-                visibleItems.map((item) => {
+              )}
+            </tbody>
+            {visibleItems.length > 0 && (
+              <StaggerList as="tbody" className="divide-y divide-slate-700/40 bg-surface-raised/50">
+                {visibleItems.map((item) => {
                   const editable = canEditItem?.(item);
                   const isEditing = editingId === item.id;
                   const row = isEditing ? editingDraft : item;
@@ -370,7 +374,7 @@ export default function InventoryView({
                   const canLoan = canManageInventory && item.type !== 'consumable' && availableQty > 0;
 
                   return (
-                    <tr key={item.id} className={lowStock ? 'bg-amber-500/5' : ''}>
+                    <StaggerItem as="tr" key={item.id} className={lowStock ? 'bg-amber-500/5 border-l-2 border-l-warning' : 'border-l-2 border-l-transparent'}>
                       <td className="px-2 py-2 text-xs text-content-primary">
                         {isEditing ? (
                           <select
@@ -417,10 +421,10 @@ export default function InventoryView({
                             onChange={(e) => setEditingDraft((prev) => ({ ...prev, quantity: e.target.value }))}
                             className="w-full rounded-lg border border-slate-600/60 bg-surface-sunken px-2 py-1.5 text-right text-xs text-content-primary focus:outline-none focus:border-primary/60"
                           />
-                        ) : Number(item.quantity || 0)}
+                        ) : <span className="font-mono tabular-nums">{Number(item.quantity || 0)}</span>}
                       </td>
                       <td className="px-2 py-2 text-right text-slate-100">
-                        {availableQty}
+                        <span className="font-mono tabular-nums">{availableQty}</span>
                       </td>
                       <td className="px-2 py-2 text-xs text-content-primary">
                         {isEditing ? (
@@ -441,7 +445,7 @@ export default function InventoryView({
                             onChange={(e) => setEditingDraft((prev) => ({ ...prev, minQuantity: e.target.value }))}
                             className="w-full rounded-lg border border-slate-600/60 bg-surface-sunken px-2 py-1.5 text-right text-xs text-content-primary focus:outline-none focus:border-primary/60"
                           />
-                        ) : (item.minQuantity || 0)}
+                        ) : <span className="font-mono tabular-nums">{item.minQuantity || 0}</span>}
                       </td>
                       <td className="px-2 py-2 text-xs text-content-tertiary">
                         {isEditing ? (
@@ -496,17 +500,17 @@ export default function InventoryView({
                           ) : '—'}
                         </td>
                       )}
-                    </tr>
+                    </StaggerItem>
                   );
-                })
-              )}
-            </tbody>
+                })}
+              </StaggerList>
+            )}
           </table>
         </div>
 
         {loanModalItem && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-            <div className="w-full max-w-xl rounded-xl border border-slate-700/40 bg-surface-raised p-4 shadow-surface-xl">
+            <div className="w-full max-w-xl rounded-xl border border-hairline bg-surface-raised p-4 shadow-surface-xl">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <h4 className="text-base font-semibold text-slate-100">
@@ -576,7 +580,7 @@ export default function InventoryView({
               </div>
 
               {loanModalActiveLoans.length > 0 && (
-                <div className="mt-4 space-y-2 rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <div className="mt-4 space-y-2 rounded-lg border border-hairline bg-slate-950/60 p-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                     {t('inventory_active_loans') || 'Prestamos activos'}
                   </p>
@@ -611,7 +615,7 @@ export default function InventoryView({
         )}
 
         {activeLoans.length > 0 && (
-          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/40 p-3">
+          <div className="mt-4 rounded-lg border border-hairline bg-slate-950/40 p-3">
             <div className="mb-2 flex items-center justify-between gap-3">
               <h4 className="text-sm font-semibold text-slate-100">
                 {t('inventory_active_loans') || 'Prestamos activos'}
@@ -623,7 +627,7 @@ export default function InventoryView({
                 const state = dueState(loan);
                 const item = items.find((entry) => entry.id === loan.itemId);
                 return (
-                  <div key={loan.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs">
+                  <div key={loan.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-hairline-strong bg-slate-900/60 px-3 py-2 text-xs">
                     <div className="space-y-1">
                       <p className="text-slate-200">
                         {loan.itemName || item?.name || 'Item'} · {loan.borrowerName || 'Member'} · {loan.quantity || 1}

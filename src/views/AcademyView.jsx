@@ -6,6 +6,7 @@ import { BilingualField, TrashBin } from '../components/ui/index.js';
 import ModalOverlay from '../components/ModalOverlay.jsx';
 import PdfReader from '../components/ui/PdfReader.jsx';
 import SafeImage from '../components/ui/SafeImage.jsx';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 const newTopicId = () => `t-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -283,7 +284,7 @@ export default function AcademyView({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-semibold">{t('nav_academy')}</h2>
+        <h2 className="text-base font-semibold font-display">{t('nav_academy')}</h2>
         <div className="flex gap-2">
           <button
             type="button"
@@ -392,19 +393,23 @@ export default function AcademyView({
             <div className="bg-slate-800 rounded-lg p-3 space-y-1">
               <div className="text-xs text-slate-400 mb-2">{`Modulos (${modules.length})`}</div>
               {modules.length === 0 && <div className="text-xs text-slate-500">{t('no_modules')}</div>}
-              {modules.map((m) => {
-                const hasAttempt = moduleAttempts.some((a) => a.moduleId === m.id);
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => { setSelectedId(m.id); setEditingModule(null); }}
-                    className={`w-full text-left px-2 py-2 rounded text-xs flex items-center justify-between gap-1 transition-colors ${selectedId === m.id ? 'bg-teal-500 text-black' : 'hover:bg-slate-700 text-slate-200'}`}
-                  >
-                    <span className="truncate">{getL(m.title, lang)}</span>
-                    {hasAttempt && <span className="shrink-0 font-bold text-teal-400">●</span>}
-                  </button>
-                );
-              })}
+              <StaggerList as="div" className="space-y-1">
+                {modules.map((m) => {
+                  const hasAttempt = moduleAttempts.some((a) => a.moduleId === m.id);
+                  return (
+                    <StaggerItem
+                      as="button"
+                      key={m.id}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => { setSelectedId(m.id); setEditingModule(null); }}
+                      className={`w-full text-left px-2 py-2 rounded text-xs flex items-center justify-between gap-1 transition-colors ${selectedId === m.id ? 'bg-teal-500 text-black' : 'hover:bg-slate-700 text-slate-200'}`}
+                    >
+                      <span className="truncate">{getL(m.title, lang)}</span>
+                      {hasAttempt && <span className="shrink-0 font-bold text-teal-400">●</span>}
+                    </StaggerItem>
+                  );
+                })}
+              </StaggerList>
             </div>
 
             <div className="md:col-span-2 bg-slate-800 rounded-lg p-4 space-y-4 min-h-[300px]">
@@ -430,7 +435,7 @@ export default function AcademyView({
                   </div>
 
                   {getTopics(selected).map((topic, idx) => (
-                    <div key={topic.id} className="border-t border-slate-700 pt-4">
+                    <div key={topic.id} className="border-t border-hairline pt-4">
                       <h4 className="text-sm font-medium text-slate-300 mb-2">{t('topic_label')} {idx + 1}: {getL(topic.title, lang) || '-'}</h4>
                       {topic.videoUrl && (
                         <div className="relative w-full mb-3" style={{ paddingTop: '56.25%' }}>
@@ -447,13 +452,13 @@ export default function AcademyView({
                     </div>
                   ))}
 
-                  <div className="border-t border-slate-700 pt-4 space-y-2">
+                  <div className="border-t border-hairline pt-4 space-y-2">
                     <p className="text-[11px] text-slate-500">{t('academy_eval_personal')}</p>
                     {attempt ? (
                       <div className="bg-slate-700/50 rounded p-3">
                         <p className="text-xs font-medium text-slate-300">{attempt.status === 'approved' ? t('review_approved') : t('review_requested')}</p>
                         {(attempt.requestedAt?.toDate || attempt.completedAt?.toDate) && (
-                          <p className="text-[10px] text-slate-500 mt-0.5">{tsToDate(attempt.requestedAt || attempt.completedAt).toLocaleString()}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5 font-mono tabular-nums">{tsToDate(attempt.requestedAt || attempt.completedAt).toLocaleString()}</p>
                         )}
                       </div>
                     ) : (
@@ -518,7 +523,7 @@ export default function AcademyView({
             </div>
 
             {showNewBookForm && canManageBooks && (
-              <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-3 space-y-3">
+              <div className="rounded-lg border border-hairline bg-slate-900/50 p-3 space-y-3">
                 <div className="text-xs font-semibold text-slate-300">{t('academy_new_book_form_title')}</div>
                 <input value={newBook.title} onChange={(e) => setNewBook((b) => ({ ...b, title: e.target.value }))} placeholder={t('academy_book_title_ph')} className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm" />
                 <input value={newBook.author} onChange={(e) => setNewBook((b) => ({ ...b, author: e.target.value }))} placeholder={t('academy_book_author_ph')} className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-sm" />
@@ -541,27 +546,30 @@ export default function AcademyView({
             )}
 
             {visibleBooks.length === 0 && <div className="text-xs text-slate-500">{t('academy_no_books')}</div>}
-            {visibleBooks.map((book) => (
-              <button
-                key={book.id}
-                type="button"
-                onClick={() => { setSelectedBookId(book.id); setEditingBookId(null); }}
-                className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedBookId === book.id ? 'border-teal-500 bg-teal-500/10' : 'border-slate-700 bg-slate-900/40 hover:border-slate-500'}`}
-              >
-                <div className="flex gap-3">
-                  <SafeImage
-                    src={book.coverUrl}
-                    alt={ensureString(book.title, lang)}
-                    className="h-16 w-12 rounded object-cover bg-slate-700"
-                    fallback={<div className="h-16 w-12 rounded bg-slate-700" />}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-slate-100">{ensureString(book.title, lang)}</div>
-                    <div className="text-xs text-slate-400">{ensureString(book.author, lang)}</div>
+            <StaggerList as="div" className="space-y-2">
+              {visibleBooks.map((book) => (
+                <StaggerItem
+                  as="button"
+                  key={book.id}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => { setSelectedBookId(book.id); setEditingBookId(null); }}
+                  className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedBookId === book.id ? 'border-teal-500 bg-teal-500/10' : 'border-hairline bg-slate-900/40 hover:border-slate-500'}`}
+                >
+                  <div className="flex gap-3">
+                    <SafeImage
+                      src={book.coverUrl}
+                      alt={ensureString(book.title, lang)}
+                      className="h-16 w-12 rounded object-cover bg-slate-700"
+                      fallback={<div className="h-16 w-12 rounded bg-slate-700" />}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-slate-100">{ensureString(book.title, lang)}</div>
+                      <div className="text-xs text-slate-400">{ensureString(book.author, lang)}</div>
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </StaggerItem>
+              ))}
+            </StaggerList>
             {canEdit && (
               <TrashBin
                 items={trashedBooks}
@@ -616,7 +624,7 @@ export default function AcademyView({
                   )}
                 </div>
 
-                <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-4 text-sm text-slate-400">
+                <div className="rounded-lg border border-hairline bg-slate-900/40 p-4 text-sm text-slate-400">
                   El libro se abre dentro del lector de la biblioteca para mantener el acceso en la app.
                 </div>
               </>
@@ -652,8 +660,8 @@ export default function AcademyView({
 
       {readerBook && (
         <ModalOverlay onClickBackdrop={() => setReaderBookId(null)} className="p-2 sm:p-4">
-          <div className="flex h-[92vh] w-[min(96vw,1400px)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl">
-            <div className="flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/95 px-4 py-3">
+          <div className="flex h-[92vh] w-[min(96vw,1400px)] flex-col overflow-hidden rounded-2xl border border-hairline bg-slate-950 shadow-2xl">
+            <div className="flex items-center justify-between gap-3 border-b border-hairline-strong bg-slate-900/95 px-4 py-3">
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold text-slate-100">{ensureString(readerBook.title, lang)}</div>
                 <div className="mt-1 text-xs text-slate-400">{ensureString(readerBook.author, lang)}</div>
@@ -666,7 +674,7 @@ export default function AcademyView({
                     setReaderInternalFailed(false);
                     setReaderBookId(null);
                   }}
-                  className="rounded border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
+                  className="rounded border border-hairline px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-teal-500/50 hover:text-teal-200"
                 >
                   Ver ficha
                 </button>
@@ -695,7 +703,7 @@ export default function AcademyView({
                 />
               ) : readerBook.embedUrl ? (
                 <div className="flex h-full flex-col">
-                  <div className="border-b border-slate-800 bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
+                  <div className="border-b border-hairline-strong bg-amber-500/10 px-4 py-2 text-xs text-amber-200">
                     {isGoogleDriveUrl(readerBook.driveUrl)
                       ? 'No se pudo abrir este archivo en el lector interno. Se uso el visor embebido de Google Drive y la pagina actual ya no se puede detectar automaticamente.'
                       : 'No se pudo cargar el PDF en modo interno. Se abrio el visor embebido de respaldo y la pagina ya no se puede detectar automaticamente para este archivo.'}

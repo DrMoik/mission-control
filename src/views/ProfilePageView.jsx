@@ -18,6 +18,7 @@ import SafeProfileImage         from '../components/ui/SafeProfileImage.jsx';
 import AchievementBadge         from '../components/AchievementBadge.jsx';
 import { useKnowledgeMap } from '../hooks/useKnowledgeMap.js';
 import { useContributionPath } from '../hooks/useContributionPath.js';
+import { StaggerList, StaggerItem } from '../components/motion/index.js';
 import { getL, toL, fillL, ensureString, getSundayOfWeekLocal, normalizeWeekOfToSunday, formatBirthdateDisplay, isBlockedImageHost, computeProfileCompletion, tsToDate, formatMissingFieldsList } from '../utils.js';
 
 function readAsDataUrl(file) {
@@ -318,26 +319,26 @@ export default function ProfilePageView({
             <SafeProfileImage
               src={editing ? draft.photoURL : membership.photoURL}
               fallback={
-                <div className="w-48 h-48 rounded-full border-4 border-slate-800 bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
+                <div className="w-48 h-48 rounded-full border-4 border-hairline-strong bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
                   {(ensureString(membership.displayName, lang) || '?')[0].toUpperCase()}
                 </div>
               }
-              className="w-48 h-48 rounded-full border-4 border-slate-800 object-cover object-[center_top] shadow-lg ring-2 ring-teal-500/30"
+              className="w-48 h-48 rounded-full border-4 border-hairline-strong object-cover object-[center_top] shadow-lg ring-2 ring-teal-500/30"
               alt=""
             />
           ) : (
-            <div className="w-48 h-48 rounded-full border-4 border-slate-800 bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
+            <div className="w-48 h-48 rounded-full border-4 border-hairline-strong bg-slate-600 flex items-center justify-center text-4xl font-bold text-slate-300 shadow-lg">
               {(ensureString(membership.displayName, lang) || '?')[0].toUpperCase()}
             </div>
           )}
         </div>
       </div>
 
-      <div className="relative z-0 pt-28 px-4 sm:px-6 lg:px-8 pb-8 bg-surface-raised/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-slate-700/40 w-full">
+      <div className="relative z-0 pt-28 px-4 sm:px-6 lg:px-8 pb-8 bg-surface-raised/95 rounded-b-xl -mt-px shadow-lg border border-t-0 border-hairline w-full">
 
         {/* Profile completion indicator */}
         {canEditThis && profileCompletion.percentage < 100 && (
-          <div className="mb-4 p-3 bg-surface-sunken/60 rounded-xl border border-slate-700/40">
+          <div className="mb-4 p-3 bg-surface-sunken/60 rounded-xl border border-hairline">
             <div className="flex items-center justify-between gap-2 mb-1">
               <span className="text-xs text-content-secondary">{t('profile_completion')}</span>
               <span className="text-sm font-semibold text-content-primary">{profileCompletion.percentage}% {t('profile_complete_pct')}</span>
@@ -366,7 +367,7 @@ export default function ProfilePageView({
 
         {editing ? (
           <div className="space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-700/40">
+            <div className="flex justify-between items-center pb-2 border-b border-hairline">
               <span className="text-xs text-content-secondary">{t('edit_profile')}</span>
               <div className="flex gap-2">
                 <button onClick={() => setEditing(false)} className="text-xs text-content-tertiary hover:text-content-secondary underline transition-colors">{t('cancel')}</button>
@@ -392,12 +393,12 @@ export default function ProfilePageView({
                 {draft.photoURL ? (
                   <SafeProfileImage
                     src={draft.photoURL}
-                    fallback={<div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>}
+                    fallback={<div className="w-9 h-9 rounded-full shrink-0 border border-hairline bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>}
                     className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-600"
                     alt=""
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-full shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>
+                  <div className="w-9 h-9 rounded-full shrink-0 border border-hairline bg-slate-700 flex items-center justify-center text-slate-500 text-xs">?</div>
                 )}
                 <input value={draft.photoURL} onChange={(e) => set('photoURL', e.target.value)}
                   placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-sm text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none" />
@@ -426,12 +427,12 @@ export default function ProfilePageView({
                 {draft.coverPhotoURL ? (
                   <SafeProfileImage
                     src={draft.coverPhotoURL}
-                    fallback={<div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>}
+                    fallback={<div className="w-14 h-9 rounded shrink-0 border border-hairline bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>}
                     className="w-14 h-9 rounded object-cover shrink-0 border border-slate-600"
                     alt=""
                   />
                 ) : (
-                  <div className="w-14 h-9 rounded shrink-0 border border-slate-700 bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>
+                  <div className="w-14 h-9 rounded shrink-0 border border-hairline bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">{t('cover_photo')}</div>
                 )}
                 <input value={draft.coverPhotoURL} onChange={(e) => set('coverPhotoURL', e.target.value)}
                   placeholder="https://…" className="flex-1 min-w-[120px] px-2 py-1.5 bg-surface-sunken border border-slate-600/60 rounded-lg text-sm text-content-primary focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none" />
@@ -483,7 +484,7 @@ export default function ProfilePageView({
               </div>
             </div>
 
-            <div className="border-t border-slate-700/40 pt-3 space-y-3">
+            <div className="border-t border-hairline pt-3 space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('section_mission')}</p>
               <BilingualField label={t('current_objective')} value={draft.currentObjective}
                 onChange={(v) => set('currentObjective', v)} placeholder={{ en: t('objective_ph'), es: t('objective_ph') }} />
@@ -491,7 +492,7 @@ export default function ProfilePageView({
                 onChange={(v) => set('currentChallenge', v)} placeholder={{ en: t('challenge_ph'), es: t('challenge_ph') }} />
             </div>
 
-            <div className="border-t border-slate-700/40 pt-3 space-y-3">
+            <div className="border-t border-hairline pt-3 space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('section_collaboration')}</p>
               <p className="text-[10px] text-slate-500">{t('collab_skill_hint')}</p>
               <SkillPicker label={t('looking_for_help_in')} value={draft.helpNeedsAreas ?? []} onChange={(v) => set('helpNeedsAreas', v)} skills={skillDictionary} allowedTypes={['technical','learning','support','collaboration']} onProposeSkill={onProposeSkill} placeholder={t('collab_tags_ph')} />
@@ -542,7 +543,7 @@ export default function ProfilePageView({
                   <span className="text-[10px] text-slate-500">{t('skill_not_standardized')}:</span>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {(draft.skillsICanTeach || []).map((tag, i) => (
-                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-slate-800/60 text-slate-300/80 border-slate-700/40">
+                      <span key={`leg-${i}`} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border bg-slate-800/60 text-slate-300/80 border-hairline">
                         {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
                         <button type="button" onClick={() => set('skillsICanTeach', (draft.skillsICanTeach || []).filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-400 leading-none transition-colors">×</button>
                       </span>
@@ -552,7 +553,7 @@ export default function ProfilePageView({
               )}
             </div>
 
-            <div className="border-t border-slate-700/40 pt-3 space-y-3">
+            <div className="border-t border-hairline pt-3 space-y-3">
               <p className="text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('about_label')}</p>
               <BilingualField label={t('about_me')} value={draft.bio} onChange={(v) => set('bio', v)}
                 multiline rows={3} placeholder={{ en: t('tell_team_placeholder'), es: t('tell_team_placeholder') }} />
@@ -562,7 +563,7 @@ export default function ProfilePageView({
                 placeholder={{ en: t('fun_fact_ph'), es: t('fun_fact_ph') }} />
             </div>
 
-            <div className="border-t border-slate-700/40 pt-3 space-y-4">
+            <div className="border-t border-hairline pt-3 space-y-4">
               <p className="text-[11px] font-bold uppercase tracking-widest text-content-tertiary">{t('section_culture')}</p>
               <CultureSongField label={t('culture_what_i_listen')} value={draft.whatIListenTo || []} onChange={(v) => set('whatIListenTo', v)}
                 titlePlaceholder={t('song_title_ph')} urlPlaceholder={t('song_url_ph')} addLabel={t('culture_add')} maxItems={3} />
@@ -592,7 +593,7 @@ export default function ProfilePageView({
           <div className="space-y-4 w-full">
             <div className="flex items-start justify-between flex-wrap gap-2">
               <div className="min-w-0">
-                <h2 className="text-xl font-bold">{ensureString(membership.displayName, lang)}</h2>
+                <h2 className="font-display text-xl font-bold">{ensureString(membership.displayName, lang)}</h2>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <RoleBadge role={membership.role} />
                   {cat && <span className="text-xs text-content-tertiary">· {ensureString(cat.name, lang)}</span>}
@@ -614,7 +615,7 @@ export default function ProfilePageView({
                   <div className="flex flex-wrap gap-3 text-xs text-content-tertiary mt-2">
                     {membership.birthdate && (
                       <span className="inline-flex items-center gap-1.5">
-                        <Cake className="w-3.5 h-3.5 text-slate-500 shrink-0" strokeWidth={2} />
+                        <Cake className="w-3.5 h-3.5 text-slate-500 shrink-0" strokeWidth={1.75} />
                         {formatBirthdateDisplay(membership.birthdate)}
                       </span>
                     )}
@@ -711,7 +712,7 @@ export default function ProfilePageView({
                 </div>
               )}
               {editingWeekly ? (
-                <div className="rounded-xl border border-slate-700/40 bg-surface-raised p-4 space-y-3">
+                <div className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
                   {[['advanced', t('weekly_advanced'), t('weekly_ph_advanced')], ['failedAt', t('weekly_failed_at'), t('weekly_ph_failed')], ['learned', t('weekly_learned'), t('weekly_ph_learned')]].map(([key, label, ph]) => (
                     <div key={key}>
                       <label className="text-[11px] text-content-secondary block mb-0.5">{label}</label>
@@ -728,7 +729,7 @@ export default function ProfilePageView({
                   </div>
                 </div>
               ) : thisWeek ? (
-                <div className="bg-surface-raised/60 rounded-xl p-4 space-y-3 border border-slate-700/40">
+                <div className="bg-surface-raised/60 rounded-xl p-4 space-y-3 border border-hairline">
                   <div className="flex items-center justify-between">
                     {availableWeeks.length <= 1 && (
                       <p className="text-[10px] text-slate-500">{weekOf === currentWeekOf ? t('weekly_this_week') : `Semana del ${new Date(weekOf + 'T12:00').toLocaleDateString()}`}</p>
@@ -847,7 +848,7 @@ export default function ProfilePageView({
                           return <span key={id} className="text-xs px-2.5 py-1 rounded-full border bg-teal-900/40 text-teal-200 border-teal-700/50">{label}</span>;
                         })}
                         {(membership.skillsICanTeach || []).map((tag, i) => (
-                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-slate-800/60 text-slate-300/80 border-slate-700/40">
+                          <span key={`leg-${i}`} className="text-xs px-2.5 py-1 rounded-full border bg-slate-800/60 text-slate-300/80 border-hairline">
                             {ensureString(tag, lang)} <span className="text-[10px] italic opacity-80">({t('skill_not_standardized')})</span>
                           </span>
                         ))}
@@ -863,7 +864,7 @@ export default function ProfilePageView({
                 <SectionHeading label={t('section_culture')} />
                 <div className="space-y-2">
                   {membership.whatIListenTo?.length > 0 && (
-                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-slate-700/40">
+                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-hairline">
                       <p className="text-[10px] text-slate-500 mb-1">{t('culture_what_i_listen')}</p>
                       <ul className="text-sm text-content-primary space-y-0.5">
                         {membership.whatIListenTo.map((s, i) => {
@@ -879,19 +880,19 @@ export default function ProfilePageView({
                     </div>
                   )}
                   {membership.bookThatMarkedMe?.length > 0 && (
-                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-slate-700/40">
+                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-hairline">
                       <p className="text-[10px] text-slate-500 mb-1">{t('culture_book_that_marked')}</p>
                       <ul className="text-sm text-content-primary space-y-0.5">{membership.bookThatMarkedMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
                     </div>
                   )}
                   {membership.ideaThatMotivatesMe?.length > 0 && (
-                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-slate-700/40">
+                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-hairline">
                       <p className="text-[10px] text-slate-500 mb-1">{t('culture_idea_that_motivates')}</p>
                       <ul className="text-sm text-content-primary space-y-0.5">{membership.ideaThatMotivatesMe.map((s, i) => <li key={i}>{ensureString(s, lang)}</li>)}</ul>
                     </div>
                   )}
                   {membership.quoteThatMovesMe?.length > 0 && (
-                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-slate-700/40">
+                    <div className="bg-surface-raised/60 rounded-xl px-3 py-2.5 border border-hairline">
                       <p className="text-[10px] text-slate-500 mb-1">{t('culture_quote_that_moves')}</p>
                       <ul className="text-sm text-content-primary space-y-0.5 italic">{membership.quoteThatMovesMe.map((s, i) => <li key={i}>&quot;{ensureString(s, lang)}&quot;</li>)}</ul>
                     </div>
@@ -903,7 +904,7 @@ export default function ProfilePageView({
             <div className="min-w-0 xl:col-span-2">
               <SectionHeading label={t('profile_logros_obtained')} />
               {meritEvents.filter((e) => e.type === 'award').length > 0 ? (
-                <div className="flex flex-wrap gap-3">
+                <StaggerList as="div" className="flex flex-wrap gap-3">
                   {(() => {
                     const awards = meritEvents.filter((e) => e.type === 'award');
                     const groups = {};
@@ -931,11 +932,13 @@ export default function ProfilePageView({
                         const iconLogo = merit?.logo ?? evt.meritLogo ?? 'trophy';
                         const iconColor = merit?.logoColor ?? evt.meritLogoColor;
                         return (
-                          <button
+                          <StaggerItem
+                            as="button"
                             key={`${evt.meritId || ''}-${evt.meritName || ''}-${evt.id}`}
                             type="button"
                             onClick={() => displayMerit && setDetailMerit(displayMerit)}
                             title={t('merit_click_to_view') || 'Clic para ver descripción'}
+                            whileTap={{ scale: 0.98 }}
                             className="flex items-center gap-2 bg-amber-950/30 border border-amber-800/40 rounded-lg px-3 py-2 text-left w-full sm:w-auto hover:bg-amber-950/50 hover:border-amber-500/60 transition-colors cursor-pointer group"
                           >
                             <AchievementBadge icon={iconLogo} color={iconColor} size="sm" compact className="shrink-0" />
@@ -944,18 +947,18 @@ export default function ProfilePageView({
                                 {evt.meritName || t('merit')}{count > 1 && <span className="text-slate-400 ml-1">×{count}</span>}
                               </p>
                               <p className="text-xs text-amber-400/90">
-                                +{(evt.points || 0) * count} pts
+                                <span className="font-mono tabular-nums">+{(evt.points || 0) * count}</span> pts
                                 {autoAward && <span className="text-slate-500 ml-1">· {t('merit_awarded_by_system')}</span>}
                               </p>
                               <p className="text-[10px] text-slate-500 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                 {t('merit_click_to_view')}
                               </p>
                             </div>
-                          </button>
+                          </StaggerItem>
                         );
                       });
                   })()}
-                </div>
+                </StaggerList>
               ) : (
                 <p className="text-xs text-slate-500 italic py-2">{t('profile_logros_empty')}</p>
               )}
@@ -976,7 +979,7 @@ export default function ProfilePageView({
                     const taskObjs = (ev?.taskIds || []).map((id) => tasks.find((t) => t.id === id)).filter(Boolean);
                     const moduleObjs = (ev?.moduleIds || []).map((id) => modules.find((m) => m.id === id)).filter(Boolean);
                     return (
-                      <div key={tend.id} className="bg-surface-raised/60 rounded-xl p-3 border border-slate-700/40">
+                      <div key={tend.id} className="bg-surface-raised/60 rounded-xl p-3 border border-hairline">
                         <div className="font-medium text-slate-200">{t(tend.labelKey)}</div>
                         <p className="text-xs text-content-tertiary mt-1">{tend.phrase}</p>
                         <button
@@ -987,7 +990,7 @@ export default function ProfilePageView({
                           {isExpanded ? t('path_hide_evidence') : t('path_view_evidence')}
                         </button>
                         {isExpanded && (
-                          <div className="mt-2 pt-2 border-t border-slate-700/50 space-y-1.5 text-[11px]">
+                          <div className="mt-2 pt-2 border-t border-hairline space-y-1.5 text-[11px]">
                             {meritObjs.length > 0 && (
                               <div>
                                 <span className="text-slate-500">{t('path_evidence_merits')}:</span>

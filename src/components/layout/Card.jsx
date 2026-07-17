@@ -3,8 +3,10 @@
 // surface, border radius, and optional hover lift.
 // variant: "default" | "glow" | "glass" | "premium"
 
+import Pressable from '../motion/Pressable.jsx';
+
 const VARIANTS = {
-  default:  'rounded-xl border border-slate-700/40 bg-surface-raised shadow-surface-sm',
+  default:  'rounded-xl border border-hairline bg-surface-raised shadow-surface-sm',
   glow:     'rounded-xl border border-primary/25 bg-surface-raised shadow-glow-sm',
   glass:    'rounded-xl glass shadow-surface-sm',
   premium:  'rounded-xl border border-primary/30 bg-surface-raised shadow-glow-sm animate-glow-breathe',
@@ -16,9 +18,14 @@ export default function Card({
   padding = true,
   hover = false,
   variant = 'default',
+  onClick,
 }) {
+  const Tag = hover ? Pressable : 'div';
+  const tagProps = hover ? { scale: 0.98 } : {};
   return (
-    <div
+    <Tag
+      onClick={onClick}
+      {...tagProps}
       className={[
         VARIANTS[variant] || VARIANTS.default,
         'transition-all duration-200 ease-out-smooth',
@@ -30,6 +37,6 @@ export default function Card({
       ].filter(Boolean).join(' ')}
     >
       {children}
-    </div>
+    </Tag>
   );
 }

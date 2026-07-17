@@ -29,7 +29,7 @@ export default function TrashBin({ items = [], onRestore, onPurge, renderLabel, 
   if (!items.length) return null;
 
   return (
-    <div className={`rounded-xl border border-slate-700/40 bg-surface-raised ${className}`}>
+    <div className={`rounded-xl border border-hairline bg-surface-raised ${className}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -43,12 +43,12 @@ export default function TrashBin({ items = [], onRestore, onPurge, renderLabel, 
       </button>
 
       {open && (
-        <div className="space-y-1.5 border-t border-slate-700/40 p-3">
+        <div className="space-y-1.5 border-t border-hairline p-3">
           <p className="mb-1 text-[11px] italic text-content-tertiary">{t('trash_hint')}</p>
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-700/40 bg-surface-overlay px-3 py-2"
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-hairline bg-surface-overlay px-3 py-2"
             >
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm text-content-secondary">{renderLabel(item)}</div>
