@@ -8,6 +8,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, Users, UserPlus } from 'lucide-react';
 import { t } from '../strings.js';
+import { confirmDialog } from '../services/feedback.js';
 import { ROLE_ORDER, CAREER_OPTIONS } from '../constants.js';
 import { RoleBadge, StrikePips, MemberAvatar } from '../components/ui/index.js';
 import SafeProfileImage from '../components/ui/SafeProfileImage.jsx';
@@ -81,6 +82,18 @@ export default function MembersView({
   const [ghostForm,        setGhostForm]         = useState({
     displayName: '', role: 'facultyAdvisor', categoryId: '', university: '', career: '', bio: '',
   });
+
+  const handleRoleChange = async (member, newRole) => {
+    if (newRole === member.role) return;
+    const ok = await confirmDialog({
+      title: t('confirm_role_change_title'),
+      message: t('confirm_role_change_msg')
+        .replace('{name}', ensureString(member.displayName))
+        .replace('{role}', t('role_' + newRole)),
+      confirmLabel: t('save'),
+    });
+    if (ok) onUpdateRole(member.id, newRole);
+  };
 
   const pending   = memberships.filter((m) => m.status === 'pending');
   const active    = memberships.filter((m) => m.status === 'active');
@@ -397,7 +410,7 @@ export default function MembersView({
                   </td>
                   <td className="px-3 py-2.5">
                     {canEdit ? (
-                      <select value={m.role} onChange={(e) => onUpdateRole(m.id, e.target.value)} className={selectCls}>
+                      <select value={m.role} onChange={(e) => handleRoleChange(m, e.target.value)} className={selectCls}>
                         {ROLE_ORDER.map((r) => <option key={r} value={r}>{t('role_' + r)}</option>)}
                       </select>
                     ) : <RoleBadge role={m.role} />}

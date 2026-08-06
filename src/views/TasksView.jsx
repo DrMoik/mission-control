@@ -377,6 +377,29 @@ export default function TasksView({
         </div>
       )}
 
+      {/* My pending tasks */}
+      <div className="animate-slide-up animate-delay-1">
+        <h3 className="text-sm font-semibold text-content-secondary uppercase tracking-wider mb-3">{t('task_my_pending')}</h3>
+        {myTasks.length === 0 ? (
+          <p className="text-xs text-content-tertiary italic py-2">{t('task_no_tasks_guidance')}</p>
+        ) : filteredMyPending.length === 0 && filteredMyPendingReview.length === 0 ? (
+          <p className="text-xs text-content-tertiary italic py-2">{taskSearch ? t('search_no_results') : t('task_no_pending_guidance')}</p>
+        ) : (
+          <StaggerList as="div" className="space-y-2">
+            {filteredMyPending.map((task) => (
+              <StaggerItem as="div" key={task.id}>
+                <TaskCard task={task} showRequestReview showGrade={false} />
+              </StaggerItem>
+            ))}
+            {filteredMyPendingReview.map((task) => (
+              <StaggerItem as="div" key={task.id}>
+                <TaskCard task={task} showRequestReview={false} showGrade={false} />
+              </StaggerItem>
+            ))}
+          </StaggerList>
+        )}
+      </div>
+
       {/* All team tasks (admins only) */}
       {canViewAllTasks && allTasks.length > 0 && (
         <div className="animate-slide-up">
@@ -422,29 +445,6 @@ export default function TasksView({
           )}
         </div>
       )}
-
-      {/* My pending tasks */}
-      <div className="animate-slide-up animate-delay-1">
-        <h3 className="text-sm font-semibold text-content-secondary uppercase tracking-wider mb-3">{t('task_my_pending')}</h3>
-        {myTasks.length === 0 ? (
-          <p className="text-xs text-content-tertiary italic py-2">{t('task_no_tasks_guidance')}</p>
-        ) : filteredMyPending.length === 0 && filteredMyPendingReview.length === 0 ? (
-          <p className="text-xs text-content-tertiary italic py-2">{taskSearch ? t('search_no_results') : t('task_no_pending_guidance')}</p>
-        ) : (
-          <StaggerList as="div" className="space-y-2">
-            {filteredMyPending.map((task) => (
-              <StaggerItem as="div" key={task.id}>
-                <TaskCard task={task} showRequestReview showGrade={false} />
-              </StaggerItem>
-            ))}
-            {filteredMyPendingReview.map((task) => (
-              <StaggerItem as="div" key={task.id}>
-                <TaskCard task={task} showRequestReview={false} showGrade={false} />
-              </StaggerItem>
-            ))}
-          </StaggerList>
-        )}
-      </div>
 
       {/* Responsibility history */}
       {myTasks.length > 0 && (

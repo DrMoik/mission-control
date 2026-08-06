@@ -3,6 +3,7 @@
 // currently-open team without leaving the page.
 
 import React from 'react';
+import { Pencil, Trash2 } from 'lucide-react';
 
 export default function InlineTeamRename({ team, isPlatformAdmin, onRename, onDelete, t }) {
   const [editing,  setEditing]  = React.useState(false);
@@ -43,15 +44,17 @@ export default function InlineTeamRename({ team, isPlatformAdmin, onRename, onDe
       <span className="font-bold text-sm truncate">{team.name}</span>
       <button onClick={start}
         title={t('rename_team')}
-        className="text-slate-500 hover:text-amber-400 transition-colors text-xs shrink-0"
+        aria-label={t('rename_team')}
+        className="text-slate-500 hover:text-amber-400 transition-colors p-1 -m-1 shrink-0"
       >
-        …
+        <Pencil className="w-3.5 h-3.5" strokeWidth={2} aria-hidden="true" />
       </button>
       <button onClick={() => onDelete(team.id)}
         title={t('delete_team')}
-        className="text-slate-500 hover:text-red-400 transition-colors text-xs shrink-0"
+        aria-label={t('delete_team')}
+        className="text-slate-500 hover:text-red-400 transition-colors p-1 -m-1 shrink-0"
       >
-        ×
+        <Trash2 className="w-3.5 h-3.5" strokeWidth={2} aria-hidden="true" />
       </button>
     </div>
   );

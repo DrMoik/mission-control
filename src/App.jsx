@@ -2470,46 +2470,24 @@ export default function App() {
     );
   }
 
-  // ── Unauthenticated — public team browser ──────────────────────────────────
+  // ── Unauthenticated — sign-in ────────────────────────────────────────────────
+  // Team data requires auth to read (Firestore rules), so there is nothing
+  // public to browse here — just get the visitor signed in.
   if (!authUser) {
     return (
-        <div className="min-h-screen bg-surface-base text-content-primary flex flex-col">
-          <header className="border-b border-hairline-strong px-4 py-3 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="font-bold text-lg leading-tight">{t('app_name')}</h1>
-              <p className="text-[11px] text-slate-500 hidden sm:block">{t('app_subtitle')}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={handleGoogleSignIn}
-                className="flex items-center gap-2 bg-white text-slate-900 text-xs sm:text-sm font-semibold px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors">
-                <GoogleIcon />
-                <span className="hidden sm:inline">{t('sign_in_google')}</span>
-                <span className="sm:hidden">{t('sign_in_short')}</span>
-              </button>
-            </div>
-          </header>
-          <main className="flex-1 w-full">
-            <div className="page-container max-w-content-wide mx-auto">
-              <p className="text-content-secondary text-sm mb-6">{t('sign_in_google')} — {t('app_subtitle')}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {allTeams.map((team) => (
-                <div key={team.id} className="bg-slate-800/90 rounded-xl p-4 space-y-2 border border-hairline shadow-sm hover:border-slate-600/50 transition-colors">
-                  <h2 className="font-bold text-base">{team.name}</h2>
-                  {getL(team.overview?.tagline, lang) && <p className="text-sm text-slate-300 italic">"{getL(team.overview.tagline, lang)}"</p>}
-                  {getL(team.overview?.about, lang)   && <p className="text-xs text-slate-400 line-clamp-3">{getL(team.overview.about, lang)}</p>}
-                  <button onClick={handleGoogleSignIn}
-                    className="mt-1 text-xs bg-teal-500 text-black font-semibold px-3 py-1.5 rounded hover:bg-teal-400 transition-colors">
-                    {t('sign_in_google')}
-                  </button>
-                </div>
-              ))}
-              {allTeams.length === 0 && (
-                <div className="col-span-2 text-center text-content-tertiary text-sm py-12">{t('no_teams_sign_in')}</div>
-              )}
-            </div>
-            </div>
-          </main>
+      <div className="min-h-screen bg-surface-base text-content-primary flex items-center justify-center p-4">
+        <div className="w-full max-w-sm text-center space-y-5">
+          <div>
+            <h1 className="font-bold text-2xl leading-tight">{t('app_name')}</h1>
+            <p className="text-content-secondary text-sm mt-1">{t('app_subtitle')}</p>
+          </div>
+          <button onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-2 bg-white text-slate-900 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-slate-100 transition-colors">
+            <GoogleIcon />
+            {t('sign_in_google')}
+          </button>
         </div>
+      </div>
     );
   }
 

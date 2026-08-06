@@ -417,6 +417,8 @@ export const STRINGS = {
     sort_asc:              'Ascendente',
     sort_desc:             'Descendente',
     th_action:            'Acción',
+    confirm_role_change_title: 'Cambiar rol',
+    confirm_role_change_msg:   'Esto cambia los permisos de {name} en la plataforma a "{role}".',
     external_badge:       '(externo)',
     no_members_filter:    'Ningún miembro coincide con los filtros.',
     suspended_header:     'Suspendidos',

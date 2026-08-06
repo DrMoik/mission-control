@@ -247,7 +247,14 @@ export default function AppViewContent({
         exit={reduceMotion ? undefined : { opacity: 0 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       >
-    <Suspense fallback={<div className="py-16 text-center text-content-tertiary text-sm">{t('loading')}</div>}>
+    <Suspense fallback={
+      <div className="space-y-3 py-2 animate-pulse" aria-hidden="true">
+        <div className="h-6 w-40 rounded bg-slate-700/40" />
+        <div className="h-4 w-64 rounded bg-slate-700/30" />
+        <div className="h-24 w-full rounded-xl bg-slate-700/25" />
+        <div className="h-24 w-full rounded-xl bg-slate-700/25" />
+      </div>
+    }>
       {view === 'inicio' && (
         <InicioView
           team={currentTeam}
@@ -657,8 +664,6 @@ export default function AppViewContent({
           allMeritEvents={teamMeritEvents}
           canEditThis={isPlatformAdmin || (authUser && profileMember.userId === authUser.uid)}
           onSave={handleUpdateMemberProfile}
-          weeklyStatuses={teamWeeklyStatuses.filter((entry) => entry.membershipId === profileMember.id)}
-          onSaveWeeklyStatus={handleSaveWeeklyStatus}
           weeklyStatuses={teamWeeklyStatuses.filter((entry) => entry.membershipId === profileMember.id)}
           onSaveWeeklyStatus={handleSaveWeeklyStatus}
           onProposeSkill={handleProposeSkill}
