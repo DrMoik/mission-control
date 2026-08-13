@@ -10,7 +10,7 @@ import { ChevronDown, Users, UserPlus } from 'lucide-react';
 import { t } from '../strings.js';
 import { confirmDialog } from '../services/feedback.js';
 import { ROLE_ORDER, CAREER_OPTIONS } from '../constants.js';
-import { RoleBadge, StrikePips, MemberAvatar } from '../components/ui/index.js';
+import { RoleBadge, StrikePips, MemberAvatar, TrashBin } from '../components/ui/index.js';
 import SafeProfileImage from '../components/ui/SafeProfileImage.jsx';
 import AddStrikeModal from '../components/AddStrikeModal.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -65,6 +65,7 @@ export default function MembersView({
   onUpdateRole, onAssignCategory, onAddStrike, onRemoveStrike,
   onViewProfile, onCreateGhostMember, onApproveMember, onRejectMember,
   onArchiveMember, onUnarchiveMember, canArchiveMembers = false,
+  trashed, onRestoreItem, onPurgeItem,
 }) {
   const careerOptions = careerOptionsProp ?? CAREER_OPTIONS;
 
@@ -326,6 +327,15 @@ export default function MembersView({
             })}
           </div>
         </div>
+      )}
+
+      {canEdit && (
+        <TrashBin
+          items={trashed?.memberships || []}
+          onRestore={(id) => onRestoreItem?.('memberships', id)}
+          onPurge={(id) => onPurgeItem?.('memberships', id)}
+          renderLabel={(m) => ensureString(m.displayName) || '—'}
+        />
       )}
 
       {/* ── Filter bar ── */}

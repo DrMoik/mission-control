@@ -173,7 +173,7 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
         }),
       );
 
-    sub(query(collection(db, 'memberships'), where('teamId', '==', selectedTeamId)), setTeamMemberships);
+    subSoft('memberships', query(collection(db, 'memberships'), where('teamId', '==', selectedTeamId)), setTeamMemberships);
     sub(
       query(collection(db, 'categories'), where('teamId', '==', selectedTeamId)),
       setTeamCategories,

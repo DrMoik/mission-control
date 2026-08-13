@@ -218,6 +218,12 @@ export const SYSTEM_MERIT_POINTS_DEFAULT = {
 
 export const SESSION_ATTENDANCE_POINTS_DEFAULT = 25;
 
+/** Points an aspirant needs to be auto-promoted to rookie. Admin can override. */
+export const ASPIRANT_TO_ROOKIE_POINTS_DEFAULT = 200;
+
+/** Months of no new points before an aspirant's membership is soft-deleted. Admin can override. */
+export const ASPIRANT_INACTIVITY_MONTHS_DEFAULT = 4;
+
 /** Merit names for system auto-awards. Used for retroactive updates. */
 export const SYSTEM_MERIT_NAMES = {
   weeklyUpdate:     'Actualización semanal',

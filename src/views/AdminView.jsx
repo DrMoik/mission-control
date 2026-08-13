@@ -16,6 +16,7 @@ import {
   MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT, SKILL_DICTIONARY_DEFAULT, SKILL_TYPES,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, ADMIN_PLACEHOLDERS,
+  ASPIRANT_TO_ROOKIE_POINTS_DEFAULT, ASPIRANT_INACTIVITY_MONTHS_DEFAULT,
 } from '../constants.js';
 
 const parseList = (s, allowEmpty = false) =>
@@ -126,6 +127,7 @@ export default function AdminView({
   onRejectSkillProposal,
   onSaveSystemMeritPoints,
   onSaveTaskGradePoints,
+  onSaveAspirantSettings,
   onSeasonReset,
   t: tProp,
 }) {
@@ -160,6 +162,8 @@ export default function AdminView({
   const taskGradeTeam = team.taskGradePointsTeam && Object.keys(team.taskGradePointsTeam).length
     ? team.taskGradePointsTeam
     : TASK_GRADE_POINTS_TEAM_DEFAULT;
+  const aspirantPromotionPoints = team?.aspirantPromotionPoints ?? ASPIRANT_TO_ROOKIE_POINTS_DEFAULT;
+  const aspirantInactivityMonths = team?.aspirantInactivityMonths ?? ASPIRANT_INACTIVITY_MONTHS_DEFAULT;
 
   const save = async (key, fn, value) => {
     setSaving(key);
@@ -539,6 +543,49 @@ export default function AdminView({
             </button>
           </section>
         </div>
+      </div>
+
+      {/* ═══════════ ASPIRANTES ═══════════ */}
+      <div className="border-l-4 border-slate-600/50 pl-4">
+        <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_aspirants') || 'Aspirantes'}</h3>
+        <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_aspirants_hint') || 'Umbral de puntos para ascender de Aspirante a Novato, y meses sin nuevos puntos antes de mover a un aspirante a la papelera.'}</p>
+        <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] text-slate-400 block mb-1">{tFn('admin_aspirant_promotion_points') || 'Puntos para ascender a Novato'}</label>
+              <input
+                type="number"
+                min="0"
+                defaultValue={aspirantPromotionPoints}
+                id="admin-aspirant-promotion-points"
+                className="w-24 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-xs"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-slate-400 block mb-1">{tFn('admin_aspirant_inactivity_months') || 'Meses de inactividad antes de eliminar'}</label>
+              <input
+                type="number"
+                min="1"
+                defaultValue={aspirantInactivityMonths}
+                id="admin-aspirant-inactivity-months"
+                className="w-24 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-xs"
+              />
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              if (!onSaveAspirantSettings) return;
+              const promotionPoints = Math.max(0, parseInt(document.getElementById('admin-aspirant-promotion-points')?.value || '0', 10) || 0);
+              const inactivityMonths = Math.max(1, parseInt(document.getElementById('admin-aspirant-inactivity-months')?.value || '0', 10) || 1);
+              save('aspirantSettings', onSaveAspirantSettings, { promotionPoints, inactivityMonths });
+            }}
+            disabled={saving === 'aspirantSettings'}
+            className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
+          >
+            {saving === 'aspirantSettings' ? tFn('saving') || 'Guardando…' : tFn('save')}
+          </button>
+        </section>
+      </div>
 
       {/* ─── TEMPORADA ─── */}
       {onSeasonReset && (
@@ -553,7 +600,6 @@ export default function AdminView({
           />
         </div>
       )}
-      </div>
     </div>
   );
 }

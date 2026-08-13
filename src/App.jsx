@@ -39,7 +39,7 @@ import {
   MERIT_FAMILIES_DEFAULT, KNOWLEDGE_AREAS_DEFAULT, SKILL_DICTIONARY_DEFAULT, SKILL_TYPES,
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   SYSTEM_MERIT_POINTS_DEFAULT, SYSTEM_MERIT_NAMES, SELECTED_TEAM_STORAGE_KEY,
-  LEADERSHIP_SCOPE,
+  LEADERSHIP_SCOPE, ASPIRANT_TO_ROOKIE_POINTS_DEFAULT, ASPIRANT_INACTIVITY_MONTHS_DEFAULT,
 } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels, isWeekEligibleForPoints, toGoogleDrivePreviewUrl, toGoogleDriveOpenUrl, isMechanicsCategoryName } from './utils.js';
 import { NAV_DOMAINS, VIEW_TO_DOMAIN } from './config/navigation.js';
@@ -179,6 +179,7 @@ export default function App() {
   const effectiveAdmin = previewRole !== null ? false        : isPlatformAdmin;
 
   const isAtLeastRookie = effectiveAdmin || atLeast(effectiveRole, 'rookie');
+  const isAspirant      = !effectiveAdmin && effectiveRole === 'aspirant';
   const canEdit         = effectiveAdmin || effectiveRole === 'teamAdmin' || effectiveRole === 'facultyAdvisor';
   const canAward        = effectiveAdmin || atLeast(effectiveRole, 'leader');
   const canEditTools    = canEdit || atLeast(effectiveRole, 'leader');
@@ -637,6 +638,14 @@ export default function App() {
       }
     }
     if (count > 0) await batch.commit();
+  };
+
+  const handleSaveAspirantSettings = async ({ promotionPoints, inactivityMonths }) => {
+    if (!currentTeam || !canEdit) return;
+    await updateDoc(doc(db, 'teams', currentTeam.id), {
+      aspirantPromotionPoints:  promotionPoints  ?? ASPIRANT_TO_ROOKIE_POINTS_DEFAULT,
+      aspirantInactivityMonths: inactivityMonths ?? ASPIRANT_INACTIVITY_MONTHS_DEFAULT,
+    });
   };
 
   const handleSaveTeamPersonalityTags = async (dictOrArr) => {
@@ -2063,6 +2072,53 @@ export default function App() {
     });
   }, [isAdminLevel, memberRole, trashed]);
 
+  // Auto-promote aspirants to rookie once their total points reach the team's
+  // configured threshold. Runs client-side when an admin is present — no
+  // Cloud Functions / Blaze plan required.
+  useEffect(() => {
+    if (!isAdminLevel || !currentTeam) return;
+    const threshold = currentTeam.aspirantPromotionPoints ?? ASPIRANT_TO_ROOKIE_POINTS_DEFAULT;
+    const totalsByMember = {};
+    teamMeritEvents.forEach((evt) => {
+      totalsByMember[evt.membershipId] = (totalsByMember[evt.membershipId] || 0) + (evt.points || 0);
+    });
+    teamMemberships
+      .filter((m) => m.role === 'aspirant' && m.status === 'active')
+      .forEach((m) => {
+        if ((totalsByMember[m.id] || 0) >= threshold) {
+          updateDoc(doc(db, 'memberships', m.id), { role: 'rookie' }).catch((error) => {
+            console.warn('Auto-promote aspirant failed:', m.id, error);
+          });
+        }
+      });
+  }, [isAdminLevel, currentTeam, teamMemberships, teamMeritEvents]);
+
+  // Soft-delete (Papelera) aspirants who've gone `aspirantInactivityMonths`
+  // without a new merit event. Restorable for 7 days, same as any other
+  // soft-deleted entity. Client-side for the same reason as above.
+  useEffect(() => {
+    if (!isAdminLevel || !currentTeam) return;
+    const months = currentTeam.aspirantInactivityMonths ?? ASPIRANT_INACTIVITY_MONTHS_DEFAULT;
+    const cutoff = Date.now() - months * 30 * 24 * 60 * 60 * 1000;
+    const lastActivityByMember = {};
+    teamMeritEvents.forEach((evt) => {
+      const ts = tsToDate(evt.createdAt).getTime();
+      if (!lastActivityByMember[evt.membershipId] || ts > lastActivityByMember[evt.membershipId]) {
+        lastActivityByMember[evt.membershipId] = ts;
+      }
+    });
+    teamMemberships
+      .filter((m) => m.role === 'aspirant' && m.status === 'active' && !m.deletedAt)
+      .forEach((m) => {
+        const lastActivity = lastActivityByMember[m.id] ?? tsToDate(m.createdAt).getTime();
+        if (lastActivity && lastActivity < cutoff) {
+          softDeleteDoc('memberships', m.id, { name: 'Sistema (inactividad)', uid: null }).catch((error) => {
+            console.warn('Auto-purge inactive aspirant failed:', m.id, error);
+          });
+        }
+      });
+  }, [isAdminLevel, currentTeam, teamMemberships, teamMeritEvents]);
+
   // ── Feed ───────────────────────────────────────────────────────────────────
 
   const handleCreatePost = async (content, mediaUrls = []) => {
@@ -3083,6 +3139,7 @@ export default function App() {
                 }}
                 permissions={{
                   isAtLeastRookie,
+                  isAspirant,
                   canEdit,
                   canUseCrossTeamChannels,
                   canStrike,
@@ -3230,6 +3287,7 @@ export default function App() {
                   handleApproveSkillProposal,
                   handleRejectSkillProposal,
                   handleSaveSystemMeritPoints,
+                  handleSaveAspirantSettings,
                   handleSaveTaskGradePoints,
                   handleUpdateMemberProfile,
                   handleSaveWeeklyStatus,

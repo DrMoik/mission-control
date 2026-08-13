@@ -204,7 +204,9 @@ service cloud.firestore {
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'strikeHistory']) ||
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status', 'strikeHistory']) ||
             // Season reset: mark member inactive with timestamp
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'inactiveSince'])
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'inactiveSince']) ||
+            // Papelera: soft-delete / restore (deleteField() on restore still only touches these 3 keys)
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt', 'deletedBy', 'deletedByUserId'])
           ))
         || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null))
             && (

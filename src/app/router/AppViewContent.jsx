@@ -83,6 +83,7 @@ export default function AppViewContent({
   } = teamState;
   const {
     isAtLeastRookie,
+    isAspirant,
     canEdit,
     canUseCrossTeamChannels,
     canStrike,
@@ -229,6 +230,7 @@ export default function AppViewContent({
     handleApproveSkillProposal,
     handleRejectSkillProposal,
     handleSaveSystemMeritPoints,
+    handleSaveAspirantSettings,
     handleSaveTaskGradePoints,
     handleUpdateMemberProfile,
     handleSaveWeeklyStatus,
@@ -354,6 +356,9 @@ export default function AppViewContent({
           onArchiveMember={handleArchiveMember}
           onUnarchiveMember={handleUnarchiveMember}
           canArchiveMembers={canArchiveMembers}
+          trashed={trashed}
+          onRestoreItem={handleRestoreItem}
+          onPurgeItem={handlePurgeItem}
         />
       )}
       {view === 'merits' && isAtLeastRookie && (
@@ -384,7 +389,7 @@ export default function AppViewContent({
           onViewProfile={handleViewProfile}
         />
       )}
-      {view === 'leaderboard' && isAtLeastRookie && (
+      {view === 'leaderboard' && (isAtLeastRookie || isAspirant) && (
         <LeaderboardView
           leaderboard={leaderboard}
           memberships={teamMemberships}
@@ -392,6 +397,7 @@ export default function AppViewContent({
           tasks={teamTasks}
           categories={teamCategories}
           onViewProfile={handleViewProfile}
+          roleFilter={isAspirant ? 'aspirant' : undefined}
         />
       )}
       {view === 'calendar' && isAtLeastRookie && (
@@ -558,7 +564,7 @@ export default function AppViewContent({
           onViewProfile={handleViewProfile}
         />
       )}
-      {view === 'tasks' && isAtLeastRookie && (
+      {view === 'tasks' && (isAtLeastRookie || isAspirant) && (
         <TasksView
           tasks={teamTasks}
           memberships={teamMemberships}
@@ -611,6 +617,7 @@ export default function AppViewContent({
           onApproveSkillProposal={handleApproveSkillProposal}
           onRejectSkillProposal={handleRejectSkillProposal}
           onSaveSystemMeritPoints={handleSaveSystemMeritPoints}
+          onSaveAspirantSettings={handleSaveAspirantSettings}
           onSaveTaskGradePoints={handleSaveTaskGradePoints}
           onSeasonReset={handleSeasonReset}
         />

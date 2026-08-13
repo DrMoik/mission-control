@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { t, lang } from '../../strings.js';
 import { ensureString } from '../../utils.js';
+import { confirmDialog } from '../../services/feedback.js';
 import { Button, Input } from '../../components/ui/index.js';
 import BoardView   from './BoardView.jsx';
 
@@ -52,7 +53,7 @@ export default function BoardTypeSection({
   const selectedArchivedBoard = archivedBoards.find((b) => b.id === selectedArchivedBoardId) || archivedBoards[0] || null;
   const canEditSelected = selectedBoard && resolveCanEdit(selectedBoard);
 
-  const handleAssignCard = async (columnId, cardId, cardTitle, assigneeMembershipIds, assigneeDisplayNames) => {
+  const handleAssignCard = async (columnId, cardId, cardTitle, assigneeMembershipIds, assigneeDisplayNames, cardDescription, cardDueDate) => {
     const ids = Array.isArray(assigneeMembershipIds) ? assigneeMembershipIds : [assigneeMembershipIds];
     const names = Array.isArray(assigneeDisplayNames) ? assigneeDisplayNames : [assigneeDisplayNames];
     if (!selectedBoard || !onCreateTask || ids.length === 0) return;
@@ -61,17 +62,17 @@ export default function BoardTypeSection({
     await onCreateTask({
       assigneeMembershipIds: ids,
       title: cardTitle,
-      description: boardName,
-      dueDate: null,
+      description: cardDescription || boardName,
+      dueDate: cardDueDate || null,
     });
-    const assignedByNamesStr = names.join(', ');
+    const assignedByName = ensureString(currentMembership?.displayName, lang) || null;
     const newColumns = (selectedBoard.columns || []).map((col) =>
       col.id === columnId
         ? {
             ...col,
             cards: (col.cards || []).map((c) =>
               c.id === cardId
-                ? { ...c, assigneeMembershipIds: ids, assignedByNames: assignedByNamesStr }
+                ? { ...c, assigneeMembershipIds: ids, assigneeNames: names, assignedByName }
                 : c,
             ),
           }
@@ -246,7 +247,8 @@ export default function BoardTypeSection({
                         <Button size="sm" variant="secondary" onClick={() => onUpdateBoard(selectedArchivedBoard.id, { archived: false, archivedAt: null, archivedBy: null })}>
                           Restaurar
                         </Button>
-                        <Button size="sm" variant="danger" onClick={() => onDeleteBoard(selectedArchivedBoard.id)}>
+                        <Button size="sm" variant="danger"
+                          onClick={async () => { if (await confirmDialog({ message: t('delete_board_confirm'), confirmLabel: t('delete'), danger: true })) onDeleteBoard(selectedArchivedBoard.id); }}>
                           {t('delete')}
                         </Button>
                       </div>

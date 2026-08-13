@@ -6,7 +6,9 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { t, lang } from '../../strings.js';
-import { ensureString } from '../../utils.js';
+import { ensureString, tsToDate } from '../../utils.js';
+import PickerField from '../../components/ui/PickerField.jsx';
+import { confirmDialog } from '../../services/feedback.js';
 
 /**
  * @param {{
@@ -18,7 +20,7 @@ import { ensureString } from '../../utils.js';
  *   canAssignTask?: function(assigneeMembershipId: string): boolean,
  *   memberships?:  object[],
  *   categories?:   object[],
- *   onAssignCard?: function(columnId, cardId, cardTitle, assigneeMembershipId, assigneeDisplayName): Promise<void>,
+ *   onAssignCard?: function(columnId, cardId, cardTitle, assigneeMembershipIds, assigneeDisplayNames, cardDescription, cardDueDate): Promise<void>,
  *   currentMembership?: object | null,
  *   memberRole?:     string | null,
  * }} props
@@ -31,6 +33,10 @@ export default function BoardView({
 }) {
   const [newCardTitles, setNewCardTitles] = useState({});
   const [assigningCardId, setAssigningCardId] = useState(null);
+  const [editingDetailsCardId, setEditingDetailsCardId] = useState(null);
+  const [detailsTitle, setDetailsTitle] = useState('');
+  const [detailsDescription, setDetailsDescription] = useState('');
+  const [detailsDueDate, setDetailsDueDate] = useState('');
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState(new Set());
   const [assignSearchQuery, setAssignSearchQuery] = useState('');
   const [assignAreaFilter, setAssignAreaFilter] = useState('');
@@ -71,11 +77,31 @@ export default function BoardView({
     onUpdateBoard(board.id, { columns: newColumns });
   };
 
-  const deleteCard = (colId, cardId) => {
+  const deleteCard = async (colId, cardId) => {
+    if (!(await confirmDialog({ message: t('delete_card_confirm'), confirmLabel: t('delete'), danger: true }))) return;
     const newColumns = board.columns.map((col) =>
       col.id === colId ? { ...col, cards: col.cards.filter((c) => c.id !== cardId) } : col,
     );
     onUpdateBoard(board.id, { columns: newColumns });
+  };
+
+  const saveCardDetails = (colId, cardId) => {
+    const title = detailsTitle.trim();
+    if (!title) return;
+    const newColumns = board.columns.map((col) =>
+      col.id === colId
+        ? {
+            ...col,
+            cards: col.cards.map((c) =>
+              c.id === cardId
+                ? { ...c, title, description: detailsDescription.trim() || null, dueDate: detailsDueDate || null }
+                : c,
+            ),
+          }
+        : col,
+    );
+    onUpdateBoard(board.id, { columns: newColumns });
+    setEditingDetailsCardId(null);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -85,7 +111,9 @@ export default function BoardView({
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-sm">{ensureString(board.name, lang)}</h3>
         {canEditThis && (
-          <button onClick={() => onDeleteBoard(board.id)} className="text-[11px] text-red-400 underline">
+          <button
+            onClick={async () => { if (await confirmDialog({ message: t('delete_board_confirm'), confirmLabel: t('delete'), danger: true })) onDeleteBoard(board.id); }}
+            className="text-[11px] text-red-400 underline">
             {t('delete_board_btn')}
           </button>
         )}
@@ -103,17 +131,71 @@ export default function BoardView({
               {col.cards.map((card) => {
                 const cardTitle = ensureString(card.title, lang);
                 const isAssigning = assigningCardId === card.id;
+                const isEditingDetails = editingDetailsCardId === card.id;
+                const cardDueDate = card.dueDate ? tsToDate(card.dueDate) : null;
+                const assigneeNames = card.assigneeNames?.join(', ') || card.assignedByNames || '';
                 return (
                   <div key={card.id} className="bg-slate-700 rounded p-2.5 text-xs group">
-                    <div className="flex items-start justify-between gap-1">
-                      <span className="text-slate-100 font-medium">{cardTitle}</span>
-                      {canEditThis && (
-                        <button onClick={() => deleteCard(col.id, card.id)}
-                          className="opacity-0 group-hover:opacity-100 text-red-400 shrink-0 transition-opacity p-0.5" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
-                      )}
-                    </div>
-                    {(card.assignedByNames || card.assignedByName) && (
-                      <p className="text-[10px] text-slate-500 mt-0.5">{t('task_assigned_to')}: {card.assignedByNames || card.assignedByName}</p>
+                    {!isEditingDetails && (
+                      <div className="flex items-start justify-between gap-1">
+                        <span className="text-slate-100 font-medium">{cardTitle}</span>
+                        {canEditThis && (
+                          <button onClick={() => deleteCard(col.id, card.id)}
+                            className="opacity-0 group-hover:opacity-100 text-red-400 shrink-0 transition-opacity p-0.5" title={t('delete')}><X className="w-4 h-4" strokeWidth={2} /></button>
+                        )}
+                      </div>
+                    )}
+                    {!isEditingDetails && card.description && (
+                      <p className="text-[11px] text-slate-300 mt-1 whitespace-pre-wrap">{ensureString(card.description, lang)}</p>
+                    )}
+                    {(assigneeNames || card.assignedByName || cardDueDate) && (
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        {assigneeNames && <>{t('task_assigned_to')}: {assigneeNames}</>}
+                        {card.assignedByName && <>{assigneeNames ? ' · ' : ''}{t('task_assigned_by')}: {card.assignedByName}</>}
+                        {cardDueDate && <>{(assigneeNames || card.assignedByName) ? ' · ' : ''}{t('task_due')}: {cardDueDate.toLocaleDateString()}</>}
+                      </p>
+                    )}
+                    {canEditThis && (
+                      <div className="mt-1">
+                        {!isEditingDetails ? (
+                          <button type="button"
+                            onClick={() => { setEditingDetailsCardId(card.id); setDetailsTitle(card.title || ''); setDetailsDescription(card.description || ''); setDetailsDueDate(card.dueDate || ''); }}
+                            className="text-[10px] text-slate-400 hover:text-teal-400 hover:underline">
+                            {t('edit')}
+                          </button>
+                        ) : (
+                          <div className="space-y-1.5 mt-1">
+                            <input
+                              type="text"
+                              value={detailsTitle}
+                              onChange={(e) => setDetailsTitle(e.target.value)}
+                              placeholder={t('task_title_ph')}
+                              className="w-full px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px] text-slate-200 placeholder-slate-500 font-medium"
+                              autoFocus
+                            />
+                            <textarea
+                              value={detailsDescription}
+                              onChange={(e) => setDetailsDescription(e.target.value)}
+                              placeholder={t('task_description_ph')}
+                              rows={2}
+                              className="w-full px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px] text-slate-200 placeholder-slate-500"
+                            />
+                            <PickerField
+                              type="date"
+                              value={detailsDueDate}
+                              onChange={setDetailsDueDate}
+                              placeholder={t('task_due')}
+                              className="px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[11px] text-slate-200"
+                            />
+                            <div className="flex gap-1">
+                              <button type="button" onClick={() => saveCardDetails(col.id, card.id)}
+                                className="text-[10px] bg-teal-500 hover:bg-teal-400 text-black px-2 py-1 rounded">{t('save')}</button>
+                              <button type="button" onClick={() => setEditingDetailsCardId(null)}
+                                className="text-[10px] text-slate-500 hover:underline">{t('cancel')}</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                     {canEditThis && onAssignCard && assignableMembers.length > 0 && !card.assigneeMembershipIds?.length && !card.assigneeMembershipId && (
                       <div className="mt-1.5 relative">
@@ -207,7 +289,7 @@ export default function BoardView({
                                     const m = assignableMembers.find((x) => x.id === id);
                                     return m ? ensureString(m.displayName, lang) : '';
                                   }).filter(Boolean);
-                                  await onAssignCard(col.id, card.id, cardTitle, ids, names);
+                                  await onAssignCard(col.id, card.id, cardTitle, ids, names, card.description, card.dueDate);
                                   setAssigningCardId(null);
                                   setSelectedAssigneeIds(new Set());
                                   setAssignSearchQuery('');

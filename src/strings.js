@@ -200,6 +200,8 @@ export const STRINGS = {
     view_profile: 'Ver perfil',
     session_delete_confirm: '¿Eliminar esta sesión? Esta acción no se puede deshacer.',
     task_delete_confirm:    '¿Eliminar esta tarea? Esta acción no se puede deshacer.',
+    delete_card_confirm:    '¿Eliminar esta tarjeta? Esta acción no se puede deshacer.',
+    delete_board_confirm:   '¿Eliminar este tablero y todas sus tarjetas? Esta acción no se puede deshacer.',
     click_to_edit:'Ver y editar mi perfil →',
 
     // ── Overview ──────────────────────────────────────────────────────────────

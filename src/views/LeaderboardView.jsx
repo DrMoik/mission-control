@@ -29,23 +29,25 @@ function SortTh({ col, label, className = '', sortBy, sortDir, onToggle }) {
  *   weeklyStatuses: object[],
  *   tasks: object[],
  *   categories: object[],
- *   onViewProfile:function(membership)
+ *   onViewProfile:function(membership),
+ *   roleFilter?: string,   // when set, only rows for this role are shown (e.g. isolated aspirant view)
  * }} props
  */
-export default function LeaderboardView({ leaderboard, memberships, weeklyStatuses = [], tasks = [], categories = [], onViewProfile }) {
+export default function LeaderboardView({ leaderboard, memberships, weeklyStatuses = [], tasks = [], categories = [], onViewProfile, roleFilter }) {
   const [tab,  setTab] = useState('season');
   const [mode, setMode] = useState('points'); // 'points' | 'effort'
   const [sortBy, setSortBy] = useState('score'); // 'score' | 'name' | 'category'
   const [sortDir, setSortDir] = useState('desc'); // desc = high first (default for rankings)
 
-  const pointsRowsRaw = (tab === 'season' ? leaderboard?.season : leaderboard?.allTime) ?? [];
+  const pointsRowsRaw = ((tab === 'season' ? leaderboard?.season : leaderboard?.allTime) ?? [])
+    .filter((row) => !roleFilter || row.role === roleFilter);
   const pointsByMember = React.useMemo(
     () => Object.fromEntries(pointsRowsRaw.map((row) => [row.membershipId, row.points ?? 0])),
     [pointsRowsRaw],
   );
   const pointsRankByMember = React.useMemo(() => {
     const ranked = memberships
-      .filter((membership) => membership.status === 'active')
+      .filter((membership) => membership.status === 'active' && (!roleFilter || membership.role === roleFilter))
       .map((membership) => ({
         membershipId: membership.id,
         points: pointsByMember[membership.id] ?? 0,
@@ -57,7 +59,7 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
       });
 
     return Object.fromEntries(ranked.map((row, index) => [row.membershipId, index + 1]));
-  }, [memberships, pointsByMember]);
+  }, [memberships, pointsByMember, roleFilter]);
   const pointsRows = React.useMemo(
     () => pointsRowsRaw.map((row) => ({ ...row, pointsRank: pointsRankByMember[row.membershipId] ?? null })),
     [pointsRowsRaw, pointsRankByMember],
@@ -76,7 +78,7 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
       }
     });
     return memberships
-      .filter((m) => m.status === 'active')
+      .filter((m) => m.status === 'active' && (!roleFilter || m.role === roleFilter))
       .map((m) => {
         const cat = categories.find((c) => c.id === m.categoryId);
         return {
@@ -91,7 +93,7 @@ export default function LeaderboardView({ leaderboard, memberships, weeklyStatus
         };
       })
       .sort((a, b) => b.effort - a.effort);
-  }, [memberships, weeklyStatuses, tasks, categories, pointsRankByMember]);
+  }, [memberships, weeklyStatuses, tasks, categories, pointsRankByMember, roleFilter]);
 
   const sortedRows = React.useMemo(() => {
     const arr = mode === 'effort' ? [...effortRows] : [...pointsRows];
