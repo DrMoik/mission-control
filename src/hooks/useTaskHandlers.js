@@ -48,8 +48,12 @@ export function useTaskHandlers({
   const canAssignTask = useCallback((assigneeMembershipId) => {
     if (!currentTeam || !authUser) return false;
     if (canEdit) return true;
-    if (memberRole !== 'leader' || !currentMembership?.categoryId) return false;
+    if (memberRole !== 'leader') return false;
     const assignee = teamMemberships.find((m) => m.id === assigneeMembershipId);
+    // Faculty advisors often span multiple areas (no matching categoryId) —
+    // any leader can assign to them regardless of category.
+    if (assignee?.role === 'facultyAdvisor') return true;
+    if (!currentMembership?.categoryId) return false;
     return assignee?.categoryId === currentMembership.categoryId;
   }, [currentTeam, authUser, canEdit, memberRole, currentMembership?.categoryId, teamMemberships]);
 
