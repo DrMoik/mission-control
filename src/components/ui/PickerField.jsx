@@ -264,7 +264,7 @@ export default function PickerField({
 
       {open && (
         <ModalOverlay onClickBackdrop={() => setOpen(false)}>
-          <div className="w-[min(92vw,720px)] rounded-2xl border border-hairline bg-slate-900 p-4 shadow-2xl">
+          <div className={`${type === 'datetime-local' ? 'w-[min(94vw,820px)]' : 'w-[min(92vw,720px)]'} rounded-2xl border border-hairline bg-slate-900 p-4 shadow-2xl`}>
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold text-slate-100">
@@ -283,7 +283,7 @@ export default function PickerField({
               </button>
             </div>
 
-            <div className={`grid gap-4 ${type === 'datetime-local' ? 'lg:grid-cols-[minmax(0,1fr)_280px]' : ''}`}>
+            <div className={`grid gap-4 ${type === 'datetime-local' ? 'lg:grid-cols-[minmax(0,1fr)_auto]' : ''}`}>
               {type !== 'time' && (
                 <CalendarPanel
                   selectedDate={parsedDate}

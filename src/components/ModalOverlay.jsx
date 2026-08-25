@@ -2,8 +2,20 @@
 // Reusable modal backdrop + panel wrapper with entrance animations.
 // Use for consistent modal transitions across the app.
 // Handles Escape-to-close and traps Tab focus inside the panel while open.
+//
+// Portals to document.body: a `position: fixed` element is only positioned
+// relative to the viewport if none of its ancestors have a transform (or
+// filter/perspective/contain). Several entrance animations in this app
+// (e.g. .animate-slide-up) end with `transform: translateY(0)` and
+// `animation-fill-mode: both/forwards`, which leaves that transform on the
+// element permanently — still a real transform, so it still creates a new
+// containing block. Any modal rendered inline inside such an ancestor would
+// get sized/positioned relative to that ancestor's box instead of the
+// viewport. Portaling to <body> sidesteps that regardless of where the
+// modal is triggered from.
 
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -41,7 +53,7 @@ export default function ModalOverlay({ children, onClickBackdrop, className = ''
     };
   }, [onClickBackdrop]);
 
-  return (
+  return createPortal(
     <div
       className={`modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 ${className}`.trim()}
       onClick={onClickBackdrop}
@@ -57,6 +69,7 @@ export default function ModalOverlay({ children, onClickBackdrop, className = ''
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
