@@ -241,6 +241,19 @@ export default function App() {
   useEffect(() => {
     if (selectedTeamId && view === 'channels' && !canUseCrossTeamChannels) navigate('/inicio', { replace: true });
   }, [selectedTeamId, view, canUseCrossTeamChannels, navigate]);
+  // A team's admin can hide any nav item (see AdminView's "Navegación y herramientas");
+  // bounce direct URL navigation to a tool this team has turned off.
+  useEffect(() => {
+    if (selectedTeamId && view && (currentTeam?.disabledTools || []).includes(view)) navigate('/inicio', { replace: true });
+  }, [selectedTeamId, view, currentTeam?.disabledTools, navigate]);
+
+  // Per-team browser-tab favicon: falls back to the Tec de Monterrey default
+  // whenever no team is selected or the team hasn't uploaded its own.
+  useEffect(() => {
+    const link = document.querySelector('link[rel="icon"]');
+    if (!link) return;
+    link.href = currentTeam?.faviconUrl || `${import.meta.env.BASE_URL}favicon-tec.ico`;
+  }, [currentTeam?.faviconUrl]);
 
   // Merit tags: team overrides, then platform config, then constants
   // Team tags; new teams get defaults from constants in handleCreateTeam
@@ -541,6 +554,15 @@ export default function App() {
   const handleSaveTeamCareers = async (arr) => {
     if (!currentTeam || !canEdit) return;
     await updateDoc(doc(db, 'teams', currentTeam.id), { careerOptions: Array.isArray(arr) ? arr : [] });
+  };
+  const handleSaveTeamFavicon = async (dataUrl) => {
+    if (!currentTeam || !canEdit) return;
+    await updateDoc(doc(db, 'teams', currentTeam.id), { faviconUrl: dataUrl || null });
+  };
+  const handleSaveDisabledTools = async (arr) => {
+    if (!currentTeam || !canEdit) return;
+    const next = Array.isArray(arr) ? arr.filter((id) => id !== 'admin') : [];
+    await updateDoc(doc(db, 'teams', currentTeam.id), { disabledTools: next });
   };
   const handleSaveTeamSemesters = async (arr) => {
     if (!currentTeam || !canEdit) return;
@@ -2829,10 +2851,12 @@ export default function App() {
 
   // ── Main app shell (team selected) ─────────────────────────────────────────
 
+  const disabledToolIds = new Set(currentTeam?.disabledTools || []);
   const visibleDomains = NAV_DOMAINS
     .map((domain) => ({
       ...domain,
       items: domain.items.filter((item) => {
+        if (disabledToolIds.has(item.id)) return false;
         if (item.access === 'admin') return canEdit;
         if (item.access === 'leader') return canEditTools;
         if (item.access === 'member') return isMember;
@@ -3373,6 +3397,8 @@ export default function App() {
                   handleDismissHrSuggestion,
                   handleReconsiderHrSuggestion,
                   handleSaveTeamCareers,
+                  handleSaveTeamFavicon,
+                  handleSaveDisabledTools,
                   handleSaveTeamSemesters,
                   handleSaveTeamPersonalityTags,
                   handleSaveTeamMeritTags,

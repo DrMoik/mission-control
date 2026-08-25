@@ -234,6 +234,8 @@ export default function AppViewContent({
     handleDismissHrSuggestion,
     handleReconsiderHrSuggestion,
     handleSaveTeamCareers,
+    handleSaveTeamFavicon,
+    handleSaveDisabledTools,
     handleSaveTeamSemesters,
     handleSaveTeamPersonalityTags,
     handleSaveTeamMeritTags,
@@ -657,6 +659,8 @@ export default function AppViewContent({
           team={currentTeam}
           t={t}
           onSaveCareers={handleSaveTeamCareers}
+          onSaveFavicon={handleSaveTeamFavicon}
+          onSaveDisabledTools={handleSaveDisabledTools}
           onSaveSemesters={handleSaveTeamSemesters}
           onSavePersonalityTags={handleSaveTeamPersonalityTags}
           onSaveMeritTags={handleSaveTeamMeritTags}

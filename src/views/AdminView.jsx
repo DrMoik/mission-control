@@ -4,9 +4,11 @@
 //   • LOGROS Y MÉRITOS — Tipos, dominios, niveles, Puntos de logros del sistema (Actualización semanal, Perfil completo, 50 actualizaciones) — retroactivo
 //   • TAREAS — Puntos por calificación (retroactivo)
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { StaggerList, StaggerItem } from '../components/motion/index.js';
 import SeasonResetSection from '../components/SeasonResetSection.jsx';
+import ImageCropModal from '../components/ImageCropModal.jsx';
+import { NAV_DOMAINS } from '../config/navigation.js';
 import { t } from '../strings.js';
 import { showToast } from '../services/feedback.js';
 import { Button, Textarea } from '../components/ui/index.js';
@@ -21,6 +23,15 @@ import {
 
 const parseList = (s, allowEmpty = false) =>
   (s || '').split(/[,\n]+/).map((x) => x.trim()).filter((x) => allowEmpty || x.length > 0);
+
+function readAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('Failed to read file'));
+    r.readAsDataURL(file);
+  });
+}
 
 /** Parse "key: label" lines into { key: label }. Legacy: plain keys use default label. */
 function parsePersonalityDict(s) {
@@ -114,6 +125,8 @@ function serializeSkillDictionary(arr) {
 export default function AdminView({
   team,
   onSaveCareers,
+  onSaveFavicon,
+  onSaveDisabledTools,
   onSaveSemesters,
   onSavePersonalityTags,
   onSaveMeritTags,
@@ -133,6 +146,8 @@ export default function AdminView({
 }) {
   const tFn = tProp || t;
   const [saving, setSaving] = useState(null);
+  const [faviconCropSrc, setFaviconCropSrc] = useState(null);
+  const faviconFileRef = useRef(null);
 
   if (!team) return null;
 
@@ -321,6 +336,88 @@ export default function AdminView({
             </section>
           )}
         </div>
+      </div>
+
+      {/* ═══════════ FAVICON — ícono de pestaña del navegador para este equipo ═══════════ */}
+      <div className="border-l-4 border-primary/50 pl-4">
+        <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_favicon') || 'Favicon del equipo'}</h3>
+        <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_favicon_hint')}</p>
+        <section className="rounded-xl border border-hairline bg-surface-raised p-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            {team.faviconUrl ? (
+              <img src={team.faviconUrl} alt="" className="w-9 h-9 rounded border border-slate-600 object-cover shrink-0" />
+            ) : (
+              <div className="w-9 h-9 rounded shrink-0 border border-hairline bg-slate-700 flex items-center justify-center text-slate-500 text-[10px]">?</div>
+            )}
+            <input type="file" accept="image/*" className="hidden" ref={faviconFileRef}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) readAsDataUrl(f).then((url) => setFaviconCropSrc(url));
+                e.target.value = '';
+              }} />
+            <button type="button" onClick={() => faviconFileRef.current?.click()}
+              className="shrink-0 px-2.5 py-1.5 bg-slate-600 hover:bg-slate-500 text-slate-200 text-[11px] font-medium rounded transition-colors">
+              {tFn('image_select_file')}
+            </button>
+            {team.faviconUrl && (
+              <button type="button" disabled={saving === 'favicon'}
+                onClick={() => save('favicon', onSaveFavicon, null)}
+                className="shrink-0 px-2.5 py-1.5 bg-slate-700 hover:bg-red-900/50 text-content-secondary hover:text-red-300 text-[11px] font-medium rounded transition-colors disabled:opacity-40">
+                {tFn('admin_favicon_remove')}
+              </button>
+            )}
+            {!team.faviconUrl && (
+              <span className="text-[11px] text-content-tertiary">{tFn('admin_favicon_none')}</span>
+            )}
+          </div>
+        </section>
+      </div>
+      {faviconCropSrc && (
+        <ImageCropModal src={faviconCropSrc} label={tFn('admin_favicon_crop_label')}
+          cropWidth={128} cropHeight={128}
+          onApply={(url) => { setFaviconCropSrc(null); save('favicon', onSaveFavicon, url); }}
+          onCancel={() => setFaviconCropSrc(null)}
+        />
+      )}
+
+      {/* ═══════════ NAVEGACIÓN — qué herramientas ve este equipo ═══════════ */}
+      <div className="border-l-4 border-primary/50 pl-4">
+        <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_navigation')}</h3>
+        <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_navigation_hint')}</p>
+        <section className="rounded-xl border border-hairline bg-surface-raised p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {NAV_DOMAINS.map((domain) => {
+            const items = domain.items.filter((item) => item.id !== 'admin');
+            if (items.length === 0) return null;
+            return (
+              <div key={domain.id}>
+                <h4 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-2">{tFn(domain.labelKey)}</h4>
+                <div className="space-y-1.5">
+                  {items.map((item) => {
+                    const disabled = (team.disabledTools || []).includes(item.id);
+                    return (
+                      <label key={item.id} className="flex items-center gap-2 text-sm text-content-secondary cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!disabled}
+                          disabled={saving === 'disabledTools'}
+                          onChange={(e) => {
+                            const current = team.disabledTools || [];
+                            const next = e.target.checked
+                              ? current.filter((id) => id !== item.id)
+                              : [...current, item.id];
+                            save('disabledTools', onSaveDisabledTools, next);
+                          }}
+                          className="rounded border-slate-600 bg-surface-sunken text-primary focus:ring-primary/40"
+                        />
+                        {tFn(item.labelKey)}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </section>
       </div>
 
       {/* ═══════════ LOGROS Y MÉRITOS — dominios, niveles, familias, puntos automáticos ═══════════ */}
