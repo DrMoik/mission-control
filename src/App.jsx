@@ -407,6 +407,7 @@ export default function App() {
   const {
     canAssignTask,
     handleCreateTask,
+    handleMarkOpenTaskParticipation,
     handleRequestTaskReview,
     handleCancelTaskReviewRequest,
     handleGradeTask,
@@ -3368,6 +3369,7 @@ export default function App() {
                   handlePurgeItem,
                   canEditToolItem,
                   handleCreateTask,
+                  handleMarkOpenTaskParticipation,
                   canAssignTask,
                   handleCreateSwot,
                   handleUpdateSwot,

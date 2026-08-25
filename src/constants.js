@@ -218,6 +218,9 @@ export const SYSTEM_MERIT_POINTS_DEFAULT = {
 
 export const SESSION_ATTENDANCE_POINTS_DEFAULT = 25;
 
+/** Default points for participating in an open task (self-reported, same logic as session attendance). */
+export const OPEN_TASK_PARTICIPATION_POINTS_DEFAULT = 25;
+
 /** Points an aspirant needs to be auto-promoted to rookie. Admin can override. */
 export const ASPIRANT_TO_ROOKIE_POINTS_DEFAULT = 200;
 
@@ -231,6 +234,7 @@ export const SYSTEM_MERIT_NAMES = {
   milestone50:      '50 actualizaciones',
   suggestionAccepted: 'Sugerencia implementada',
   sessionAttendance: 'Asistencia a sesión',
+  openTaskParticipation: 'Participación en tarea abierta',
 };
 
 /** Descriptions for system merits (shown when clicking on profile logros). */
@@ -258,5 +262,9 @@ export const SYSTEM_MERIT_DESCRIPTIONS = {
   [SYSTEM_MERIT_NAMES.sessionAttendance]: {
     shortDescription: { en: 'Attended a team session.', es: 'Asistencia a una sesión del equipo.' },
     longDescription:  { en: 'Awarded when attendance is registered for a session configured to grant points.', es: 'Se otorga cuando se registra asistencia en una sesión configurada para dar puntos.' },
+  },
+  [SYSTEM_MERIT_NAMES.openTaskParticipation]: {
+    shortDescription: { en: 'Participated in an open task.', es: 'Participación en una tarea abierta.' },
+    longDescription:  { en: 'Awarded when you mark yourself as having participated in an open task configured to grant points. Self-reported — no assigner review.', es: 'Se otorga al marcarte como participante en una tarea abierta configurada para dar puntos. Autoreportado — sin revisión de un asignador.' },
   },
 };

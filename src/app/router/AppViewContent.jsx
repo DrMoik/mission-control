@@ -155,6 +155,7 @@ export default function AppViewContent({
     handlePurgeItem,
     canEditToolItem,
     handleCreateTask,
+    handleMarkOpenTaskParticipation,
     canAssignTask,
     handleCreateSwot,
     handleUpdateSwot,
@@ -624,6 +625,7 @@ export default function AppViewContent({
           memberships={teamMemberships}
           currentMembership={currentMembership}
           canViewAllTasks={canEdit}
+          onMarkOpenTaskParticipation={handleMarkOpenTaskParticipation}
           onRequestTaskReview={handleRequestTaskReview}
           onCancelTaskReviewRequest={handleCancelTaskReviewRequest}
           onGradeTask={handleGradeTask}

@@ -40,6 +40,9 @@ export default function BoardView({
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState(new Set());
   const [assignSearchQuery, setAssignSearchQuery] = useState('');
   const [assignAreaFilter, setAssignAreaFilter] = useState('');
+  const [assignIsOpen, setAssignIsOpen] = useState(false);
+  const [openGrantsPoints, setOpenGrantsPoints] = useState(false);
+  const [openPoints, setOpenPoints] = useState('');
 
   const assignableMembers = (memberships || []).filter(
     (m) => m.status === 'active' && m.id !== currentMembership?.id && canAssignTask?.(m.id),
@@ -197,13 +200,55 @@ export default function BoardView({
                         )}
                       </div>
                     )}
-                    {canEditThis && onAssignCard && assignableMembers.length > 0 && !card.assigneeMembershipIds?.length && !card.assigneeMembershipId && (
+                    {canEditThis && onAssignCard && !card.assigneeMembershipIds?.length && !card.assigneeMembershipId && !card.openTask && (
                       <div className="mt-1.5 relative">
                         {!isAssigning ? (
-                          <button type="button" onClick={() => { setAssigningCardId(card.id); setSelectedAssigneeIds(new Set()); setAssignSearchQuery(''); setAssignAreaFilter(''); }}
-                            className="text-[10px] text-teal-400 hover:underline">
-                            {t('task_assign')}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {assignableMembers.length > 0 && (
+                              <button type="button" onClick={() => { setAssigningCardId(card.id); setAssignIsOpen(false); setSelectedAssigneeIds(new Set()); setAssignSearchQuery(''); setAssignAreaFilter(''); }}
+                                className="text-[10px] text-teal-400 hover:underline">
+                                {t('task_assign')}
+                              </button>
+                            )}
+                            <button type="button" onClick={() => { setAssigningCardId(card.id); setAssignIsOpen(true); setOpenGrantsPoints(false); setOpenPoints(''); }}
+                              className="text-[10px] text-blue-400 hover:underline">
+                              {t('task_open_toggle')}
+                            </button>
+                          </div>
+                        ) : assignIsOpen ? (
+                          <div className="space-y-1.5">
+                            <label className="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer">
+                              <input type="checkbox" checked={openGrantsPoints} onChange={(e) => setOpenGrantsPoints(e.target.checked)} className="rounded" />
+                              {t('task_open_grants_points')}
+                            </label>
+                            {openGrantsPoints && (
+                              <input
+                                type="number"
+                                min="1"
+                                value={openPoints}
+                                onChange={(e) => setOpenPoints(e.target.value)}
+                                placeholder={t('task_open_points_ph')}
+                                className="w-24 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-xs text-slate-200"
+                              />
+                            )}
+                            <div className="flex gap-1">
+                              <button type="button"
+                                onClick={async () => {
+                                  await onAssignCard(col.id, card.id, cardTitle, [], [], card.description, card.dueDate, {
+                                    open: true,
+                                    grantsPoints: openGrantsPoints,
+                                    points: openGrantsPoints ? openPoints : null,
+                                  });
+                                  setAssigningCardId(null);
+                                  setAssignIsOpen(false);
+                                }}
+                                className="text-[10px] bg-blue-500 hover:bg-blue-400 text-black px-2 py-1 rounded">
+                                {t('task_open_create')}
+                              </button>
+                              <button type="button" onClick={() => { setAssigningCardId(null); setAssignIsOpen(false); }}
+                                className="text-[10px] text-slate-500 hover:underline">{t('cancel')}</button>
+                            </div>
+                          </div>
                         ) : (
                           <div className="space-y-1.5">
                             <input

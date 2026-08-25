@@ -26,12 +26,66 @@ function SectionToggle({ label, count, open, onToggle }) {
   );
 }
 
+function OpenTaskCard({ task, memberships, currentMembership, canViewAllTasks, onMarkOpenTaskParticipation, onDeleteTask }) {
+  const participants = task.participants || {};
+  const participantIds = Object.keys(participants);
+  const alreadyParticipated = Boolean(currentMembership && participants[currentMembership.id]);
+  const participantNames = participantIds
+    .map((id) => memberships.find((m) => m.id === id))
+    .filter(Boolean)
+    .map((m) => ensureString(m.displayName, lang));
+  const canDelete = canViewAllTasks || task.assignedByMembershipId === currentMembership?.id;
+
+  return (
+    <div className="rounded-xl border p-4 space-y-2 border-l-[3px] bg-surface-raised border-hairline hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200" style={{ borderLeftColor: 'var(--color-info)' }}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="font-medium text-content-primary">{ensureString(task.title, lang)}</h4>
+            {task.grantsPoints && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-primary/15 text-primary border border-primary/30">
+                +{task.points} pts
+              </span>
+            )}
+          </div>
+          {task.description && (
+            <p className="text-sm text-content-secondary mt-1 whitespace-pre-wrap">{ensureString(task.description, lang)}</p>
+          )}
+          <p className="text-[11px] text-content-tertiary mt-2">
+            {participantIds.length} {participantIds.length === 1 ? t('task_participants_count') : t('task_participants_count_plural')}
+            {participantNames.length > 0 && <> · {participantNames.join(', ')}</>}
+          </p>
+        </div>
+        <div className="shrink-0 flex flex-col items-end gap-1.5">
+          {alreadyParticipated ? (
+            <span className="text-xs text-teal-400 font-medium whitespace-nowrap">{t('task_participated')}</span>
+          ) : (
+            <Button variant="primary" size="sm" onClick={() => onMarkOpenTaskParticipation?.(task.id)}>
+              {t('task_participate')}
+            </Button>
+          )}
+          {canDelete && onDeleteTask && (
+            <button
+              type="button"
+              onClick={async () => { if (await confirmDialog({ message: t('task_delete_confirm') || '¿Eliminar esta tarea?', confirmLabel: t('delete'), danger: true })) onDeleteTask(task.id); }}
+              className="text-[11px] text-error hover:text-red-400 transition-colors"
+            >
+              {t('delete')}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TasksView({
   tasks,
   memberships = [],
   currentMembership,
   canViewAllTasks = false,
   knowledgeAreas = [],
+  onMarkOpenTaskParticipation,
   onRequestTaskReview,
   onCancelTaskReviewRequest,
   onGradeTask,
@@ -50,8 +104,9 @@ export default function TasksView({
   const [editingKnowledgeAreasTaskId, setEditingKnowledgeAreasTaskId] = useState(null);
 
   const myTasks = (tasks || []).filter((task) =>
-    getTaskAssigneeIds(task).includes(currentMembership?.id),
+    !task.openTask && getTaskAssigneeIds(task).includes(currentMembership?.id),
   );
+  const openTasks = (tasks || []).filter((task) => task.openTask);
   const pending = myTasks.filter((t) => (t.status || 'pending') === 'pending');
   const pendingReviewMine = myTasks.filter((t) => t.status === 'pending_review');
   const completed = myTasks.filter((t) => t.status === 'completed');
@@ -61,7 +116,7 @@ export default function TasksView({
       task.assignedByMembershipId === currentMembership?.id && task.status === 'pending_review',
   );
 
-  const allTasks = tasks || [];
+  const allTasks = (tasks || []).filter((task) => !task.openTask);
   const q = (taskSearch || '').toLowerCase().trim();
   const matchesSearch = (task) => {
     if (!q) return true;
@@ -360,6 +415,27 @@ export default function TasksView({
         onChange={(e) => setTaskSearch(e.target.value)}
         placeholder={t('search_placeholder')}
       />
+
+      {/* Open tasks — visible to everyone, no assignee, self-reported participation */}
+      {openTasks.length > 0 && (
+        <div className="animate-slide-up">
+          <h3 className="text-sm font-semibold text-content-secondary uppercase tracking-wider mb-1">{t('task_open_section_title')}</h3>
+          <p className="text-xs text-content-tertiary mb-3">{t('task_open_section_hint')}</p>
+          <div className="space-y-2">
+            {openTasks.filter(matchesSearch).map((task) => (
+              <OpenTaskCard
+                key={task.id}
+                task={task}
+                memberships={memberships}
+                currentMembership={currentMembership}
+                canViewAllTasks={canViewAllTasks}
+                onMarkOpenTaskParticipation={onMarkOpenTaskParticipation}
+                onDeleteTask={onDeleteTask}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Pending your review (assigner grades here) */}
       {filteredTasksPendingMyReview.length > 0 && (

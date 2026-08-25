@@ -288,7 +288,15 @@ service cloud.firestore {
           (request.resource.data.meritName == 'Perfil completo' &&
            eventId == 'auto_profile_complete_50_' + request.resource.data.teamId + '_' + request.resource.data.membershipId) ||
           (request.resource.data.meritName == '50 actualizaciones' &&
-           eventId == 'auto_milestone50_' + request.resource.data.membershipId)
+           eventId == 'auto_milestone50_' + request.resource.data.membershipId) ||
+          (request.resource.data.meritName == 'Participación en tarea abierta' &&
+           request.resource.data.taskId is string &&
+           eventId == 'auto_opentask_' + request.resource.data.taskId + '_' + request.resource.data.membershipId &&
+           exists(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)) &&
+           get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.get('openTask', false) == true &&
+           get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.get('grantsPoints', false) == true &&
+           get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.teamId == request.resource.data.teamId &&
+           get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.points == request.resource.data.points)
         );
     }
 
@@ -381,6 +389,15 @@ service cloud.firestore {
     function taskMembershipId(teamId) {
       return request.auth.uid + '_' + teamId;
     }
+    // Open tasks (no assignee): any active member may mark ONLY their own key
+    // in `participants` — once set, it can't be changed or removed (self-report
+    // is permanent, matching how other system auto-awards work).
+    function isOpenTaskSelfParticipation(teamId) {
+      return resource.data.get('openTask', false) == true &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']) &&
+        request.resource.data.participants.diff(resource.data.get('participants', {})).affectedKeys().hasOnly([taskMembershipId(teamId)]) &&
+        !(taskMembershipId(teamId) in resource.data.get('participants', {}));
+    }
     function isTaskAssigneeWorkflowUpdate(teamId) {
       return (
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'requestedReviewAt']) &&
@@ -460,7 +477,8 @@ service cloud.firestore {
       allow update: if isActiveMember(resource.data.teamId) && (
         isLeaderOrAbove(resource.data.teamId) ||
         (isTaskAssignee(resource.data.teamId) && isTaskAssigneeWorkflowUpdate(resource.data.teamId)) ||
-        (isTaskAssigner() && isTaskAssignerWorkflowUpdate(resource.data.teamId))
+        (isTaskAssigner() && isTaskAssignerWorkflowUpdate(resource.data.teamId)) ||
+        isOpenTaskSelfParticipation(resource.data.teamId)
       );
       allow delete: if isActiveMember(resource.data.teamId) && (
         isLeaderOrAbove(resource.data.teamId) ||

@@ -53,12 +53,32 @@ export default function BoardTypeSection({
   const selectedArchivedBoard = archivedBoards.find((b) => b.id === selectedArchivedBoardId) || archivedBoards[0] || null;
   const canEditSelected = selectedBoard && resolveCanEdit(selectedBoard);
 
-  const handleAssignCard = async (columnId, cardId, cardTitle, assigneeMembershipIds, assigneeDisplayNames, cardDescription, cardDueDate) => {
+  const handleAssignCard = async (columnId, cardId, cardTitle, assigneeMembershipIds, assigneeDisplayNames, cardDescription, cardDueDate, openOptions) => {
+    if (!selectedBoard || !onCreateTask) return;
+    const boardName = ensureString(selectedBoard.name, lang) || selectedBoard.id;
+
+    if (openOptions?.open) {
+      await onCreateTask({
+        openTask: true,
+        title: cardTitle,
+        description: cardDescription || boardName,
+        dueDate: cardDueDate || null,
+        grantsPoints: Boolean(openOptions.grantsPoints),
+        points: openOptions.grantsPoints ? openOptions.points : null,
+      });
+      const newColumns = (selectedBoard.columns || []).map((col) =>
+        col.id === columnId
+          ? { ...col, cards: (col.cards || []).map((c) => (c.id === cardId ? { ...c, openTask: true } : c)) }
+          : col,
+      );
+      await onUpdateBoard(selectedBoard.id, { columns: newColumns });
+      return;
+    }
+
     const ids = Array.isArray(assigneeMembershipIds) ? assigneeMembershipIds : [assigneeMembershipIds];
     const names = Array.isArray(assigneeDisplayNames) ? assigneeDisplayNames : [assigneeDisplayNames];
-    if (!selectedBoard || !onCreateTask || ids.length === 0) return;
+    if (ids.length === 0) return;
     for (const id of ids) { if (!canAssignTask?.(id)) return; }
-    const boardName = ensureString(selectedBoard.name, lang) || selectedBoard.id;
     await onCreateTask({
       assigneeMembershipIds: ids,
       title: cardTitle,
