@@ -8,7 +8,7 @@ import React, { useState, useRef } from 'react';
 import { StaggerList, StaggerItem } from '../components/motion/index.js';
 import SeasonResetSection from '../components/SeasonResetSection.jsx';
 import ImageCropModal from '../components/ImageCropModal.jsx';
-import { NAV_DOMAINS } from '../config/navigation.js';
+import { NAV_DOMAINS, isGroup } from '../config/navigation.js';
 import { t } from '../strings.js';
 import { showToast } from '../services/feedback.js';
 import { Button, Textarea } from '../components/ui/index.js';
@@ -385,38 +385,52 @@ export default function AdminView({
         <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_navigation')}</h3>
         <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_navigation_hint')}</p>
         <section className="rounded-xl border border-hairline bg-surface-raised p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {NAV_DOMAINS.map((domain) => {
-            const items = domain.items.filter((item) => item.id !== 'admin');
-            if (items.length === 0) return null;
-            return (
-              <div key={domain.id}>
-                <h4 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-2">{tFn(domain.labelKey)}</h4>
-                <div className="space-y-1.5">
-                  {items.map((item) => {
-                    const disabled = (team.disabledTools || []).includes(item.id);
-                    return (
-                      <label key={item.id} className="flex items-center gap-2 text-sm text-content-secondary cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={!disabled}
-                          disabled={saving === 'disabledTools'}
-                          onChange={(e) => {
-                            const current = team.disabledTools || [];
-                            const next = e.target.checked
-                              ? current.filter((id) => id !== item.id)
-                              : [...current, item.id];
-                            save('disabledTools', onSaveDisabledTools, next);
-                          }}
-                          className="rounded border-slate-600 bg-surface-sunken text-primary focus:ring-primary/40"
-                        />
-                        {tFn(item.labelKey)}
-                      </label>
-                    );
-                  })}
+          {(() => {
+            const flattenLeaves = (entries) => entries.flatMap((entry) => (isGroup(entry) ? flattenLeaves(entry.items) : [entry]));
+            const renderToggle = (item) => {
+              const disabled = (team.disabledTools || []).includes(item.id);
+              return (
+                <label key={item.id} className="flex items-center gap-2 text-sm text-content-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!disabled}
+                    disabled={saving === 'disabledTools'}
+                    onChange={(e) => {
+                      const current = team.disabledTools || [];
+                      const next = e.target.checked
+                        ? current.filter((id) => id !== item.id)
+                        : [...current, item.id];
+                      save('disabledTools', onSaveDisabledTools, next);
+                    }}
+                    className="rounded border-slate-600 bg-surface-sunken text-primary focus:ring-primary/40"
+                  />
+                  {tFn(item.labelKey)}
+                </label>
+              );
+            };
+            return NAV_DOMAINS.map((domain) => {
+              const leaves = flattenLeaves(domain.items).filter((item) => item.id !== 'admin');
+              if (leaves.length === 0) return null;
+              return (
+                <div key={domain.id}>
+                  <h4 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-2">{tFn(domain.labelKey)}</h4>
+                  <div className="space-y-2.5">
+                    {domain.items.map((entry) => {
+                      if (!isGroup(entry)) return entry.id !== 'admin' ? renderToggle(entry) : null;
+                      const groupItems = entry.items.filter((item) => item.id !== 'admin');
+                      if (groupItems.length === 0) return null;
+                      return (
+                        <div key={entry.id}>
+                          <div className="text-[10px] font-semibold uppercase tracking-wider text-content-tertiary/70 mb-1">{tFn(entry.labelKey)}</div>
+                          <div className="space-y-1.5">{groupItems.map(renderToggle)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </section>
       </div>
 

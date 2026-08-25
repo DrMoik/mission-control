@@ -1,5 +1,10 @@
 // ─── NAVIGATION CONFIG ────────────────────────────────────────────────────────
-// Domain structure for sidebar and mobile nav. Two levels only.
+// Domain structure for sidebar and mobile nav. Two levels, except the
+// "Administración" domain, whose items are themselves groups (Ingeniería /
+// Operación / Plataforma) so engineering, business/ops, and platform-config
+// tools stay visually separated without becoming three separate top-level
+// domains. A domain item is a *group* when it has its own `items` array;
+// everything else is a leaf that maps to a real view id.
 
 import {
   LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, CalendarDays, Wrench,
@@ -7,7 +12,7 @@ import {
   Cog, Landmark, ShieldCheck, Handshake, Truck,
 } from 'lucide-react';
 
-/** Navigation domain structure (two levels only). */
+/** Navigation domain structure. */
 export const NAV_DOMAINS = [
   {
     id: 'comunidad',
@@ -51,39 +56,53 @@ export const NAV_DOMAINS = [
       { id: 'leaderboard', labelKey: 'nav_leaderboard', Icon: Award },
     ],
   },
-  // Administrative domains, split so engineering content never mixes with
-  // business/operations content — different teams own each one.
+  // Administración: one top-level domain, three internal groups so
+  // engineering content never mixes with business/operations content.
   {
-    id: 'admin_engineering',
-    labelKey: 'nav_domain_admin_engineering',
-    Icon: Cog,
+    id: 'administracion',
+    labelKey: 'nav_domain_admin',
+    Icon: Settings,
     items: [
-      { id: 'bom', labelKey: 'nav_bom', Icon: ClipboardList, access: 'member' },
-    ],
-  },
-  {
-    id: 'admin_operations',
-    labelKey: 'nav_domain_admin_operations',
-    Icon: Landmark,
-    items: [
-      { id: 'funding', labelKey: 'nav_funding', Icon: Wallet, access: 'member' },
-      { id: 'inventory', labelKey: 'nav_inventory', Icon: Package, access: 'member' },
-      { id: 'sponsors', labelKey: 'nav_sponsors', Icon: Handshake, access: 'member' },
-      { id: 'eventLogistics', labelKey: 'nav_event_logistics', Icon: Truck, access: 'member' },
-    ],
-  },
-  {
-    id: 'admin_platform',
-    labelKey: 'nav_domain_admin_platform',
-    Icon: ShieldCheck,
-    items: [
-      { id: 'admin', labelKey: 'nav_admin', Icon: Settings, access: 'admin' },
+      {
+        id: 'admin_engineering',
+        labelKey: 'nav_domain_admin_engineering',
+        Icon: Cog,
+        items: [
+          { id: 'bom', labelKey: 'nav_bom', Icon: ClipboardList, access: 'member' },
+          { id: 'inventory', labelKey: 'nav_inventory', Icon: Package, access: 'member' },
+        ],
+      },
+      {
+        id: 'admin_operations',
+        labelKey: 'nav_domain_admin_operations',
+        Icon: Landmark,
+        items: [
+          { id: 'funding', labelKey: 'nav_funding', Icon: Wallet, access: 'member' },
+          { id: 'sponsors', labelKey: 'nav_sponsors', Icon: Handshake, access: 'member' },
+          { id: 'eventLogistics', labelKey: 'nav_event_logistics', Icon: Truck, access: 'member' },
+        ],
+      },
+      {
+        id: 'admin_platform',
+        labelKey: 'nav_domain_admin_platform',
+        Icon: ShieldCheck,
+        items: [
+          { id: 'admin', labelKey: 'nav_admin', Icon: Settings, access: 'admin' },
+        ],
+      },
     ],
   },
 ];
 
-/** Map view id → domain id for sidebar expansion. */
+/** True when a domain-item entry is a group (has its own sub-items) rather than a leaf view. */
+export const isGroup = (entry) => Array.isArray(entry.items);
+
+/** Map view id → top-level domain id for sidebar expansion (recurses into groups). */
 export const VIEW_TO_DOMAIN = {};
 NAV_DOMAINS.forEach((d) => {
-  d.items.forEach((it) => { VIEW_TO_DOMAIN[it.id] = d.id; });
+  const visit = (entries) => entries.forEach((entry) => {
+    if (isGroup(entry)) { visit(entry.items); return; }
+    VIEW_TO_DOMAIN[entry.id] = d.id;
+  });
+  visit(d.items);
 });

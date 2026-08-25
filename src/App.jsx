@@ -42,7 +42,7 @@ import {
   LEADERSHIP_SCOPE, ASPIRANT_TO_ROOKIE_POINTS_DEFAULT, ASPIRANT_INACTIVITY_MONTHS_DEFAULT,
 } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels, isWeekEligibleForPoints, toGoogleDrivePreviewUrl, toGoogleDriveOpenUrl, isMechanicsCategoryName } from './utils.js';
-import { NAV_DOMAINS, VIEW_TO_DOMAIN } from './config/navigation.js';
+import { NAV_DOMAINS, VIEW_TO_DOMAIN, isGroup } from './config/navigation.js';
 import RoleBadge  from './components/ui/RoleBadge.jsx';
 import GoogleIcon from './components/ui/GoogleIcon.jsx';
 import HamburgerIcon from './components/ui/HamburgerIcon.jsx';
@@ -249,10 +249,15 @@ export default function App() {
 
   // Per-team browser-tab favicon: falls back to the Tec de Monterrey default
   // whenever no team is selected or the team hasn't uploaded its own.
+  // Removing + recreating the <link> (rather than mutating .href on the
+  // existing one) is what actually makes Chromium re-render the tab icon.
   useEffect(() => {
-    const link = document.querySelector('link[rel="icon"]');
-    if (!link) return;
-    link.href = currentTeam?.faviconUrl || `${import.meta.env.BASE_URL}favicon-tec.ico`;
+    const href = currentTeam?.faviconUrl || `${import.meta.env.BASE_URL}favicon-tec.ico`;
+    document.querySelectorAll('link[rel="icon"]').forEach((el) => el.remove());
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.href = href;
+    document.head.appendChild(link);
   }, [currentTeam?.faviconUrl]);
 
   // Merit tags: team overrides, then platform config, then constants
@@ -2852,19 +2857,39 @@ export default function App() {
   // ── Main app shell (team selected) ─────────────────────────────────────────
 
   const disabledToolIds = new Set(currentTeam?.disabledTools || []);
+  const filterNavEntries = (entries) => entries
+    .map((entry) => {
+      if (isGroup(entry)) {
+        const items = filterNavEntries(entry.items);
+        return items.length > 0 ? { ...entry, items } : null;
+      }
+      if (disabledToolIds.has(entry.id)) return null;
+      if (entry.access === 'admin' && !canEdit) return null;
+      if (entry.access === 'leader' && !canEditTools) return null;
+      if (entry.access === 'member' && !isMember) return null;
+      return entry;
+    })
+    .filter(Boolean);
   const visibleDomains = NAV_DOMAINS
-    .map((domain) => ({
-      ...domain,
-      items: domain.items.filter((item) => {
-        if (disabledToolIds.has(item.id)) return false;
-        if (item.access === 'admin') return canEdit;
-        if (item.access === 'leader') return canEditTools;
-        if (item.access === 'member') return isMember;
-        return true;
-      }),
-    }))
+    .map((domain) => ({ ...domain, items: filterNavEntries(domain.items) }))
     .filter((domain) => domain.items.length > 0);
-  const navItems = visibleDomains.flatMap((d) => d.items);
+  const flattenLeaves = (entries) => entries.flatMap((entry) => (isGroup(entry) ? flattenLeaves(entry.items) : [entry]));
+  const navItems = visibleDomains.flatMap((d) => flattenLeaves(d.items));
+
+  // Shared leaf-item button for the sidebar/drawer nav trees below (used both
+  // directly under a domain and nested one level inside an Administración group).
+  const renderNavLeaf = (item, { compact = false, onNavigate } = {}) => {
+    const isActive = view === item.id;
+    return (
+      <button key={item.id} onClick={() => { goToView(item.id); onNavigate?.(); }}
+        title={item.id === 'hr' ? t('hr_page_title') : undefined}
+        className={`w-full text-left ${compact ? 'px-2 py-1.5' : 'px-2.5 py-2'} rounded-md flex items-center gap-2 text-[12px] transition-colors
+          ${isActive ? 'text-primary font-semibold bg-primary/10' : 'text-content-tertiary shell-nav-hover'}`}>
+        <item.Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.25 : 1.75} />
+        <span className="truncate">{t(item.labelKey)}</span>
+      </button>
+    );
+  };
 
   return (
       <div className="h-screen overflow-hidden bg-surface-base text-content-primary flex flex-col">
@@ -2919,18 +2944,19 @@ export default function App() {
                           </button>
                           {isExpanded && (
                             <div className="ml-4 mt-0.5 space-y-0.5 border-l border-hairline pl-2">
-                              {domain.items.map((item) => {
-                                const isActive = view === item.id;
-                                return (
-                                  <button key={item.id} onClick={() => { goToView(item.id); setMobileNavOpen(false); }}
-                                    title={item.id === 'hr' ? t('hr_page_title') : undefined}
-                                    className={`w-full text-left px-2.5 py-2 rounded-md flex items-center gap-2 text-[12px] transition-colors
-                                      ${isActive ? 'text-primary font-semibold bg-primary/10' : 'text-content-tertiary shell-nav-hover'}`}>
-                                    <item.Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.25 : 1.75} />
-                                    <span>{t(item.labelKey)}</span>
-                                  </button>
-                                );
-                              })}
+                              {domain.items.map((entry) => (
+                                isGroup(entry) ? (
+                                  <div key={entry.id} className="mt-2 first:mt-0">
+                                    <div className="px-2.5 pb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-tertiary">
+                                      <entry.Icon className="w-3 h-3 shrink-0" strokeWidth={1.75} />
+                                      {t(entry.labelKey)}
+                                    </div>
+                                    <div className="space-y-0.5">
+                                      {entry.items.map((item) => renderNavLeaf(item, { onNavigate: () => setMobileNavOpen(false) }))}
+                                    </div>
+                                  </div>
+                                ) : renderNavLeaf(entry, { onNavigate: () => setMobileNavOpen(false) })
+                              ))}
                             </div>
                           )}
                         </div>
@@ -3164,18 +3190,19 @@ export default function App() {
                         </button>
                         {!navCollapsed && isExpanded && (
                           <div className="ml-3 mt-0.5 space-y-0.5 border-l border-hairline pl-2">
-                            {domain.items.map((item) => {
-                              const isActive = view === item.id;
-                              return (
-                                <button key={item.id} onClick={() => goToView(item.id)}
-                                  title={item.id === 'hr' ? t('hr_page_title') : undefined}
-                                  className={`w-full text-left px-2 py-1.5 rounded-md flex items-center gap-2 text-[12px] transition-colors
-                                    ${isActive ? 'text-primary font-semibold bg-primary/10' : 'text-content-tertiary shell-nav-hover'}`}>
-                                  <item.Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.25 : 1.75} />
-                                  <span className="truncate">{t(item.labelKey)}</span>
-                                </button>
-                              );
-                            })}
+                            {domain.items.map((entry) => (
+                              isGroup(entry) ? (
+                                <div key={entry.id} className="mt-2 first:mt-0">
+                                  <div className="px-2 pb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-tertiary">
+                                    <entry.Icon className="w-3 h-3 shrink-0" strokeWidth={1.75} />
+                                    {t(entry.labelKey)}
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    {entry.items.map((item) => renderNavLeaf(item, { compact: true }))}
+                                  </div>
+                                </div>
+                              ) : renderNavLeaf(entry, { compact: true })
+                            ))}
                           </div>
                         )}
                       </div>

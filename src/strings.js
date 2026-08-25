@@ -42,6 +42,7 @@ export const STRINGS = {
     nav_domain_trabajo:     'Trabajo',
     nav_domain_aprendizaje: 'Aprendizaje',
     nav_domain_reconocimiento: 'Reconocimiento',
+    nav_domain_admin:      'Administración',
     nav_domain_admin_engineering: 'Ingeniería',
     nav_domain_admin_operations:  'Operación',
     nav_domain_admin_platform:    'Plataforma',
