@@ -99,10 +99,13 @@ export const isGroup = (entry) => Array.isArray(entry.items);
 
 /** Map view id → top-level domain id for sidebar expansion (recurses into groups). */
 export const VIEW_TO_DOMAIN = {};
+/** Map view id → its immediate group id, for views nested inside a group (e.g. Administración's sub-groups). */
+export const VIEW_TO_GROUP = {};
 NAV_DOMAINS.forEach((d) => {
-  const visit = (entries) => entries.forEach((entry) => {
-    if (isGroup(entry)) { visit(entry.items); return; }
+  const visit = (entries, groupId) => entries.forEach((entry) => {
+    if (isGroup(entry)) { visit(entry.items, entry.id); return; }
     VIEW_TO_DOMAIN[entry.id] = d.id;
+    if (groupId) VIEW_TO_GROUP[entry.id] = groupId;
   });
-  visit(d.items);
+  visit(d.items, null);
 });

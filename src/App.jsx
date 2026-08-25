@@ -42,7 +42,7 @@ import {
   LEADERSHIP_SCOPE, ASPIRANT_TO_ROOKIE_POINTS_DEFAULT, ASPIRANT_INACTIVITY_MONTHS_DEFAULT,
 } from './constants.js';
 import { atLeast, tsToDate, getL, ensureString, compressDataUrlIfNeeded, getSundayOfWeekLocal, normalizeWeekOfToSunday, getProfileMissingFieldsLabels, isWeekEligibleForPoints, toGoogleDrivePreviewUrl, toGoogleDriveOpenUrl, isMechanicsCategoryName } from './utils.js';
-import { NAV_DOMAINS, VIEW_TO_DOMAIN, isGroup } from './config/navigation.js';
+import { NAV_DOMAINS, VIEW_TO_DOMAIN, VIEW_TO_GROUP, isGroup } from './config/navigation.js';
 import RoleBadge  from './components/ui/RoleBadge.jsx';
 import GoogleIcon from './components/ui/GoogleIcon.jsx';
 import HamburgerIcon from './components/ui/HamburgerIcon.jsx';
@@ -139,6 +139,7 @@ export default function App() {
   const [navCollapsed,   setNavCollapsed]   = useState(false);
   const [mobileNavOpen,  setMobileNavOpen]  = useState(false);
   const [expandedDomain, setExpandedDomain] = useState(null);
+  const [expandedGroup,  setExpandedGroup]  = useState(null);   // sub-group accordion within a domain (e.g. Administración)
   const [previewRole,    setPreviewRole]    = useState(null);   // admin "preview as role" simulation
   const [renamingTeamId, setRenamingTeamId] = useState(null);  // team picker inline rename
   const [renameValue,    setRenameValue]    = useState('');
@@ -152,12 +153,17 @@ export default function App() {
     : null;
 
   const currentDomain = VIEW_TO_DOMAIN[view] || null;
+  const currentGroup  = VIEW_TO_GROUP[view] || null;
   useEffect(() => {
     if (mobileNavOpen && currentDomain) setExpandedDomain(currentDomain);
-  }, [mobileNavOpen, currentDomain]);
+    if (mobileNavOpen && currentGroup) setExpandedGroup(currentGroup);
+  }, [mobileNavOpen, currentDomain, currentGroup]);
   useEffect(() => {
     if (currentDomain) setExpandedDomain((prev) => (prev === currentDomain ? prev : currentDomain));
   }, [currentDomain]);
+  useEffect(() => {
+    if (currentGroup) setExpandedGroup((prev) => (prev === currentGroup ? prev : currentGroup));
+  }, [currentGroup]);
 
   // Redirect invalid paths to /inicio (only when team is selected, to avoid running in team picker)
   useEffect(() => {
@@ -2944,19 +2950,28 @@ export default function App() {
                           </button>
                           {isExpanded && (
                             <div className="ml-4 mt-0.5 space-y-0.5 border-l border-hairline pl-2">
-                              {domain.items.map((entry) => (
-                                isGroup(entry) ? (
-                                  <div key={entry.id} className="mt-2 first:mt-0">
-                                    <div className="px-2.5 pb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-tertiary">
-                                      <entry.Icon className="w-3 h-3 shrink-0" strokeWidth={1.75} />
-                                      {t(entry.labelKey)}
-                                    </div>
-                                    <div className="space-y-0.5">
-                                      {entry.items.map((item) => renderNavLeaf(item, { onNavigate: () => setMobileNavOpen(false) }))}
-                                    </div>
+                              {domain.items.map((entry) => {
+                                if (!isGroup(entry)) return renderNavLeaf(entry, { onNavigate: () => setMobileNavOpen(false) });
+                                const groupOpen = expandedGroup === entry.id;
+                                return (
+                                  <div key={entry.id} className="mt-1.5 first:mt-0 border-t border-hairline/60 pt-1.5 first:border-t-0 first:pt-0">
+                                    <button
+                                      onClick={() => setExpandedGroup(groupOpen ? null : entry.id)}
+                                      className="w-full px-2.5 py-1 flex items-center justify-between gap-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-content-tertiary opacity-70 hover:opacity-100 transition-opacity">
+                                      <span className="flex items-center gap-1.5">
+                                        <entry.Icon className="w-3 h-3 shrink-0" strokeWidth={1.75} />
+                                        {t(entry.labelKey)}
+                                      </span>
+                                      <ChevronDown className={`w-3 h-3 shrink-0 transition-transform duration-200 ${groupOpen ? '' : '-rotate-90'}`} strokeWidth={1.75} />
+                                    </button>
+                                    {groupOpen && (
+                                      <div className="space-y-0.5 mt-0.5">
+                                        {entry.items.map((item) => renderNavLeaf(item, { onNavigate: () => setMobileNavOpen(false) }))}
+                                      </div>
+                                    )}
                                   </div>
-                                ) : renderNavLeaf(entry, { onNavigate: () => setMobileNavOpen(false) })
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -3190,19 +3205,28 @@ export default function App() {
                         </button>
                         {!navCollapsed && isExpanded && (
                           <div className="ml-3 mt-0.5 space-y-0.5 border-l border-hairline pl-2">
-                            {domain.items.map((entry) => (
-                              isGroup(entry) ? (
-                                <div key={entry.id} className="mt-2 first:mt-0">
-                                  <div className="px-2 pb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-content-tertiary">
-                                    <entry.Icon className="w-3 h-3 shrink-0" strokeWidth={1.75} />
-                                    {t(entry.labelKey)}
-                                  </div>
-                                  <div className="space-y-0.5">
-                                    {entry.items.map((item) => renderNavLeaf(item, { compact: true }))}
-                                  </div>
+                            {domain.items.map((entry) => {
+                              if (!isGroup(entry)) return renderNavLeaf(entry, { compact: true });
+                              const groupOpen = expandedGroup === entry.id;
+                              return (
+                                <div key={entry.id} className="mt-1.5 first:mt-0 border-t border-hairline/60 pt-1.5 first:border-t-0 first:pt-0">
+                                  <button
+                                    onClick={() => setExpandedGroup(groupOpen ? null : entry.id)}
+                                    className="w-full px-2 py-1 flex items-center justify-between gap-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-content-tertiary opacity-70 hover:opacity-100 transition-opacity">
+                                    <span className="flex items-center gap-1.5">
+                                      <entry.Icon className="w-3 h-3 shrink-0" strokeWidth={1.75} />
+                                      {t(entry.labelKey)}
+                                    </span>
+                                    <ChevronDown className={`w-3 h-3 shrink-0 transition-transform duration-200 ${groupOpen ? '' : '-rotate-90'}`} strokeWidth={1.75} />
+                                  </button>
+                                  {groupOpen && (
+                                    <div className="space-y-0.5 mt-0.5">
+                                      {entry.items.map((item) => renderNavLeaf(item, { compact: true }))}
+                                    </div>
+                                  )}
                                 </div>
-                              ) : renderNavLeaf(entry, { compact: true })
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
