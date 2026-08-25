@@ -509,6 +509,27 @@ service cloud.firestore {
       allow delete: if isLeaderOrAbove(resource.data.teamId);
     }
 
+    match /teamGantts/{entryId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamSponsors/{entryId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    match /teamEventLogistics/{entryId} {
+      allow read: if isActiveMember(resource.data.teamId);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId);
+      allow update: if isLeaderOrAbove(resource.data.teamId);
+      allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
     match /teamBoards/{boardId} {
       allow read: if isActiveMember(resource.data.teamId);
       allow create: if isLeaderOrAbove(request.resource.data.teamId);

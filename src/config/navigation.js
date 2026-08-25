@@ -4,6 +4,7 @@
 import {
   LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, CalendarDays, Wrench,
   GraduationCap, Wallet, CheckSquare, Settings, MessagesSquare, Map, Package, ClipboardList,
+  Cog, Landmark, ShieldCheck, Handshake, Truck,
 } from 'lucide-react';
 
 /** Navigation domain structure (two levels only). */
@@ -50,14 +51,32 @@ export const NAV_DOMAINS = [
       { id: 'leaderboard', labelKey: 'nav_leaderboard', Icon: Award },
     ],
   },
+  // Administrative domains, split so engineering content never mixes with
+  // business/operations content — different teams own each one.
   {
-    id: 'admin_group',
-    labelKey: 'nav_domain_admin',
-    Icon: Settings,
+    id: 'admin_engineering',
+    labelKey: 'nav_domain_admin_engineering',
+    Icon: Cog,
     items: [
-      { id: 'inventory', labelKey: 'nav_inventory', Icon: Package, access: 'member' },
       { id: 'bom', labelKey: 'nav_bom', Icon: ClipboardList, access: 'member' },
+    ],
+  },
+  {
+    id: 'admin_operations',
+    labelKey: 'nav_domain_admin_operations',
+    Icon: Landmark,
+    items: [
       { id: 'funding', labelKey: 'nav_funding', Icon: Wallet, access: 'member' },
+      { id: 'inventory', labelKey: 'nav_inventory', Icon: Package, access: 'member' },
+      { id: 'sponsors', labelKey: 'nav_sponsors', Icon: Handshake, access: 'member' },
+      { id: 'eventLogistics', labelKey: 'nav_event_logistics', Icon: Truck, access: 'member' },
+    ],
+  },
+  {
+    id: 'admin_platform',
+    labelKey: 'nav_domain_admin_platform',
+    Icon: ShieldCheck,
+    items: [
       { id: 'admin', labelKey: 'nav_admin', Icon: Settings, access: 'admin' },
     ],
   },

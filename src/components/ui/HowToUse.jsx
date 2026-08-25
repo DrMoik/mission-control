@@ -25,6 +25,12 @@ const TOOL_DESCRIPTIONS = {
     'Matriz de priorización por urgencia e importancia.\n\n• Cuadrante 1: urgente e importante (hacer hoy).\n• Cuadrante 2: importante, no urgente (programar).\n• Cuadrante 3: urgente, no importante (delegar).\n• Cuadrante 4: ninguna (eliminar o posponer).',
   tool_desc_pugh:
     'Compara alternativas contra una opción de referencia.\n\n• Referencia: opción actual o baseline.\n• Alternativas: A, B, C…\n• Criterios: costo, tiempo, calidad…\n• Puntúa +1 (mejor), 0 (igual), -1 (peor). La opción con mayor total gana.',
+  tool_desc_gantt:
+    'Cronograma visual de tareas en el tiempo.\n\n• Crea un Gantt general o uno por área/proyecto específico.\n• Agrega elementos con fecha de inicio y fin.\n• Vincula opcionalmente un elemento a una tarea existente para dar seguimiento.\n• La línea roja marca el día de hoy.',
+  tool_desc_sponsors:
+    'Seguimiento de patrocinadores: nivel, aportación y estatus del contrato.\n\n• Nivel: Oro / Plata / Bronce.\n• Tipo de aportación: Dinero / Especie / Mixto.\n• Vencimiento: alerta automática cuando faltan 30 días o menos.\n• Haz clic en 🔍 para ver contactos, beneficios y notas de seguimiento.',
+  tool_desc_logistics:
+    'Logística de eventos: encargados, invitados, presupuesto y gastos.\n\n• Encargados: asigna integrantes del equipo desde la lista de membresías.\n• Invitados y gastos: haz clic en 🔍 para el desglose completo de cada evento.\n• Presupuesto cubierto: compara el costo aproximado contra lo cubierto por patrocinio.',
 };
 
 const TOOL_EXAMPLES = {
@@ -38,6 +44,9 @@ const TOOL_EXAMPLES = {
   tool_desc_goals_example: 'Objetivo: "Lanzar MVP en Q1". Resultados clave: "Completar 10 user stories", "Tests al 80%". Ajusta la barra de progreso según avance.',
   tool_desc_calendar_example: 'Evento global: "Competencia regional - 15 Mar". Evento por área: "Revisión de diseño Mecánica - 20 Mar" con alcance Mecánica.',
   tool_desc_meetings_example: 'Registra la agenda, resume la discusion, anota decisiones tomadas y asigna puntos de accion con responsable y fecha limite.',
+  tool_desc_gantt_example: 'Gantt "Lanzamiento Q1": "Diseño" (1-10 Mar), "Prototipo" (8-20 Mar) vinculado a la tarea "Armar prototipo", "Pruebas" (18-28 Mar).',
+  tool_desc_sponsors_example: '"Refrescos ACME" — Oro, en especie, $50,000 MXN, vence 31/12. "Banco Regional" — Oro, en dinero, $150,000 MXN, contacto: Claudia Reyes.',
+  tool_desc_logistics_example: '"Feria de Emprendimiento 2026" — 17 Oct, Centro de Convenciones Norte, encargados: Carlos y Mariana, costo $85,000, cubierto $60,000, estatus: En preparación.',
 };
 
 const TOOL_LINKS = {
@@ -51,6 +60,8 @@ const TOOL_LINKS = {
   tool_desc_goals_link: 'https://es.wikipedia.org/wiki/Objetivos_y_resultados_clave',
   tool_desc_calendar_link: 'https://es.wikipedia.org/wiki/Calendario',
   tool_desc_meetings_link: 'https://www.atlassian.com/team-playbook/plays/meeting-notes',
+  tool_desc_gantt_link: 'https://es.wikipedia.org/wiki/Diagrama_de_Gantt',
+  tool_desc_sponsors_link: 'https://docs.google.com/spreadsheets/d/1iEeyGP12-0vefgFJFtqGyHUJINIjOU5UW4DcFdLK05s/edit',
 };
 
 /**

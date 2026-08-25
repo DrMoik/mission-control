@@ -26,6 +26,7 @@ import BoardTypeSection        from './tools/BoardTypeSection.jsx';
 import AvailabilityPollsSection from './tools/AvailabilityPollsSection.jsx';
 import MeetingsSection         from './tools/MeetingsSection.jsx';
 import GoalsSection            from './tools/GoalsSection.jsx';
+import GanttSection            from './tools/GanttSection.jsx';
 import { BilingualField, Button, Input, HowToUse, ScopeFilter, TrashBin } from '../components/ui/index.js';
 import { getL, toL, ensureString, isGeneralLeadershipCategoryName } from '../utils.js';
 import { LEADERSHIP_SCOPE } from '../constants.js';
@@ -65,7 +66,7 @@ const SWOT_META = [
  * }} props
  */
 export default function ToolsView({
-  teamSwots = [], teamEisenhowers = [], teamPughs = [], teamBoards, teamAvailabilityPolls = [], teamMeetings, teamGoals,
+  teamSwots = [], teamEisenhowers = [], teamPughs = [], teamGantts = [], teamTasks = [], teamBoards, teamAvailabilityPolls = [], teamMeetings, teamGoals,
   categories, memberships = [], currentMembership, memberRole, canEdit, canEditTools,
   resolveCanEdit,
   trashed = {}, onRestoreItem, onPurgeItem,
@@ -73,6 +74,7 @@ export default function ToolsView({
   onCreateSwot, onUpdateSwot, onDeleteSwot,
   onCreateEisenhower, onUpdateEisenhower, onDeleteEisenhower,
   onCreatePugh, onUpdatePugh, onDeletePugh,
+  onCreateGantt, onUpdateGantt, onDeleteGantt,
   onCreateBoard,  onUpdateBoard,  onDeleteBoard,
   onCreateAvailabilityPoll, onUpdateAvailabilityPoll, onDeleteAvailabilityPoll,
   onCreateMeeting, onUpdateMeeting, onDeleteMeeting,
@@ -172,6 +174,7 @@ export default function ToolsView({
   const visibleGoals    = useMemo(() => filterItems(teamGoals),    [filterItems, teamGoals]);
   const visibleEisenhowerList = useMemo(() => filterItems(teamEisenhowers), [filterItems, teamEisenhowers]);
   const visiblePughList       = useMemo(() => filterItems(teamPughs),       [filterItems, teamPughs]);
+  const visibleGanttList      = useMemo(() => filterItems(teamGantts),      [filterItems, teamGantts]);
 
   // When scope filter hides the selected Eisenhower/Pugh matrix, select first visible
   React.useEffect(() => {
@@ -273,6 +276,7 @@ export default function ToolsView({
             ['boards', t('tab_kanban')],
             ['scrum', t('tab_scrum')],
             ['retro', t('tab_retro')],
+            ['gantt', t('tab_gantt')],
             ['availability', t('tab_availability')],
             ['meetings', t('tab_meetings')],
           ].map(([id, label]) => (
@@ -939,6 +943,28 @@ export default function ToolsView({
             onDeleteBoard={onDeleteBoard}
           />
           {renderTrash('teamBoards', (b) => b.boardType === 'retro')}
+        </div>
+      )}
+
+      {/* ══════════ GANTT ══════════ */}
+      {toolTab === 'gantt' && (
+        <div className="space-y-4">
+          <HowToUse descKey="tool_desc_gantt" />
+          <ScopeFilter value={scopeFilter} onChange={setScopeFilter}
+            categories={categories} userCategoryId={userCategoryId} canEdit={canEdit}
+            extraVisibleCategoryId={canEditTools ? generalLeadershipCategoryId : null} />
+          <GanttSection
+            charts={visibleGanttList}
+            tasks={teamTasks}
+            categories={categories}
+            scopeCategories={creatableCategories}
+            canCreate={canCreate}
+            resolveCanEdit={resolveCanEdit}
+            onCreateGantt={onCreateGantt}
+            onUpdateGantt={onUpdateGantt}
+            onDeleteGantt={onDeleteGantt}
+          />
+          {renderTrash('teamGantts')}
         </div>
       )}
 

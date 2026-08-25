@@ -94,6 +94,9 @@ export default function App() {
     teamSwots,
     teamEisenhowers,
     teamPughs,
+    teamGantts,
+    teamSponsors,
+    teamEventLogistics,
     teamBoards,
     teamAvailabilityPolls,
     teamPosts,
@@ -1899,6 +1902,87 @@ export default function App() {
     await softDeleteDoc('teamPughs', id, trashActor());
   };
 
+  // ── Tools: Gantt (multiple charts per team, items optionally linked to tasks) ─
+
+  const handleCreateGantt = async ({ name, categoryId }) => {
+    if (!currentTeam || !canEditTools) return null;
+    const fakeItem = { categoryId: categoryId || null };
+    if (!canEditToolItem(fakeItem)) return null;
+    const ref = await addDoc(collection(db, 'teamGantts'), {
+      teamId:     currentTeam.id,
+      name:       (name || '').trim() || t('gantt_new_chart'),
+      categoryId: categoryId || null,
+      items:      [],
+      createdAt:  serverTimestamp(),
+      ...lastEditedStamp(),
+    });
+    return ref.id;
+  };
+
+  const handleUpdateGantt = async (id, updates) => {
+    const entry = teamGantts.find((e) => e.id === id);
+    if (!entry || !canEditToolItem(entry)) return;
+    await updateDoc(doc(db, 'teamGantts', id), { ...updates, ...lastEditedStamp() });
+  };
+
+  const handleDeleteGantt = async (id) => {
+    const entry = teamGantts.find((e) => e.id === id);
+    if (!entry || !canEditToolItem(entry)) return;
+    await softDeleteDoc('teamGantts', id, trashActor());
+  };
+
+  // ── Tools: Sponsors (flat list per team, scoped like Goals) ────────────────
+
+  const handleCreateSponsor = async (data) => {
+    const fakeItem = { categoryId: data.categoryId || null };
+    if (!currentTeam || !canEditToolItem(fakeItem)) return;
+    await addDoc(collection(db, 'teamSponsors'), {
+      teamId: currentTeam.id,
+      ...data,
+      categoryId: data.categoryId || null,
+      createdAt: serverTimestamp(),
+      ...lastEditedStamp(),
+    });
+  };
+
+  const handleUpdateSponsor = async (id, updates) => {
+    const sponsor = teamSponsors.find((s) => s.id === id);
+    if (!sponsor || !canEditToolItem(sponsor)) return;
+    await updateDoc(doc(db, 'teamSponsors', id), { ...updates, ...lastEditedStamp() });
+  };
+
+  const handleDeleteSponsor = async (id) => {
+    const sponsor = teamSponsors.find((s) => s.id === id);
+    if (!sponsor || !canEditToolItem(sponsor)) return;
+    await softDeleteDoc('teamSponsors', id, trashActor());
+  };
+
+  // ── Admin: Event Logistics (flat list per team, scoped like Goals) ─────────
+
+  const handleCreateEventLogistics = async (data) => {
+    const fakeItem = { categoryId: data.categoryId || null };
+    if (!currentTeam || !canEditToolItem(fakeItem)) return;
+    await addDoc(collection(db, 'teamEventLogistics'), {
+      teamId: currentTeam.id,
+      ...data,
+      categoryId: data.categoryId || null,
+      createdAt: serverTimestamp(),
+      ...lastEditedStamp(),
+    });
+  };
+
+  const handleUpdateEventLogistics = async (id, updates) => {
+    const entry = teamEventLogistics.find((e) => e.id === id);
+    if (!entry || !canEditToolItem(entry)) return;
+    await updateDoc(doc(db, 'teamEventLogistics', id), { ...updates, ...lastEditedStamp() });
+  };
+
+  const handleDeleteEventLogistics = async (id) => {
+    const entry = teamEventLogistics.find((e) => e.id === id);
+    if (!entry || !canEditToolItem(entry)) return;
+    await softDeleteDoc('teamEventLogistics', id, trashActor());
+  };
+
   // ── Tools: Boards (Kanban / SCRUM / Retro) ─────────────────────────────────
 
   const handleCreateBoard = async (name, boardType = 'kanban', defaultColumns = null, categoryId = null) => {
@@ -3113,6 +3197,9 @@ export default function App() {
                   teamSwots,
                   teamEisenhowers,
                   teamPughs,
+                  teamGantts,
+                  teamSponsors,
+                  teamEventLogistics,
                   teamBoards,
                   teamAvailabilityPolls,
                   teamMeetings,
@@ -3216,6 +3303,15 @@ export default function App() {
                   handleCreatePugh,
                   handleUpdatePugh,
                   handleDeletePugh,
+                  handleCreateGantt,
+                  handleUpdateGantt,
+                  handleDeleteGantt,
+                  handleCreateSponsor,
+                  handleUpdateSponsor,
+                  handleDeleteSponsor,
+                  handleCreateEventLogistics,
+                  handleUpdateEventLogistics,
+                  handleDeleteEventLogistics,
                   handleCreateBoard,
                   handleUpdateBoard,
                   handleDeleteBoard,

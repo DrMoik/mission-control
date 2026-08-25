@@ -32,6 +32,9 @@ import { tsToDate } from '../utils.js';
  *   teamSwots: object[],
  *   teamEisenhowers: object[],
  *   teamPughs: object[],
+ *   teamGantts: object[],
+ *   teamSponsors: object[],
+ *   teamEventLogistics: object[],
  *   teamBoards: object[],
  *   teamAvailabilityPolls: object[],
  *   teamPosts: object[],
@@ -69,6 +72,9 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
   const [teamSwots, setTeamSwots] = useState([]);
   const [teamEisenhowers, setTeamEisenhowers] = useState([]);
   const [teamPughs, setTeamPughs] = useState([]);
+  const [teamGantts, setTeamGantts] = useState([]);
+  const [teamSponsors, setTeamSponsors] = useState([]);
+  const [teamEventLogistics, setTeamEventLogistics] = useState([]);
   const [teamBoards, setTeamBoards] = useState([]);
   const [teamAvailabilityPolls, setTeamAvailabilityPolls] = useState([]);
   const [teamPosts, setTeamPosts] = useState([]);
@@ -223,6 +229,24 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
       'teamPughs',
       query(collection(db, 'teamPughs'), where('teamId', '==', selectedTeamId)),
       setTeamPughs,
+      (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+    );
+    subSoft(
+      'teamGantts',
+      query(collection(db, 'teamGantts'), where('teamId', '==', selectedTeamId)),
+      setTeamGantts,
+      (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+    );
+    subSoft(
+      'teamSponsors',
+      query(collection(db, 'teamSponsors'), where('teamId', '==', selectedTeamId)),
+      setTeamSponsors,
+      (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+    );
+    subSoft(
+      'teamEventLogistics',
+      query(collection(db, 'teamEventLogistics'), where('teamId', '==', selectedTeamId)),
+      setTeamEventLogistics,
       (rows) => [...rows].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
     );
     subSoft('teamBoards', query(collection(db, 'teamBoards'), where('teamId', '==', selectedTeamId)), setTeamBoards);
@@ -431,6 +455,9 @@ export function useFirebaseSubscriptions({ authUser, selectedTeamId, userProfile
     teamSwots,
     teamEisenhowers,
     teamPughs,
+    teamGantts,
+    teamSponsors,
+    teamEventLogistics,
     teamBoards,
     teamAvailabilityPolls,
     teamPosts,

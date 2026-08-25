@@ -24,6 +24,8 @@ const MeritsView = lazy(() => import('../../views/MeritsView.jsx'));
 const HRView = lazy(() => import('../../views/HRView.jsx'));
 const AdminView = lazy(() => import('../../views/AdminView.jsx'));
 const BomView = lazy(() => import('../../views/BomView.jsx'));
+const SponsorsView = lazy(() => import('../../views/SponsorsView.jsx'));
+const EventLogisticsView = lazy(() => import('../../views/EventLogisticsView.jsx'));
 
 export default function AppViewContent({
   view,
@@ -57,6 +59,9 @@ export default function AppViewContent({
     teamSwots,
     teamEisenhowers,
     teamPughs,
+    teamGantts,
+    teamSponsors,
+    teamEventLogistics,
     teamBoards,
     teamAvailabilityPolls,
     teamMeetings,
@@ -160,6 +165,15 @@ export default function AppViewContent({
     handleCreatePugh,
     handleUpdatePugh,
     handleDeletePugh,
+    handleCreateGantt,
+    handleUpdateGantt,
+    handleDeleteGantt,
+    handleCreateSponsor,
+    handleUpdateSponsor,
+    handleDeleteSponsor,
+    handleCreateEventLogistics,
+    handleUpdateEventLogistics,
+    handleDeleteEventLogistics,
     handleCreateBoard,
     handleUpdateBoard,
     handleDeleteBoard,
@@ -425,6 +439,8 @@ export default function AppViewContent({
           teamSwots={teamSwots}
           teamEisenhowers={teamEisenhowers}
           teamPughs={teamPughs}
+          teamGantts={teamGantts}
+          teamTasks={teamTasks}
           teamBoards={teamBoards}
           teamAvailabilityPolls={teamAvailabilityPolls}
           teamMeetings={teamMeetings}
@@ -453,6 +469,9 @@ export default function AppViewContent({
           onCreatePugh={handleCreatePugh}
           onUpdatePugh={handleUpdatePugh}
           onDeletePugh={handleDeletePugh}
+          onCreateGantt={handleCreateGantt}
+          onUpdateGantt={handleUpdateGantt}
+          onDeleteGantt={handleDeleteGantt}
           onCreateBoard={handleCreateBoard}
           onUpdateBoard={handleUpdateBoard}
           onDeleteBoard={handleDeleteBoard}
@@ -465,6 +484,39 @@ export default function AppViewContent({
           onCreateGoal={handleCreateGoal}
           onUpdateGoal={handleUpdateGoal}
           onDeleteGoal={handleDeleteGoal}
+        />
+      )}
+      {view === 'sponsors' && isAtLeastRookie && (
+        <SponsorsView
+          teamSponsors={teamSponsors}
+          categories={teamCategories}
+          currentMembership={currentMembership}
+          canEdit={canEdit}
+          canEditTools={canEditTools}
+          resolveCanEdit={canEditToolItem}
+          trashed={trashed}
+          onRestoreItem={handleRestoreItem}
+          onPurgeItem={handlePurgeItem}
+          onCreateSponsor={handleCreateSponsor}
+          onUpdateSponsor={handleUpdateSponsor}
+          onDeleteSponsor={handleDeleteSponsor}
+        />
+      )}
+      {view === 'eventLogistics' && isAtLeastRookie && (
+        <EventLogisticsView
+          teamEventLogistics={teamEventLogistics}
+          categories={teamCategories}
+          memberships={teamMemberships}
+          currentMembership={currentMembership}
+          canEdit={canEdit}
+          canEditTools={canEditTools}
+          resolveCanEdit={canEditToolItem}
+          trashed={trashed}
+          onRestoreItem={handleRestoreItem}
+          onPurgeItem={handlePurgeItem}
+          onCreateEventLogistics={handleCreateEventLogistics}
+          onUpdateEventLogistics={handleUpdateEventLogistics}
+          onDeleteEventLogistics={handleDeleteEventLogistics}
         />
       )}
       {view === 'academy' && isAtLeastRookie && (
