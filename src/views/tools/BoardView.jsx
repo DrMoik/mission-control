@@ -200,7 +200,7 @@ export default function BoardView({
                         )}
                       </div>
                     )}
-                    {canEditThis && onAssignCard && !card.assigneeMembershipIds?.length && !card.assigneeMembershipId && !card.openTask && (
+                    {canEditThis && onAssignCard && !card.assigneeMembershipIds?.length && !card.assigneeMembershipId && !card.openTask && !card.claimable && (
                       <div className="mt-1.5 relative">
                         {!isAssigning ? (
                           <div className="flex items-center gap-2">
@@ -213,6 +213,10 @@ export default function BoardView({
                             <button type="button" onClick={() => { setAssigningCardId(card.id); setAssignIsOpen(true); setOpenGrantsPoints(false); setOpenPoints(''); }}
                               className="text-[10px] text-blue-400 hover:underline">
                               {t('task_open_toggle')}
+                            </button>
+                            <button type="button" onClick={() => onAssignCard(col.id, card.id, cardTitle, [], [], card.description, card.dueDate, { claimable: true })}
+                              className="text-[10px] text-amber-400 hover:underline">
+                              {t('task_claimable_toggle')}
                             </button>
                           </div>
                         ) : assignIsOpen ? (

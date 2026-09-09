@@ -5,6 +5,8 @@
 import { useCallback } from 'react';
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
+import { showToast } from '../services/feedback.js';
+import { t } from '../strings.js';
 import {
   TASK_GRADES, TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT, TASK_GRADE_POINTS_TEAM_DEFAULT,
   OPEN_TASK_PARTICIPATION_POINTS_DEFAULT, SYSTEM_MERIT_NAMES,
@@ -25,8 +27,12 @@ import { getPrimaryTaskAssigneeId, getTaskAssigneeIds } from '../utils/taskHelpe
  * }} params
  * @returns {{
  *   canAssignTask: (assigneeMembershipId: string) => boolean,
- *   handleCreateTask: (opts: { assigneeMembershipId?: string, assigneeMembershipIds?: string[], title: string, description?: string, dueDate?: string, openTask?: boolean, grantsPoints?: boolean, points?: number }) => Promise<void>,
+ *   handleCreateTask: (opts: { assigneeMembershipId?: string, assigneeMembershipIds?: string[], title: string, description?: string, dueDate?: string, openTask?: boolean, grantsPoints?: boolean, points?: number, claimable?: boolean }) => Promise<void>,
+ *   handleClaimTask: (taskId: string) => Promise<void>,
  *   handleMarkOpenTaskParticipation: (taskId: string) => Promise<void>,
+ *   canReviewOpenTaskParticipation: (task: object) => boolean,
+ *   handleApproveOpenTaskParticipation: (taskId: string, membershipId: string) => Promise<void>,
+ *   handleRejectOpenTaskParticipation: (taskId: string, membershipId: string) => Promise<void>,
  *   handleRequestTaskReview: (taskId: string) => Promise<void>,
  *   handleCancelTaskReviewRequest: (taskId: string) => Promise<void>,
  *   handleGradeTask: (taskId: string, grade: string) => Promise<void>,
@@ -63,9 +69,27 @@ export function useTaskHandlers({
 
   const handleCreateTask = useCallback(async ({
     assigneeMembershipId, assigneeMembershipIds, title, description, dueDate,
-    openTask, grantsPoints, points,
+    openTask, grantsPoints, points, claimable,
   }) => {
     if (!currentTeam || !currentMembership) return;
+    if (claimable) {
+      // No assignee yet: visible to every active member until the first one
+      // to claim it becomes its sole assignee (see handleClaimTask). From
+      // then on it behaves like any other single-assignee task.
+      await addDoc(collection(db, 'tasks'), {
+        teamId:                 currentTeam.id,
+        claimable:              true,
+        assigneeMembershipIds:  [],
+        assignedByMembershipId: currentMembership.id,
+        assignedByName:         currentMembership.displayName || userProfile?.displayName || authUser?.email || '—',
+        title:                  (title || '').trim(),
+        description:            (description || '').trim() || null,
+        dueDate:                dueDate || null,
+        status:                 'pending',
+        createdAt:              serverTimestamp(),
+      });
+      return;
+    }
     if (openTask) {
       // No assignee: visible to every active member, who each self-report
       // participation independently (see handleMarkOpenTaskParticipation).
@@ -103,26 +127,64 @@ export function useTaskHandlers({
     });
   }, [currentTeam, currentMembership, authUser, userProfile, canAssignTask]);
 
-  // Open tasks only: any active member marks themselves as having
-  // participated. Self-reported and permanent — no leader review, no
-  // un-marking (matches the trust model of the other system auto-awards).
+  // Claimable tasks only: first active member to claim it becomes its sole
+  // assignee — first-write-wins is enforced by firestore.rules (the update
+  // only succeeds if assigneeMembershipIds is still empty server-side), so a
+  // simultaneous claim by someone else surfaces as a rejected write here.
+  const handleClaimTask = useCallback(async (taskId) => {
+    if (!currentTeam || !authUser || !currentMembership) return;
+    const task = teamTasks.find((t) => t.id === taskId);
+    if (!task || !task.claimable || (task.assigneeMembershipIds || []).length > 0) return;
+    try {
+      await updateDoc(doc(db, 'tasks', taskId), {
+        assigneeMembershipIds: [currentMembership.id],
+        claimedAt: serverTimestamp(),
+      });
+    } catch {
+      showToast(t('task_claim_failed'), 'error');
+    }
+  }, [currentTeam, authUser, currentMembership, teamTasks]);
+
+  // Open tasks only: any active member requests participation credit. This is
+  // now a claim, not an award — it sits as 'pending' until the task's
+  // assigner (or an admin) approves or rejects it. A rejected claim can be
+  // resubmitted; an approved one is permanent.
   const handleMarkOpenTaskParticipation = useCallback(async (taskId) => {
     if (!currentTeam || !authUser || !currentMembership) return;
     const task = teamTasks.find((t) => t.id === taskId);
     if (!task || !task.openTask) return;
-    if (task.participants?.[currentMembership.id]) return;
+    const existing = task.participants?.[currentMembership.id];
+    if (existing && existing.status !== 'rejected') return;
     await updateDoc(doc(db, 'tasks', taskId), {
       [`participants.${currentMembership.id}`]: {
-        participatedAt: serverTimestamp(),
+        status: 'pending',
+        requestedAt: serverTimestamp(),
       },
     });
+  }, [currentTeam, authUser, currentMembership, teamTasks]);
+
+  const canReviewOpenTaskParticipation = useCallback((task) => {
+    if (!task) return false;
+    return canEdit || task.assignedByMembershipId === currentMembership?.id;
+  }, [canEdit, currentMembership?.id]);
+
+  const handleApproveOpenTaskParticipation = useCallback(async (taskId, membershipId) => {
+    if (!currentTeam || !authUser || !currentMembership) return;
+    const task = teamTasks.find((t) => t.id === taskId);
+    if (!task || !task.openTask || !canReviewOpenTaskParticipation(task)) return;
+    if (task.participants?.[membershipId]?.status !== 'pending') return;
+    await updateDoc(doc(db, 'tasks', taskId), {
+      [`participants.${membershipId}.status`]: 'approved',
+      [`participants.${membershipId}.reviewedAt`]: serverTimestamp(),
+      [`participants.${membershipId}.reviewedByMembershipId`]: currentMembership.id,
+    });
     if (task.grantsPoints) {
-      const eventRef = doc(db, 'meritEvents', `auto_opentask_${taskId}_${currentMembership.id}`);
-      const existing = await getDoc(eventRef);
-      if (!existing.exists()) {
+      const eventRef = doc(db, 'meritEvents', `auto_opentask_${taskId}_${membershipId}`);
+      const existingEvent = await getDoc(eventRef);
+      if (!existingEvent.exists()) {
         await setDoc(eventRef, {
           teamId:          currentTeam.id,
-          membershipId:    currentMembership.id,
+          membershipId,
           meritId:         null,
           meritName:       SYSTEM_MERIT_NAMES.openTaskParticipation,
           meritLogo:       'checked-shield',
@@ -130,7 +192,6 @@ export function useTaskHandlers({
           type:            'award',
           evidence:        `open_task:${taskId}`,
           taskId,
-          autoAward:       true,
           systemGiven:     true,
           awardedByUserId: authUser.uid,
           awardedByName:   currentMembership.displayName || userProfile?.displayName || authUser?.email || '—',
@@ -138,7 +199,19 @@ export function useTaskHandlers({
         });
       }
     }
-  }, [currentTeam, authUser, currentMembership, userProfile, teamTasks]);
+  }, [currentTeam, authUser, currentMembership, userProfile, teamTasks, canReviewOpenTaskParticipation]);
+
+  const handleRejectOpenTaskParticipation = useCallback(async (taskId, membershipId) => {
+    if (!currentTeam || !authUser || !currentMembership) return;
+    const task = teamTasks.find((t) => t.id === taskId);
+    if (!task || !task.openTask || !canReviewOpenTaskParticipation(task)) return;
+    if (task.participants?.[membershipId]?.status !== 'pending') return;
+    await updateDoc(doc(db, 'tasks', taskId), {
+      [`participants.${membershipId}.status`]: 'rejected',
+      [`participants.${membershipId}.reviewedAt`]: serverTimestamp(),
+      [`participants.${membershipId}.reviewedByMembershipId`]: currentMembership.id,
+    });
+  }, [currentTeam, authUser, currentMembership, teamTasks, canReviewOpenTaskParticipation]);
 
   const handleRequestTaskReview = useCallback(async (taskId) => {
     if (!currentTeam || !authUser) return;
@@ -311,7 +384,11 @@ export function useTaskHandlers({
   return {
     canAssignTask,
     handleCreateTask,
+    handleClaimTask,
     handleMarkOpenTaskParticipation,
+    canReviewOpenTaskParticipation,
+    handleApproveOpenTaskParticipation,
+    handleRejectOpenTaskParticipation,
     handleRequestTaskReview,
     handleCancelTaskReviewRequest,
     handleGradeTask,

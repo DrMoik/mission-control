@@ -75,6 +75,22 @@ export default function BoardTypeSection({
       return;
     }
 
+    if (openOptions?.claimable) {
+      await onCreateTask({
+        claimable: true,
+        title: cardTitle,
+        description: cardDescription || boardName,
+        dueDate: cardDueDate || null,
+      });
+      const newColumns = (selectedBoard.columns || []).map((col) =>
+        col.id === columnId
+          ? { ...col, cards: (col.cards || []).map((c) => (c.id === cardId ? { ...c, claimable: true } : c)) }
+          : col,
+      );
+      await onUpdateBoard(selectedBoard.id, { columns: newColumns });
+      return;
+    }
+
     const ids = Array.isArray(assigneeMembershipIds) ? assigneeMembershipIds : [assigneeMembershipIds];
     const names = Array.isArray(assigneeDisplayNames) ? assigneeDisplayNames : [assigneeDisplayNames];
     if (ids.length === 0) return;

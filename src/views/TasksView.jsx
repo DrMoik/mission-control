@@ -26,15 +26,18 @@ function SectionToggle({ label, count, open, onToggle }) {
   );
 }
 
-function OpenTaskCard({ task, memberships, currentMembership, canViewAllTasks, onMarkOpenTaskParticipation, onDeleteTask }) {
+function OpenTaskCard({
+  task, memberships, currentMembership, canViewAllTasks,
+  onMarkOpenTaskParticipation, onApproveOpenTaskParticipation, onRejectOpenTaskParticipation,
+  onDeleteTask,
+}) {
   const participants = task.participants || {};
-  const participantIds = Object.keys(participants);
-  const alreadyParticipated = Boolean(currentMembership && participants[currentMembership.id]);
-  const participantNames = participantIds
-    .map((id) => memberships.find((m) => m.id === id))
-    .filter(Boolean)
-    .map((m) => ensureString(m.displayName, lang));
+  const nameFor = (id) => ensureString(memberships.find((m) => m.id === id)?.displayName, lang) || id;
+  const approvedIds = Object.keys(participants).filter((id) => participants[id]?.status === 'approved');
+  const pendingIds = Object.keys(participants).filter((id) => participants[id]?.status === 'pending');
+  const myStatus = currentMembership ? participants[currentMembership.id]?.status : null;
   const canDelete = canViewAllTasks || task.assignedByMembershipId === currentMembership?.id;
+  const canReview = canViewAllTasks || task.assignedByMembershipId === currentMembership?.id;
 
   return (
     <div className="rounded-xl border p-4 space-y-2 border-l-[3px] bg-surface-raised border-hairline hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200" style={{ borderLeftColor: 'var(--color-info)' }}>
@@ -52,18 +55,69 @@ function OpenTaskCard({ task, memberships, currentMembership, canViewAllTasks, o
             <p className="text-sm text-content-secondary mt-1 whitespace-pre-wrap">{ensureString(task.description, lang)}</p>
           )}
           <p className="text-[11px] text-content-tertiary mt-2">
-            {participantIds.length} {participantIds.length === 1 ? t('task_participants_count') : t('task_participants_count_plural')}
-            {participantNames.length > 0 && <> · {participantNames.join(', ')}</>}
+            {approvedIds.length} {approvedIds.length === 1 ? t('task_participants_count') : t('task_participants_count_plural')}
+            {approvedIds.length > 0 && <> · {approvedIds.map(nameFor).join(', ')}</>}
           </p>
         </div>
         <div className="shrink-0 flex flex-col items-end gap-1.5">
-          {alreadyParticipated ? (
-            <span className="text-xs text-teal-400 font-medium whitespace-nowrap">{t('task_participated')}</span>
-          ) : (
-            <Button variant="primary" size="sm" onClick={() => onMarkOpenTaskParticipation?.(task.id)}>
-              {t('task_participate')}
-            </Button>
+          {myStatus === 'approved' && <span className="text-xs text-teal-400 font-medium whitespace-nowrap">{t('task_participated')}</span>}
+          {myStatus === 'pending' && <span className="text-xs text-content-tertiary font-medium whitespace-nowrap">{t('task_participation_pending')}</span>}
+          {(!myStatus || myStatus === 'rejected') && (
+            <>
+              {myStatus === 'rejected' && <span className="text-xs text-error font-medium whitespace-nowrap">{t('task_participation_rejected')}</span>}
+              <Button variant="primary" size="sm" onClick={() => onMarkOpenTaskParticipation?.(task.id)}>
+                {t('task_participate')}
+              </Button>
+            </>
           )}
+          {canDelete && onDeleteTask && (
+            <button
+              type="button"
+              onClick={async () => { if (await confirmDialog({ message: t('task_delete_confirm') || '¿Eliminar esta tarea?', confirmLabel: t('delete'), danger: true })) onDeleteTask(task.id); }}
+              className="text-[11px] text-error hover:text-red-400 transition-colors"
+            >
+              {t('delete')}
+            </button>
+          )}
+        </div>
+      </div>
+      {canReview && pendingIds.length > 0 && (
+        <div className="border-t border-hairline pt-2 space-y-1.5">
+          <p className="text-[11px] font-medium text-content-tertiary">{t('task_participation_review_title')}</p>
+          {pendingIds.map((id) => (
+            <div key={id} className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-content-secondary truncate">{nameFor(id)}</span>
+              <div className="flex items-center gap-2 shrink-0">
+                <button type="button" onClick={() => onApproveOpenTaskParticipation?.(task.id, id)} className="text-teal-400 hover:text-teal-300 font-medium transition-colors">
+                  {t('task_participation_approve')}
+                </button>
+                <button type="button" onClick={() => onRejectOpenTaskParticipation?.(task.id, id)} className="text-error hover:text-red-400 font-medium transition-colors">
+                  {t('task_participation_reject')}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ClaimableTaskCard({ task, currentMembership, canViewAllTasks, onClaimTask, onDeleteTask }) {
+  const canDelete = canViewAllTasks || task.assignedByMembershipId === currentMembership?.id;
+  return (
+    <div className="rounded-xl border p-4 space-y-2 border-l-[3px] bg-surface-raised border-hairline hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200" style={{ borderLeftColor: 'var(--color-warning)' }}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h4 className="font-medium text-content-primary">{ensureString(task.title, lang)}</h4>
+          {task.description && (
+            <p className="text-sm text-content-secondary mt-1 whitespace-pre-wrap">{ensureString(task.description, lang)}</p>
+          )}
+        </div>
+        <div className="shrink-0 flex flex-col items-end gap-1.5">
+          <Button variant="primary" size="sm" onClick={() => onClaimTask?.(task.id)}>
+            {t('task_claim')}
+          </Button>
           {canDelete && onDeleteTask && (
             <button
               type="button"
@@ -85,7 +139,10 @@ export default function TasksView({
   currentMembership,
   canViewAllTasks = false,
   knowledgeAreas = [],
+  onClaimTask,
   onMarkOpenTaskParticipation,
+  onApproveOpenTaskParticipation,
+  onRejectOpenTaskParticipation,
   onRequestTaskReview,
   onCancelTaskReviewRequest,
   onGradeTask,
@@ -107,6 +164,7 @@ export default function TasksView({
     !task.openTask && getTaskAssigneeIds(task).includes(currentMembership?.id),
   );
   const openTasks = (tasks || []).filter((task) => task.openTask);
+  const claimableTasks = (tasks || []).filter((task) => task.claimable && getTaskAssigneeIds(task).length === 0);
   const pending = myTasks.filter((t) => (t.status || 'pending') === 'pending');
   const pendingReviewMine = myTasks.filter((t) => t.status === 'pending_review');
   const completed = myTasks.filter((t) => t.status === 'completed');
@@ -416,6 +474,26 @@ export default function TasksView({
         placeholder={t('search_placeholder')}
       />
 
+      {/* Claimable tasks — visible to everyone, up for grabs until one member claims it */}
+      {claimableTasks.length > 0 && (
+        <div className="animate-slide-up">
+          <h3 className="text-sm font-semibold text-content-secondary uppercase tracking-wider mb-1">{t('task_claimable_section_title')}</h3>
+          <p className="text-xs text-content-tertiary mb-3">{t('task_claimable_section_hint')}</p>
+          <div className="space-y-2">
+            {claimableTasks.filter(matchesSearch).map((task) => (
+              <ClaimableTaskCard
+                key={task.id}
+                task={task}
+                currentMembership={currentMembership}
+                canViewAllTasks={canViewAllTasks}
+                onClaimTask={onClaimTask}
+                onDeleteTask={onDeleteTask}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Open tasks — visible to everyone, no assignee, self-reported participation */}
       {openTasks.length > 0 && (
         <div className="animate-slide-up">
@@ -430,6 +508,8 @@ export default function TasksView({
                 currentMembership={currentMembership}
                 canViewAllTasks={canViewAllTasks}
                 onMarkOpenTaskParticipation={onMarkOpenTaskParticipation}
+                onApproveOpenTaskParticipation={onApproveOpenTaskParticipation}
+                onRejectOpenTaskParticipation={onRejectOpenTaskParticipation}
                 onDeleteTask={onDeleteTask}
               />
             ))}

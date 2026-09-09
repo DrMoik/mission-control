@@ -288,15 +288,10 @@ service cloud.firestore {
           (request.resource.data.meritName == 'Perfil completo' &&
            eventId == 'auto_profile_complete_50_' + request.resource.data.teamId + '_' + request.resource.data.membershipId) ||
           (request.resource.data.meritName == '50 actualizaciones' &&
-           eventId == 'auto_milestone50_' + request.resource.data.membershipId) ||
-          (request.resource.data.meritName == 'Participación en tarea abierta' &&
-           request.resource.data.taskId is string &&
-           eventId == 'auto_opentask_' + request.resource.data.taskId + '_' + request.resource.data.membershipId &&
-           exists(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)) &&
-           get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.get('openTask', false) == true &&
-           get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.get('grantsPoints', false) == true &&
-           get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.teamId == request.resource.data.teamId &&
-           get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.points == request.resource.data.points)
+           eventId == 'auto_milestone50_' + request.resource.data.membershipId)
+          // Open-task participation is no longer self-awarded: it now requires
+          // the assigner/admin to approve the claim, which creates this event
+          // as a leader action (isLeaderOrAbove, checked in the match block below).
         );
     }
 
@@ -389,14 +384,30 @@ service cloud.firestore {
     function taskMembershipId(teamId) {
       return request.auth.uid + '_' + teamId;
     }
-    // Open tasks (no assignee): any active member may mark ONLY their own key
-    // in `participants` — once set, it can't be changed or removed (self-report
-    // is permanent, matching how other system auto-awards work).
+    // Open tasks (no assignee): any active member may claim ONLY their own key
+    // in `participants` as a 'pending' request — never as 'approved' (that
+    // requires the assigner/admin, granted separately via isLeaderOrAbove).
+    // A rejected request may be resubmitted; a pending or approved one is locked.
     function isOpenTaskSelfParticipation(teamId) {
+      let key = taskMembershipId(teamId);
+      let before = resource.data.get('participants', {});
       return resource.data.get('openTask', false) == true &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']) &&
-        request.resource.data.participants.diff(resource.data.get('participants', {})).affectedKeys().hasOnly([taskMembershipId(teamId)]) &&
-        !(taskMembershipId(teamId) in resource.data.get('participants', {}));
+        request.resource.data.participants.diff(before).affectedKeys().hasOnly([key]) &&
+        (!(key in before) || before[key].status == 'rejected') &&
+        request.resource.data.participants[key].keys().hasOnly(['status', 'requestedAt']) &&
+        request.resource.data.participants[key].status == 'pending' &&
+        request.resource.data.participants[key].requestedAt != null;
+    }
+    // Claimable tasks (no assignee): any active member may become the sole
+    // assignee, but only while the doc still shows no assignee server-side —
+    // that check races two simultaneous claims down to exactly one winner.
+    function isTaskClaim(teamId) {
+      return resource.data.get('claimable', false) == true &&
+        resource.data.get('assigneeMembershipIds', []).size() == 0 &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assigneeMembershipIds', 'claimedAt']) &&
+        request.resource.data.assigneeMembershipIds == [taskMembershipId(teamId)] &&
+        request.resource.data.claimedAt != null;
     }
     function isTaskAssigneeWorkflowUpdate(teamId) {
       return (
@@ -478,7 +489,8 @@ service cloud.firestore {
         isLeaderOrAbove(resource.data.teamId) ||
         (isTaskAssignee(resource.data.teamId) && isTaskAssigneeWorkflowUpdate(resource.data.teamId)) ||
         (isTaskAssigner() && isTaskAssignerWorkflowUpdate(resource.data.teamId)) ||
-        isOpenTaskSelfParticipation(resource.data.teamId)
+        isOpenTaskSelfParticipation(resource.data.teamId) ||
+        isTaskClaim(resource.data.teamId)
       );
       allow delete: if isActiveMember(resource.data.teamId) && (
         isLeaderOrAbove(resource.data.teamId) ||
