@@ -105,6 +105,7 @@ function OpenTaskCard({
 
 function ClaimableTaskCard({ task, currentMembership, canViewAllTasks, onClaimTask, onDeleteTask }) {
   const canDelete = canViewAllTasks || task.assignedByMembershipId === currentMembership?.id;
+  const [claiming, setClaiming] = useState(false);
   return (
     <div className="rounded-xl border p-4 space-y-2 border-l-[3px] bg-surface-raised border-hairline hover:border-primary/25 hover:shadow-glow-sm transition-all duration-200" style={{ borderLeftColor: 'var(--color-warning)' }}>
       <div className="flex items-start justify-between gap-2">
@@ -115,7 +116,15 @@ function ClaimableTaskCard({ task, currentMembership, canViewAllTasks, onClaimTa
           )}
         </div>
         <div className="shrink-0 flex flex-col items-end gap-1.5">
-          <Button variant="primary" size="sm" onClick={() => onClaimTask?.(task.id)}>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={claiming}
+            onClick={async () => {
+              setClaiming(true);
+              try { await onClaimTask?.(task.id); } finally { setClaiming(false); }
+            }}
+          >
             {t('task_claim')}
           </Button>
           {canDelete && onDeleteTask && (

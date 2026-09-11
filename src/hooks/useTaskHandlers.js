@@ -2,7 +2,7 @@
 // Task CRUD and grading handlers. Extracted from App.jsx for maintainability.
 // Supports multi-assignee tasks (assigneeMembershipIds) and legacy assigneeMembershipId.
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { showToast } from '../services/feedback.js';
@@ -131,10 +131,16 @@ export function useTaskHandlers({
   // assignee — first-write-wins is enforced by firestore.rules (the update
   // only succeeds if assigneeMembershipIds is still empty server-side), so a
   // simultaneous claim by someone else surfaces as a rejected write here.
+  const claimsInFlight = useRef(new Set());
   const handleClaimTask = useCallback(async (taskId) => {
     if (!currentTeam || !authUser || !currentMembership) return;
     const task = teamTasks.find((t) => t.id === taskId);
     if (!task || !task.claimable || (task.assigneeMembershipIds || []).length > 0) return;
+    // A double click/tap fires this twice before the first write's onSnapshot
+    // update lands, so the local guard above can't see it — the second call
+    // would then hit the server race and wrongly report "someone else took it".
+    if (claimsInFlight.current.has(taskId)) return;
+    claimsInFlight.current.add(taskId);
     try {
       await updateDoc(doc(db, 'tasks', taskId), {
         assigneeMembershipIds: [currentMembership.id],
@@ -142,6 +148,8 @@ export function useTaskHandlers({
       });
     } catch {
       showToast(t('task_claim_failed'), 'error');
+    } finally {
+      claimsInFlight.current.delete(taskId);
     }
   }, [currentTeam, authUser, currentMembership, teamTasks]);
 
