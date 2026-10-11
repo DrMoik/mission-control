@@ -73,13 +73,14 @@ service cloud.firestore {
       );
     }
 
-    function isAreaLeaderCanStrikeTarget(teamId, targetCategoryId) {
+    function isAreaLeaderCanStrikeTarget(teamId, targetCategoryId, targetRole) {
       return request.auth != null
         && membershipExists(teamId)
         && membershipDoc(teamId).data.status == 'active'
         && membershipDoc(teamId).data.role == 'leader'
         && membershipDoc(teamId).data.get('categoryId', '') != ''
-        && targetCategoryId == membershipDoc(teamId).data.categoryId;
+        && targetCategoryId == membershipDoc(teamId).data.categoryId
+        && !(targetRole in ['leader', 'facultyAdvisor', 'teamAdmin']);
     }
 
     function isLeaderCanEditMerit(teamId, meritCategoryId) {
@@ -208,7 +209,7 @@ service cloud.firestore {
             // Papelera: soft-delete / restore (deleteField() on restore still only touches these 3 keys)
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt', 'deletedBy', 'deletedByUserId'])
           ))
-        || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null))
+        || (isAreaLeaderCanStrikeTarget(resource.data.teamId, resource.data.get('categoryId', null), resource.data.get('role', ''))
             && (
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'status']) ||
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['strikes', 'strikeHistory']) ||

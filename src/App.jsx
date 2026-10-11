@@ -891,15 +891,15 @@ export default function App() {
     await updateDoc(doc(db, 'memberships', membershipId), { categoryId: categoryId || null });
   };
 
-  // Admins with a category can only add/remove strikes for members in their area.
-  // Area leaders (leader + categoryId) can strike only members in their area.
-  // Leaders cannot remove their own strikes.
+  // Team admins / faculty advisors can strike anyone, regardless of their own area.
+  // Area leaders (leader + categoryId) can strike only their leadees: members of
+  // their area ranked below leader. Leaders cannot remove their own strikes.
+  // Mirrors isAreaLeaderCanStrikeTarget in firestore.rules.
   const canStrike = canEdit || (memberRole === 'leader' && currentMembership?.categoryId);
   const canStrikeMember = (member) => {
     if (!canStrike) return false;
-    if (isPlatformAdmin) return true;
-    if (canEdit && !currentMembership?.categoryId) return true; // global admin
-    return member?.categoryId === currentMembership?.categoryId;
+    if (canEdit) return true;
+    return member?.categoryId === currentMembership?.categoryId && !atLeast(member?.role, 'leader');
   };
   const canRemoveStrikeMember = (member) =>
     canStrikeMember(member) && !(memberRole === 'leader' && !isPlatformAdmin && currentMembership?.id === member?.id);
