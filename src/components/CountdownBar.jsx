@@ -5,10 +5,10 @@
 // past countdowns are hidden from the strip but stay editable.
 
 import { useEffect, useState } from 'react';
-import { Pencil, Plus, Trash2, Timer } from 'lucide-react';
+import { Pencil, Plus, Trash2, Trophy } from 'lucide-react';
 import ModalOverlay from './ModalOverlay.jsx';
 import PickerField from './ui/PickerField.jsx';
-import { formatRemaining } from '../utils.js';
+import { remainingParts } from '../utils.js';
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -83,21 +83,36 @@ export default function CountdownBar({ countdowns = [], canEdit, onSave, t }) {
   if (upcoming.length === 0 && !canEdit) return null;
 
   return (
-    <div className="shrink-0 border-b border-hairline bg-surface-raised/60 px-3 py-1.5 flex items-center gap-x-4 gap-y-1 flex-wrap text-xs">
-      <Timer className="w-3.5 h-3.5 text-primary shrink-0" />
-      {upcoming.map((c) => (
-        <span key={c.id} className="flex items-center gap-1.5 whitespace-nowrap">
-          <span className="text-content-secondary">{c.label}</span>
-          <span className="font-mono tabular-nums font-semibold text-content-primary">
-            {formatRemaining(new Date(c.at).getTime() - now)}
-          </span>
-        </span>
-      ))}
-      {upcoming.length === 0 && <span className="text-content-tertiary">{t('countdowns_empty')}</span>}
+    <div className="shrink-0 border-b border-hairline bg-gradient-to-r from-fuchsia-950/40 via-slate-900/60 to-amber-950/40 px-3 py-2.5 flex items-center gap-3 flex-wrap">
+      {upcoming.map((c) => {
+        const ms = new Date(c.at).getTime() - now;
+        const { d, h, m, s } = remainingParts(ms);
+        const units = [[d, t('countdown_days')], [h, t('countdown_hours')], [m, t('countdown_minutes')], [s, t('countdown_seconds')]];
+        return (
+          <div key={c.id}
+            className={`flex items-center gap-3 rounded-xl border border-amber-400/30 bg-gradient-to-br from-amber-400/10 to-fuchsia-500/10 px-3 py-2 ${ms < 86_400_000 ? 'animate-glow-breathe' : ''}`}>
+            <Trophy className="w-6 h-6 text-amber-300 shrink-0" />
+            <div className="min-w-0">
+              <div className="text-xs font-semibold uppercase tracking-wide text-amber-200 truncate max-w-[14rem]">{c.label}</div>
+              <div className="flex items-end gap-1.5 mt-0.5">
+                {units.map(([v, label]) => (
+                  <div key={label} className="flex flex-col items-center">
+                    <span className="font-mono tabular-nums text-xl sm:text-2xl font-bold leading-none text-content-primary rounded-md bg-black/30 px-1.5 py-1">
+                      {String(v).padStart(2, '0')}
+                    </span>
+                    <span className="text-[9px] uppercase tracking-wider text-content-tertiary mt-0.5">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      {upcoming.length === 0 && <span className="text-xs text-content-tertiary">{t('countdowns_empty')}</span>}
       {canEdit && (
-        <button onClick={() => setEditing(true)} className="ml-auto p-1 text-content-tertiary hover:text-content-primary"
+        <button onClick={() => setEditing(true)} className="ml-auto p-1.5 text-content-tertiary hover:text-content-primary"
           title={t('countdowns_edit')} aria-label={t('countdowns_edit')}>
-          <Pencil className="w-3.5 h-3.5" />
+          <Pencil className="w-4 h-4" />
         </button>
       )}
       {editing && <CountdownEditor countdowns={countdowns} onSave={onSave} onClose={() => setEditing(false)} t={t} />}

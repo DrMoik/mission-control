@@ -1335,6 +1335,10 @@ export const STRINGS = {
     countdowns_empty:           'Sin cuentas regresivas — agrega una para el próximo concurso.',
     countdown_add:              'Agregar cuenta regresiva',
     countdown_label_ph:         'Ej. Rover Challenge 2027',
+    countdown_days:             'días',
+    countdown_hours:            'hrs',
+    countdown_minutes:          'min',
+    countdown_seconds:          'seg',
   };
 /** Lookup string by key. Returns STRINGS[k] or k. */
 export const t = (k) => STRINGS[k] ?? k;
