@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   remainingParts,
+  competitionRanks,
   rankOf,
   atLeast,
   parseCalendarDate,
@@ -142,5 +143,12 @@ describe('remainingParts', () => {
   it('splits into d/h/m/s and clamps past to zero', () => {
     expect(remainingParts(((2 * 24 + 3) * 3600 + 4 * 60 + 5) * 1000)).toEqual({ d: 2, h: 3, m: 4, s: 5 });
     expect(remainingParts(-5000)).toEqual({ d: 0, h: 0, m: 0, s: 0 });
+  });
+});
+
+describe('competitionRanks', () => {
+  it('gives ties the same rank and skips the next', () => {
+    const rows = [{ id: 'a', p: 5 }, { id: 'b', p: 10 }, { id: 'c', p: 10 }, { id: 'd', p: 3 }];
+    expect(competitionRanks(rows, (r) => r.p, (r) => r.id)).toEqual({ b: 1, c: 1, a: 3, d: 4 });
   });
 });

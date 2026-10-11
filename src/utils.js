@@ -473,3 +473,15 @@ export const remainingParts = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 };
 };
+
+/** Standard competition ranking ("1, 1, 3"): equal scores share a rank.
+ *  Returns { [key]: rank } for rows sorted by score descending. */
+export const competitionRanks = (rows, score, key) => {
+  const sorted = [...rows].sort((a, b) => score(b) - score(a));
+  const ranks = {};
+  sorted.forEach((row, i) => {
+    const prev = sorted[i - 1];
+    ranks[key(row)] = prev && score(prev) === score(row) ? ranks[key(prev)] : i + 1;
+  });
+  return ranks;
+};
