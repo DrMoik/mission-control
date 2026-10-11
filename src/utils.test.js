@@ -1,6 +1,7 @@
 // ─── utils.js tests ───────────────────────────────────────────────────────────
 import { describe, it, expect } from 'vitest';
 import {
+  formatRemaining,
   rankOf,
   atLeast,
   parseCalendarDate,
@@ -134,5 +135,13 @@ describe('toEmbedUrl', () => {
   });
   it('returns empty for empty', () => {
     expect(toEmbedUrl('')).toBe('');
+  });
+});
+
+describe('formatRemaining', () => {
+  it('formats days and h:m:s, clamps past to zero', () => {
+    expect(formatRemaining(((2 * 24 + 3) * 3600 + 4 * 60 + 5) * 1000)).toBe('2d 03:04:05');
+    expect(formatRemaining(59_000)).toBe('00:00:59');
+    expect(formatRemaining(-5000)).toBe('00:00:00');
   });
 });

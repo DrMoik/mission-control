@@ -1330,6 +1330,11 @@ export const STRINGS = {
     sales_low_stock:            'Stock bajo',
     sales_total_pending:        'Total pendiente',
     sales_total_confirmed:      'Total confirmado',
+    countdowns_title:           'Cuentas regresivas',
+    countdowns_edit:            'Editar cuentas regresivas',
+    countdowns_empty:           'Sin cuentas regresivas — agrega una para el próximo concurso.',
+    countdown_add:              'Agregar cuenta regresiva',
+    countdown_label_ph:         'Ej. Rover Challenge 2027',
   };
 /** Lookup string by key. Returns STRINGS[k] or k. */
 export const t = (k) => STRINGS[k] ?? k;

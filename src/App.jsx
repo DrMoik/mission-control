@@ -47,6 +47,7 @@ import RoleBadge  from './components/ui/RoleBadge.jsx';
 import GoogleIcon from './components/ui/GoogleIcon.jsx';
 import HamburgerIcon from './components/ui/HamburgerIcon.jsx';
 import InlineTeamRename from './components/InlineTeamRename.jsx';
+import CountdownBar from './components/CountdownBar.jsx';
 import SafeProfileImage from './components/ui/SafeProfileImage.jsx';
 import { Home, User, Settings, ChevronDown, ChevronRight, X, MoreHorizontal } from 'lucide-react';
 
@@ -578,6 +579,10 @@ export default function App() {
     if (!currentTeam || !canEdit) return;
     const next = Array.isArray(arr) ? arr.filter((id) => id !== 'admin') : [];
     await updateDoc(doc(db, 'teams', currentTeam.id), { disabledTools: next });
+  };
+  const handleSaveCountdowns = async (arr) => {
+    if (!currentTeam || !canEdit) return;
+    await updateDoc(doc(db, 'teams', currentTeam.id), { countdowns: arr });
   };
   const handleSaveTeamSemesters = async (arr) => {
     if (!currentTeam || !canEdit) return;
@@ -3119,6 +3124,8 @@ export default function App() {
             </button>
           </div>
         </header>
+
+        <CountdownBar countdowns={currentTeam?.countdowns} canEdit={canEdit} onSave={handleSaveCountdowns} t={t} />
 
         {/* ── Preview mode banner ── */}
         {previewRole && (

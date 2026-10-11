@@ -467,3 +467,12 @@ export function formatMissingFieldsList(labels) {
   const rest = labels.slice(0, -1);
   return `${rest.join(', ')} y ${last}`;
 }
+
+/** Milliseconds → "Nd HH:MM:SS" (days omitted when 0); negatives clamp to zero. */
+export const formatRemaining = (ms) => {
+  const p2 = (n) => String(n).padStart(2, '0');
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400);
+  const hms = `${p2(Math.floor((s % 86400) / 3600))}:${p2(Math.floor((s % 3600) / 60))}:${p2(s % 60)}`;
+  return d > 0 ? `${d}d ${hms}` : hms;
+};
