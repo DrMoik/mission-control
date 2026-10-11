@@ -21,6 +21,11 @@ const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), in
 
 export default function ModalOverlay({ children, onClickBackdrop, className = '' }) {
   const panelRef = useRef(null);
+  // Callers often pass an inline handler (new function every render). Reading it
+  // through a ref keeps the effect below mount-only; otherwise every keystroke
+  // in a modal input re-ran it and its focus restore/steal blurred the input.
+  const onBackdropRef = useRef(onClickBackdrop);
+  useEffect(() => { onBackdropRef.current = onClickBackdrop; });
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -30,7 +35,7 @@ export default function ModalOverlay({ children, onClickBackdrop, className = ''
 
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onClickBackdrop?.({ target: panel, currentTarget: panel });
+        onBackdropRef.current?.({ target: panel, currentTarget: panel });
         return;
       }
       if (e.key !== 'Tab') return;
@@ -51,7 +56,7 @@ export default function ModalOverlay({ children, onClickBackdrop, className = ''
       document.removeEventListener('keydown', onKeyDown, true);
       if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
     };
-  }, [onClickBackdrop]);
+  }, []);
 
   return createPortal(
     <div
