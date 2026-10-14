@@ -33,6 +33,41 @@ const STATUS_CLS = {
 };
 const inputCls = 'w-full bg-surface-raised border border-hairline rounded-lg px-3 py-2 text-sm text-content-primary';
 
+// Folio number security assigns after approval. Approver edits; requester just sees it.
+function FolioField({ request, isApprover, onError }) {
+  const [value, setValue] = useState(request.folio || '');
+  const [saving, setSaving] = useState(false);
+  if (!isApprover) {
+    return request.folio ? (
+      <div className="text-sm"><span className="text-content-tertiary">{t('access_folio')}: </span>
+        <span className="font-mono font-semibold text-content-primary">{request.folio}</span></div>
+    ) : null;
+  }
+  const dirty = value.trim() !== (request.folio || '');
+  const save = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'teamAccessRequests', request.id), { folio: value.trim() });
+    } catch (err) {
+      onError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <form onSubmit={save} className="flex items-center gap-2 pt-1">
+      <label className="text-xs font-medium text-content-secondary shrink-0" htmlFor={`folio-${request.id}`}>{t('access_folio')}</label>
+      <input id={`folio-${request.id}`} value={value} onChange={(e) => setValue(e.target.value)} placeholder={t('access_folio_ph')}
+        className="flex-1 min-w-0 max-w-xs bg-surface-raised border border-hairline rounded-lg px-3 py-1.5 text-sm font-mono text-content-primary" />
+      {dirty && (
+        <button type="submit" disabled={saving}
+          className="px-3 py-1.5 text-sm rounded-lg bg-primary text-white disabled:opacity-50">{t('save')}</button>
+      )}
+    </form>
+  );
+}
+
 export default function AccessRequestsView({ authUser, currentTeam, currentMembership }) {
   const isApprover = authUser?.email === ACCESS_APPROVER_EMAIL;
   const [requests, setRequests] = useState([]);
@@ -146,6 +181,7 @@ export default function AccessRequestsView({ authUser, currentTeam, currentMembe
               </div>
             ))}
           </dl>
+          {r.status !== 'rejected' && <FolioField request={r} isApprover={isApprover} onError={setError} />}
           <div className="flex flex-wrap justify-end gap-2 pt-1">
             {isApprover && r.status === 'pending' && (
               <>

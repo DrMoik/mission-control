@@ -568,9 +568,12 @@ service cloud.firestore {
       allow create: if isLeaderOrAbove(request.resource.data.teamId)
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'pending';
-      allow update: if isAccessApprover()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt'])
-        && request.resource.data.status in ['approved', 'rejected'];
+      allow update: if isAccessApprover() && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt'])
+          && request.resource.data.status in ['approved', 'rejected'])
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['folio'])
+          && request.resource.data.folio is string)
+      );
       allow delete: if isAccessApprover() ||
         (request.auth != null && resource.data.createdBy == request.auth.uid && resource.data.status == 'pending');
     }
