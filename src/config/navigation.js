@@ -9,7 +9,7 @@
 import {
   LayoutDashboard, Rss, Grid, Users, Trophy, Award, Calendar, CalendarDays, Wrench,
   GraduationCap, Wallet, CheckSquare, Settings, MessagesSquare, Map, Package, ClipboardList,
-  Cog, Landmark, ShieldCheck, Handshake, Truck,
+  Cog, Landmark, ShieldCheck, Handshake, Truck, DoorOpen,
 } from 'lucide-react';
 
 /** Navigation domain structure. */
@@ -80,6 +80,7 @@ export const NAV_DOMAINS = [
           { id: 'funding', labelKey: 'nav_funding', Icon: Wallet, access: 'member' },
           { id: 'sponsors', labelKey: 'nav_sponsors', Icon: Handshake, access: 'member' },
           { id: 'eventLogistics', labelKey: 'nav_event_logistics', Icon: Truck, access: 'member' },
+          { id: 'accessRequests', labelKey: 'nav_access_requests', Icon: DoorOpen, access: 'leader', quantumOnly: true },
         ],
       },
       {

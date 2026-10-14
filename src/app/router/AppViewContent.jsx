@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { t } from '../../strings.js';
+import { isQuantumTeam } from '../../accessRequestEmail.js';
 
 const MotionDiv = motion.div;
 
@@ -25,6 +26,7 @@ const HRView = lazy(() => import('../../views/HRView.jsx'));
 const AdminView = lazy(() => import('../../views/AdminView.jsx'));
 const BomView = lazy(() => import('../../views/BomView.jsx'));
 const SponsorsView = lazy(() => import('../../views/SponsorsView.jsx'));
+const AccessRequestsView = lazy(() => import('../../views/AccessRequestsView.jsx'));
 const EventLogisticsView = lazy(() => import('../../views/EventLogisticsView.jsx'));
 
 export default function AppViewContent({
@@ -507,6 +509,9 @@ export default function AppViewContent({
           onUpdateSponsor={handleUpdateSponsor}
           onDeleteSponsor={handleDeleteSponsor}
         />
+      )}
+      {view === 'accessRequests' && canEditTools && isQuantumTeam(currentTeam) && (
+        <AccessRequestsView authUser={authUser} currentTeam={currentTeam} currentMembership={currentMembership} />
       )}
       {view === 'eventLogistics' && isAtLeastRookie && (
         <EventLogisticsView

@@ -48,6 +48,7 @@ import GoogleIcon from './components/ui/GoogleIcon.jsx';
 import HamburgerIcon from './components/ui/HamburgerIcon.jsx';
 import InlineTeamRename from './components/InlineTeamRename.jsx';
 import CountdownBar from './components/CountdownBar.jsx';
+import { isQuantumTeam } from './accessRequestEmail.js';
 import SafeProfileImage from './components/ui/SafeProfileImage.jsx';
 import { Home, User, Settings, ChevronDown, ChevronRight, X, MoreHorizontal } from 'lucide-react';
 
@@ -2882,6 +2883,7 @@ export default function App() {
       if (entry.access === 'admin' && !canEdit) return null;
       if (entry.access === 'leader' && !canEditTools) return null;
       if (entry.access === 'member' && !isMember) return null;
+      if (entry.quantumOnly && !isQuantumTeam(currentTeam)) return null;
       return entry;
     })
     .filter(Boolean);

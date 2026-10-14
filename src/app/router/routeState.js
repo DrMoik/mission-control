@@ -15,6 +15,7 @@ export const VALID_VIEWS = new Set([
   'bom',
   'sponsors',
   'eventLogistics',
+  'accessRequests',
   'tasks',
   'sessions',
   'mapa',

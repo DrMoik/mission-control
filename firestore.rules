@@ -83,6 +83,13 @@ service cloud.firestore {
         && !(targetRole in ['leader', 'facultyAdvisor', 'teamAdmin']);
     }
 
+    // Campus access requests approver (keep in sync with src/accessRequestEmail.js)
+    function isAccessApprover() {
+      return request.auth != null
+        && request.auth.token.email == 'm.galvez@tec.mx'
+        && request.auth.token.email_verified == true;
+    }
+
     function isLeaderCanEditMerit(teamId, meritCategoryId) {
       return isLeaderOrAbove(teamId)
         && membershipDoc(teamId).data.role == 'leader'
@@ -552,6 +559,20 @@ service cloud.firestore {
       allow create: if isLeaderOrAbove(request.resource.data.teamId);
       allow update: if isLeaderOrAbove(resource.data.teamId);
       allow delete: if isLeaderOrAbove(resource.data.teamId);
+    }
+
+    // Solicitudes de acceso: leaders+ file them, only the approver sees all and decides.
+    match /teamAccessRequests/{requestId} {
+      allow read: if isAccessApprover() ||
+        (request.auth != null && resource.data.createdBy == request.auth.uid);
+      allow create: if isLeaderOrAbove(request.resource.data.teamId)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if isAccessApprover()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt'])
+        && request.resource.data.status in ['approved', 'rejected'];
+      allow delete: if isAccessApprover() ||
+        (request.auth != null && resource.data.createdBy == request.auth.uid && resource.data.status == 'pending');
     }
 
     match /teamEventLogistics/{entryId} {
