@@ -438,36 +438,6 @@ export default function TasksView({
                     {t(`task_grade_${grade}`)}
                   </button>
                 ))}
-                {assigneeIds.length > 1 && (
-                  <div className="w-full mt-1 pt-1 border-t border-hairline space-y-1">
-                    <p className="text-[10px] text-content-tertiary">{t('task_grade_individual_hint')}</p>
-                    {assigneeIds.map((id) => (
-                      <label key={id} className="flex items-center justify-end gap-2 text-[11px] text-content-secondary">
-                        {memberName(id)}
-                        <select
-                          value={memberGradeDraft[task.id]?.[id] || ''}
-                          onChange={(e) => setMemberGradeDraft((d) => ({
-                            ...d, [task.id]: { ...d[task.id], [id]: e.target.value },
-                          }))}
-                          className="text-[10px] bg-surface-overlay border border-hairline rounded-md px-1 py-0.5"
-                        >
-                          <option value="">—</option>
-                          {TASK_GRADES.map((g) => <option key={g} value={g}>{t(`task_grade_${g}`)}</option>)}
-                        </select>
-                      </label>
-                    ))}
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        disabled={!assigneeIds.every((id) => memberGradeDraft[task.id]?.[id])}
-                        onClick={() => onGradeTask(task.id, memberGradeDraft[task.id])}
-                        className="text-[10px] bg-primary/20 text-primary border border-primary/40 px-2 py-1 rounded-md disabled:opacity-40"
-                      >
-                        {t('task_grade_individual_submit')}
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
             {canDelete && (
@@ -481,15 +451,53 @@ export default function TasksView({
             )}
           </div>
         </div>
+        {showGrade && isAssigner && task.status === 'pending_review' && assigneeIds.length > 1 && (
+          <div className="mt-3 pt-3 border-t border-hairline space-y-2">
+            <p className="text-sm text-content-secondary">{t('task_grade_individual_hint')}</p>
+            {assigneeIds.map((id) => (
+              <div key={id} className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-medium text-content-primary">{memberName(id)}</span>
+                <div className="flex flex-wrap gap-1">
+                  {TASK_GRADES.map((g) => {
+                    const sel = memberGradeDraft[task.id]?.[id] === g;
+                    return (
+                      <button
+                        key={g}
+                        type="button"
+                        aria-pressed={sel}
+                        onClick={() => setMemberGradeDraft((d) => ({ ...d, [task.id]: { ...d[task.id], [id]: g } }))}
+                        className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${sel ? 'bg-primary/25 text-primary border-primary/60 font-medium' : 'bg-surface-overlay text-content-secondary border-hairline hover:border-primary/40'}`}
+                      >
+                        {t(`task_grade_${g}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!assigneeIds.every((id) => memberGradeDraft[task.id]?.[id])}
+                onClick={() => onGradeTask(task.id, memberGradeDraft[task.id])}
+              >
+                {t('task_grade_individual_submit')}
+              </Button>
+            </div>
+          </div>
+        )}
         {isCompleted && task.grade && (
           <div className="space-y-0.5 pt-1 border-t border-hairline">
             <p className="text-[11px] text-content-tertiary">
               {t('task_grade_label')}: <span className="text-content-secondary">{t(`task_grade_${task.grade}`)}</span>
             </p>
             {task.memberGrades && assigneeIds.length > 1 && (
-              <p className="text-[11px] text-content-tertiary">
-                {assigneeIds.map((id) => `${memberName(id)}: ${t(`task_grade_${task.memberGrades[id]}`)}`).join(' · ')}
-              </p>
+              <ul className="text-xs text-content-secondary space-y-0.5">
+                {assigneeIds.map((id) => (
+                  <li key={id}>{memberName(id)}: <span className="text-content-primary font-medium">{t(`task_grade_${task.memberGrades[id]}`)}</span></li>
+                ))}
+              </ul>
             )}
             {acceptedAt && (
               <p className="text-[11px] text-content-tertiary">
