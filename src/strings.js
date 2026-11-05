@@ -709,6 +709,7 @@ export const STRINGS = {
     task_grade_good:      'Bien',
     task_grade_excellent: 'Excelente',
     task_grade_perfect:   'Perfecto',
+    task_grade_rejected:  'No trabajó',
     task_grade_individual_hint:   'O califica a cada miembro por separado:',
     task_grade_individual_submit: 'Calificar individualmente',
     task_mark_blocked:    'Marcar bloqueada',

@@ -258,9 +258,13 @@ export function useTaskHandlers({
     const memberGrades = typeof grades === 'string'
       ? Object.fromEntries(assigneeIds.map((id) => [id, grades]))
       : (grades || {});
-    if (!assigneeIds.every((id) => TASK_GRADES.includes(memberGrades[id]))) return;
+    // 'rejected' = member didn't contribute: no points. At least one member must pass
+    // (rejecting everyone is handleRejectTaskReview).
+    if (!assigneeIds.every((id) => memberGrades[id] === 'rejected' || TASK_GRADES.includes(memberGrades[id]))) return;
+    const passedIds = assigneeIds.filter((id) => memberGrades[id] !== 'rejected');
+    if (passedIds.length === 0) return;
     // Task-level grade = best member grade (what the team delivered).
-    const grade = TASK_GRADES[Math.max(...assigneeIds.map((id) => TASK_GRADES.indexOf(memberGrades[id])))];
+    const grade = TASK_GRADES[Math.max(...passedIds.map((id) => TASK_GRADES.indexOf(memberGrades[id])))];
     const ptsInd = currentTeam.taskGradePointsIndividual || TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT;
     const ptsTeam = currentTeam.taskGradePointsTeam || TASK_GRADE_POINTS_TEAM_DEFAULT;
     const pts = assigneeIds.length > 1 ? ptsTeam : ptsInd;
@@ -276,7 +280,7 @@ export function useTaskHandlers({
     const awardedByName = currentMembership.displayName || userProfile?.displayName || authUser?.email || '—';
     const taskScope = assigneeIds.length > 1 ? 'team' : 'individual';
     const meritEventsRef = collection(db, 'meritEvents');
-    for (const membershipId of assigneeIds) {
+    for (const membershipId of passedIds) {
       const memberGrade = memberGrades[membershipId];
       await addDoc(meritEventsRef, {
         teamId:                currentTeam.id,

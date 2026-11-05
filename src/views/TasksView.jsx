@@ -458,15 +458,18 @@ export default function TasksView({
               <div key={id} className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-medium text-content-primary">{memberName(id)}</span>
                 <div className="flex flex-wrap gap-1">
-                  {TASK_GRADES.map((g) => {
+                  {[...TASK_GRADES, 'rejected'].map((g) => {
                     const sel = memberGradeDraft[task.id]?.[id] === g;
+                    const selCls = g === 'rejected'
+                      ? 'bg-red-900/50 text-red-200 border-red-600/60 font-medium'
+                      : 'bg-primary/25 text-primary border-primary/60 font-medium';
                     return (
                       <button
                         key={g}
                         type="button"
                         aria-pressed={sel}
                         onClick={() => setMemberGradeDraft((d) => ({ ...d, [task.id]: { ...d[task.id], [id]: g } }))}
-                        className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${sel ? 'bg-primary/25 text-primary border-primary/60 font-medium' : 'bg-surface-overlay text-content-secondary border-hairline hover:border-primary/40'}`}
+                        className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${sel ? selCls : 'bg-surface-overlay text-content-secondary border-hairline hover:border-primary/40'}`}
                       >
                         {t(`task_grade_${g}`)}
                       </button>
@@ -479,7 +482,10 @@ export default function TasksView({
               <Button
                 variant="primary"
                 size="sm"
-                disabled={!assigneeIds.every((id) => memberGradeDraft[task.id]?.[id])}
+                disabled={
+                  !assigneeIds.every((id) => memberGradeDraft[task.id]?.[id])
+                  || assigneeIds.every((id) => memberGradeDraft[task.id]?.[id] === 'rejected')
+                }
                 onClick={() => onGradeTask(task.id, memberGradeDraft[task.id])}
               >
                 {t('task_grade_individual_submit')}
