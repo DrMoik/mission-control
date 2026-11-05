@@ -168,6 +168,9 @@ export default function TasksView({
   const [showHistory, setShowHistory] = useState(false);
   const [taskSearch, setTaskSearch] = useState('');
   const [editingKnowledgeAreasTaskId, setEditingKnowledgeAreasTaskId] = useState(null);
+  // { [taskId]: { [membershipId]: grade } } — lives here because TaskCard remounts each render.
+  const [memberGradeDraft, setMemberGradeDraft] = useState({});
+  const memberName = (id) => ensureString(memberships.find((m) => m.id === id)?.displayName, lang) || '—';
 
   const myTasks = (tasks || []).filter((task) =>
     !task.openTask && getTaskAssigneeIds(task).includes(currentMembership?.id),
@@ -435,6 +438,36 @@ export default function TasksView({
                     {t(`task_grade_${grade}`)}
                   </button>
                 ))}
+                {assigneeIds.length > 1 && (
+                  <div className="w-full mt-1 pt-1 border-t border-hairline space-y-1">
+                    <p className="text-[10px] text-content-tertiary">{t('task_grade_individual_hint')}</p>
+                    {assigneeIds.map((id) => (
+                      <label key={id} className="flex items-center justify-end gap-2 text-[11px] text-content-secondary">
+                        {memberName(id)}
+                        <select
+                          value={memberGradeDraft[task.id]?.[id] || ''}
+                          onChange={(e) => setMemberGradeDraft((d) => ({
+                            ...d, [task.id]: { ...d[task.id], [id]: e.target.value },
+                          }))}
+                          className="text-[10px] bg-surface-overlay border border-hairline rounded-md px-1 py-0.5"
+                        >
+                          <option value="">—</option>
+                          {TASK_GRADES.map((g) => <option key={g} value={g}>{t(`task_grade_${g}`)}</option>)}
+                        </select>
+                      </label>
+                    ))}
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        disabled={!assigneeIds.every((id) => memberGradeDraft[task.id]?.[id])}
+                        onClick={() => onGradeTask(task.id, memberGradeDraft[task.id])}
+                        className="text-[10px] bg-primary/20 text-primary border border-primary/40 px-2 py-1 rounded-md disabled:opacity-40"
+                      >
+                        {t('task_grade_individual_submit')}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {canDelete && (
@@ -453,6 +486,11 @@ export default function TasksView({
             <p className="text-[11px] text-content-tertiary">
               {t('task_grade_label')}: <span className="text-content-secondary">{t(`task_grade_${task.grade}`)}</span>
             </p>
+            {task.memberGrades && assigneeIds.length > 1 && (
+              <p className="text-[11px] text-content-tertiary">
+                {assigneeIds.map((id) => `${memberName(id)}: ${t(`task_grade_${task.memberGrades[id]}`)}`).join(' · ')}
+              </p>
+            )}
             {acceptedAt && (
               <p className="text-[11px] text-content-tertiary">
                 {t('task_accepted_at')}: <span className="font-mono tabular-nums">{acceptedAt.toLocaleDateString()}</span>

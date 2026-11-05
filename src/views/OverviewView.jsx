@@ -12,7 +12,6 @@ import { Trophy, FileText, X, CalendarDays, Zap } from 'lucide-react';
 import { t, lang } from '../strings.js';
 import { BilingualField, Button, Input } from '../components/ui/index.js';
 import { getL, toL, fillL, ensureString, tsToDate } from '../utils.js';
-import { ROLE_LABELS } from '../constants.js';
 import { StaggerList, StaggerItem } from '../components/motion/index.js';
 
 // ── SVG histogram (vertical bars, dynamic bins, matches slate/teal aesthetic)
@@ -587,7 +586,7 @@ export default function OverviewView({ team, teamMemberships, teamMeritEvents, t
                       <option value="">{t('stats_select_status')}</option>
                       {avgByLevel.map(({ role, count }) => (
                         <option key={role} value={role}>
-                          {ROLE_LABELS[role] || role} ({count})
+                          {t('role_' + role) || role} ({count})
                         </option>
                       ))}
                     </select>

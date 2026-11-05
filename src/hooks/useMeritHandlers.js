@@ -5,6 +5,7 @@ import { useCallback } from 'react';
 import { collection, doc, addDoc, updateDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { showToast } from '../services/feedback.js';
+import { t } from '../strings.js';
 
 /**
  * @param {{
@@ -161,7 +162,7 @@ export function useMeritHandlers({
     const allowed = merit.assignableBy || 'leader';
     const canAssign = isPlatformAdmin || memberRole === 'teamAdmin' || memberRole === 'facultyAdvisor' || memberRole === allowed;
     if (!canAssign) {
-      showToast(`Solo un ${allowed === 'leader' ? 'Líder' : allowed === 'teamAdmin' ? 'Team Admin' : 'Faculty Advisor'} puede otorgar este logro.`, 'warning');
+      showToast(`Solo un ${t('assignable_by_' + allowed)} puede otorgar este logro.`, 'warning');
       return;
     }
     if (!canEdit && memberRole === 'leader' && !isPlatformAdmin) {

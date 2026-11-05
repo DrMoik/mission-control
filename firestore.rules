@@ -460,7 +460,7 @@ service cloud.firestore {
         request.resource.data.blockedReason == null &&
         request.resource.data.blockedAt == null
       ) || (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'grade', 'acceptedAt', 'completedAt', 'gradedByMembershipId']) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'grade', 'memberGrades', 'acceptedAt', 'completedAt', 'gradedByMembershipId']) &&
         resource.data.status == 'pending_review' &&
         request.resource.data.status == 'completed' &&
         request.resource.data.grade in ['ok', 'good', 'excellent', 'perfect'] &&

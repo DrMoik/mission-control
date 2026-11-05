@@ -709,6 +709,8 @@ export const STRINGS = {
     task_grade_good:      'Bien',
     task_grade_excellent: 'Excelente',
     task_grade_perfect:   'Perfecto',
+    task_grade_individual_hint:   'O califica a cada miembro por separado:',
+    task_grade_individual_submit: 'Calificar individualmente',
     task_mark_blocked:    'Marcar bloqueada',
     task_unblock:         'Desbloquear',
     task_blocked_reason_ph:'Motivo del bloqueo (opcional)…',
@@ -1365,9 +1367,57 @@ export const STRINGS = {
     countdown_hours:            'hrs',
     countdown_minutes:          'min',
     countdown_seconds:          'seg',
+    admin_section_roles:        'Roles',
+    admin_section_roles_hint:   'Alias con el que se muestran estos roles en todo el equipo. Vacío = nombre por defecto. Los permisos no cambian.',
+    admin_roles_help:           'Permisos de cada rol',
+    admin_roles_help_teamAdmin: 'Rol más alto del equipo (quien crea el equipo lo recibe). Edita toda la configuración de Admin, aprueba solicitudes, cambia roles y áreas, crea y otorga cualquier logro, asigna tareas a cualquiera, pone strikes, archiva miembros, administra BOM e inventario, ve RH y reinicia la temporada.',
+    admin_roles_help_facultyAdvisor: 'Mismos permisos de administración que Admin de Equipo. Además ve el nombre de quien envía quejas en RH. Cualquier líder le puede asignar tareas aunque no comparta área. Se ordena justo debajo de Admin de Equipo y es el rol por defecto de los miembros fantasma (sin cuenta).',
+    admin_roles_help_leader:    'Otorga logros de su área y crea logros, asigna tareas, pone strikes e inventario dentro de su área. Un líder sin área (general) puede archivar miembros. Accede a canales y encuestas de disponibilidad.',
+    admin_section_audit:        'Registro de cambios',
+    admin_section_audit_hint:   'Cambios hechos por Admin de Equipo y Asesor Académico: configuración, miembros, áreas, strikes, logros y tareas.',
+    admin_audit_load:           'Ver registro',
+    admin_audit_refresh:        'Actualizar',
+    admin_audit_empty:          'Aún no hay cambios registrados.',
+    admin_audit_who:            'Quién',
+    admin_audit_what:           'Qué',
+    audit_update_settings:      'Cambió configuración',
+    audit_approve_member:       'Aprobó miembro',
+    audit_reject_member:        'Rechazó solicitud',
+    audit_archive_member:       'Archivó miembro',
+    audit_unarchive_member:     'Restauró miembro',
+    audit_change_role:          'Cambió rol',
+    audit_assign_category:      'Cambió área',
+    audit_add_strike:           'Puso strike',
+    audit_remove_strike:        'Quitó strike',
+    audit_create_category:      'Creó área',
+    audit_update_category:      'Editó área',
+    audit_delete_category:      'Eliminó área',
+    audit_season_reset:         'Reinició temporada',
+    audit_revoke_merit:         'Revocó logro',
+    audit_grade_task:           'Calificó tarea',
+    audit_reject_task_review:   'Rechazó revisión de tarea',
+    audit_accept_suggestion:    'Aceptó sugerencia de RH',
+    audit_dismiss_suggestion:   'Descartó sugerencia de RH',
+    audit_approve_skill_proposal: 'Aprobó habilidad propuesta',
+    audit_reject_skill_proposal:  'Rechazó habilidad propuesta',
+    admin_roles_help_members:   'Senior, Junior y Novato: miembros activos que participan en tareas, logros y publicaciones. Aspirante: periodo de prueba; asciende a Novato al juntar los puntos configurados en Aspirantes.',
   };
 /** Lookup string by key. Returns STRINGS[k] or k. */
 export const t = (k) => STRINGS[k] ?? k;
+
+/** Roles a team can rename (Admin → Roles). Alias only changes the label, never the permissions. */
+export const ALIASABLE_ROLES = ['teamAdmin', 'facultyAdvisor'];
+const ROLE_LABEL_DEFAULTS = Object.fromEntries(
+  ALIASABLE_ROLES.flatMap((r) => [`role_${r}`, `assignable_by_${r}`]).map((k) => [k, STRINGS[k]]),
+);
+/** Apply the current team's role aliases ({ teamAdmin, facultyAdvisor }) to every t('role_*') lookup. */
+export function setRoleAliases(aliases) {
+  ALIASABLE_ROLES.forEach((r) => {
+    const alias = aliases?.[r]?.trim();
+    STRINGS[`role_${r}`] = alias || ROLE_LABEL_DEFAULTS[`role_${r}`];
+    STRINGS[`assignable_by_${r}`] = alias || ROLE_LABEL_DEFAULTS[`assignable_by_${r}`];
+  });
+}
 
 /** UI language (Spanish only). Use with getL/ensureString for bilingual data. */
 export const lang = 'es';

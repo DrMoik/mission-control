@@ -253,6 +253,7 @@ export default function AppViewContent({
     handleRejectSkillProposal,
     handleSaveSystemMeritPoints,
     handleSaveAspirantSettings,
+    handleSaveRoleAliases,
     handleSaveTaskGradePoints,
     handleUpdateMemberProfile,
     handleSaveWeeklyStatus,
@@ -687,6 +688,7 @@ export default function AppViewContent({
           onRejectSkillProposal={handleRejectSkillProposal}
           onSaveSystemMeritPoints={handleSaveSystemMeritPoints}
           onSaveAspirantSettings={handleSaveAspirantSettings}
+          onSaveRoleAliases={handleSaveRoleAliases}
           onSaveTaskGradePoints={handleSaveTaskGradePoints}
           onSeasonReset={handleSeasonReset}
         />

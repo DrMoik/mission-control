@@ -247,49 +247,55 @@ export function useTaskHandlers({
     });
   }, [currentTeam, authUser, currentMembership?.id, teamTasks]);
 
-  const handleGradeTask = useCallback(async (taskId, grade) => {
+  // `grades` is one grade for every assignee, or { membershipId: grade } to
+  // grade each member of a team task individually.
+  const handleGradeTask = useCallback(async (taskId, grades) => {
     if (!currentTeam || !authUser || !currentMembership) return;
     const task = teamTasks.find((t) => t.id === taskId);
     if (!task || task.status !== 'pending_review') return;
     if (task.assignedByMembershipId !== currentMembership.id) return;
-    if (!TASK_GRADES.includes(grade)) return;
     const assigneeIds = getTaskAssigneeIds(task);
+    const memberGrades = typeof grades === 'string'
+      ? Object.fromEntries(assigneeIds.map((id) => [id, grades]))
+      : (grades || {});
+    if (!assigneeIds.every((id) => TASK_GRADES.includes(memberGrades[id]))) return;
+    // Task-level grade = best member grade (what the team delivered).
+    const grade = TASK_GRADES[Math.max(...assigneeIds.map((id) => TASK_GRADES.indexOf(memberGrades[id])))];
     const ptsInd = currentTeam.taskGradePointsIndividual || TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT;
     const ptsTeam = currentTeam.taskGradePointsTeam || TASK_GRADE_POINTS_TEAM_DEFAULT;
-    const pointsPerMember = assigneeIds.length > 1
-      ? (ptsTeam[grade] ?? 0)
-      : (ptsInd[grade] ?? 0);
+    const pts = assigneeIds.length > 1 ? ptsTeam : ptsInd;
     await updateDoc(doc(db, 'tasks', taskId), {
       status:               'completed',
       grade,
+      memberGrades,
       acceptedAt:           serverTimestamp(),
       completedAt:          serverTimestamp(),
       gradedByMembershipId:  currentMembership.id,
     });
     const meritName = 'Tarea revisada';
-    const evidence = `${(task.title || '').trim()} (${grade})`;
     const awardedByName = currentMembership.displayName || userProfile?.displayName || authUser?.email || '—';
     const taskScope = assigneeIds.length > 1 ? 'team' : 'individual';
     const meritEventsRef = collection(db, 'meritEvents');
     for (const membershipId of assigneeIds) {
+      const memberGrade = memberGrades[membershipId];
       await addDoc(meritEventsRef, {
         teamId:                currentTeam.id,
         membershipId,
         meritId:               null,
         meritName,
         meritLogo:             'checked-shield',
-        points:                pointsPerMember,
+        points:                pts[memberGrade] ?? 0,
         type:                 'award',
-        evidence,
+        evidence:             `${(task.title || '').trim()} (${memberGrade})`,
         awardedByUserId:       authUser?.uid ?? null,
         awardedByName,
         taskId,
         taskCompletionScope:   taskScope,
-        taskGrade:             grade,
+        taskGrade:             memberGrade,
         createdAt:            serverTimestamp(),
       });
     }
-    if (canEdit) await logAudit('grade_task', 'task', taskId, { grade, membershipId: getPrimaryTaskAssigneeId(task) });
+    if (canEdit) await logAudit('grade_task', 'task', taskId, { grade, memberGrades, membershipId: getPrimaryTaskAssigneeId(task) });
   }, [currentTeam, currentMembership, authUser, userProfile, teamTasks, canEdit, logAudit]);
 
   const handleRejectTaskReview = useCallback(async (taskId, feedback = '') => {

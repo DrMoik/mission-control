@@ -9,7 +9,10 @@ import { StaggerList, StaggerItem } from '../components/motion/index.js';
 import SeasonResetSection from '../components/SeasonResetSection.jsx';
 import ImageCropModal from '../components/ImageCropModal.jsx';
 import { NAV_DOMAINS, isGroup } from '../config/navigation.js';
-import { t } from '../strings.js';
+import { HelpCircle } from 'lucide-react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase.js';
+import { t, ALIASABLE_ROLES } from '../strings.js';
 import { showToast } from '../services/feedback.js';
 import { Button, Textarea } from '../components/ui/index.js';
 import {
@@ -141,12 +144,23 @@ export default function AdminView({
   onSaveSystemMeritPoints,
   onSaveTaskGradePoints,
   onSaveAspirantSettings,
+  onSaveRoleAliases,
   onSeasonReset,
   t: tProp,
 }) {
   const tFn = tProp || t;
   const [saving, setSaving] = useState(null);
   const [faviconCropSrc, setFaviconCropSrc] = useState(null);
+  const [showRolesHelp, setShowRolesHelp] = useState(false);
+  const [auditLog, setAuditLog] = useState(null);
+
+  const loadAuditLog = async () => {
+    // ponytail: loads the team's whole log and sorts client-side (no composite index); paginate if it grows to thousands.
+    const snap = await getDocs(query(collection(db, 'auditLog'), where('teamId', '==', team.id)));
+    const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    rows.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+    setAuditLog(rows);
+  };
   const faviconFileRef = useRef(null);
 
   if (!team) return null;
@@ -695,6 +709,98 @@ export default function AdminView({
           >
             {saving === 'aspirantSettings' ? tFn('saving') || 'Guardando…' : tFn('save')}
           </button>
+        </section>
+      </div>
+
+      {/* ═══════════ ROLES — alias de Admin de Equipo / Asesor Académico ═══════════ */}
+      {onSaveRoleAliases && (
+        <div className="border-l-4 border-purple-600/50 pl-4">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider">{tFn('admin_section_roles')}</h3>
+            <button
+              type="button"
+              onClick={() => setShowRolesHelp((v) => !v)}
+              aria-expanded={showRolesHelp}
+              aria-label={tFn('admin_roles_help')}
+              title={tFn('admin_roles_help')}
+              className="text-content-tertiary hover:text-primary transition-colors"
+            >
+              <HelpCircle size={16} />
+            </button>
+          </div>
+          <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_roles_hint')}</p>
+          {showRolesHelp && (
+            <section className="rounded-xl border border-hairline bg-surface-raised p-4 mb-4 space-y-2 text-[11px] text-content-secondary">
+              <h4 className="text-sm font-semibold text-primary">{tFn('admin_roles_help')}</h4>
+              {['teamAdmin', 'facultyAdvisor', 'leader'].map((r) => (
+                <p key={r}><span className="font-semibold text-content-primary">{tFn('role_' + r)}:</span> {tFn('admin_roles_help_' + r)}</p>
+              ))}
+              <p>{tFn('admin_roles_help_members')}</p>
+            </section>
+          )}
+          <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {ALIASABLE_ROLES.map((r) => (
+                <div key={r}>
+                  <label htmlFor={`admin-role-alias-${r}`} className="text-[11px] text-slate-400 block mb-1">{tFn('role_' + r)}</label>
+                  <input
+                    type="text"
+                    maxLength={40}
+                    defaultValue={team.roleAliases?.[r] || ''}
+                    id={`admin-role-alias-${r}`}
+                    className="w-full px-2 py-1 bg-slate-900 border border-slate-600 rounded text-xs"
+                  />
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                const aliases = Object.fromEntries(ALIASABLE_ROLES.map((r) => [r, (document.getElementById(`admin-role-alias-${r}`)?.value || '').trim()]));
+                save('roleAliases', onSaveRoleAliases, aliases);
+              }}
+              disabled={saving === 'roleAliases'}
+              className="inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 text-xs rounded-lg px-2.5 py-1.5 bg-gradient-to-br from-primary-hover to-primary text-content-inverse hover:from-teal-400 hover:to-primary-hover hover:shadow-glow-sm active:scale-[0.96] disabled:opacity-40 disabled:pointer-events-none"
+            >
+              {saving === 'roleAliases' ? tFn('saving') || 'Guardando…' : tFn('save')}
+            </button>
+          </section>
+        </div>
+      )}
+
+      {/* ═══════════ REGISTRO DE CAMBIOS ═══════════ */}
+      <div className="border-l-4 border-amber-600/50 pl-4">
+        <h3 className="text-sm font-bold text-content-secondary uppercase tracking-wider mb-1">{tFn('admin_section_audit')}</h3>
+        <p className="text-[11px] text-content-tertiary mb-4">{tFn('admin_section_audit_hint')}</p>
+        <section className="rounded-xl border border-hairline bg-surface-raised p-4 space-y-3">
+          <Button size="sm" variant="secondary" onClick={loadAuditLog}>
+            {auditLog ? tFn('admin_audit_refresh') : tFn('admin_audit_load')}
+          </Button>
+          {auditLog && (auditLog.length === 0 ? (
+            <p className="text-[11px] text-content-tertiary">{tFn('admin_audit_empty')}</p>
+          ) : (
+            <div className="max-h-96 overflow-y-auto">
+              <table className="w-full text-[11px]">
+                <thead className="text-content-tertiary text-left">
+                  <tr><th className="py-1 pr-2">{tFn('th_when')}</th><th className="py-1 pr-2">{tFn('admin_audit_who')}</th><th className="py-1">{tFn('admin_audit_what')}</th></tr>
+                </thead>
+                <tbody>
+                  {auditLog.map((e) => (
+                    <tr key={e.id} className="border-t border-hairline align-top">
+                      <td className="py-1 pr-2 whitespace-nowrap text-content-tertiary">{e.createdAt?.toDate?.().toLocaleString('es-MX') ?? '—'}</td>
+                      <td className="py-1 pr-2">{e.userName}</td>
+                      <td className="py-1">
+                        <span className="font-semibold">{tFn('audit_' + e.action)}</span>
+                        {e.details?.memberName && ` · ${e.details.memberName}`}
+                        {e.details?.from && ` · ${tFn('role_' + e.details.from)} → ${tFn('role_' + e.details.to)}`}
+                        {e.details?.name && ` · ${e.details.name}`}
+                        {e.details?.fields && ` · ${e.details.fields.join(', ')}`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </section>
       </div>
 

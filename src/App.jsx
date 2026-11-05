@@ -30,7 +30,7 @@ import { useSessionHandlers } from './hooks/useSessionHandlers.js';
 import { usePushNotifications } from './hooks/usePushNotifications.js';
 import AppViewContent from './app/router/AppViewContent.jsx';
 import { getRouteState } from './app/router/routeState.js';
-import { t, lang, STRINGS }         from './strings.js';
+import { t, lang, STRINGS, setRoleAliases } from './strings.js';
 import { showToast, confirmDialog } from './services/feedback.js';
 import { softDeleteDoc, restoreDoc, purgeDoc, msUntilPurge } from './services/softDelete.js';
 import {
@@ -221,6 +221,8 @@ export default function App() {
     () => allTeams.find((t) => t.id === selectedTeamId) || null,
     [allTeams, selectedTeamId],
   );
+  // Before children render, so every t('role_*') shows this team's aliases.
+  setRoleAliases(currentTeam?.roleAliases);
 
   const bomSubsystems = useMemo(
     () => (currentTeam?.bomSubsystems?.length ? currentTeam.bomSubsystems : ['Chasis', 'Tracción', 'Brazo', 'Laboratorio', 'Antenas']),
@@ -382,6 +384,12 @@ export default function App() {
       console.warn('Audit log failed:', e);
     }
   }, [currentTeam, canEdit, authUser, userProfile]);
+
+  /** Write fields on the current team doc and log which ones changed. */
+  const updateTeam = async (payload) => {
+    await updateDoc(doc(db, 'teams', currentTeam.id), payload);
+    await logAudit('update_settings', 'team', currentTeam.id, { fields: Object.keys(payload) });
+  };
 
   const logChannelAudit = useCallback(async (action, channelId, details = {}) => {
     if (!currentTeam || !authUser || !canManageCrossTeamChannels) return;
@@ -563,45 +571,45 @@ export default function App() {
 
   const handleSaveTeamMeritTags = async (domains) => {
     if (!currentTeam || (!canEdit && !isPlatformAdmin)) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), {
+    await updateTeam({
       domains: Array.isArray(domains) ? domains.filter(Boolean) : [],
     });
   };
 
   const handleSaveTeamCareers = async (arr) => {
     if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), { careerOptions: Array.isArray(arr) ? arr : [] });
+    await updateTeam({ careerOptions: Array.isArray(arr) ? arr : [] });
   };
   const handleSaveTeamFavicon = async (dataUrl) => {
     if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), { faviconUrl: dataUrl || null });
+    await updateTeam({ faviconUrl: dataUrl || null });
   };
   const handleSaveDisabledTools = async (arr) => {
     if (!currentTeam || !canEdit) return;
     const next = Array.isArray(arr) ? arr.filter((id) => id !== 'admin') : [];
-    await updateDoc(doc(db, 'teams', currentTeam.id), { disabledTools: next });
+    await updateTeam({ disabledTools: next });
   };
   const handleSaveCountdowns = async (arr) => {
     if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), { countdowns: arr });
+    await updateTeam({ countdowns: arr });
   };
   const handleSaveTeamSemesters = async (arr) => {
     if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), { semesterOptions: Array.isArray(arr) ? arr : [] });
+    await updateTeam({ semesterOptions: Array.isArray(arr) ? arr : [] });
   };
   const handleSaveTeamMeritTiers = async (arr) => {
     if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), { meritTiers: Array.isArray(arr) ? arr : [] });
+    await updateTeam({ meritTiers: Array.isArray(arr) ? arr : [] });
   };
   const handleSaveTeamMeritFamilies = async (arr) => {
     if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), {
+    await updateTeam({
       meritFamilies: Array.isArray(arr) ? arr.filter((x) => x && x.id && x.name) : [],
     });
   };
   const handleSaveTeamKnowledgeAreas = async (arr) => {
     if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), {
+    await updateTeam({
       knowledgeAreas: Array.isArray(arr) ? arr.filter((x) => x && x.id && x.name) : [],
     });
   };
@@ -616,13 +624,13 @@ export default function App() {
           status: s.status || 'active',
         }))
       : [];
-    await updateDoc(doc(db, 'teams', currentTeam.id), { skillDictionary: skills });
+    await updateTeam({ skillDictionary: skills });
   };
   const handleSaveTaskGradePoints = async ({ individual, team }) => {
     if (!currentTeam || !canEdit) return;
     const ptsInd = individual || TASK_GRADE_POINTS_INDIVIDUAL_DEFAULT;
     const ptsTeam = team || TASK_GRADE_POINTS_TEAM_DEFAULT;
-    await updateDoc(doc(db, 'teams', currentTeam.id), {
+    await updateTeam({
       taskGradePointsIndividual: ptsInd,
       taskGradePointsTeam:       ptsTeam,
     });
@@ -655,7 +663,7 @@ export default function App() {
   const handleSaveSystemMeritPoints = async (points) => {
     if (!currentTeam || !canEdit) return;
     const { weeklyUpdate, profileComplete, milestone50 } = points;
-    await updateDoc(doc(db, 'teams', currentTeam.id), {
+    await updateTeam({
       pointsPerWeeklyUpdate:    weeklyUpdate ?? SYSTEM_MERIT_POINTS_DEFAULT.weeklyUpdate,
       pointsPerProfileComplete: profileComplete ?? SYSTEM_MERIT_POINTS_DEFAULT.profileComplete,
       pointsPerMilestone50:    milestone50 ?? SYSTEM_MERIT_POINTS_DEFAULT.milestone50,
@@ -688,10 +696,15 @@ export default function App() {
 
   const handleSaveAspirantSettings = async ({ promotionPoints, inactivityMonths }) => {
     if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), {
+    await updateTeam({
       aspirantPromotionPoints:  promotionPoints  ?? ASPIRANT_TO_ROOKIE_POINTS_DEFAULT,
       aspirantInactivityMonths: inactivityMonths ?? ASPIRANT_INACTIVITY_MONTHS_DEFAULT,
     });
+  };
+
+  const handleSaveRoleAliases = async (roleAliases) => {
+    if (!currentTeam || !canEdit) return;
+    await updateTeam({ roleAliases });
   };
 
   const handleSaveTeamPersonalityTags = async (dictOrArr) => {
@@ -701,7 +714,7 @@ export default function App() {
       : Array.isArray(dictOrArr)
         ? Object.fromEntries((dictOrArr || []).map((k) => [k, PERSONALITY_TAGS_DEFAULT[k] || k]))
         : PERSONALITY_TAGS_DEFAULT;
-    await updateDoc(doc(db, 'teams', currentTeam.id), { personalityTags: payload });
+    await updateTeam({ personalityTags: payload });
   };
 
   // ── Season Reset ───────────────────────────────────────────────────────────
@@ -861,11 +874,13 @@ export default function App() {
   const handleApproveMember = async (membershipId) => {
     if (!canEdit) return;
     await updateDoc(doc(db, 'memberships', membershipId), { status: 'active' });
+    await logAudit('approve_member', 'membership', membershipId, { memberName: teamMemberships.find((mm) => mm.id === membershipId)?.displayName });
   };
 
   const handleRejectMember = async (membershipId) => {
     if (!canEdit) return;
     await deleteDoc(doc(db, 'memberships', membershipId));
+    await logAudit('reject_member', 'membership', membershipId, { memberName: teamMemberships.find((mm) => mm.id === membershipId)?.displayName });
   };
 
   // Archive a single member outside of a full season reset — same 'inactive'
@@ -877,6 +892,7 @@ export default function App() {
       status: 'inactive',
       inactiveSince: serverTimestamp(),
     });
+    await logAudit('archive_member', 'membership', membershipId, { memberName: teamMemberships.find((mm) => mm.id === membershipId)?.displayName });
   };
 
   const handleUnarchiveMember = async (membershipId) => {
@@ -885,16 +901,20 @@ export default function App() {
       status: 'active',
       inactiveSince: deleteField(),
     });
+    await logAudit('unarchive_member', 'membership', membershipId, { memberName: teamMemberships.find((mm) => mm.id === membershipId)?.displayName });
   };
 
   const handleUpdateMemberRole = async (membershipId, newRole) => {
     if (!canEdit) return;
+    const m = teamMemberships.find((mm) => mm.id === membershipId);
     await updateDoc(doc(db, 'memberships', membershipId), { role: newRole });
+    await logAudit('change_role', 'membership', membershipId, { memberName: m?.displayName, from: m?.role, to: newRole });
   };
 
   const handleAssignCategory = async (membershipId, categoryId) => {
     if (!canEdit) return;
     await updateDoc(doc(db, 'memberships', membershipId), { categoryId: categoryId || null });
+    await logAudit('assign_category', 'membership', membershipId, { memberName: teamMemberships.find((mm) => mm.id === membershipId)?.displayName, categoryId: categoryId || null });
   };
 
   // Team admins / faculty advisors can strike anyone, regardless of their own area.
@@ -933,6 +953,7 @@ export default function App() {
       strikeHistory,
       ...(newStrikes >= 3 ? { status: 'suspended' } : {}),
     });
+    await logAudit('add_strike', 'membership', membershipId, { memberName: m.displayName, strikes: newStrikes });
   };
 
   const handleRemoveStrike = async (membershipId) => {
@@ -950,6 +971,7 @@ export default function App() {
       strikeHistory,
       status: 'active',
     });
+    await logAudit('remove_strike', 'membership', membershipId, { memberName: m.displayName, strikes: newStrikes });
   };
 
   const handleSubmitHrSuggestion = async (content, isAnonymous) => {
@@ -1346,16 +1368,19 @@ export default function App() {
   const handleCreateCategory = async (name, description) => {
     if (!currentTeam || !canEdit) return;
     await addDoc(collection(db, 'categories'), { teamId: currentTeam.id, name, description });
+    await logAudit('create_category', 'category', null, { name });
   };
 
   const handleUpdateCategory = async (catId, name, description) => {
     if (!canEdit) return;
     await updateDoc(doc(db, 'categories', catId), { name, description });
+    await logAudit('update_category', 'category', catId, { name });
   };
 
   const handleDeleteCategory = async (catId) => {
     if (!canEdit) return;
     await deleteDoc(doc(db, 'categories', catId));
+    await logAudit('delete_category', 'category', catId, { name: teamCategories.find((c) => c.id === catId)?.name });
     // Clear the deleted category from all affected memberships
     await Promise.all(
       teamMemberships
@@ -1368,7 +1393,7 @@ export default function App() {
 
   const handleSaveOverview = async (overview) => {
     if (!currentTeam || !canEdit) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), { overview });
+    await updateTeam({ overview });
   };
 
   // ── Funding ─────────────────────────────────────────────────────────────────
@@ -1791,7 +1816,7 @@ export default function App() {
 
   const handleSaveBomSubsystems = async (subsystems) => {
     if (!currentTeam || !canManageBom) return;
-    await updateDoc(doc(db, 'teams', currentTeam.id), {
+    await updateTeam({
       bomSubsystems: Array.isArray(subsystems) ? subsystems.filter(Boolean) : [],
     });
   };
@@ -3478,6 +3503,7 @@ export default function App() {
                   handleRejectSkillProposal,
                   handleSaveSystemMeritPoints,
                   handleSaveAspirantSettings,
+                  handleSaveRoleAliases,
                   handleSaveTaskGradePoints,
                   handleUpdateMemberProfile,
                   handleSaveWeeklyStatus,
